@@ -1,6 +1,6 @@
 # 開発の仕組みの見直し：FableとAstra（2026-11-06）
 
-記録。書き換えない。決めたことは [decisions.md](../decisions.md) のD21。
+記録。書き換えない。決めたことは [decisions.md](../decisions.md) のD23。
 
 ## 進め方
 
@@ -28,4 +28,4 @@ Soraの依頼で、Claudeが作った開発の仕組み（orchestrator、Codex�
 
 ## 採ったものと採らなかったもの
 
-採ったものは D21。orchestratorをFableにするかはSoraが考え、費用の面から、orchestratorはClaudeのまま、Fableは朝夜の見直しに使うことにした。
+採ったものは D23。orchestratorをFableにするかはSoraが考え、費用の面から、orchestratorはClaudeのまま、Fableは朝夜の見直しに使うことにした。

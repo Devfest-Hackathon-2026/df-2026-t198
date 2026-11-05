@@ -3,13 +3,22 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": "26.x" },
+  "engines": {
+    "node": "26.x"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "pnpm --filter @kadai-hisho/core build && vitest run",
+    "test:emulator": "pnpm --filter @kadai-hisho/core build && RUN_OBSERVATION_EMULATOR_TESTS=1 vitest run tests/observations.emulator.test.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js"
   },
-  "devDependencies": { "@types/node": "^26.6.6" }
+  "devDependencies": {
+    "@types/node": "^26.6.6"
+  },
+  "dependencies": {
+    "@kadai-hisho/core": "workspace:*",
+    "firebase-admin": "^14.5.0"
+  }
 }

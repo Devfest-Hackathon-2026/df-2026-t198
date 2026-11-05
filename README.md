@@ -6,7 +6,7 @@
 
 ## 開発を始める
 
-Node 26とpnpm 11を使う。pnpmの固定版は [package.json](package.json) の `packageManager` を参照。
+Node 26とpnpm 11を使う。pnpmの固定版は [package.json](package.json) の `packageManager` を参照。`pnpm test` はFirestoreのエミュレーターも起動するため、[JDK 21以上](#firebaseエミュレーター) が必要。
 
 ```sh
 pnpm install
@@ -71,7 +71,28 @@ pnpm emulators:web
 
 Hostingは `http://127.0.0.1:5002/student` と `/session`、管理画面は `http://127.0.0.1:4000`。全体起動時のFirestoreは8085、Authenticationは9099で動く。設定は [firebase.json](firebase.json)。初回はエミュレーターのダウンロードが発生する。
 
-アプリとエミュレーターの接続は未実装。Firestoreの規則は全読み書きを拒否する状態から始める。接続を実装するときに、共有範囲に合わせた規則とテストを追加する。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
+アプリとエミュレーターの接続は未実装。Firestoreの規則は [設計案の共有範囲](docs/design.md#2-firestoreのデータの置き方と共有の範囲) に限って読み取りを許可し、画面からの書き込みはすべて拒否する。
+
+規則だけの試験は `pnpm test:firestore-rules`。架空のプロジェクト `demo-kadai-hisho-rules` でFirestoreだけを起動し、試験後に停止する。手動で起動したエミュレーターと8085番ポートを共用するため、手動の方を先に終了しておく。macOSでは `/opt/homebrew/opt/openjdk@21/bin`、GitHub Actionsでは `JAVA_HOME_21_X64` のJavaを試験コマンドがPATHに足す。それ以外はJDK 21以上をPATHに置く。初回はダウンロードにネットワーク接続が必要。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
+
+観測APIはAuth・Firestoreのエミュレーターで試験できる（下記）。画面との接続は未実装。Firestoreの規則は上のとおり。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
+
+### 観測APIの試験
+
+```sh
+pnpm test:observations:emulator
+```
+
+AuthとFirestoreを `demo-kadai-hisho` で起動し、架空の利用者・観測を使ってAPIへの送信、保存、再送、取消、本人以外の保存先の拒否を試す。通常の `pnpm test` ではエミュレーターの4試験をskipするため、このコマンドも別途実行する。JDKがPATHにない場合は、インストール済みJDKのbinをPATHに加えて実行する。
+
+APIを手動で動かす場合は、`pnpm emulators` の起動後、別のターミナルで次を実行する。
+
+```sh
+pnpm --filter server... build
+GCLOUD_PROJECT=demo-kadai-hisho FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 pnpm --filter server start
+```
+
+送信形とAPIの応答は [データの形](docs/data-shapes.md)。エミュレーター用の環境変数はクラウドでは設定しない。
 
 ## 提出とライセンス
 

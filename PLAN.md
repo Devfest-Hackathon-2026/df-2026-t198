@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 5/41（12%）、必須 5/37（13%）
+完成条件：全体 10/41（24%）、必須 10/37（27%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -37,7 +37,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作
 - [ ] C05 〈Sora〉 裏で取れないときは、開いているページの側で取りに行く。確かめ方：裏の取得を止めた状態で操作
 - [x] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験 → `packages/core/tests/login-state.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`（固定の失敗コード。ログイン前・認証エラーの保存見本で確認）
-- [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）
+- [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）。Issue #10で製品固有のパターンを引数付きに移行し、別製品の読み取り・不正な引数の拒否を `packages/core/tests/parameterized-patterns.test.mjs` で確認
 
 ### 取得：PandA（Sakai）
 
@@ -46,10 +46,10 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 
 ### 観測の送信と台帳
 
-- [ ] C10 〈未定〉 観測をサーバーへ送る。送る中身にSIDやCookieが入っていないことを試験で確かめる
-- [ ] C11 〈未定〉 観測から、新規・締切の変更・題名の変更・提出を台帳に記録する。確かめ方：試験
-- [ ] C12 〈未定〉 一覧を最後まで取れた授業で2回続けて見当たらない課題を取消にする。1回だけなら取消の候補にとどめる。確かめ方：試験
-- [ ] C13 〈未定〉 同じ観測を2回受け取っても台帳が変わらない。確かめ方：試験
+- [x] C10 〈未定〉 観測をサーバーへ送る。送る中身にSIDやCookieが入っていないことを試験で確かめる → `packages/server/tests/observations.test.ts`（認証・SID/Cookie拒否）、`pnpm test:observations:emulator`（架空観測のAPI送信・保存）
+- [x] C11 〈未定〉 観測から、新規・締切の変更・題名の変更・提出を台帳に記録する。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（新規・題名/締切変更・提出）
+- [x] C12 〈未定〉 一覧を最後まで取れた授業で2回続けて見当たらない課題を取消にする。1回だけなら取消の候補にとどめる。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（完全な一覧2回、詳細失敗、再出現）
+- [x] C13 〈未定〉 同じ観測を2回受け取っても台帳が変わらない。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（再送と同時再送。文書・履歴・取消回数を維持）
 - [ ] C14 〈未定〉 サーバーをCloud Runに置き、台帳をFirestoreに書く。確かめ方：デプロイした先で観測を1つ送る
 
 ### カレンダー
@@ -71,7 +71,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [ ] C23 〈未定〉 次の面談までの締切、前回の面談からの変化、要確認のものを出す。確かめ方：画面
 - [ ] C24 〈未定〉 時間割の空いたコマに準備の候補を出し、決めたものだけを準備の予定として保存する。確かめ方：試験と画面
 - [ ] C25 〈未定〉 決めた準備の予定が、学生の時間割とGoogleカレンダーに入る（学生の承認の流れは未決）。確かめ方：画面と実際のカレンダー
-- [ ] C26 〈未定〉 支援担当は、自分が受け持つ学生のデータだけを読める。確かめ方：Firestoreの規則の試験（エミュレーター）
+- [x] C26 〈未定〉 支援担当は、自分が受け持つ学生のデータだけを読める。確かめ方：Firestoreの規則の試験（エミュレーター）→ `scripts/firestore-rules.test.mjs`、`pnpm test:firestore-rules` 32件成功（本人・許可済み・未許可・取消済み・他人・未ログイン、本人だけの文書と直接書き込み拒否を含む）
 - [ ] C27 〈未定〉 面談の前のまとめを出す。〔削れる〕
 
 ### お知らせの文章（Gemini）
@@ -95,7 +95,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [ ] C38 〈Sora〉 デモ動画を撮り、同じフォルダに置く。確かめ方：実際の操作を撮ったもので、筋書き（C34）が映っている
 - [ ] C39 〈Sora〉 著作物利用シートを作る。確かめ方：`docs/third-party.md` の全行がシートにある
 - [ ] C40 〈Sora〉 会場のGoogleフォームに、GitHubのURLとフォルダのURLを出す。確かめ方：送信の控え
-- [ ] C41 〈未定〉 デプロイ先を 2026-11-14 まで動かす。確かめ方：11/14に、試す人のアカウントで筋書きが通る
+- [ ] C41 〈Sora〉 デプロイ先を 2026-11-14 まで動かす。確かめ方：11/14に、試す人のアカウントで筋書きが通る
 
 ## 指標
 
@@ -127,5 +127,5 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 |---|---|---|
 | 2026-11-05 | C01〜C36を置いた | 最初の計画 |
 | 2026-11-06 | C30を必須にした。C03に、全授業の課題の一覧がLMSに無いことを書いた | C30は、別の大学へ広げるときの入口になるため（Sora）。36個すべてを終える前提で進める |
-| 2026-11-06 | C37〜C41（提出物）を足した | 完成条件をすべて満たしても、提出一式がそろわないため（FableとAstraの見直し、D21。Soraが合意、orangeは後でレビュー） |
-| 2026-11-06 | C28 の〔削れる〕を外し、必須にした | 延長や前倒しがお知らせの文にだけ書かれることがあり、利用者が見落とす変化を拾う役目があるため（D21。Soraが合意、orangeは後でレビュー）。D11の削る順の③はC29だけにした |
+| 2026-11-06 | C37〜C41（提出物）を足した | 完成条件をすべて満たしても、提出一式がそろわないため（FableとAstraの見直し、D23。Soraが合意、orangeは後でレビュー） |
+| 2026-11-06 | C28 の〔削れる〕を外し、必須にした | 延長や前倒しがお知らせの文にだけ書かれることがあり、利用者が見落とす変化を拾う役目があるため（D23。Soraが合意、orangeは後でレビュー）。D11の削る順の③はC29だけにした |
