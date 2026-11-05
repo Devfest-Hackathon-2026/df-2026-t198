@@ -266,3 +266,12 @@ M1は [見本README](../lms-definitions/coursepower/samples/README.md) の基準
 - 受領記録を先に読み、授業・台帳・別文書の履歴・取得状態と同じトランザクションで作る。先に受領だけを保存する案は、途中で止まったとき未処理なのに処理済みになり得るため採らない。取得状態の文書も読むことで、空の台帳からの同時受領を直列化する。
 - Issueの指定に従い、通し番号、内容のハッシュ、受領・処理時刻は受領記録に追加しない。同じIDで異なる内容の検出と、新しいIDで遅れて届いた観測の拒否は未実装。この制約を隠すためにPCの時刻で順番を判定することはしない。
 - 試験は架空データだけを使い、AuthとFirestoreのエミュレーターへAPI経由で送る。ローカルの接続先と `demo-kadai-hisho` を検査してからSDKを初期化する。クラウドの資源・認証設定・Firestoreの規則は変更しない。
+
+## 面談画面の日時と学生一覧（2026-11-06、Issue #21）
+
+- 合意の記録：Issue #21「足したこと」で、設計案2・8節に沿う学生一覧APIと面談日時API、`SessionContext` の型とデータ形の変更、`human:ok` の付与が承認された。契約は [data-shapes.md](data-shapes.md#面談日時と担当する学生issue-21)。
+- Firebaseの既存SDKで認証・購読・保存を行う。[購読の公式資料](https://firebase.google.com/docs/firestore/query-data/listen)、[collection groupの公式資料](https://firebase.google.com/docs/firestore/query-data/queries#collection-group-query)、[Authエミュレーターの公式資料](https://firebase.google.com/docs/emulator-suite/connect_auth)を確認した。依存は追加しない。Webのビルドは既存のルートの `firebase` を参照し、共通の型だけをcoreから読み込む。
+- 許可の文書は支援担当UIDを文書IDに持ち、検索用のUIDフィールドを持たない。collection groupの文書IDの等値検索にはフルパスが必要なため、APIが `supporters` の文書を読み、厳密な4階層のパス・担当UID・許可の中身で絞り、学生UIDだけ返す。新しいフィールド・インデックス・Firestore規則は足さない。許可が増えると読み取り量も増えるため、大規模運用には検索用の形の合意が必要。
+- 表示名の契約を増やさず、学生IDで選ぶ最小の画面にする。面談日時が無い場合は、期間を勝手に決めず入力を促す。「今日決めること」は要確認の課題にまとめ、準備の候補・予定の保存（C24・C25）は含めない。
+- 日時保存は許可の確認と同一トランザクション。クライアントはFirestoreへ直接書かない。選択中の学生の許可を購読し、取消または購読の失敗で全表示を消す。SDKの永続キャッシュは有効にしない。学生一覧は再読込と30秒間隔で更新する。
+- 確かめる範囲は、APIの認証・認可・入力、日時と締切の境界、描画・学生切替・ログアウト、実際のAuthとFirestoreエミュレーターでの購読と取消。クラウドの設定・課金、外部OAuthの認可画面、暗号や支払いの処理は変更しない。ローカルの試験アカウントは最初からひも付け、実環境へのアカウント配備は含めない。

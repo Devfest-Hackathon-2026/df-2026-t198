@@ -2,7 +2,7 @@
 
 大学の授業支援システムから課題を集め、学生の画面・カレンダー・面談画面につなぐ、DevFest GDGoC Japan Hackathon 2026の作品。
 
-開発用repoは `shieikan/kadai-hisho`。今あるのは、共通の型、Chrome拡張の入口（YNU LMSのセッションIDを受け取るところまで）、ヘルスチェックAPI、学生と面談の空画面。課題の取得・台帳・カレンダー連携・ログインはこれから実装する。何が済んで何が残っているかは [PLAN.md](PLAN.md) を参照（`pnpm progress` で数える）。
+開発用repoは `shieikan/kadai-hisho`。実装済みの範囲と残っている作業は [PLAN.md](PLAN.md) を参照（`pnpm progress` で数える）。
 
 ## 開発を始める
 
@@ -16,7 +16,7 @@ pnpm test
 pnpm build
 ```
 
-全パッケージをルートから確認する。CIも同じ順で実行する。Webは空画面だけなので、現時点ではテストファイルがなくても `test` が通る。
+全パッケージをルートから確認する。CIも同じ順で実行する。面談画面の描画と操作の試験も含む。
 
 構成と作業の規則は [AGENTS.md](AGENTS.md)、データの意味は [docs/data-shapes.md](docs/data-shapes.md)、設計の判断は [docs/decisions.md](docs/decisions.md)（ライブラリの選定理由はD14）、画面の言葉は [docs/ui-words.md](docs/ui-words.md) を参照。
 
@@ -26,7 +26,7 @@ pnpm build
 pnpm --filter web dev
 ```
 
-表示されたローカルURLの `/student` に学生の画面、`/session` に面談画面がある。ビルドした画面は `pnpm --filter web preview` で確認できる。
+表示されたローカルURLの `/student` に学生の画面、`/session` に面談画面がある。ビルドした画面は `pnpm --filter web preview` で確認できる。面談のログイン・架空データ・API接続・試験は [面談画面のローカル確認](docs/session-development.md) を参照。
 
 色と書体は [tokens.css](packages/web/src/tokens.css) にまとめてある。フォントは端末に入っているものを順に使う。外部配信のフォントは読み込まない。
 
@@ -71,11 +71,11 @@ pnpm emulators:web
 
 Hostingは `http://127.0.0.1:5002/student` と `/session`、管理画面は `http://127.0.0.1:4000`。全体起動時のFirestoreは8085、Authenticationは9099で動く。設定は [firebase.json](firebase.json)。初回はエミュレーターのダウンロードが発生する。
 
-アプリとエミュレーターの接続は未実装。Firestoreの規則は [設計案の共有範囲](docs/design.md#2-firestoreのデータの置き方と共有の範囲) に限って読み取りを許可し、画面からの書き込みはすべて拒否する。
+面談画面の接続は [面談画面のローカル確認](docs/session-development.md) を参照。Firestoreの規則は [設計案の共有範囲](docs/design.md#2-firestoreのデータの置き方と共有の範囲) に限って読み取りを許可し、画面からの書き込みはすべて拒否する。
 
 規則だけの試験は `pnpm test:firestore-rules`。架空のプロジェクト `demo-kadai-hisho-rules` でFirestoreだけを起動し、試験後に停止する。手動で起動したエミュレーターと8085番ポートを共用するため、手動の方を先に終了しておく。macOSでは `/opt/homebrew/opt/openjdk@21/bin`、GitHub Actionsでは `JAVA_HOME_21_X64` のJavaを試験コマンドがPATHに足す。それ以外はJDK 21以上をPATHに置く。初回はダウンロードにネットワーク接続が必要。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
 
-観測APIはAuth・Firestoreのエミュレーターで試験できる（下記）。画面との接続は未実装。Firestoreの規則は上のとおり。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
+観測APIはAuth・Firestoreのエミュレーターで試験できる（下記）。面談画面との接続は上の手順を参照。Firestoreの規則は上のとおり。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
 
 ### 観測APIの試験
 

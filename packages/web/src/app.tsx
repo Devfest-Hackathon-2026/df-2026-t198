@@ -1,3 +1,5 @@
+import { SessionPage } from './session-page';
+
 export function App() {
   const path = window.location.pathname;
   const title = path === '/student' || path === '/'
@@ -17,6 +19,7 @@ export function App() {
       </header>
       <main>
         <h1>{title}</h1>
+        {path === '/session' && <div className="session-page"><SessionPage /></div>}
       </main>
     </div>
   );
