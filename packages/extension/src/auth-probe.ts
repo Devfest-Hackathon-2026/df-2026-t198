@@ -57,9 +57,15 @@ function eventBody(event: ProbeState['event']) {
 
 function matchesEvent(data: unknown, event: ProbeState['event']): boolean {
   const value = record(data);
+  const sameSecond = (actual: unknown, expected: string) => {
+    const actualTime = Date.parse(String(actual));
+    const expectedTime = Date.parse(expected);
+    return Number.isFinite(actualTime) && Number.isFinite(expectedTime)
+      && Math.floor(actualTime / 1000) === Math.floor(expectedTime / 1000);
+  };
   return value.id === event.id && value.summary === eventName && value.status !== 'cancelled'
-    && Date.parse(String(record(value.start).dateTime)) === Date.parse(event.start)
-    && Date.parse(String(record(value.end).dateTime)) === Date.parse(event.end)
+    && sameSecond(record(value.start).dateTime, event.start)
+    && sameSecond(record(value.end).dateTime, event.end)
     && record(record(value.extendedProperties).private).authProbe === event.id;
 }
 
@@ -128,7 +134,7 @@ export function createProbe(deps: ProbeDependencies) {
           throw new ProbeFailure('calendar-recovery-required', '前回のカレンダー作成が終わったか不明です。二重に作らず停止しました。spikes/auth-probe.mdの復旧手順を確認してください。');
         }
       } else {
-        const start = new Date(deps.now().getTime() + 24 * 60 * 60 * 1000);
+        const start = new Date(Math.floor(deps.now().getTime() / 1000) * 1000 + 24 * 60 * 60 * 1000);
         state = { namespace: deps.namespace, uid, workerId: deps.workerId,
           calendar: { status: 'creating' },
           event: { id: deps.newEventId(), start: start.toISOString(), end: new Date(start.getTime() + 5 * 60 * 1000).toISOString() } };
