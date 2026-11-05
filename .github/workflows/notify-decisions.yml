@@ -18,26 +18,59 @@ jobs:
         with:
           fetch-depth: 0
       - name: Post changed decision headings
+        shell: bash
         env:
           WEBHOOK: ${{ secrets.DISCORD_DECISIONS_WEBHOOK }}
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.sha }}
           FILE_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/docs/decisions.md
         run: |
+          set -euo pipefail
           if [ -z "$WEBHOOK" ]; then
             echo "DISCORD_DECISIONS_WEBHOOK is not set; skipping."
             exit 0
           fi
           if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
-            BEFORE="$AFTER~1"
+            echo 'Comparison commit is unavailable; not sending.' >&2
+            exit 1
+          fi
+          # 差分取得の失敗を、本文だけの変更や変更なしと区別する。
+          diff=$(git diff --no-ext-diff --no-textconv --unified=0 "$BEFORE" "$AFTER" -- docs/decisions.md)
+          # ファイルのモードだけの変更も通知しない。
+          changes=$(printf '%s\n' "$diff" | sed -n '/^@@ /,$p')
+          if [ -z "$changes" ]; then
+            echo 'No decision content changes; skipping.'
+            exit 0
           fi
           # 見出し（「## D16. …（状態：案、…）」）が足された・変わったものだけを並べる。
-          headings=$(git diff --unified=0 "$BEFORE" "$AFTER" -- docs/decisions.md \
-            | sed -n 's/^+## \(D[0-9][0-9]*\..*\)$/- \1/p' | head -n 5)
+          # 最後まで読み、pipefailで早期終了のSIGPIPEを誤検出しない。
+          headings=$(printf '%s\n' "$changes" | sed -n 's/^+## \(D[0-9][0-9]*\..*\)$/- \1/p' | sed -n '1,5p')
           if [ -n "$headings" ]; then
-            message=$(printf '決まったことの記録が更新されました。\n%s\n詳しく：%s' "$headings" "$FILE_URL")
+            summary=$(printf '決まったことの記録が更新されました。\n%s' "$headings")
           else
-            message=$(printf '決まったことの記録（本文）が更新されました。\n詳しく：%s' "$FILE_URL")
+            summary='決まったことの記録（本文）が更新されました。'
           fi
-          jq -n --arg content "$message" '{content: $content, allowed_mentions: {parse: []}}' \
-            | curl --fail --silent --show-error -H 'Content-Type: application/json' -d @- "$WEBHOOK"
+          # リンク全体の枠を先に確保する。絵文字もUTF-16換算で2000以内に収める。
+          payload=$(jq -n --arg summary "$summary" --arg url "$FILE_URL" '
+            def units: [explode[] | if . > 65535 then 2 else 1 end] | add // 0;
+            def fit($n):
+              if units <= $n then .
+              else (.[:($n - 1)] | until(units <= ($n - 1); .[:-1])) + "…" end;
+            ("\n詳しく：" + $url) as $suffix |
+            (2000 - ($suffix | units)) as $budget |
+            if $budget < 1 then error("Decision link exceeds the message limit")
+            else {content: (($summary | fit($budget)) + $suffix), allowed_mentions: {parse: []}} end
+          ')
+          case "$WEBHOOK" in
+            *\?*) webhook_url="${WEBHOOK}&wait=true" ;;
+            *) webhook_url="${WEBHOOK}?wait=true" ;;
+          esac
+          response=$(mktemp)
+          trap 'rm -f "$response"' EXIT
+          printf '%s' "$payload" | curl --fail --silent --show-error \
+            -H 'Content-Type: application/json' -d @- --output "$response" "$webhook_url"
+          if ! jq -e 'type == "object" and (.id | type == "string" and length > 0)' "$response" >/dev/null 2>&1; then
+            echo 'Discord did not confirm a saved message.' >&2
+            exit 1
+          fi
+          echo 'Discord confirmed a saved message.'

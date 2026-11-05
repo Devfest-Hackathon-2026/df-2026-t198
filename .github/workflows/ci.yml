@@ -28,3 +28,29 @@ jobs:
       - run: pnpm progress --check
       - run: pnpm check:samples
       - run: node scripts/check-samples.mjs --self-test
+
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Download and verify gitleaks
+        env:
+          GITLEAKS_VERSION: '8.24.3'
+        run: |
+          set -euo pipefail
+          install_dir="$RUNNER_TEMP/gitleaks"
+          mkdir -p "$install_dir"
+          cd "$install_dir"
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          release="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' "$release/$archive" -o "$archive"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' "$release/gitleaks_${GITLEAKS_VERSION}_checksums.txt" -o checksums.txt
+          awk -v archive="$archive" '$2 == archive { print }' checksums.txt > selected.sha256
+          test "$(wc -l < selected.sha256)" -eq 1
+          sha256sum --check --strict selected.sha256
+          tar -xzf "$archive" gitleaks
+      - name: Scan complete Git history (redacted)
+        run: '"$RUNNER_TEMP/gitleaks/gitleaks" git --redact --log-opts="--all" .'

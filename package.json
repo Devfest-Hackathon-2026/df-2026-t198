@@ -6,8 +6,11 @@
   "engines": { "node": "26.x", "pnpm": "11.x" },
   "scripts": {
     "typecheck": "pnpm -r typecheck",
-    "lint": "eslint eslint.config.js && pnpm -r lint",
-    "test": "pnpm -r test",
+    "lint": "eslint eslint.config.js scripts/agent-merge*.mjs scripts/notify-decisions.test.mjs && pnpm -r lint",
+    "test": "pnpm test:agent-merge && pnpm test:notify-decisions && pnpm -r test",
+    "test:agent-merge": "node --test scripts/agent-merge.test.mjs",
+    "test:notify-decisions": "node --test scripts/notify-decisions.test.mjs",
+    "agent-merge": "node scripts/agent-merge.mjs",
     "build": "pnpm -r build",
     "gcp-build": "pnpm --filter server build",
     "start": "pnpm --filter server start",
