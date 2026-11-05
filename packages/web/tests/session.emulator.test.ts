@@ -2,14 +2,13 @@ import { afterAll, beforeAll, expect, it, describe } from 'vitest';
 import { deleteApp, initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, signInWithCustomToken, signOut } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, terminate } from 'firebase/firestore';
-import { sessionEmulatorFixture } from '../../server/tests/session-emulator-fixture';
 import { observation } from '../../server/tests/observation-fixture';
 import { firebaseSessionSource } from '../src/session-firebase';
 import { watchSession, type SessionState } from '../src/session-watch';
 
 const enabled = process.env['RUN_SESSION_EMULATOR_TESTS'] === '1';
 describe.skipIf(!enabled)('session API and Web listeners with Auth and Firestore rules', () => {
-  let fixture: Awaited<ReturnType<typeof sessionEmulatorFixture>>;
+  let fixture: Awaited<ReturnType<typeof import('../../server/tests/session-emulator-fixture').sessionEmulatorFixture>>;
   const app = initializeApp({ projectId: 'demo-kadai-hisho', apiKey: 'emulator-only' }, 'session-test');
   const auth = getAuth(app);
   const db = getFirestore(app);
@@ -17,6 +16,7 @@ describe.skipIf(!enabled)('session API and Web listeners with Auth and Firestore
   const grant = { scopes: ['all'], revokedAt: null };
   beforeAll(async () => {
     // Check the environment before either SDK makes a request.
+    const { sessionEmulatorFixture } = await import('../../server/tests/session-emulator-fixture');
     fixture = await sessionEmulatorFixture();
     connectAuthEmulator(auth, `http://${process.env['FIREBASE_AUTH_EMULATOR_HOST']}`, { disableWarnings: true });
     const [host, port] = process.env['FIRESTORE_EMULATOR_HOST']!.split(':');
