@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font: 12px system-ui, sans-serif; width: 460px; margin: 8px; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border-bottom: 1px solid #ddd; padding: 2px 4px; text-align: left; }
+    .out { color: #b00020; }
+    .row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <button id="probe">今すぐ確認</button>
+    <label>間隔 <select id="interval">
+      <option>5</option><option>15</option><option>30</option><option>60</option><option>90</option>
+    </select> 分</label>
+    <button id="copy">記録をコピー</button>
+  </div>
+  <div id="summary"></div>
+  <table><thead><tr><th>時刻</th><th>きっかけ</th><th>状態</th><th>path</th></tr></thead><tbody id="rows"></tbody></table>
+  <script src="popup.js"></script>
+</body>
+</html>
