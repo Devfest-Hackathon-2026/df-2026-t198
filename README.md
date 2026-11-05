@@ -2,7 +2,7 @@
 
 大学の授業支援システムから課題を集め、学生の画面・カレンダー・面談画面につなぐ、DevFest GDGoC Japan Hackathon 2026の作品。
 
-開発用repoは `shieikan/kadai-hisho`。この雛形には共通の型、Chrome拡張の入口、ヘルスチェックAPI、学生と面談の空画面がある。課題の取得・台帳・カレンダー連携・ログインはこれから実装する。
+開発用repoは `shieikan/kadai-hisho`。今あるのは、共通の型、Chrome拡張の入口（YNU LMSのセッションIDを受け取るところまで）、ヘルスチェックAPI、学生と面談の空画面。課題の取得・台帳・カレンダー連携・ログインはこれから実装する。何が済んで何が残っているかは [PLAN.md](PLAN.md) を参照（`pnpm progress` で数える）。
 
 ## 開発を始める
 
@@ -18,7 +18,7 @@ pnpm build
 
 全パッケージをルートから確認する。CIも同じ順で実行する。Webは空画面だけなので、現時点ではテストファイルがなくても `test` が通る。
 
-構成と作業の規則は [AGENTS.md](AGENTS.md)、データの意味は [docs/data-shapes.md](docs/data-shapes.md)、ライブラリの選定理由は [D14](docs/decisions.md#d14-開発用の雛形2026-11-05) を参照。
+構成と作業の規則は [AGENTS.md](AGENTS.md)、データの意味は [docs/data-shapes.md](docs/data-shapes.md)、設計の判断は [docs/decisions.md](docs/decisions.md)（ライブラリの選定理由はD14）、画面の言葉は [docs/ui-words.md](docs/ui-words.md) を参照。
 
 ## 画面
 
