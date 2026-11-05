@@ -255,7 +255,7 @@ C28（お知らせからの締切変更の検知。時間が足りなければ�
 
 ## 10. デプロイ・開発環境・費用の管理（C14、C26、C30〜C36）
 
-手元の開発環境では、FirebaseのAuth・Firestore・Hostingのエミュレーター（手元のPCで動く模擬サーバー）と、Node.jsのAPIサーバーを使います。今の `pnpm emulators` には、APIの起動と画面からのつなぎ込みがまだありません。また、FirestoreのエミュレーターにはJavaが必要です（SoraのMacにはまだ入っていません）。
+手元の開発環境では、FirebaseのAuth・Firestore・Hostingのエミュレーター（手元のPCで動く模擬サーバー）と、Node.jsのAPIサーバーを使います。今の `pnpm emulators` には、APIの起動と画面からのつなぎ込みがまだありません。また、FirestoreのエミュレーターにはJava 21以上が必要です。SoraのMacには入っていますが、PATHに入れているのは `~/.zshrc` だけなので、エージェントのシェルからは見えないことがあります。
 
 クラウド環境は、大会用のGoogle Cloudプロジェクト1つで足ります。ただしこれを「本番」とは呼ばず、体験用のUIDと実際に使うUIDを、サーバーが管理する属性で分けます。デプロイの順は「CIを通す → Firestoreの規則と索引（インデックス）を試験して反映 → Cloud Run → Hosting → 架空の観測1件と体験の筋書きを通す」とします。
 
