@@ -8,18 +8,27 @@ DevFest GDGoC Japan Hackathon 2026 の作品。課題の管理が苦手な大学
 - 提出用は `Devfest-Hackathon-2026/df-2026-t198`（**公開**、remote名 `submission`）。GitHub ActionsとPagesは使えない。審査はこちらの内容で行う。
 - 提出用へは、mainを同じ履歴のままpushする。公開されるので、個人の事情（当事者の経験、カウンセリングの内容、聞き取りのメモ）、実際の課題のデータ、採点の戦略、Creditの情報をどのcommitにも入れない。
 
-## 構成（予定）
+## 構成
 
 | 場所 | 中身 |
 |---|---|
-| `extension/` | Chrome拡張（Manifest V3）。大学ごとの取得部品が「観測」を作って送る |
-| `server/` | Cloud Run のAPI。台帳、カレンダーの同期、Gemini（Vertex AI）の呼び出し |
-| `web/` | 支援担当の面談画面（Firebase Hosting） |
-| `shared/` | 観測と台帳のデータの形（取得部品とサーバーの境界） |
+| `packages/extension/` | Chrome拡張（Manifest V3）。今はYNUのSIDをメモリに受け取る入口のみ |
+| `packages/server/` | Cloud Run のAPI。今は `/healthz` のみ。起動は `src/index.ts` |
+| `packages/web/` | 学生の画面と支援担当の面談画面（React + Vite、Firebase Hosting） |
+| `packages/core/` | 観測・台帳の型と共通関数。DOM・Node固有APIに依存しない |
+| `lms-definitions/` | LMS製品ごとの宣言的な定義と試験用の見本 |
 | `spikes/` | 確かめるための試作。製品のコードから参照しない |
 | `docs/decisions.md` | 選んだもの・理由・採用しなかった案 |
 
-言語はTypeScriptにそろえる。コマンドはそれぞれの場所を作ったときにここへ書く。
+## コマンド
+
+環境はルートの `package.json` の `engines` と `packageManager` を参照。言語はTypeScript strict。
+
+- 初回：`pnpm install`
+- 変更後：`pnpm typecheck && pnpm lint && pnpm test && pnpm build`（全パッケージ）
+- 単体：`pnpm --filter <名前> <コマンド>`。名前は `@kadai-hisho/core`、`extension`、`server`、`web`
+- ローカル起動とエミュレーターの前提：[README.md](README.md)
+- 型の変更：[docs/data-shapes.md](docs/data-shapes.md)。画面の変更：[docs/ui-words.md](docs/ui-words.md) とD13
 
 ## 守ること
 
