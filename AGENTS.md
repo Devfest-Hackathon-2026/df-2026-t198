@@ -23,6 +23,7 @@ DevFest GDGoC Japan Hackathon 2026 の作品。課題の管理が苦手な大学
 | `scripts/` | 開発の補助（`plan-progress.mjs`：PLAN.mdの進み具合を数える） |
 | `fixtures-local/` | 実物のLMSのページなど、手元だけに置くもの。git管理外 |
 | `docs/decisions.md` | 選んだもの・理由・採用しなかった案 |
+| `docs/design.md` | 部品のつなぎ目の設計案（状態：案、orangeの合意待ち） |
 | `PLAN.md` | 完成条件（C番号）と指標（M番号）、日程の目安。進み具合の正本 |
 
 ## コマンド
