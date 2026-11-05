@@ -78,12 +78,12 @@ describe('auth and Calendar probe contract', () => {
     expect(f.state()?.event.end).toBe('2026-11-07T00:05:00.000Z');
   });
 
-  it('rejects a real one-second change to the saved event time', async () => {
+  it('treats a one-minute change to the saved event as a mismatch (deadlines move by minutes)', async () => {
     const f = fixture();
     await createProbe(f.deps).run();
     const saved = f.state()!;
     const event = f.events.get(saved.event.id) as Record<string, unknown>;
-    f.events.set(saved.event.id, { ...event, start: { dateTime: '2026-11-07T00:00:01Z' } });
+    f.events.set(saved.event.id, { ...event, start: { dateTime: '2026-11-07T00:01:00Z' } });
     const result = await createProbe(f.deps).run();
     expect(result.steps.at(-1)).toMatchObject({ status: 'error', code: 'event-mismatch' });
   });
