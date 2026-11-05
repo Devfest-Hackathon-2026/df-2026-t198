@@ -12,7 +12,8 @@
     "gcp-build": "pnpm --filter server build",
     "start": "pnpm --filter server start",
     "emulators": "firebase emulators:start --project demo-kadai-hisho",
-    "emulators:web": "firebase emulators:start --project demo-kadai-hisho --only auth,hosting"
+    "emulators:web": "firebase emulators:start --project demo-kadai-hisho --only auth,hosting",
+    "progress": "node scripts/plan-progress.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

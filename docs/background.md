@@ -1,4 +1,4 @@
-# 背景と既存の仕組み（2026-11-05に調べた）
+# 背景と既存の仕組み（2026-11-05、2026-11-06に調べた）
 
 提出の説明資料の「解決する課題」「既存手法との違い」の材料。数字には出典を付ける。
 
@@ -17,10 +17,12 @@
 | UNIPA Assignment Sync（UNIPA向け） | 課題一覧のページを開くと、GoogleカレンダーとGoogleスプレッドシートに同期し、決めた時刻に知らせる | UNIPA専用。初めにスプレッドシートを自分のドライブに写す設定が要る。[ストア](https://chromeboard.com/extension/unipa-assignment-sync-fodipgpaenifggcjnbmnmkkljdkjecif) |
 | MoodleWorkClawer（北海道科学大学のMoodle向け） | Moodleの課題を見つけてGoogleカレンダーに自動で入れる | 1つの大学のMoodle専用 |
 | manaba-enhanced（筑波大学向け、オープンソース） | 締切までの日数で一覧を色分け | 表示の改善が中心。大学非公式と明記 |
+| Assignment Manager for YNU LMS（YNUの学生が開発、MIT、最終更新2022年5月） | 講義のページを開いたときに未提出の課題をブラウザに保存し、LMSのトップに一覧を出す。Googleカレンダーへの登録のリンク | 開いた講義の課題だけ。締切の変更の追跡や支援担当へのつながりはない。[GitHub](https://github.com/Bubovirginianus/Assignment-Manager-for-YNU-LMS) |
+| Comfortable Sakai（京大、Apache-2.0、Comfortable PandAの後継） | SakaiのJSONのAPI（`/direct/assignment/site/{授業ID}.json` など）で課題と小テストを取る | Sakai専用。カレンダーや支援担当にはつながらない。[GitHub](https://github.com/kyoto-u/comfortable-sakai) |
 
 違いは3つ。
 
-1. **1つの大学・1つの製品に閉じない。** LMSの製品ごとの定義をデータで足す形にしている（`decisions.md` のD9）。
+1. **1つの大学・1つの製品に閉じない。** LMSの製品ごとの定義をデータで足す形にしている（`decisions.md` のD9）。公式のAPIが無く画面のHTMLを読むCoursePower（YNU）と、JSONのAPIがあるSakai（京大のPandA）の両方を、同じ核で扱う。
 2. **締切の変更を追う。** 課題の欄の変更に加え、お知らせの文章に書かれた延長や前倒しもGeminiで拾い、食い違いは「要確認」として出す。
 3. **支援担当につながる。** 学生が許可した範囲で、前回の面談からの変化と次の一歩を面談画面に出す。既存の仕組みはどれも学生本人だけで完結している。
 
