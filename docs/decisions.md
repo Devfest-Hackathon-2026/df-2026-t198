@@ -279,7 +279,7 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 - 人の印の事前の承認：Soraが、ターミナルの会話で、この決定の推奨をまとめて認めた（2026-11-06 08時台）。orangeは、Discordで先に進めてレビューで直す進め方に同意と言っている（Sora経由、同じ日）。2人の合意が要る変更も、この範囲なら先に進め、orangeのレビューで直す。範囲は次のとおり。
   - ファイル：`docs/design.md`（main の `6b78444` の時点）の2節・3節・5節・8節に沿った `packages/core/src/types.ts` と `docs/data-shapes.md` の変更、1節・2節に沿った `firestore.rules`、4節・10節に沿った `firebase.json`。
   - 依存：`firebase-admin`、`@firebase/rules-unit-testing`、`@google/genai`、`@playwright/test`（Soraが2026-11-06に承認）。`linkedom`・`firebase` はmerge済み。
-  - orchestratorは、PRの差分がこの範囲に収まることを確かめてから `human:ok` を付け、根拠（このD21と、該当のIssue）をPRにコメントする。範囲の外（設計と違う形、上に無い依存、権限やGoogle Cloudの設定の変更）は、今までどおり人に聞いて、答えがあるまで止める。
+  - orchestratorは、PRの差分がこの範囲に収まることを確かめてから `human:ok` を付け、根拠（このD23と、該当のIssue）をPRにコメントする。範囲の外（設計と違う形、上に無い依存、権限やGoogle Cloudの設定の変更）は、今までどおり人に聞いて、答えがあるまで止める。
 - 実行役：Codexが、作業用のbranchへのpushとPRの作成まで行う。mergeは関所（D20）を通す。Claudeの見直しは、差分を読むことと、CIの結果を見ることにする（CIと同じ試験を回し直さない）。Claudeが書いたものは、Codexが見直す。
 - やめること：仕組みの作り込み（指標を1つのコマンドで出す仕組み、朝夜の投稿の自動化、関所の強化）。指標は各PRが個別に測って本文に書く（loop.md 2節）。設計の判断ごとの3つのモデルの比較は、大きな判断だけにする。gcloudのスクリプトとWIFのデプロイはやめ、大会中は人の許可でMacから流す（D17を改める）。招待コードはやめ、試す人のアカウントは最初からひも付ける。観測の通し番号はやめる。画像で作る画面の案は、学生の時間割と面談画面の2つで1回だけ選ぶ。
 - Firebaseのweb用の設定（公開を前提とした値）は、repoに入れてよい。
