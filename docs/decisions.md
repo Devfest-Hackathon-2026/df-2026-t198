@@ -215,7 +215,20 @@ Discordから開発のエージェントを呼ぶ仕組み（Claude CodeのDisco
 | [cheerio](https://cheerio.js.org/docs/intro/) | 今回は採らない | jQuery風の探索APIを使えるが、今回は既存のDOMに近いAPIで足りる。worker向け入口のあるlinkedomを優先した。サイズの優劣は測っていない |
 | [offscreen documentのDOMParser](https://developer.chrome.com/docs/extensions/reference/api/offscreen) | 採らない | 裏画面の作成とメッセージ通信が必要になり、Node.jsの試験と同じ実行経路にならない |
 
-定義は [definition.json](../lms-definitions/coursepower/definition.json)、書式の型と検査は [definition.ts](../packages/core/src/definition.ts)。基本、ページの確認、授業の一覧、教材の一覧、課題の詳細、値の変換を持つ。未知のキーは入れ子も含めて拒否する。変換は固定した4種類のパターン名、曜日・提出状態の対応表、1種類の日付書式に限る。正規表現やJavaScriptを自由に書く欄、HTTPメソッドやホストを指定する欄はない。大学のUTCオフセットは呼び出し側から渡す。
+定義は [definition.json](../lms-definitions/coursepower/definition.json)、書式の型と検査は [definition.ts](../packages/core/src/definition.ts)。基本、ページの確認、授業の一覧、教材の一覧、課題の詳細、値の変換を持つ。未知のキーは入れ子も含めて拒否する。変換は引数付きの4種類（下記）、曜日・提出状態の対応表、1種類の日付書式に限る。正規表現やJavaScriptを自由に書く欄、HTTPメソッドやホストを指定する欄はない。大学のUTCオフセットは呼び出し側から渡す。
+
+Issue #10で、製品固有の値を定義へ移した（2026-11-06、Codex。Issueの依頼に基づく変更）。`pattern` は次のいずれか1つ、または最大4つの配列とし、配列は前から順に適用する。途中で一致しなければ値を返さない。CoursePowerの授業IDは `call-argument` → `prefixed-id` の順に読む。
+
+| 型 | 引数と読み方 |
+|---|---|
+| `prefixed-id` | `prefix` に続くASCII数字を文字列全体で確認し、ID全体を返す。接頭辞は英字から始まる英数字・`_`・`-`、1〜32文字 |
+| `after-label` | `label`、空白、空でない題名の順に並ぶ文字列から題名を返す |
+| `number-between` | NFKCで正規化した文字列の最初の `before` の直後にASCII数字と `after` があれば、数字を返す。題名には正規化しない |
+| `call-argument` | `name` に一致する関数名、括弧、同じ引用符で囲まれた引数1つだけを読む。実行はしない。名前はJavaScriptのASCII識別子の文字で1〜64文字、引数は英数字・`_`・`-`で1〜128文字 |
+
+`label`・`before`・`after` はUnicodeの文字・数字・句読記号・ASCII空白で1〜64文字とし、空白だけ、制御文字、URLは拒否する。引数を正規表現へ展開せず、文字列比較と固定した正規表現だけを使う。未知の型、余分なキー、配列の入れ子は拒否する。以前のパターン名は受け付けず、`readerVersion` を2、CoursePower定義の `version` を3に更新した。外部からの定義更新を扱う処理は今回追加していない。
+
+採用しなかった案は、製品名付きのパターンを増やす方法（別製品のたびにコード変更が要る）と、定義に任意の正規表現を許す方法（入力から実行する式を組み立てるため）。依存は追加していない。[架空製品の定義](../lms-definitions/fictional/definition.json) と [試験](../packages/core/tests/parameterized-patterns.test.mjs) で、別の接頭辞・ラベル・区切り・関数名を読み取る。この定義は試験専用で、公開済みの模擬LMSやGeminiによる生成の証拠ではない（C30・C32は未完了）。
 
 今回は保存HTMLからの中間結果まで。観測の型は変えていない。リンクは見本で除去済みのため、リンク・次ページは`null`のみを受け付ける。ログインの印、空一覧の印、一覧の終わりの印も根拠がないため未設定。0行を成功にせず、取得完了も出力しない。これらの設定と実際の取得処理はC04以降で確かめる。「未評価」から提出済みへの変換は、見本READMEの採取記録に基づく対応であり、別のCoursePower環境での意味は未確認。
 

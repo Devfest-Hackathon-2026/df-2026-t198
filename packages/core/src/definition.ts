@@ -1,22 +1,26 @@
 import type { Submission } from './types.js';
 
-export const READER_VERSION = 1;
-export type Pattern = 'course-id' | 'report-id' | 'report-title' | 'period';
+export const READER_VERSION = 2;
+export type Pattern =
+  | { type: 'prefixed-id'; prefix: string }
+  | { type: 'after-label'; label: string }
+  | { type: 'number-between'; before: string; after: string }
+  | { type: 'call-argument'; name: string };
 export interface ValueRule {
   selector: string;
   ancestor?: string;
   attribute?: 'id' | 'onclick';
-  pattern?: Pattern;
+  pattern?: Pattern | Pattern[];
 }
 export interface Marker { selector: string; text?: string }
 export interface PageCheck { present: Marker[]; empty: Marker | null }
 
-/** Version 1 reads saved pages only. Unobserved navigation stays explicitly unset. */
+/** Reads saved pages only. Unobserved navigation stays explicitly unset. */
 export interface ReadingDefinition {
   schemaVersion: 1;
   definitionId: string;
   version: number;
-  readerVersion: 1;
+  readerVersion: 2;
   pageChecks: {
     loggedIn: Marker | null;
     loggedOut: Marker | null;
@@ -68,8 +72,21 @@ function shape(required: Record<string, Check>, optional: Record<string, Check> 
       return check !== undefined && check(value);
     });
 }
+const literal: Check = (v) => typeof v === 'string' && text(v) && v.trim().length > 0
+  && /^[\p{L}\p{M}\p{N}\p{P} ]{1,64}$/u.test(v);
+const patternChecks: Record<Pattern['type'], Check> = {
+  'prefixed-id': shape({ type: oneOf('prefixed-id'),
+    prefix: (v) => typeof v === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,31}$/.test(v) }),
+  'after-label': shape({ type: oneOf('after-label'), label: literal }),
+  'number-between': shape({ type: oneOf('number-between'), before: literal, after: literal }),
+  'call-argument': shape({ type: oneOf('call-argument'),
+    name: (v) => typeof v === 'string' && /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/.test(v) }),
+};
+const pattern: Check = (v) => object(v) && typeof v.type === 'string'
+  && Object.hasOwn(patternChecks, v.type) && patternChecks[v.type as Pattern['type']](v);
 const rule = shape({ selector: text }, {
-  ancestor: text, attribute: oneOf('id', 'onclick'), pattern: oneOf('course-id', 'report-id', 'report-title', 'period'),
+  ancestor: text, attribute: oneOf('id', 'onclick'),
+  pattern: (v) => Array.isArray(v) ? v.length > 0 && v.length <= 4 && v.every(pattern) : pattern(v),
 });
 const marker = shape({ selector: text }, { text });
 const page = shape({
