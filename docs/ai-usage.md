@@ -13,3 +13,4 @@
 | 2026-11-06 | LMSの画面の見本の保存 | GPT-6.1-Sol（Codex） | 実際のLMSのページを、セッションIDを伏せて手元だけに保存させた（commitしない） | 読み取りの試験の元にするため |
 | 2026-11-06 | Discordからの開発 | Claude（Claude Code）、Codex | Discordのメンションでエージェントを呼べるようにした。開発の道具で、作品には含めない（D15） | 2人が離れていても、同じ場所で頼み、結果を見られるようにするため |
 | 2026-11-06 | 部品のつなぎ目の設計案（`docs/design.md`） | Claude（Claude Code）、GPT-6-Astra（Codex）、Gemini 4 Argon（Antigravity CLI） | ClaudeとAstraが2回話し合い、Astraが公式の資料で仕様を確かめた。合意した中身をArgonがorange向けの日本語に書き直し、Claudeが項目名・URL・番号が残っていることを機械で確かめた | 1つのモデルの案に寄らないようにするため。読み手に合わせた文章は別の系統に書かせた |
+| 2026-11-06 | 準備の段階の決めごとの引き継ぎ | Claude（Claude Code） | 準備用の非公開repoの文書から、ループの回し方・大会の決まり・持たない情報を、今の構成に合わせて書き直した（`docs/loop.md`、`docs/submission.md`、D16）。採点の戦略・個人の事情・Creditの情報は移していない | 準備用repoの履歴は開始前のcommitと公開できない内容を含むので、移さずに要る部分だけを新しく書くため |
