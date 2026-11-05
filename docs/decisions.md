@@ -257,3 +257,11 @@ M1は [見本README](../lms-definitions/coursepower/samples/README.md) の基準
 - `pnpm test` に含め、`demo-kadai-hisho-rules` のFirestoreだけを起動して終了する。Javaは手元のHomebrew JDK 21と、[GitHubのUbuntuにある `JAVA_HOME_21_X64`](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#java) を使う。規則・ポートは既存の `firebase.json` を共用する。クラウドへのデプロイは含めない。
 - 共有を許可するのは `scopes` がリストで `all` を含み、`revokedAt` が明示的に `null` の許可文書だけ。欠けた項目や不正な型は許可と扱わない。`sessionContext/current` と `integrations/calendar` は設計の文書名に限定し、未知の文書や下位のコレクションは再帰で許可しない。
 - 境界の確認：学生ごとのデータをWeb SDKが読む際の認可と、直接書き込み禁止を試験する。Admin SDKでのAPI認可、招待の作成、画面から既取得情報を消す動作、実環境への反映は別の作業。この変更はトークンの扱い、外部入力の解析、暗号、課金APIを変更しないため、それらの検査は対象外。
+
+## D22. お知らせの締切変更を抽出して測る（2026-11-06、Issue #29）
+
+- 合意の記録：Issue #29が `@google/genai` の追加と、設計9節の構造化出力・架空30件の評価を許可。Issueの「D21」は、現在のD21（Firestore規則）とは番号が異なるため、合意はIssue本文を根拠にする。決めた人：Codex。
+- 公式の [Google Gen AI SDK](https://github.com/googleapis/js-genai) を採用し、Vertex AI・`gemini-3.8-flash`・`global` で呼ぶ。独自の認証やHTTPクライアントは作らない。SDKのpreinstallはno-opだが不要なので実行を許可しない。
+- 未知の応答を候補キー・引用・日時で検査して要確認の提案だけ返す。#16は未mergeのため、HTTPや台帳の更新には接続しない。台帳接続時には本人・授業の候補選択と永続的な版の取得済み判定を渡す。実物のLMSのお知らせは保持条件が確かめられるまで有効にしない。
+- 費用は呼び出す前に予約し、usage（推論込み）で精算する。日次の記録はプロジェクト別のローカルファイルと排他ロックを使う。Firestoreをこのために追加しない。複数Mac・Cloud Runへの接続時には共通の永続ストアが別途必要。料金は[公式表](https://cloud.google.com/model-garden/pricing)の標準単価で保守的に計算する。初回測定・上限・確認用の扱いとコマンドは [見本の説明](../lms-definitions/announcements/README.md)。
+- 脅威の範囲は、お知らせとモデル応答による命令注入・他の課題への誤結合・ログへの本文混入・評価費用。ツールなしの呼び出し、出力検査、固定のエラーコード、予約上限を試験する。API・ログイン・権限・デプロイは変更しないため、このPRでの認可検証の対象外。

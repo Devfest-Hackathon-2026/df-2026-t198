@@ -11,5 +11,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js"
   },
-  "devDependencies": { "@types/node": "^26.6.6" }
+  "devDependencies": { "@types/node": "^26.6.6" },
+  "dependencies": {
+    "@google/genai": "^2.32.0"
+  }
 }
