@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>課題の秘書 画面の試作</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#F4F2ED;
+  --card:#FFFFFF;
+  --ink:#1E2126;
+  --muted:#666B72;
+  --faint:#9AA0A6;
+  --line:#E3DFD7;
+  --line-strong:#CFCAC0;
+  --hover:#F8F6F1;
+  --accent:#2A5DA8;
+  --attn-ink:#8A5A0B;   /* 注意（今すぐではないが近い・はっきりしない） */
+  --attn-bg:#FBF2DD;
+  --ok-ink:#2E6B47;
+  --ok-bg:#E6F2EA;
+  --today-ink:#B3261E; /* 赤。今日やらないと間に合わないものだけに使う。今回のデータでは出番なし */
+  --today-bg:#FBE9E7;
+  --radius:12px;
+  --font:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font);
+  font-size:15px;
+  line-height:1.6;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+h1,h2,h3{margin:0;font-weight:700}
+p{margin:0}
+ul{list-style:none;margin:0;padding:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- 上部の切り替え ---------- */
+.switcher{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:10px 16px;
+  background:#2B2F36;color:#E8E6E1;
+  font-size:13px;
+}
+.switcher .name{font-weight:700;margin-right:auto;white-space:nowrap}
+.tabs{display:flex;gap:4px;background:#1E2126;padding:3px;border-radius:9px}
+.tabs button{padding:6px 12px;border-radius:7px;color:#C9C6BF;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:#F4F2ED;color:#1E2126;font-weight:700}
+.width-toggle{display:flex;gap:4px;align-items:center}
+.width-toggle span{color:#9AA0A6;margin-right:4px}
+.width-toggle button{padding:4px 10px;border-radius:7px;color:#C9C6BF;border:1px solid #4A4F58}
+.width-toggle button[aria-pressed="true"]{background:#F4F2ED;color:#1E2126;border-color:#F4F2ED}
+.width-toggle[hidden]{display:none}
+
+.screen[hidden]{display:none}
+
+/* ---------- 共通の部品 ---------- */
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+}
+.card > h2{
+  font-size:13px;color:var(--muted);
+  padding:12px 16px 6px;
+}
+.card > h2 .sub{font-weight:400;color:var(--faint);margin-left:8px}
+.rows{display:flex;flex-direction:column}
+.row{border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row-head{
+  width:100%;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:12px;align-items:start;
+  padding:12px 16px;
+  border-radius:0;
+}
+.row-head:hover{background:var(--hover)}
+.row-head .when{
+  min-width:5.5em;
+  font-weight:700;
+  white-space:nowrap;
+}
+.row-head .when small{display:block;font-weight:400;color:var(--muted);font-size:12px;line-height:1.3}
+.row-head .what{min-width:0}
+.row-head .what .course{color:var(--muted);font-size:13px;display:block;line-height:1.4}
+.row-head .what .title{display:block;line-height:1.45}
+.row-head .what .note{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.row-head .chev{
+  color:var(--faint);
+  width:16px;height:16px;margin-top:4px;
+  transition:transform .16s ease;
+}
+.row-head[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.row-body{
+  display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows .18s ease;
+}
+.row-body > div{overflow:hidden}
+.row-body.open{grid-template-rows:1fr}
+.evidence{
+  margin:0 16px 14px 16px;
+  padding:10px 12px;
+  background:var(--hover);
+  border-radius:8px;
+  font-size:13px;color:var(--muted);
+}
+.evidence dt{font-weight:700;color:var(--ink);margin-top:8px}
+.evidence dt:first-child{margin-top:0}
+.evidence dd{margin:2px 0 0 0}
+.evidence q{quotes:"「" "」"}
+.evidence .src{color:var(--faint)}
+
+.chip{
+  display:inline-block;
+  font-size:12px;line-height:1.5;
+  padding:1px 8px;border-radius:999px;
+  white-space:nowrap;vertical-align:middle;
+}
+.chip.attn{background:var(--attn-bg);color:var(--attn-ink)}
+.chip.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.chip.plain{background:var(--hover);color:var(--muted)}
+.chip.today{background:var(--today-bg);color:var(--today-ink)}
+.when.attn{color:var(--attn-ink)}
+.when.ok{color:var(--ok-ink)}
+.when.today{color:var(--today-ink)}
+
+.card.attn{border-color:#E9D6A6}
+.card.attn > h2{color:var(--attn-ink)}
+
+.check{width:16px;height:16px;vertical-align:-3px;margin-right:4px}
+
+@media (prefers-reduced-motion:reduce){
+  .row-head .chev,.row-body,.lms-notice{transition:none}
+}
+
+/* ---------- 1. 学生の画面 ---------- */
+#student{padding:20px 16px 48px}
+.student-frame{
+  margin:0 auto;
+  width:100%;
+  max-width:640px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.student-frame.narrow{
+  max-width:390px;
+  padding:16px;
+  background:#FBFAF7;
+  border:1px solid var(--line-strong);
+  border-radius:24px;
+}
+#student .top{padding:4px 2px 2px}
+#student .top h1{font-size:22px;line-height:1.3}
+#student .top .app{font-size:12px;color:var(--faint);display:block;margin-bottom:2px}
+#student .top p{color:var(--muted);font-size:14px;margin-top:2px}
+#student .fetch{
+  padding:0 2px;
+}
+#student .fetch > button{
+  font-size:13px;color:var(--faint);
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 2px;
+}
+#student .fetch > button:hover{color:var(--muted)}
+#student .fetch .row-body > div p{font-size:13px;color:var(--muted);padding:4px 2px 0}
+.row.more .row-head .what .title{color:var(--muted)}
+.row.more .row-body .rows{border-top:1px solid var(--line)}
+
+/* ---------- 2. 支援担当の面談画面 ---------- */
+#counselor{padding:20px 16px 48px}
+.c-wrap{
+  width:min(1248px,100%);
+  margin:0 auto;
+  display:grid;
+  grid-template-columns:232px 1fr;
+  gap:20px;
+  align-items:start;
+}
+.students{position:sticky;top:64px}
+.students h2{font-size:13px;color:var(--muted);padding:12px 16px 6px}
+.students li{border-top:1px solid var(--line)}
+.students li:first-of-type{border-top:0}
+.students button{
+  width:100%;padding:10px 16px;display:block;
+}
+.students button:hover{background:var(--hover)}
+.students button[aria-current="true"]{background:var(--hover);box-shadow:inset 3px 0 0 var(--accent)}
+.students .nm{font-weight:700;display:block}
+.students .st{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+.students .st.attn{color:var(--attn-ink)}
+
+.c-main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.c-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:0 2px}
+.c-head h1{font-size:22px}
+.c-head p{color:var(--muted)}
+.c-head .fetched{margin-left:auto;font-size:13px;color:var(--faint)}
+.c-grid{
+  display:grid;
+  grid-template-columns:1.25fr 1fr;
+  gap:16px;
+  align-items:start;
+}
+.c-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.promise .rows{padding:0 0 4px}
+.promise .row-head{grid-template-columns:auto 1fr}
+.promise .num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--hover);color:var(--muted);
+  font-size:12px;display:grid;place-items:center;font-weight:700;margin-top:2px;
+}
+.promise .num.ok{background:var(--ok-bg);color:var(--ok-ink)}
+.promise .result{display:block;margin-top:2px;font-size:13px}
+.promise .result.ok{color:var(--ok-ink)}
+.promise .result.open{color:var(--muted)}
+.next h2 span.sub{font-weight:400;color:var(--faint)}
+.next li{
+  padding:8px 16px;border-top:1px solid var(--line);
+  display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;
+}
+.next li:first-child{border-top:0}
+.next .dot{width:8px;height:8px;border-radius:50%;background:var(--line-strong);margin-top:9px}
+.next .why{display:block;font-size:13px;color:var(--muted)}
+.c-grid .row-head .when{min-width:6.5em}
+.c-grid .group{
+  font-size:12px;color:var(--faint);
+  padding:10px 16px 2px;
+  border-top:1px solid var(--line);
+}
+.c-grid .group:first-child{border-top:0}
+.c-grid .group + .row{border-top:0}
+.history{
+  margin:0 16px 14px;
+  padding:10px 12px;
+  background:var(--hover);border-radius:8px;
+  font-size:13px;
+}
+.history h4{margin:0 0 4px;font-size:12px;color:var(--faint);font-weight:700}
+.history h4:not(:first-child){margin-top:10px}
+.history li{display:grid;grid-template-columns:5.5em 1fr;gap:8px;padding:2px 0;color:var(--muted)}
+.history li b{color:var(--ink);font-weight:400}
+.history .ev dt{font-weight:700;color:var(--ink);margin-top:6px}
+.history .ev dd{margin:2px 0 0 0;color:var(--muted)}
+.history q{quotes:"「" "」"}
+
+@media (max-width:1100px){
+  .c-wrap{grid-template-columns:1fr}
+  .students{position:static}
+  .c-grid{grid-template-columns:1fr}
+}
+
+/* ---------- 3. LMSの隅の知らせ ---------- */
+#lms{padding:0;min-height:calc(100vh - 44px);position:relative;background:#EEF0F2}
+.lms-page{
+  color:#7D838B;              /* 架空のLMSは薄く描く */
+  min-height:calc(100vh - 44px);
+  display:flex;flex-direction:column;
+}
+.lms-bar{
+  background:#D7DBE0;color:#5B6169;
+  padding:12px 28px;display:flex;align-items:center;gap:28px;font-size:14px;
+}
+.lms-bar b{font-weight:700;color:#4F555D}
+.lms-bar nav{display:flex;gap:20px;font-size:13px}
+.lms-bar .me{margin-left:auto;font-size:13px}
+.lms-body{
+  width:min(1120px,100%);margin:0 auto;padding:28px 24px 120px;
+  display:grid;grid-template-columns:1fr 300px;gap:24px;
+}
+.lms-h{font-size:18px;font-weight:700;color:#6B717A;margin:0 0 12px}
+.lms-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.lms-card{background:#F7F8F9;border:1px solid #DDE1E5;border-radius:8px;padding:14px;min-height:92px}
+.lms-card b{display:block;color:#6B717A;font-weight:700;margin-bottom:4px}
+.lms-card span{font-size:12px}
+.lms-list{background:#F7F8F9;border:1px solid #DDE1E5;border-radius:8px}
+.lms-list li{padding:10px 14px;border-top:1px solid #E6E9EC;font-size:13px;display:flex;gap:12px}
+.lms-list li:first-child{border-top:0}
+.lms-list li span:first-child{color:#A2A7AD;min-width:4em}
+.lms-side{display:flex;flex-direction:column;gap:14px}
+.lms-side .lms-list li{display:block}
+@media (max-width:860px){
+  .lms-body{grid-template-columns:1fr}
+  .lms-cards{grid-template-columns:1fr 1fr}
+  .lms-bar nav{display:none}
+}
+
+.lms-notice{
+  position:absolute;right:24px;bottom:24px;
+  width:min(360px,calc(100% - 48px));
+  background:#FFFFFF;color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:12px;
+  box-shadow:0 8px 28px rgba(30,33,38,.14);
+  display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  padding:0;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.lms-notice.gone{opacity:0;transform:translateY(8px);pointer-events:none}
+.lms-notice .open-student{
+  grid-column:1 / 3;
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;
+  padding:14px 0 14px 16px;
+  border-radius:12px 0 0 12px;
+}
+.lms-notice .open-student:hover{background:var(--hover)}
+.lms-notice .ico{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--accent);color:#fff;
+  display:grid;place-items:center;
+}
+.lms-notice .ico svg{width:20px;height:20px}
+.lms-notice .txt{font-size:14px;line-height:1.5}
+.lms-notice .txt small{display:block;color:var(--accent);font-size:13px;margin-top:2px}
+.lms-notice .close{
+  align-self:stretch;padding:0 12px;color:var(--faint);
+  border-radius:0 12px 12px 0;
+}
+.lms-notice .close:hover{background:var(--hover);color:var(--muted)}
+.lms-notice .close svg{width:14px;height:14px}
+.lms-restore{
+  position:absolute;right:24px;bottom:24px;
+  font-size:12px;color:#8A9098;border:1px dashed #C4C9CF;border-radius:8px;padding:6px 10px;
+}
+.lms-restore[hidden]{display:none}
+</style>
+</head>
+<body>
+
+<header class="switcher">
+  <span class="name">課題の秘書 画面の試作</span>
+  <div class="tabs" role="tablist" aria-label="画面">
+    <button role="tab" aria-selected="true" data-screen="student">1 学生の画面</button>
+    <button role="tab" aria-selected="false" data-screen="counselor">2 支援担当の面談画面</button>
+    <button role="tab" aria-selected="false" data-screen="lms">3 LMSの隅の知らせ</button>
+  </div>
+  <div class="width-toggle" id="widthToggle">
+    <span>表示幅</span>
+    <button aria-pressed="true" data-width="narrow">スマホ 390px</button>
+    <button aria-pressed="false" data-width="wide">PC</button>
+  </div>
+</header>
+
+<!-- ======================= 1. 学生の画面 ======================= -->
+<main id="student" class="screen" role="tabpanel">
+  <div class="student-frame narrow" id="studentFrame">
+
+    <div class="top">
+      <span class="app">課題の秘書</span>
+      <h1>11月12日（木）</h1>
+      <p>森先生との面談 あす 11:00</p>
+    </div>
+
+    <!-- 今週の締切（いつも見せる） -->
+    <section class="card" aria-labelledby="s-week">
+      <h2 id="s-week">今週の締切</h2>
+      <div class="rows">
+
+        <div class="row">
+          <button class="row-head" aria-expanded="false">
+            <span class="when attn">あす<small>17:00</small></span>
+            <span class="what">
+              <span class="course">線形代数</span>
+              <span class="title">演習レポート第5回</span>
+            </span>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="row-body"><div>
+            <dl class="evidence">
+              <dt>どこに書いてあったか</dt>
+              <dd>課題ページ「演習レポート第5回」の締切欄：<q>11月13日（金）17:00</q></dd>
+              <dt>状態</dt>
+              <dd>未提出 <span class="src">（今日 9:12 に取得）</span></dd>
+            </dl>
+          </div></div>
+        </div>
+
+        <div class="row">
+          <button class="row-head" aria-expanded="false">
+            <span class="when">15日<small>日曜</small></span>
+            <span class="what">
+              <span class="course">英語プレゼンテーション</span>
+              <span class="title">発表スライドの準備を始める日 <span class="chip plain">準備</span></span>
+            </span>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="row-body"><div>
+            <dl class="evidence">
+              <dt>この日の理由</dt>
+              <dd>締切 11月18日（水）23:59 の3日前。森先生との設定で、締切の3日前に準備の予定を入れています。</dd>
+              <dt>どこに書いてあったか</dt>
+              <dd>課題ページ「発表スライドの提出」の締切欄：<q>11月18日（水）23:59</q></dd>
+            </dl>
+          </div></div>
+        </div>
+
+        <div class="row more">
+          <button class="row-head" aria-expanded="false">
+            <span class="when" style="color:var(--muted)">来週〜</span>
+            <span class="what"><span class="title">来週からの締切 4件</span></span>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="row-body"><div>
+            <div class="rows">
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">17日<small>月曜</small></span>
+                  <span class="what">
+                    <span class="course">情報リテラシー</span>
+                    <span class="title">課題3 データ整理 <span class="chip attn">要確認</span></span>
+                    <span class="note">17日か19日か、はっきりしません</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>どこに書いてあったか</dt>
+                    <dd>課題の欄：<q>11月19日（木）23:59</q></dd>
+                    <dd>11月11日のお知らせ：<q>課題3は11/17までに変更します</q></dd>
+                    <dt>カレンダー</dt>
+                    <dd>早いほうの 11月17日 で入れています。</dd>
+                  </dl>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">18日<small>水曜 23:59</small></span>
+                  <span class="what">
+                    <span class="course">英語プレゼンテーション</span>
+                    <span class="title">発表スライドの提出</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>どこに書いてあったか</dt>
+                    <dd>課題ページ「発表スライドの提出」の締切欄：<q>11月18日（水）23:59</q>（11月10日に出た課題）</dd>
+                  </dl>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">20日<small>金曜 17:00</small></span>
+                  <span class="what">
+                    <span class="course">熱力学</span>
+                    <span class="title">小レポート「エントロピー」</span>
+                    <span class="note">準備は 17日（火）から</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>どこに書いてあったか</dt>
+                    <dd>課題ページ「小レポート「エントロピー」」の締切欄：<q>11月20日（金）17:00</q></dd>
+                    <dd class="src">11月9日に 11月16日 → 11月20日 に延びました。</dd>
+                  </dl>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">27日<small>金曜 17:00</small></span>
+                  <span class="what">
+                    <span class="course">現代物理学入門</span>
+                    <span class="title">期末レポートの題目の提出</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>どこに書いてあったか</dt>
+                    <dd>課題ページ「期末レポートの題目の提出」の締切欄：<q>11月27日（金）17:00</q>（11月10日に出た課題）</dd>
+                  </dl>
+                </div></div>
+              </div>
+
+            </div>
+          </div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 要確認（問題があるときだけ） -->
+    <section class="card attn" aria-labelledby="s-check">
+      <h2 id="s-check">要確認</h2>
+      <div class="rows">
+        <div class="row">
+          <button class="row-head" aria-expanded="false">
+            <span class="when attn">17日か<small>19日か</small></span>
+            <span class="what">
+              <span class="course">情報リテラシー</span>
+              <span class="title">課題3 の締切が 2つ書かれています</span>
+              <span class="note">カレンダーには早いほうの 17日（月）で入れています</span>
+            </span>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="row-body"><div>
+            <dl class="evidence">
+              <dt>課題の欄</dt>
+              <dd><q>11月19日（木）23:59</q></dd>
+              <dt>11月11日のお知らせ</dt>
+              <dd><q>課題3は11/17までに変更します</q></dd>
+              <dt>確かめ方</dt>
+              <dd>授業のお知らせか、あすの面談で森先生と一緒に見ると決められます。</dd>
+            </dl>
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 最近の変化（いつも見せる） -->
+    <section class="card" aria-labelledby="s-changes">
+      <h2 id="s-changes">最近の変化</h2>
+      <div class="rows">
+
+        <div class="row">
+          <button class="row-head" aria-expanded="false">
+            <span class="when ok">11日<small>水曜</small></span>
+            <span class="what">
+              <span class="course">微分方程式</span>
+              <span class="title"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="var(--ok-ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>演習問題10 を出せました</span>
+            </span>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="row-body"><div>
+            <dl class="evidence">
+              <dt>どこに書いてあったか</dt>
+              <dd>課題ページ「演習問題10」の提出欄：<q>提出済み 11月11日 15:40</q>（締切 11月11日 17:00）</dd>
+            </dl>
+          </div></div>
+        </div>
+
+        <div class="row">
+          <button class="row-head" aria-expanded="false">
+            <span class="when">10日<small>火曜</small></span>
+            <span class="what">
+              <span class="course">英語プレゼンテーション</span>
+              <span class="title">新しい課題：発表スライドの提出（18日まで）</span>
+            </span>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="row-body"><div>
+            <dl class="evidence">
+              <dt>どこに書いてあったか</dt>
+              <dd>11月10日、授業ページの課題一覧に追加。締切欄：<q>11月18日（水）23:59</q></dd>
+              <dt>カレンダー</dt>
+              <dd>締切と、3日前（15日）の準備の予定を入れました。</dd>
+            </dl>
+          </div></div>
+        </div>
+
+        <div class="row">
+          <button class="row-head" aria-expanded="false">
+            <span class="when">10日<small>火曜</small></span>
+            <span class="what">
+              <span class="course">現代物理学入門</span>
+              <span class="title">新しい課題：期末レポートの題目の提出（27日まで）</span>
+            </span>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="row-body"><div>
+            <dl class="evidence">
+              <dt>どこに書いてあったか</dt>
+              <dd>11月10日、授業ページの課題一覧に追加。締切欄：<q>11月27日（金）17:00</q></dd>
+              <dt>カレンダー</dt>
+              <dd>締切と、3日前（24日）の準備の予定を入れました。</dd>
+            </dl>
+          </div></div>
+        </div>
+
+        <div class="row">
+          <button class="row-head" aria-expanded="false">
+            <span class="when">9日<small>月曜</small></span>
+            <span class="what">
+              <span class="course">熱力学</span>
+              <span class="title">小レポートの締切が 16日 → 20日 に延びました</span>
+            </span>
+            <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="row-body"><div>
+            <dl class="evidence">
+              <dt>どこに書いてあったか</dt>
+              <dd>課題ページ「小レポート「エントロピー」」の締切欄が <q>11月16日（月）17:00</q> から <q>11月20日（金）17:00</q> に変わりました。</dd>
+              <dt>カレンダー</dt>
+              <dd>締切を 20日 に、準備の予定を 17日（火）に動かしました。</dd>
+            </dl>
+          </div></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 最後に取得できた時刻（押したときだけ） -->
+    <div class="fetch row">
+      <button class="row-head" aria-expanded="false" style="display:inline-flex;padding:4px 2px">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span>情報の取得について</span>
+      </button>
+      <div class="row-body"><div>
+        <p>最後に取得できた時刻：今日 9:12。LMSにログインすると自動で取り直します。</p>
+      </div></div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ======================= 2. 支援担当の面談画面 ======================= -->
+<main id="counselor" class="screen" role="tabpanel" hidden>
+  <div class="c-wrap">
+
+    <aside class="card students" aria-labelledby="c-list">
+      <h2 id="c-list">担当の学生</h2>
+      <ul>
+        <li><button aria-current="true">
+          <span class="nm">青木 ひかり</span>
+          <span class="st">面談 あす 11:00 ・ 要確認 1件</span>
+        </button></li>
+        <li><button>
+          <span class="nm">石田 そら</span>
+          <span class="st attn">11月8日から取得できていません（4日）</span>
+        </button></li>
+        <li><button>
+          <span class="nm">上野 まこと</span>
+        </button></li>
+      </ul>
+    </aside>
+
+    <div class="c-main">
+      <div class="c-head">
+        <h1>青木 ひかり さん</h1>
+        <p>面談 11月13日（金）11:00 ・ 前回 11月6日（金）</p>
+        <span class="fetched">今日 9:12 時点の情報</span>
+      </div>
+
+      <div class="c-grid">
+        <!-- 左列 -->
+        <div class="c-col">
+
+          <section class="card" aria-labelledby="c-due">
+            <h2 id="c-due">締切 <span class="sub">あすの面談から次の面談（20日）まで</span></h2>
+            <div class="rows">
+
+              <div class="group">面談の日</div>
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when attn">13日（金）<small>17:00</small></span>
+                  <span class="what">
+                    <span class="course">線形代数</span>
+                    <span class="title">演習レポート第5回</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <div class="history">
+                    <h4>履歴</h4>
+                    <ul>
+                      <li><span>今日 9:12</span><b>取得。未提出</b></li>
+                    </ul>
+                    <h4>根拠</h4>
+                    <dl class="ev">
+                      <dt>締切</dt><dd>課題ページ「演習レポート第5回」の締切欄：<q>11月13日（金）17:00</q></dd>
+                    </dl>
+                  </div>
+                </div></div>
+              </div>
+
+              <div class="group">次の週</div>
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when attn">17日（月）<small>か 19日（木）</small></span>
+                  <span class="what">
+                    <span class="course">情報リテラシー</span>
+                    <span class="title">課題3 データ整理 <span class="chip attn">要確認</span></span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <div class="history">
+                    <h4>履歴</h4>
+                    <ul>
+                      <li><span>11日（水）</span><b>お知らせに締切の変更の記載。課題の欄は変わらず → 要確認</b></li>
+                      <li><span>今日 9:12</span><b>取得。未提出</b></li>
+                    </ul>
+                    <h4>根拠</h4>
+                    <dl class="ev">
+                      <dt>課題の欄</dt><dd><q>11月19日（木）23:59</q></dd>
+                      <dt>11月11日のお知らせ</dt><dd><q>課題3は11/17までに変更します</q></dd>
+                      <dt>カレンダー</dt><dd>早いほうの 11月17日 で入れています。</dd>
+                    </dl>
+                  </div>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">18日（水）<small>23:59</small></span>
+                  <span class="what">
+                    <span class="course">英語プレゼンテーション</span>
+                    <span class="title">発表スライドの提出</span>
+                    <span class="note">準備の目安 15日（日）から ・ 10日に出た課題</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <div class="history">
+                    <h4>履歴</h4>
+                    <ul>
+                      <li><span>10日（火）</span><b>課題一覧に追加（締切 11月18日 23:59）。カレンダーに締切と準備（15日）を入れた</b></li>
+                      <li><span>今日 9:12</span><b>取得。未提出</b></li>
+                    </ul>
+                    <h4>根拠</h4>
+                    <dl class="ev">
+                      <dt>締切</dt><dd>課題ページ「発表スライドの提出」の締切欄：<q>11月18日（水）23:59</q></dd>
+                    </dl>
+                  </div>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">20日（金）<small>17:00</small></span>
+                  <span class="what">
+                    <span class="course">熱力学</span>
+                    <span class="title">小レポート「エントロピー」</span>
+                    <span class="note">準備の目安 17日（火）から ・ 9日に 16日 → 20日 へ延長</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <div class="history">
+                    <h4>履歴</h4>
+                    <ul>
+                      <li><span>6日以前</span><b>締切 11月16日（月）17:00</b></li>
+                      <li><span>9日（月）</span><b>締切が 11月20日（金）17:00 に変更。カレンダーの締切と準備（17日）を動かした</b></li>
+                      <li><span>今日 9:12</span><b>取得。未提出</b></li>
+                    </ul>
+                    <h4>根拠</h4>
+                    <dl class="ev">
+                      <dt>締切</dt><dd>課題ページ「小レポート「エントロピー」」の締切欄：<q>11月20日（金）17:00</q></dd>
+                    </dl>
+                  </div>
+                </div></div>
+              </div>
+
+              <div class="group">その先</div>
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when" style="color:var(--muted)">27日（金）<small>17:00</small></span>
+                  <span class="what">
+                    <span class="course">現代物理学入門</span>
+                    <span class="title">期末レポートの題目の提出</span>
+                    <span class="note">10日に出た課題</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <div class="history">
+                    <h4>履歴</h4>
+                    <ul>
+                      <li><span>10日（火）</span><b>課題一覧に追加（締切 11月27日 17:00）。カレンダーに締切と準備（24日）を入れた</b></li>
+                      <li><span>今日 9:12</span><b>取得。未提出</b></li>
+                    </ul>
+                    <h4>根拠</h4>
+                    <dl class="ev">
+                      <dt>締切</dt><dd>課題ページ「期末レポートの題目の提出」の締切欄：<q>11月27日（金）17:00</q></dd>
+                    </dl>
+                  </div>
+                </div></div>
+              </div>
+
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="c-changes">
+            <h2 id="c-changes">前回の面談（6日）からの変化</h2>
+            <div class="rows">
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">9日（月）</span>
+                  <span class="what">
+                    <span class="course">熱力学</span>
+                    <span class="title">小レポートの締切が 16日 → 20日 に延長</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>根拠</dt>
+                    <dd>課題ページの締切欄が <q>11月16日（月）17:00</q> から <q>11月20日（金）17:00</q> に変わりました。</dd>
+                  </dl>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">10日（火）</span>
+                  <span class="what">
+                    <span class="course">英語プレゼンテーション</span>
+                    <span class="title">新しい課題：発表スライドの提出（18日 23:59）</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>根拠</dt>
+                    <dd>授業ページの課題一覧に追加。締切欄：<q>11月18日（水）23:59</q></dd>
+                  </dl>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when">10日（火）</span>
+                  <span class="what">
+                    <span class="course">現代物理学入門</span>
+                    <span class="title">新しい課題：期末レポートの題目の提出（27日 17:00）</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>根拠</dt>
+                    <dd>授業ページの課題一覧に追加。締切欄：<q>11月27日（金）17:00</q></dd>
+                  </dl>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when ok">11日（水）</span>
+                  <span class="what">
+                    <span class="course">微分方程式</span>
+                    <span class="title"><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="var(--ok-ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>演習問題10 を提出（15:40）</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>根拠</dt>
+                    <dd>課題ページ「演習問題10」の提出欄：<q>提出済み 11月11日 15:40</q>（締切 11月11日 17:00）</dd>
+                  </dl>
+                </div></div>
+              </div>
+
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when attn">11日（水）</span>
+                  <span class="what">
+                    <span class="course">情報リテラシー</span>
+                    <span class="title">お知らせに 課題3 の締切の変更 → 要確認</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>根拠</dt>
+                    <dd>11月11日のお知らせ：<q>課題3は11/17までに変更します</q>。課題の欄は <q>11月19日（木）23:59</q> のまま。</dd>
+                  </dl>
+                </div></div>
+              </div>
+
+            </div>
+          </section>
+
+        </div>
+
+        <!-- 右列 -->
+        <div class="c-col">
+
+          <section class="card promise" aria-labelledby="c-promise">
+            <h2 id="c-promise">前回の約束</h2>
+            <div class="rows">
+              <div class="row">
+                <div class="row-head" style="cursor:default">
+                  <span class="num ok">1</span>
+                  <span class="what">
+                    <span class="title">微分方程式 演習問題10 を出す</span>
+                    <span class="result ok">出せました（11日 15:40）</span>
+                  </span>
+                </div>
+              </div>
+              <div class="row">
+                <div class="row-head" style="cursor:default">
+                  <span class="num">2</span>
+                  <span class="what">
+                    <span class="title">熱力学 レポートの構成だけ作る</span>
+                    <span class="result open">まだ分かりません。面談で聞く</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card next" aria-labelledby="c-next">
+            <h2 id="c-next">次の一歩 <span class="sub">候補。面談で一緒に決める</span></h2>
+            <ul>
+              <li><span class="dot"></span><span>線形代数 演習レポート第5回<span class="why">面談の日の 17:00 が締切</span></span></li>
+              <li><span class="dot"></span><span>熱力学 レポートの構成<span class="why">前回からの続き。準備の目安は 17日（火）から</span></span></li>
+              <li><span class="dot"></span><span>英語プレゼンの準備を 15日（日）から<span class="why">締切 18日の3日前</span></span></li>
+              <li><span class="dot"></span><span>情報リテラシー 課題3 の締切を確かめる<span class="why">17日か19日か</span></span></li>
+            </ul>
+          </section>
+
+          <section class="card attn" aria-labelledby="c-check">
+            <h2 id="c-check">要確認 1件</h2>
+            <div class="rows">
+              <div class="row">
+                <button class="row-head" aria-expanded="false">
+                  <span class="when attn">17日か<small>19日か</small></span>
+                  <span class="what">
+                    <span class="course">情報リテラシー</span>
+                    <span class="title">課題3 の締切が 2つ書かれています</span>
+                  </span>
+                  <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="row-body"><div>
+                  <dl class="evidence">
+                    <dt>課題の欄</dt>
+                    <dd><q>11月19日（木）23:59</q></dd>
+                    <dt>11月11日のお知らせ</dt>
+                    <dd><q>課題3は11/17までに変更します</q></dd>
+                    <dt>カレンダー</dt>
+                    <dd>早いほうの 11月17日 で入れています。</dd>
+                  </dl>
+                </div></div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ======================= 3. LMSの隅の知らせ ======================= -->
+<main id="lms" class="screen" role="tabpanel" hidden>
+  <div class="lms-page" aria-hidden="true">
+    <div class="lms-bar">
+      <b>授業支援システム</b>
+      <nav><span>時間割</span><span>授業</span><span>課題</span><span>お知らせ</span><span>成績</span></nav>
+      <span class="me">青木 ひかり</span>
+    </div>
+    <div class="lms-body">
+      <div>
+        <p class="lms-h">今日の授業</p>
+        <div class="lms-cards">
+          <div class="lms-card"><b>線形代数</b><span>2限 ・ 講義室 A-204</span></div>
+          <div class="lms-card"><b>熱力学</b><span>3限 ・ 講義室 B-101</span></div>
+          <div class="lms-card"><b>情報リテラシー</b><span>5限 ・ 演習室 C-3</span></div>
+        </div>
+        <p class="lms-h">お知らせ</p>
+        <ul class="lms-list">
+          <li><span>11/11</span><span>情報リテラシー：課題3の提出について</span></li>
+          <li><span>11/10</span><span>英語プレゼンテーション：発表スライドの提出について</span></li>
+          <li><span>11/10</span><span>現代物理学入門：期末レポートの題目について</span></li>
+          <li><span>11/09</span><span>熱力学：小レポートの締切について</span></li>
+          <li><span>11/06</span><span>図書館：開館時間の変更</span></li>
+        </ul>
+      </div>
+      <div class="lms-side">
+        <p class="lms-h">履修中の授業</p>
+        <ul class="lms-list">
+          <li>線形代数</li>
+          <li>英語プレゼンテーション</li>
+          <li>熱力学</li>
+          <li>情報リテラシー</li>
+          <li>微分方程式</li>
+          <li>現代物理学入門</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="lms-notice" id="lmsNotice" role="status">
+    <button class="open-student" data-screen="student">
+      <span class="ico">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 8h14M7 2.5v3M13 2.5v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 12.5l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="txt">新しい課題2件、締切の変更1件をカレンダーに入れました<small>押すと今週の締切を見られます</small></span>
+    </button>
+    <button class="close" id="lmsClose" aria-label="閉じる">
+      <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <button class="lms-restore" id="lmsRestore" hidden>知らせをもう一度出す（試作用）</button>
+</main>
+
+<script>
+(function () {
+  // 画面の切り替え
+  var tabs = document.querySelectorAll('.tabs [role="tab"]');
+  var screens = document.querySelectorAll('.screen');
+  var widthToggle = document.getElementById('widthToggle');
+
+  function showScreen(id) {
+    screens.forEach(function (s) { s.hidden = (s.id !== id); });
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.screen === id)); });
+    widthToggle.hidden = (id !== 'student');
+    window.scrollTo(0, 0);
+  }
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () { showScreen(t.dataset.screen); });
+  });
+
+  // 学生の画面の表示幅
+  var frame = document.getElementById('studentFrame');
+  widthToggle.querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      widthToggle.querySelectorAll('button').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      frame.classList.toggle('narrow', b.dataset.width === 'narrow');
+    });
+  });
+
+  // 行を押したときの開閉（意味のある動きだけ）
+  document.querySelectorAll('button.row-head[aria-expanded]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+      var body = btn.nextElementSibling;
+      if (body && body.classList.contains('row-body')) body.classList.toggle('open', !open);
+    });
+  });
+
+  // LMSの隅の知らせ
+  var notice = document.getElementById('lmsNotice');
+  var restore = document.getElementById('lmsRestore');
+  notice.querySelector('.open-student').addEventListener('click', function () {
+    showScreen('student');
+  });
+  document.getElementById('lmsClose').addEventListener('click', function () {
+    notice.classList.add('gone');
+    restore.hidden = false;
+  });
+  restore.addEventListener('click', function () {
+    notice.classList.remove('gone');
+    restore.hidden = true;
+  });
+})();
+</script>
+</body>
+</html>
