@@ -1,6 +1,6 @@
 # データの形（状態：案、2026-11-05）
 
-取得部品とサーバーの境界。ここを2人で合意すれば、YNUの部品（Sora）と京大の部品（orange）を別々に作れる。変えるときは2人で合意し、`decisions.md` に理由を書く。合意したら `shared/` にTypeScriptの型として置く。
+取得部品とサーバーの境界。ここを2人で合意すれば、YNUの部品（Sora）と京大の部品（orange）を別々に作れる。変えるときは2人で合意し、`decisions.md` に理由を書く。この雛形のTypeScriptの型は [`packages/core/src/types.ts`](../packages/core/src/types.ts) に置く。
 
 ## 観測（取得部品 → サーバー）
 
@@ -53,3 +53,11 @@
 | カレンダーの予定 | 予定ID |
 
 候補は保存しない。面談で入れると決めたものだけを保存し、学生の時間割とカレンダーに出す。
+
+## TypeScriptでの表し方
+
+- 6つの入口の型は `Observation`、`Assignment`、`FetchFailure`、`LedgerAssignment`、`PreparationPlan`、`FetchState`。公開する型は `packages/core/src/index.ts` にまとめる。
+- 時刻はタイムゾーン付きのISO 8601文字列。日付だけの値は `YYYY-MM-DD`。曜日は月曜1〜日曜7、時限は1からの数値。型だけでは文字列の形式や数値の範囲を検査しない。
+- 全体の取得失敗は `courseId: null`。まだ試していない・成功していない取得時刻は `null`。提出時刻が不明なら `submittedAt` を省く。
+- 台帳の `latest` は最後の観測の課題、`officialDeadline` は締切とその根拠。履歴は `system` と `fetchedAt` で元の観測を指す。取消の判定や準備日の計算はまだ実装しない。
+- `stripSessionId` はURLのpathにある `;SID=...` を除く。queryとfragmentの内容は変えない。ほかの種類の秘密情報も除く汎用のURL清掃処理ではない。

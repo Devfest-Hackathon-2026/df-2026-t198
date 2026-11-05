@@ -1,0 +1,10 @@
+packages:
+  - packages/*
+allowBuilds:
+  esbuild: true
+  protobufjs: true
+  # Firebase Hosting's optional native regex engine; its JS fallback is sufficient here.
+  re2: false
+minimumReleaseAgeExclude:
+  - firebase-tools@15.35.0
+  - vite@8.3.6

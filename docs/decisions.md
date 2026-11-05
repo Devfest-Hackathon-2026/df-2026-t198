@@ -142,3 +142,21 @@
 これで足りなくなるデータ：
 - 授業の曜日と時限、各時限の時刻。YNU LMSのホームには曜日と時限で授業が並んでいるので、取得部品で取れる。時限の時刻は大学ごとの設定に置く（D9）。
 - 準備の予定。どの課題の準備を、どの日のどの時限に置くか。面談画面で決めたときに作り、カレンダーの予定にもする。
+
+## D14. 開発用の雛形（2026-11-05）
+
+今回の雛形の依頼に沿って、Node 26・pnpm 11のworkspaceを `packages/*` に置く。D2の `shared/` に当たる場所は `packages/core/` とする。依存の版は各 `package.json`、実際の解決結果は `pnpm-lock.yaml` でそろえる。
+
+| 対象 | 選択と理由 | 今は採用しない案 |
+|---|---|---|
+| 画面 | React + Vite。学生と面談の画面をコンポーネントに分け、Firebase Hostingへ静的な出力を置ける | Next.jsなどのSSR基盤（空画面には不要）。ルーター・UIライブラリ（2つの入口はpathの判定と普通のリンクで足りる） |
+| 試験 | Vitest。TypeScriptを直接試験でき、拡張機能のChrome APIも置き換えられる | Jest（TypeScript向けの追加設定を増やさない） |
+| サーバー | Node標準の `node:http`。`/healthz` だけなのでフレームワークの依存は足さない。buildpacksの `gcp-build` と `start` をルートに置く | Express・Fastify・Hono（ルーティングやAPIが増えた段階で検討）。Dockerfile（D10） |
+| 拡張機能のビルド | esbuildでworkerとcontent scriptを別々のIIFEへ束ね、manifestをコピーする。content scriptへES modulesのimportを残さない | WXT・CRXJS（2つの入口には追加の規約や設定が不要） |
+| 型・lint | TypeScript strict、ESLint flat config、typescript-eslint。TypeScriptはlint側の対応範囲に入る6.0系に固定 | TypeScript 7（この時点のtypescript-eslintの対応範囲外） |
+
+公式資料：[Viteのビルド](https://vite.dev/guide/build.html)、[Vitest](https://vitest.dev/guide/)、[Node HTTP](https://nodejs.org/api/http.html)、[esbuild](https://esbuild.github.io/api/#build)、[Chromeのsession storage](https://developer.chrome.com/docs/extensions/reference/api/storage#property-session)。
+
+SIDは拡張機能内のメッセージで渡し、送信元と値を確かめてからsession storageへ置く。LMSへの取得と外部への送信はこの雛形に含めない。型の具体的な名前・日付・空値の表し方は [data-shapes.md](data-shapes.md#typescriptでの表し方) に記す。
+
+pnpmの依存ビルドはesbuildとprotobufjsを許可する。Firebase Hostingの任意依存 `re2` はビルドせず、付属のJavaScript処理を使う。導入時に公開から日が浅かったfirebase-toolsとViteは、採用する版だけを `minimumReleaseAgeExclude` に列挙する。
