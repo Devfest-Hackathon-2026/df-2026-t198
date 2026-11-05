@@ -11,7 +11,7 @@
 | [typescript-eslint](https://github.com/typescript-eslint/typescript-eslint) | ESLintでのTypeScript解析と規則 | MIT |
 | [Vitest](https://github.com/vitest-dev/vitest) | 単体テスト、Chrome APIのモック、HTTPテスト | MIT |
 | [firebase-tools](https://github.com/firebase/firebase-tools) | Firebase Local Emulator Suiteの起動 | MIT |
-| [firebase](https://github.com/firebase/firebase-js-sdk) | 拡張機能のGoogle credentialによるログイン。`firebase/auth/web-extension` をIIFEに同梱。ルートの開発依存はFirestoreの規則の試験に使う（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
+| [firebase](https://github.com/firebase/firebase-js-sdk) | 拡張機能のGoogle credentialによるログイン。`firebase/auth/web-extension` をIIFEに同梱。ルートの開発依存はFirestoreの規則の試験と、学生画面のログイン・Firestore購読に使う（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
 | [@firebase/rules-unit-testing](https://github.com/firebase/firebase-js-sdk/tree/main/packages/rules-unit-testing) | 本人・支援担当・未ログインを模擬したFirestoreの規則の試験（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
 | [firebase-admin](https://github.com/firebase/firebase-admin-node) | サーバーでFirebase ID tokenを検証し、Firestoreへ台帳を原子的に保存（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
 | [esbuild](https://github.com/evanw/esbuild) | 拡張機能のservice worker・content script・設定画面のバンドル | MIT |
@@ -22,6 +22,7 @@
 | [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node) | サーバーのNode APIの型 | MIT |
 | [@types/react](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react) | Reactの型 | MIT |
 | [@types/react-dom](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom) | React DOMの型 | MIT |
+| [Playwright](https://github.com/microsoft/playwright) | 手元にある実行環境で学生画面のブラウザ試験を行う。workspaceの依存には追加しない（2026-11-06、実行環境のLICENSEで確認） | Apache-2.0 |
 
 ## 実行環境とCI
 

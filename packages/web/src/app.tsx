@@ -1,3 +1,5 @@
+import { StudentPage } from './student';
+
 export function App() {
   const path = window.location.pathname;
   const title = path === '/student' || path === '/'
@@ -16,7 +18,7 @@ export function App() {
         </nav>
       </header>
       <main>
-        <h1>{title}</h1>
+        {path === '/student' || path === '/' ? <StudentPage /> : <h1>{title}</h1>}
       </main>
     </div>
   );
