@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>課題の秘書・接続テスト</title>
+    <link rel="stylesheet" href="options.css">
+    <script src="options.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Googleとの接続テスト</h1>
+      <p>Googleと連携し、Firebaseへのログインを試します。続けて、専用の「課題の秘書・接続テスト」カレンダーに、明日の架空の予定を1つ作ります。既存のカレンダーは変更しません。</p>
+      <p>2回目は同じ予定IDで試します。トークンは表示しません。試すGoogleアカウントのChromeプロファイルで開いてください。</p>
+      <div class="actions">
+        <button id="run" type="button">Googleと連携して試す</button>
+        <button id="restore" type="button">保存したログインを確認</button>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+      <ol id="steps"></ol>
+      <dl id="details"></dl>
+      <p>再開を試すときは、service workerの検証画面を閉じて停止させてから、「保存したログインを確認」を押します。このボタンは新たにGoogleと連携せず、保存したログインだけを確認します。</p>
+    </main>
+  </body>
+</html>

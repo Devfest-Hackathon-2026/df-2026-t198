@@ -9,5 +9,6 @@
     "test": "vitest run",
     "build": "node build.mjs"
   },
+  "dependencies": { "firebase": "13.2.0" },
   "devDependencies": { "@types/chrome": "^0.3.7", "esbuild": "^0.28.2" }
 }

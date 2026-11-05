@@ -2,14 +2,36 @@
   "manifest_version": 3,
   "name": "課題の秘書",
   "version": "0.0.0",
-  "minimum_chrome_version": "102",
-  "permissions": ["storage"],
-  "background": { "service_worker": "service-worker.js" },
+  "minimum_chrome_version": "105",
+  "permissions": [
+    "storage",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://www.googleapis.com/*",
+    "https://identitytoolkit.googleapis.com/*",
+    "https://securetoken.googleapis.com/*"
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  },
   "content_scripts": [
     {
-      "matches": ["https://lms.ynu.ac.jp/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://lms.ynu.ac.jp/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1E7Xwes5QVAbqhsIpfyilJrkHns8Pbt5stKNua1ZzvrLEKUt4/r0HEbcwTsfdelLWl/dkLApnRZhL/vigsiUrphcJd04jonRoLoatj+ef3wC75XGfi5ME+YLb2d2WRJHxcEtUpSNDBTXLp9RmTaQH4aTomI5pXcnO4h3TIMwc5DVOv/fbLQ1dn+meADUPFHGpB7wmLDahcz7xk0N+JoXL9o5T9y47tvn5OKCSfK+cDHVXxfbfNFRCEF0PCWX7ASbf6oqmTwNzSyoKaE17ICS/4sEMaQqUd46OZBQ5EtFSwIuwalgnFL5am+vkzI+uoVg05Nsbu01HZsVoIWrhKIuHwIDAQAB"
 }

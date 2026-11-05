@@ -216,3 +216,11 @@ Discordから開発のエージェントを呼ぶ仕組み（Claude CodeのDisco
 今回は保存HTMLからの中間結果まで。観測の型は変えていない。リンクは見本で除去済みのため、リンク・次ページは`null`のみを受け付ける。ログインの印、空一覧の印、一覧の終わりの印も根拠がないため未設定。0行を成功にせず、取得完了も出力しない。これらの設定と実際の取得処理はC04以降で確かめる。「未評価」から提出済みへの変換は、見本READMEの採取記録に基づく対応であり、別のCoursePower環境での意味は未確認。
 
 M1は [見本README](../lms-definitions/coursepower/samples/README.md) の基準を使う。教材一覧9件と課題詳細1件の各3項目（題名・締切・提出状態）を比較する。締切は`dueText`と`dueAt`が両方一致したときだけ1項目の正解。重複する教材一覧は一度だけ数え、欠落を分母から除かない。一覧の公開期限は締切に置き換えず、正解どおり`null`として比較する。この割合は見本での一致率であり、実物での取得成功率ではない。全項目の比較は [html-reader.test.mjs](../packages/core/tests/html-reader.test.mjs)、worker向けバンドルの確認は [html-reader-worker.test.mjs](../packages/extension/tests/html-reader-worker.test.mjs)。お知らせ2見本はC02・C03の対象外で、今回の読み取りとM1には含めない。
+
+## D19. 拡張機能の認証・カレンダーを実物で試す部品（2026-11-06）
+
+- Soraが依頼の中で `firebase` の追加と検証画面を承認。SDKは公式の拡張機能用入口 `firebase/auth/web-extension` を使い、既存のesbuild/IIFE構成を保つ。独自の認証処理やoffscreen documentは作らない。[Firebase公式の案内](https://firebase.google.com/docs/auth/web/chrome-extension)に、Googleの認証後に `signInWithCredential` を使う経路があるため。
+- `initializeAuth` に `indexedDBLocalPersistence` を指定。新たなGoogle認証を行わない確認ボタンで、復元した完全なuidと前回の完全なuidを内部で比較し、画面には先頭8文字だけ出す。ChromeのPromise版Identity APIに合わせ、最低Chrome版を105にする。
+- Googleへの要求は `openid`・`email`・`calendar.app.created`。Calendar SDKは追加せず、拡張機能からRESTで専用カレンダーと架空の予定だけを扱う。予定IDはPOST前に保存し、HTTP 409では同じIDの予定をGETして内容を照合する。
+- カレンダーの作成自体には任意のIDを指定できないため、作成前の印を保存し、結果が不明なら再作成せず停止する。これは接続テスト用の手元の状態であり、設計案のFirestoreやAPIの形は変えない。
+- 手順と制約は [auth-probe.md](../spikes/auth-probe.md)。自動試験とビルドは実機での認可・復元成功を証明しない。Cloudリソースの作成と実アカウントでの操作はSoraが行う。

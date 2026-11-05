@@ -35,6 +35,7 @@ Thumbs.db
 
 # 実際のLMSの画面を保存した見本（個人の情報を含むので commit しない）
 fixtures-local/
+packages/extension/config.local.json
 
 # ローカルのパッケージ保存先とエミュレーターの状態
 .pnpm-store/
