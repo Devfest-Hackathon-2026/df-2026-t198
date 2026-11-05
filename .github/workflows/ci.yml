@@ -26,3 +26,5 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm progress --check
+      - run: pnpm check:samples
+      - run: node scripts/check-samples.mjs --self-test

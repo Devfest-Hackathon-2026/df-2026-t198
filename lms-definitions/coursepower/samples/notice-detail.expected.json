@@ -1,0 +1,13 @@
+{
+  "pageType": "notice-detail",
+  "notices": [
+    {
+      "sourceId": "INF8777475229682",
+      "title": "架空通知01",
+      "bodyText": "架空文面12\n架空文面13\n架空科目04\n(2098/10/30 11:53)\n架空課題03"
+    }
+  ],
+  "contextOnly": [
+    "sourceId"
+  ]
+}

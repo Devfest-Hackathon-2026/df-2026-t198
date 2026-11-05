@@ -1,0 +1,18 @@
+{
+  "pageType": "assignment-detail",
+  "assignments": [
+    {
+      "sourceId": "REP8464597055634",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題04",
+      "dueText": "2098/11/13 (木) 11:53 まで",
+      "dueAt": "2098-11-13T11:53:00+09:00",
+      "submission": "not-submitted",
+      "statusText": "未提出"
+    }
+  ],
+  "contextOnly": [
+    "sourceId",
+    "courseId"
+  ]
+}
