@@ -1,0 +1,23 @@
+/* design/prototypes/2026-11-05/merged.html */
+:root {
+  --paper: #f6f5f0;
+  --white: #fffefa;
+  --ink: #273e37;
+  --body: #3e5149;
+  --muted: #6c766d;
+  --line: #dddeda;
+  --line-soft: #e8e9e2;
+  --green: #345d4c;
+  --soft: #e8eee6;
+  --side: #eff1ea;
+  --gold: #8a601f;
+  --gold-bg: #f9f0dc;
+  --gold-line: #e7d7b5;
+  --gold-ink: #694f2b;
+  --blue: #4e667d;
+  --blue-bg: #eaf0f4;
+  --today: #a63d2f;
+  --today-bg: #f8e7e2;
+  --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --sans: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+}
