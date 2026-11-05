@@ -58,14 +58,22 @@ chrome.runtime.onStartup.addListener(async () => {
   await probeFromWorker("browser-startup");
 });
 
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === "probe") probeFromWorker("alarm");
+// 定期の取得と「今すぐ確認」は、最後に見つけたSIDを付けて取る。
+// SIDは chrome.storage.session（ディスクに書かれず、ブラウザを閉じると消える）にだけ置く。
+async function currentSid() {
+  const { sid = null } = await chrome.storage.session.get("sid");
+  return sid;
+}
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === "probe") probeFromWorker("alarm", await currentSid());
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "lms-login-seen") {
     isNewLogin(message.sidHash).then(async (isNew) => {
       sendResponse({ isNewLogin: isNew });
+      await chrome.storage.session.set({ sid: message.sid });
       if (!isNew) return;
       await probeFromWorker("login", null);
       await probeFromWorker("login", message.sid);
@@ -79,7 +87,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
   if (message.type === "probe-now") {
-    probeFromWorker("manual", null).then(sendResponse);
+    currentSid().then((sid) => probeFromWorker("manual", sid)).then(sendResponse);
     return true;
   }
   if (message.type === "set-interval") {
