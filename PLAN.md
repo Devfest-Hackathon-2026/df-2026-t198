@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 5/36（13%）、必須 5/31（16%）
+完成条件：全体 9/36（25%）、必須 9/31（29%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -46,10 +46,10 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 
 ### 観測の送信と台帳
 
-- [ ] C10 〈未定〉 観測をサーバーへ送る。送る中身にSIDやCookieが入っていないことを試験で確かめる
-- [ ] C11 〈未定〉 観測から、新規・締切の変更・題名の変更・提出を台帳に記録する。確かめ方：試験
-- [ ] C12 〈未定〉 一覧を最後まで取れた授業で2回続けて見当たらない課題を取消にする。1回だけなら取消の候補にとどめる。確かめ方：試験
-- [ ] C13 〈未定〉 同じ観測を2回受け取っても台帳が変わらない。確かめ方：試験
+- [x] C10 〈未定〉 観測をサーバーへ送る。送る中身にSIDやCookieが入っていないことを試験で確かめる → `packages/server/tests/observations.test.ts`（認証・SID/Cookie拒否）、`pnpm test:observations:emulator`（架空観測のAPI送信・保存）
+- [x] C11 〈未定〉 観測から、新規・締切の変更・題名の変更・提出を台帳に記録する。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（新規・題名/締切変更・提出）
+- [x] C12 〈未定〉 一覧を最後まで取れた授業で2回続けて見当たらない課題を取消にする。1回だけなら取消の候補にとどめる。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（完全な一覧2回、詳細失敗、再出現）
+- [x] C13 〈未定〉 同じ観測を2回受け取っても台帳が変わらない。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（再送と同時再送。文書・履歴・取消回数を維持）
 - [ ] C14 〈未定〉 サーバーをCloud Runに置き、台帳をFirestoreに書く。確かめ方：デプロイした先で観測を1つ送る
 
 ### カレンダー
