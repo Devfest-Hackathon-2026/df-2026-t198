@@ -257,3 +257,12 @@ M1は [見本README](../lms-definitions/coursepower/samples/README.md) の基準
 - `pnpm test` に含め、`demo-kadai-hisho-rules` のFirestoreだけを起動して終了する。Javaは手元のHomebrew JDK 21と、[GitHubのUbuntuにある `JAVA_HOME_21_X64`](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#java) を使う。規則・ポートは既存の `firebase.json` を共用する。クラウドへのデプロイは含めない。
 - 共有を許可するのは `scopes` がリストで `all` を含み、`revokedAt` が明示的に `null` の許可文書だけ。欠けた項目や不正な型は許可と扱わない。`sessionContext/current` と `integrations/calendar` は設計の文書名に限定し、未知の文書や下位のコレクションは再帰で許可しない。
 - 境界の確認：学生ごとのデータをWeb SDKが読む際の認可と、直接書き込み禁止を試験する。Admin SDKでのAPI認可、招待の作成、画面から既取得情報を消す動作、実環境への反映は別の作業。この変更はトークンの扱い、外部入力の解析、暗号、課金APIを変更しないため、それらの検査は対象外。
+
+## D22. 観測の受領と台帳の更新（2026-11-06、Issue #16）
+
+- 決めた人：SoraがIssue #16で型・データ形・依存追加を承認し、Codexが実装。契約の詳細と限界は [data-shapes.md](data-shapes.md) にまとめる。
+- 認証と保存には `firebase-admin`（Apache-2.0）を使う。ID tokenの検証とFirestoreのトランザクションを公式SDKに任せ、JWTの検証やRESTでの競合処理は独自実装しない。[認証の公式資料](https://firebase.google.com/docs/auth/admin/verify-id-tokens)、[トランザクションの公式資料](https://firebase.google.com/docs/firestore/manage-data/transactions)を確認した。tokenの失効も検査する。
+- coreは台帳を更新する純粋関数、serverは入力の検査・認証・保存を担当する。server向けに `@kadai-hisho/core/ledger` の入口を分け、HTML読み取り用の型・実行コードを読み込まずに利用できるようにした。YNU取得部品は変更しない。
+- 受領記録を先に読み、授業・台帳・別文書の履歴・取得状態と同じトランザクションで作る。先に受領だけを保存する案は、途中で止まったとき未処理なのに処理済みになり得るため採らない。取得状態の文書も読むことで、空の台帳からの同時受領を直列化する。
+- Issueの指定に従い、通し番号、内容のハッシュ、受領・処理時刻は受領記録に追加しない。同じIDで異なる内容の検出と、新しいIDで遅れて届いた観測の拒否は未実装。この制約を隠すためにPCの時刻で順番を判定することはしない。
+- 試験は架空データだけを使い、AuthとFirestoreのエミュレーターへAPI経由で送る。ローカルの接続先と `demo-kadai-hisho` を検査してからSDKを初期化する。クラウドの資源・認証設定・Firestoreの規則は変更しない。

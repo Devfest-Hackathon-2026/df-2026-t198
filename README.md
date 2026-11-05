@@ -75,6 +75,25 @@ Hostingは `http://127.0.0.1:5002/student` と `/session`、管理画面は `htt
 
 規則だけの試験は `pnpm test:firestore-rules`。架空のプロジェクト `demo-kadai-hisho-rules` でFirestoreだけを起動し、試験後に停止する。手動で起動したエミュレーターと8085番ポートを共用するため、手動の方を先に終了しておく。macOSでは `/opt/homebrew/opt/openjdk@21/bin`、GitHub Actionsでは `JAVA_HOME_21_X64` のJavaを試験コマンドがPATHに足す。それ以外はJDK 21以上をPATHに置く。初回はダウンロードにネットワーク接続が必要。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
 
+観測APIはAuth・Firestoreのエミュレーターで試験できる（下記）。画面との接続は未実装。Firestoreの規則は上のとおり。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
+
+### 観測APIの試験
+
+```sh
+pnpm test:observations:emulator
+```
+
+AuthとFirestoreを `demo-kadai-hisho` で起動し、架空の利用者・観測を使ってAPIへの送信、保存、再送、取消、本人以外の保存先の拒否を試す。通常の `pnpm test` ではエミュレーターの4試験をskipするため、このコマンドも別途実行する。JDKがPATHにない場合は、インストール済みJDKのbinをPATHに加えて実行する。
+
+APIを手動で動かす場合は、`pnpm emulators` の起動後、別のターミナルで次を実行する。
+
+```sh
+pnpm --filter server... build
+GCLOUD_PROJECT=demo-kadai-hisho FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 pnpm --filter server start
+```
+
+送信形とAPIの応答は [データの形](docs/data-shapes.md)。エミュレーター用の環境変数はクラウドでは設定しない。
+
 ## 提出とライセンス
 
 公開の提出先は `Devfest-Hackathon-2026/df-2026-t198`（remote名 `submission`）。提出時は確認したmainの履歴をそろえる。提出先ではGitHub ActionsとPagesを使えない。提出方法と締切は運営の案内に従う。
