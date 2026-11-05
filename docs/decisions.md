@@ -76,10 +76,25 @@
 
 採用しなかった案：大学ごとに取得部品をコードで書く（大学の数だけ同じようなコードが増える）。毎回Geminiに画面を読ませる（確実さと費用の面で劣る。D5）。
 
-## D10. 技術の構成（状態：案、2026-11-05、Sora）
+## D10. 技術の構成：広げるための仕組みはGoogleのサービスで持つ（状態：案、2026-11-05、Sora）
 
-- TypeScriptのmonorepo。`packages/core`（共通の核。ブラウザのDOMに頼らず、拡張機能の裏・Node.jsの試験・サーバーのどこでも同じコードが動く）、`packages/extension`、`packages/server`、`packages/web`、`lms-definitions/`（製品ごとの定義と、試験用の見本）。
-- Manifest V3の拡張機能の裏（service worker）には DOMParser がないので、HTMLの読み取りは純粋なJavaScriptのライブラリで行う。ライブラリは実装のときに選び、理由をここに足す。
-- サーバーはDockerfileでコンテナにして Cloud Run で動かす。手元では docker compose でサーバーとFirestoreのエミュレーターを立て、全体を1つのコマンドで動かせるようにする。
-- 各大学の支援室が、自分のGoogle Cloudのプロジェクトに丸ごと立てられるように、立て方を1本の手順にまとめる。支援に関わる情報を大学の外に出さずに済む。Terraformなどでの自動化は余裕があれば。
-- Dockerは、立てやすさと手元での再現のためのもの。対応する大学を増やすのは、D9の定義の層で行う。
+コードの置き方：TypeScriptのmonorepo。`packages/core`（共通の核。ブラウザのDOMに頼らず、拡張機能の裏・Node.jsの試験・サーバーのどこでも同じコードが動く）、`packages/extension`、`packages/server`、`packages/web`、`lms-definitions/`（製品ごとの定義と、試験用の見本）。Manifest V3の拡張機能の裏にはDOMParserがないので、HTMLの読み取りは純粋なJavaScriptのライブラリで行う（実装のときに選び、理由を足す）。
+
+| 役目 | 使うもの | 理由 |
+|---|---|---|
+| サーバーを動かす | Cloud Run。ソースから直接デプロイし、コンテナはCloud Buildのbuildpacksに作らせる | Dockerfileを自分たちで持たなくてよい |
+| 面談画面を配る | Firebase Hosting（必要ならApp Hosting） | 指定の実行基盤に入っている |
+| 台帳と画面の即時反映 | Firestore | 変更をその場で画面に届けられる（D8） |
+| ログイン | Firebase Authentication | 学生はGoogleアカウント、支援担当も同じ仕組みで入る |
+| 手元での開発 | Firebase Local Emulator Suite（Firestore、Authentication、Hosting） | Docker Composeの代わりに、全体を手元で1つのコマンドで動かせる |
+| **LMS製品の定義を配る** | Firestoreに置き、拡張機能が起動時に読む | 画面の作りが変わった、大学を足した、というときに、拡張機能を作り直してChromeウェブストアの審査を待たずに全員へ直せる。定義はデータでコードではないので、Manifest V3の「外から取ってきたコードを動かさない」決まりに触れない |
+| 定義が壊れたことに気づく | Cloud Logging と Error Reporting | 取得部品が「読めなかった」ことを、個人の情報を除いて送る。LMSの画面が変わったら、利用者が気づく前に分かる |
+| 定義の下書き | Vertex AIのGemini（D9） | 見本の画面から定義の下書きを作る |
+| 秘密の情報 | Secret Manager | Calendar APIの更新に使うトークンなどをコードと分ける |
+| カレンダーの更新のやり直し | Cloud Tasks（余裕があれば） | Calendar APIが一時的に失敗しても、順番を保ってやり直せる |
+
+今は作らないが、この形で広げられること：
+- **大学ごとに分ける**：Identity Platformのマルチテナントで、大学ごとに支援担当の入口とデータを分ける。大学のシングルサインオン（学認などのSAML）での支援担当のログインもここでつなげる。
+- **大学が自分で立てる**：支援に関わる情報を大学の外に出したくない場合に、大学のGoogle Cloudのプロジェクトへ同じ構成を立てる。手順はInfrastructure Manager（GoogleのTerraform実行サービス）にまとめられる。
+
+採用しなかった案：Docker Composeでの手元の開発と、Dockerfileの手書き（同じことをGoogleのサービスでできる）。LMS製品の定義を拡張機能に埋め込んで配る（直すたびにストアの審査が要る）。
