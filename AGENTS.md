@@ -49,6 +49,7 @@ DevFest GDGoC Japan Hackathon 2026 の作品。課題の管理が苦手な大学
 - 完了と言うときは、テストか実際の動作確認の結果を示す。
 - PRで完成条件を満たしたら、`PLAN.md` の該当の行を `[x]` にして行末に証拠を書き、`pnpm progress --write` で数字を直す。進み具合を人に伝えるときは `PLAN.md` の「報告の形」で書く。
 - 前提が誤っていると判断したら、作業を止めて根拠と代案を返す。
+- エージェントがPRをmergeする条件、判断の重さ、止まって人に返すときは [docs/loop.md](docs/loop.md)。大会の決まりと提出物は [docs/submission.md](docs/submission.md)。
 
 ## 記録と連絡の置き場所
 
