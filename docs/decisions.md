@@ -183,3 +183,18 @@ Discordから開発のエージェントを呼ぶ仕組み（Claude CodeのDisco
 - 全データの削除と、支援担当が見た日時を学生が確かめる記録は、今回は作らない（後回しの候補）。
 
 理由：支援に要らない情報を持たなければ、漏れたときの害も、守るための仕組みも小さくなる。5日間で作る範囲を、課題の管理の負担を減らすことに絞るため。
+
+## D17. Google Cloudの土台は、gcloudのスクリプトで作る（2026-11-06、orangeとSora）
+
+要件：サービスアカウントと権限、GitHub Actionsから鍵ファイルなしでデプロイする設定（Workload Identity Federation）、secret、予算の通知を、何度でも同じように作れる。別の大学が自分のプロジェクトに同じ構成を立てられる（D10）。
+
+| 候補 | 判断 | 理由 |
+|---|---|---|
+| gcloudのスクリプト | 採る | Googleの道具だけで済む。何度流しても同じ結果になるように書けば、作り直しも別の大学での構築もできる |
+| Terraform | 採らない | 変更前後の差分が見え、PRでレビューできる。ただ、今回の構成は小さく、状態ファイルの置き場所・版の固定・既存の資源の取り込みの手間に見合わない。OAuthの同意画面やChrome拡張のOAuthクライアントは、どちらでも手作業が残る |
+| Infrastructure Manager（GoogleがTerraformを動かすサービス） | 採らない | Googleのサービスにはなるが、Terraformの手間はそのまま残る |
+| コンソールでの手作業 | 採らない | 作り直せず、何をしたかが残らない |
+
+- スクリプトに入れないもの：毎回のCloud Runへのデプロイ（CIから `gcloud run deploy --source`）、HostingとFirestoreの規則（`firebase.json`）。同じものを2つの道具で扱わないため。
+- 手作業が残るもの（OAuthの同意画面、OAuthクライアント、FirebaseをGoogle Cloudのプロジェクトに追加すること）は、手順として書く。
+- 経緯：orangeがTerraformを挙げ、Soraがgcloudではどうかと聞いた。Claudeが上の比べ方を出し、orangeが「そこまで大規模なことはしないので、Terraformはやらなくてよい」と判断した。
