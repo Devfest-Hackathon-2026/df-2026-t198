@@ -6,8 +6,8 @@
   "engines": { "node": "26.x", "pnpm": "11.x" },
   "scripts": {
     "typecheck": "pnpm -r typecheck",
-    "lint": "eslint eslint.config.js scripts/agent-merge*.mjs scripts/notify-decisions.test.mjs scripts/firestore-rules.test.mjs && pnpm -r lint",
-    "test": "pnpm test:agent-merge && pnpm test:notify-decisions && pnpm test:firestore-rules && pnpm test:design-mocks && pnpm -r test",
+    "lint": "eslint eslint.config.js scripts/agent-merge*.mjs scripts/notify-decisions.test.mjs scripts/firestore-rules.test.mjs scripts/*m3*.mjs && pnpm -r lint",
+    "test": "pnpm test:agent-merge && pnpm test:notify-decisions && pnpm test:firestore-rules && pnpm test:design-mocks && pnpm test:m3-score && pnpm -r test",
     "test:firestore-rules": "PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --only firestore --project demo-kadai-hisho-rules \"node --test scripts/firestore-rules.test.mjs\"",
     "test:design-mocks": "node --test design/mocks/2026-11-06/gallery.test.mjs",
     "test:agent-merge": "node --test scripts/agent-merge.test.mjs",
@@ -22,7 +22,9 @@
     "emulators:web": "firebase emulators:start --project demo-kadai-hisho --only auth,hosting",
     "progress": "node scripts/plan-progress.mjs",
     "check:samples": "node scripts/check-samples.mjs",
-    "metrics:m1": "pnpm --filter @kadai-hisho/core build && node scripts/metrics-m1.mjs"
+    "metrics:m1": "pnpm --filter @kadai-hisho/core build && node scripts/metrics-m1.mjs",
+    "metrics:m3": "pnpm --filter server build && node scripts/metrics-m3.mjs",
+    "test:m3-score": "node --test scripts/m3-score.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
