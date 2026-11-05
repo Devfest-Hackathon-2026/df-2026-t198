@@ -1,0 +1,43 @@
+# main の docs/decisions.md が変わったら、Discordに短く知らせる。
+# Webhook の URL は secret DISCORD_DECISIONS_WEBHOOK に置く。無ければ何もしない。
+name: notify-decisions
+
+on:
+  push:
+    branches: [main]
+    paths: [docs/decisions.md]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Post changed decision headings
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_DECISIONS_WEBHOOK }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          FILE_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/docs/decisions.md
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "DISCORD_DECISIONS_WEBHOOK is not set; skipping."
+            exit 0
+          fi
+          if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            BEFORE="$AFTER~1"
+          fi
+          # 見出し（「## D16. …（状態：案、…）」）が足された・変わったものだけを並べる。
+          headings=$(git diff --unified=0 "$BEFORE" "$AFTER" -- docs/decisions.md \
+            | sed -n 's/^+## \(D[0-9][0-9]*\..*\)$/- \1/p' | head -n 5)
+          if [ -n "$headings" ]; then
+            message=$(printf '決まったことの記録が更新されました。\n%s\n詳しく：%s' "$headings" "$FILE_URL")
+          else
+            message=$(printf '決まったことの記録（本文）が更新されました。\n詳しく：%s' "$FILE_URL")
+          fi
+          jq -n --arg content "$message" '{content: $content, allowed_mentions: {parse: []}}' \
+            | curl --fail --silent --show-error -H 'Content-Type: application/json' -d @- "$WEBHOOK"

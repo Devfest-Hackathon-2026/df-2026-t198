@@ -1,0 +1,211 @@
+{
+  "pageType": "home",
+  "courses": [
+    {
+      "courseId": "KOG8473125058175",
+      "name": "架空科目01",
+      "slots": [
+        {
+          "dayOfWeek": 1,
+          "period": 2
+        }
+      ],
+      "teacher": "架空教員01"
+    },
+    {
+      "courseId": "KOG8844214307152",
+      "name": "架空科目02",
+      "slots": [
+        {
+          "dayOfWeek": 1,
+          "period": 3
+        }
+      ],
+      "teacher": "架空教員02"
+    },
+    {
+      "courseId": "KOG8473268378312",
+      "name": "架空科目03",
+      "slots": [
+        {
+          "dayOfWeek": 2,
+          "period": 1
+        }
+      ],
+      "teacher": "架空教員03"
+    },
+    {
+      "courseId": "KOG8857837161477",
+      "name": "架空科目04",
+      "slots": [
+        {
+          "dayOfWeek": 2,
+          "period": 2
+        }
+      ],
+      "teacher": "架空教員04"
+    },
+    {
+      "courseId": "KOG8446745214477",
+      "name": "架空科目05",
+      "slots": [
+        {
+          "dayOfWeek": 2,
+          "period": 3
+        },
+        {
+          "dayOfWeek": 2,
+          "period": 4
+        },
+        {
+          "dayOfWeek": 2,
+          "period": 5
+        }
+      ],
+      "teacher": "架空教員05"
+    },
+    {
+      "courseId": "KOG8499649078446",
+      "name": "架空科目06",
+      "slots": [
+        {
+          "dayOfWeek": 3,
+          "period": 2
+        }
+      ],
+      "teacher": "架空教員06"
+    },
+    {
+      "courseId": "KOG8804588778021",
+      "name": "架空科目07",
+      "slots": [
+        {
+          "dayOfWeek": 3,
+          "period": 3
+        }
+      ],
+      "teacher": "架空教員07"
+    },
+    {
+      "courseId": "KOG8755112891124",
+      "name": "架空科目08",
+      "slots": [
+        {
+          "dayOfWeek": 3,
+          "period": 4
+        }
+      ],
+      "teacher": "架空教員08"
+    },
+    {
+      "courseId": "KOG8605232242296",
+      "name": "架空科目09",
+      "slots": [
+        {
+          "dayOfWeek": 4,
+          "period": 1
+        }
+      ],
+      "teacher": "架空教員09"
+    },
+    {
+      "courseId": "KOG8893910745061",
+      "name": "架空科目10",
+      "slots": [
+        {
+          "dayOfWeek": 4,
+          "period": 2
+        }
+      ],
+      "teacher": "架空教員10"
+    },
+    {
+      "courseId": "KOG8331135367537",
+      "name": "架空科目11",
+      "slots": [
+        {
+          "dayOfWeek": 4,
+          "period": 4
+        }
+      ],
+      "teacher": "架空教員11"
+    },
+    {
+      "courseId": "KOG8338450550951",
+      "name": "架空科目12",
+      "slots": [
+        {
+          "dayOfWeek": 5,
+          "period": 1
+        }
+      ],
+      "teacher": "架空教員12"
+    },
+    {
+      "courseId": "KOG8850439330272",
+      "name": "架空科目13",
+      "slots": [
+        {
+          "dayOfWeek": 5,
+          "period": 4
+        }
+      ],
+      "teacher": "架空教員13"
+    },
+    {
+      "courseId": "KOG8556485122567",
+      "name": "架空科目14",
+      "slots": [],
+      "teacher": "架空教員14"
+    },
+    {
+      "courseId": "KOG8845479795734",
+      "name": "架空科目15",
+      "slots": [],
+      "teacher": "架空教員15"
+    },
+    {
+      "courseId": "KOG8335569133881",
+      "name": "架空科目16",
+      "slots": [],
+      "teacher": "架空教員16"
+    },
+    {
+      "courseId": "KOG8333573514275",
+      "name": "架空科目17",
+      "slots": [],
+      "teacher": "架空教員17"
+    },
+    {
+      "courseId": "KOG8153336274166",
+      "name": "架空科目18",
+      "slots": [],
+      "teacher": "架空教員18"
+    },
+    {
+      "courseId": "KOG8632425357132",
+      "name": "架空科目19",
+      "slots": [],
+      "teacher": "架空教員19"
+    },
+    {
+      "courseId": "KOG8150090493701",
+      "name": "架空科目20",
+      "slots": [],
+      "teacher": "架空教員20"
+    },
+    {
+      "courseId": "KOG8503792577666",
+      "name": "架空科目21",
+      "slots": [],
+      "teacher": "架空教員21"
+    },
+    {
+      "courseId": "KOG8869323311579",
+      "name": "架空科目22",
+      "slots": [],
+      "teacher": "架空教員22"
+    }
+  ],
+  "assignments": []
+}

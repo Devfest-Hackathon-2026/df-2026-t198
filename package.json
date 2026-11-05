@@ -13,7 +13,8 @@
     "start": "pnpm --filter server start",
     "emulators": "firebase emulators:start --project demo-kadai-hisho",
     "emulators:web": "firebase emulators:start --project demo-kadai-hisho --only auth,hosting",
-    "progress": "node scripts/plan-progress.mjs"
+    "progress": "node scripts/plan-progress.mjs",
+    "check:samples": "node scripts/check-samples.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
