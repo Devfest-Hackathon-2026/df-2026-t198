@@ -32,3 +32,5 @@
 Firebase CLIの間接依存である [protobufjs](https://github.com/protobufjs/protobuf.js)（BSD-3-Clause）はpostinstallを許可する。[re2](https://github.com/uhop/node-re2)（BSD-3-Clause）は任意依存で、ネイティブビルドは無効にしている。Hostingエミュレーターは [superstatic](https://github.com/firebase/superstatic)（MIT）のJavaScript処理を使う。
 
 画面の色と書体の指定はrepo内の `design/prototypes/2026-11-05/merged.html` に合わせた。フォントファイルや外部画像は配布物に追加していない。
+
+CoursePower（富士通）の画面の構造を抽出・架空化した試験用HTMLを `lms-definitions/coursepower/samples/` に置く。

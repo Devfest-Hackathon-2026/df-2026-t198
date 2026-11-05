@@ -1,0 +1,99 @@
+{
+  "pageType": "materials",
+  "courseId": "KOG8857837161477",
+  "assignments": [
+    {
+      "sourceId": "REP8561002265941",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題01",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "submitted",
+      "statusText": "未評価",
+      "availabilityText": "公開終了"
+    },
+    {
+      "sourceId": "REP8105107814656",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題02",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "not-submitted",
+      "statusText": "未提出",
+      "availabilityText": "公開終了"
+    },
+    {
+      "sourceId": "REP8542067713434",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題03",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "not-submitted",
+      "statusText": "未提出",
+      "availabilityText": "公開終了"
+    },
+    {
+      "sourceId": "REP8464597055634",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題04",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "not-submitted",
+      "statusText": "未提出",
+      "availabilityText": "2098/11/13 11:53"
+    },
+    {
+      "sourceId": "REP8989133416356",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題05",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "not-submitted",
+      "statusText": "未提出",
+      "availabilityText": "2098/11/20 11:53"
+    },
+    {
+      "sourceId": "REP8233464133178",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題06",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "not-submitted",
+      "statusText": "未提出",
+      "availabilityText": "2098/12/04 11:53"
+    },
+    {
+      "sourceId": "REP8473475854781",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題07",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "not-submitted",
+      "statusText": "未提出",
+      "availabilityText": "2098/12/11 11:53"
+    },
+    {
+      "sourceId": "REP8502934344374",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題08",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "not-submitted",
+      "statusText": "未提出",
+      "availabilityText": "2098/12/18 11:53"
+    },
+    {
+      "sourceId": "REP8333215428670",
+      "courseId": "KOG8857837161477",
+      "title": "架空課題09",
+      "dueText": null,
+      "dueAt": null,
+      "submission": "not-submitted",
+      "statusText": "未提出",
+      "availabilityText": "2099/01/01 11:53"
+    }
+  ],
+  "contextOnly": [
+    "courseId"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "pageType": "notice-list",
+  "notices": [
+    {
+      "sourceId": "INF8607214852670",
+      "title": "架空文面01"
+    },
+    {
+      "sourceId": "INF8777475229682",
+      "title": "架空通知01"
+    }
+  ],
+  "complete": false
+}
