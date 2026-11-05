@@ -119,7 +119,7 @@ chrome.identity のGoogleのアクセストークン
   → Cloud Run APIへ Authorization: Bearer ...
 ```
 
-Firebaseの公式資料では、SDK 10.8.0以降の `firebase/auth/web-extension` と `signInWithCredential` を使う方法が、Manifest V3（MV3）の拡張機能向けに案内されています。PopupやRedirectを使う方式は、裏で画面（offscreen document）を作る必要があるため使いません。現在の `build.mjs`（esbuildでIIFE形式に1つに束ねる設定）のままで動くはずですが、まだ実機では動かしていません。初日に「ログイン → ID tokenでAPIの認証 → service worker（拡張機能の裏で動くプログラム）の停止と再開 → 同じUIDで戻る」という一連の動きを小さく通して確かめます。
+Firebaseの公式資料では、SDK 10.8.0以降の `firebase/auth/web-extension` と `signInWithCredential` を使う方法が、Manifest V3（MV3）の拡張機能向けに案内されています。PopupやRedirectを使う方式は、裏で画面（offscreen document）を作る必要があるため使いません。現在の `build.mjs`（esbuildでIIFE形式に1つに束ねる設定）のまま、Soraのchromeで、Googleでのログイン → Firebaseへのログイン → service worker（拡張機能の裏で動くプログラム）の停止と再開 → 同じUIDで戻る、を確かめました（2026-11-06、[記録](records/2026-11-06-auth-probe.md)）。ID tokenでCloud RunのAPIを認証するところは、APIができてから確かめます。
 
 初回のGoogleアカウントとの連携は、利用者が拡張機能の設定画面で説明を読んでからボタンを押して行います。裏の自動処理では `interactive: false` にし、認可が必要なときは処理を保留して、勝手に認証画面を開かないようにします。また、学生のWeb画面と拡張機能は、同じFirebaseのプロジェクト・同じGoogleアカウントでログインし、同じUIDになることを確かめます。Firebaseのログイン状態とGoogleカレンダーの接続状態は、画面上で別々に表示します。
 
@@ -307,7 +307,7 @@ orangeはインフラ（ログイン、Cloud Run、Firestoreと規則、デプ�
 
 現時点でまだ実機や環境で確かめていない点は次の4つです。
 
-- `firebase/auth/web-extension` を、esbuildのIIFEに束ねたMV3のservice workerで動かすこと（公式の資料上は動く構成であり、初日に確かめます）。
+- ID tokenでCloud RunのAPIを認証すること（APIができてから）。MV3のservice workerでのFirebaseへのログインと、`calendar.app.created` での専用カレンダーへの予定の作成は、2026-11-06に実物で確かめた（[記録](records/2026-11-06-auth-probe.md)）。
 - Cloud Buildのbuildpacksでのビルド。
 - 同じCoursePowerの別の大学で、設定だけで動くこと。
 - Google側のGeminiのデータの保持の条件。
