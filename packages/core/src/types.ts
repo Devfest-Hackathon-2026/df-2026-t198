@@ -2,7 +2,7 @@
 export type IsoDateTime = string;
 /** Calendar date in YYYY-MM-DD form. */
 export type IsoDate = string;
-export type LmsSystem = 'ynu-lms' | 'panda';
+export type LmsSystem = 'ynu-lms' | 'panda' | 'demo-lms';
 export type Submission = 'submitted' | 'not-submitted' | 'unknown';
 export type FailureKind = 'not-logged-in' | 'http' | 'parse';
 
@@ -19,14 +19,19 @@ export interface Course {
   slots: CourseSlot[];
 }
 
+export type Deadline = { dueText: string; timeZone: string } & (
+  | { kind: 'datetime'; dueAt: IsoDateTime }
+  | { kind: 'date'; date: IsoDate }
+  | { kind: 'none' | 'unreadable' }
+);
+
 export interface Assignment {
   sourceId: string;
   courseId: string;
   title: string;
   /** Session parameters must be removed before leaving the extension. */
   url: string;
-  dueAt: IsoDateTime | null;
-  dueText: string;
+  deadline: Deadline;
   submission: Submission;
   submittedAt?: IsoDateTime;
 }
@@ -40,10 +45,14 @@ export interface FetchFailure {
 }
 
 export interface Observation {
+  schemaVersion: 1;
+  observationId: string;
   system: LmsSystem;
+  definitionId: string;
+  definitionVersion: number;
   fetchedAt: IsoDateTime;
-  /** Only courses whose assignment list was fetched completely. */
-  courses: Course[];
+  catalogCourses: Course[];
+  courseResults: { courseId: string; listComplete: boolean; seenSourceIds: string[] }[];
   assignments: Assignment[];
   failures: FetchFailure[];
 }
@@ -53,34 +62,49 @@ export interface AssignmentKey {
   sourceId: string;
 }
 
-export interface HistorySource {
-  at: IsoDateTime;
-  observation: Pick<Observation, 'system' | 'fetchedAt'>;
+export interface AssignmentChange {
+  changeId: string;
+  assignmentKey: AssignmentKey;
+  kind: 'new' | 'title-changed' | 'deadline-changed' | 'submitted' |
+    'cancellation-candidate' | 'cancelled' | 'restored';
+  before: string | Deadline | null;
+  after: string | Deadline | null;
+  observationId: string;
+  recordedAt: IsoDateTime;
 }
-
-export type AssignmentHistory = HistorySource & (
-  | { kind: 'new' | 'cancellation-candidate' | 'cancelled' | 'submitted' }
-  | { kind: 'deadline-changed'; before: IsoDateTime | null; after: IsoDateTime | null }
-  | { kind: 'title-changed'; before: string; after: string }
-);
 
 export interface LedgerAssignment {
   key: AssignmentKey;
   latest: Assignment;
   officialDeadline: {
-    dueAt: IsoDateTime | null;
-    dueText: string;
+    deadline: Deadline;
     url: string;
     fetchedAt: IsoDateTime;
-  };
+    observationId: string;
+  } | null;
   preparationStartsAt: IsoDateTime | null;
-  state: 'not-submitted' | 'submitted' | 'cancellation-candidate' | 'cancelled';
-  history: AssignmentHistory[];
+  submission: Submission;
+  submittedAt: IsoDateTime | null;
+  presenceState: 'active' | 'cancellation-candidate' | 'cancelled';
+  consecutiveMissingCount: number;
+  lastSeenObservationId: string;
+  lastSeenAt: IsoDateTime;
   reviewReasons: {
     kind: 'unreadable-deadline' | 'conflicting-deadline';
     detail: string;
   }[];
-  calendarEventIds: { deadline: string | null; preparation: string | null };
+}
+
+export interface ObservationResult {
+  status: 'applied';
+  changed: boolean;
+  changeCount: number;
+}
+
+/** Issue #16 deliberately stores neither the payload nor a payload hash. */
+export interface ObservationReceipt {
+  observationId: string;
+  result: ObservationResult;
 }
 
 /** Only a preparation slot agreed during a session is stored. */
@@ -98,4 +122,6 @@ export interface FetchState {
   lastSucceededAt: IsoDateTime | null;
   lastAttemptedAt: IsoDateTime | null;
   lastFailureKind: FailureKind | null;
+  lastResult: 'success' | 'partial' | 'failed';
+  lastAppliedObservationId: string;
 }
