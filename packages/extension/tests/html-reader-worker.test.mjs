@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
 import { createContext, runInContext } from 'node:vm';
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath, URL } from 'node:url';
 import { expect, it } from 'vitest';
 import { loadSamples } from '../../../scripts/coursepower-samples.mjs';
@@ -18,5 +19,16 @@ it('bundles and reads the same samples without browser DOM, Node globals, or cod
     const input = JSON.stringify([definition, sample.html, sample.context]);
     const actual = runInContext(`JSON.stringify(Reader.readPage(...${input}))`, worker, { timeout: 3000 });
     expect(JSON.parse(actual)).toStrictEqual(sample.expected);
+  }
+  const root = new URL('../../../lms-definitions/coursepower/samples/', import.meta.url);
+  for (const name of ['logged-out', 'session-expired']) {
+    const html = await readFile(new URL(`${name}.html`, root), 'utf8');
+    const expected = JSON.parse(await readFile(new URL(`${name}.expected.json`, root), 'utf8'));
+    const input = JSON.stringify([definition, html, { utcOffset: '+09:00' }]);
+    const actual = runInContext(`(() => {
+      try { return JSON.stringify(Reader.readPage(...${input})); }
+      catch (error) { return JSON.stringify({ error: error.message }); }
+    })()`, worker, { timeout: 3000 });
+    expect(JSON.parse(actual)).toStrictEqual(expected);
   }
 });

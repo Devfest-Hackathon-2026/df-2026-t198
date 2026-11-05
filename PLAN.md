@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 4/36（11%）、必須 4/31（12%）
+完成条件：全体 5/36（13%）、必須 5/31（16%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -36,7 +36,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C03 〈Sora〉 授業ごとの教材一覧（課題もここに並ぶ。全授業をまとめた課題の一覧はLMSに無い）と課題の詳細から、題名・締切・提出の状態を読み取る。確かめ方：見本で試験 → `packages/core/tests/html-reader.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`、M1 30/30（100%）。保存見本で確認
 - [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作
 - [ ] C05 〈Sora〉 裏で取れないときは、開いているページの側で取りに行く。確かめ方：裏の取得を止めた状態で操作
-- [ ] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験
+- [x] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験 → `packages/core/tests/login-state.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`（固定の失敗コード。ログイン前・認証エラーの保存見本で確認）
 - [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）
 
 ### 取得：PandA（Sakai）

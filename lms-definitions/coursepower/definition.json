@@ -1,11 +1,15 @@
 {
   "schemaVersion": 1,
   "definitionId": "coursepower",
-  "version": 1,
+  "version": 2,
   "readerVersion": 1,
   "pageChecks": {
-    "loggedIn": null,
-    "loggedOut": null,
+    "loggedIn": {
+      "selector": ".logoutButton, .weeklyCourseArea .courseCard, .kyozai_table .kyozaititleCell, #cs_centerinVox .cs_table3a"
+    },
+    "loggedOut": {
+      "selector": "#gakuninLoginForm button[name=\"loginButton\"], #addMess4Vox #addMess4 form[name=\"lginLgirActionForm\"] input[type=\"submit\"]"
+    },
     "home": {
       "present": [
         {
