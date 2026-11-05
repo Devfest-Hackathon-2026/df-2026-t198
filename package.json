@@ -14,7 +14,8 @@
     "emulators": "firebase emulators:start --project demo-kadai-hisho",
     "emulators:web": "firebase emulators:start --project demo-kadai-hisho --only auth,hosting",
     "progress": "node scripts/plan-progress.mjs",
-    "check:samples": "node scripts/check-samples.mjs"
+    "check:samples": "node scripts/check-samples.mjs",
+    "metrics:m1": "pnpm --filter @kadai-hisho/core build && node scripts/metrics-m1.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

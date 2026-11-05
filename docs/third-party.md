@@ -4,6 +4,7 @@
 
 | 名前・出典 | 用途 | ライセンス |
 |---|---|---|
+| [linkedom](https://github.com/WebReflection/linkedom) | 保存HTMLの解析。Nodeとservice workerで同じworker入口を使う（2026-11-06、導入物のLICENSEとpackage.jsonで確認） | ISC |
 | [TypeScript](https://github.com/microsoft/TypeScript) | strictの型検査、coreとserverのビルド | Apache-2.0 |
 | [ESLint](https://github.com/eslint/eslint) | コードの静的検査 | MIT |
 | [@eslint/js](https://github.com/eslint/eslint) | JavaScriptの推奨lint規則 | MIT |
