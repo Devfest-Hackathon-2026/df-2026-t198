@@ -13,7 +13,6 @@
 | [firebase-tools](https://github.com/firebase/firebase-tools) | Firebase Local Emulator Suiteの起動 | MIT |
 | [firebase](https://github.com/firebase/firebase-js-sdk) | 拡張機能のGoogle credentialによるログイン。`firebase/auth/web-extension` をIIFEに同梱。ルートの開発依存はFirestoreの規則の試験に使う（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
 | [@firebase/rules-unit-testing](https://github.com/firebase/firebase-js-sdk/tree/main/packages/rules-unit-testing) | 本人・支援担当・未ログインを模擬したFirestoreの規則の試験（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
-| [firebase-admin](https://github.com/firebase/firebase-admin-node) | サーバーでFirebase ID tokenを検証し、Firestoreへ台帳を原子的に保存（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
 | [esbuild](https://github.com/evanw/esbuild) | 拡張機能のservice worker・content script・設定画面のバンドル | MIT |
 | [React](https://github.com/facebook/react) | 学生と面談の画面のコンポーネント | MIT |
 | [react-dom](https://github.com/facebook/react) | ReactをブラウザのDOMへ描画 | MIT |
@@ -39,3 +38,7 @@ Firebase CLIの間接依存である [protobufjs](https://github.com/protobufjs/
 画面の色と書体の指定はrepo内の `design/prototypes/2026-11-05/merged.html` に合わせた。フォントファイルや外部画像は配布物に追加していない。
 
 CoursePower（富士通）の画面の構造を抽出・架空化した試験用HTMLを `lms-definitions/coursepower/samples/` に置く。
+
+## 画面の見た目の案（2026-11-06）
+
+`design/mocks/2026-11-06/` の画像8枚は [Nano Banana 2.1](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1)（Vertex AI）の生成物。利用条件は [Google Cloud のサービス規約](https://cloud.google.com/terms/service-terms)を参照。参照画像2枚はrepo内の架空の試作を撮影したもの。外部の写真・ロゴ・フォントファイルは追加していない。
