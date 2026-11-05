@@ -32,3 +32,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 *.log
+
+# 実際のLMSの画面を保存した見本（個人の情報を含むので commit しない）
+fixtures-local/
