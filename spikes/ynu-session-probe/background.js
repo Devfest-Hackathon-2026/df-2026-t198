@@ -53,7 +53,20 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "probe") probe("alarm");
 });
 
+const PAGE_OPEN_THROTTLE_MS = 10 * 60 * 1000;
+
+async function probeOnPageOpen() {
+  const { lastPageOpenProbeAt = 0 } = await chrome.storage.local.get("lastPageOpenProbeAt");
+  if (Date.now() - lastPageOpenProbeAt < PAGE_OPEN_THROTTLE_MS) return;
+  await chrome.storage.local.set({ lastPageOpenProbeAt: Date.now() });
+  await probe("lms-page-opened");
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.type === "lms-page-opened") {
+    probeOnPageOpen();
+    return false;
+  }
   if (message.type === "probe-now") {
     probe("manual").then(sendResponse);
     return true;

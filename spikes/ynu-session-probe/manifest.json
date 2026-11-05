@@ -2,9 +2,30 @@
   "manifest_version": 3,
   "name": "YNU LMS session probe (spike)",
   "version": "0.1.0",
-  "description": "YNU LMSのログインが、裏からの定期的な取得でどれくらい保たれるかを測る試作",
-  "permissions": ["alarms", "storage"],
-  "host_permissions": ["https://lms.ynu.ac.jp/*"],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup.html", "default_title": "YNU LMS session probe" }
+  "description": "YNU LMSを開いたときに、拡張機能から裏でログイン済みの取得ができるかを確かめる試作",
+  "permissions": [
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://lms.ynu.ac.jp/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "YNU LMS session probe"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://lms.ynu.ac.jp/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }
