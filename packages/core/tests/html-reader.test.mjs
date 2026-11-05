@@ -30,7 +30,7 @@ describe('definition validation and interpretation', () => {
     (d) => { d.transforms.submission['未提出'] = 'done'; },
     (d) => { d.transforms.weekdays['月曜日'] = 8; },
     (d) => { d.transforms.dateFormat = 'arbitrary'; },
-    (d) => { d.readerVersion = 2; },
+    (d) => { d.readerVersion = 0; },
     (d) => { d.pageChecks.home.present = []; },
     (d) => { d.materials.nextPage = 'https://example.test'; },
     (d) => { d.transforms.submission = JSON.parse('{"__proto__":"submitted"}'); },
