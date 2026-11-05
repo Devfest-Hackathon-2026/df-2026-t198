@@ -2,6 +2,7 @@ packages:
   - packages/*
 allowBuilds:
   '@firebase/util': false
+  '@google/genai': false
   esbuild: true
   protobufjs: true
   # Firebase Hosting's optional native regex engine; its JS fallback is sufficient here.
