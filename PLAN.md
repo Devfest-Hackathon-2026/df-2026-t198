@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 1/36（2%）、必須 1/31（3%）
+完成条件：全体 4/36（11%）、必須 4/31（12%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -32,12 +32,12 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 ### 取得：YNU（CoursePower）
 
 - [x] C01 〈Sora〉 拡張機能がLMSのページからSIDを受け取り、`chrome.storage.session` にだけ置く。→ PR #1、`packages/extension/tests/service-worker.test.ts`
-- [ ] C02 〈Sora〉 ホームの画面から、授業の一覧と曜日・時限を読み取る。確かめ方：保存したページの見本で試験
-- [ ] C03 〈Sora〉 授業ごとの教材一覧（課題もここに並ぶ。全授業をまとめた課題の一覧はLMSに無い）と課題の詳細から、題名・締切・提出の状態を読み取る。確かめ方：見本で試験
+- [x] C02 〈Sora〉 ホームの画面から、授業の一覧と曜日・時限を読み取る。確かめ方：保存したページの見本で試験 → ホームの見本の授業・曜日・時限が正解と一致（`packages/core/tests/html-reader.test.mjs`、service worker相当の試験 `packages/extension/tests/html-reader-worker.test.mjs`）
+- [x] C03 〈Sora〉 授業ごとの教材一覧（課題もここに並ぶ。全授業をまとめた課題の一覧はLMSに無い）と課題の詳細から、題名・締切・提出の状態を読み取る。確かめ方：見本で試験 → `packages/core/tests/html-reader.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`、M1 30/30（100%）。保存見本で確認
 - [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作
 - [ ] C05 〈Sora〉 裏で取れないときは、開いているページの側で取りに行く。確かめ方：裏の取得を止めた状態で操作
 - [ ] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験
-- [ ] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験
+- [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）
 
 ### 取得：PandA（Sakai）
 
@@ -98,7 +98,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 
 | ID | 指標 | 今の値 | 目標 | 測り方 |
 |---|---|---|---|---|
-| M1 | YNUの見本で、題名・締切・提出の状態を正しく読めた項目の割合 | 未測定 | 100% | 見本と手で作った正解を比べる試験 |
+| M1 | YNUの見本で、題名・締切・提出の状態を正しく読めた項目の割合 | 30/30（100%、`pnpm metrics:m1`、2026-11-06） | 100% | 見本と手で作った正解を比べる試験 |
 | M2 | PandAの見本で、同じく正しく読めた割合 | 未測定 | 100% | 同上（orange） |
 | M3 | お知らせから締切の変更を拾えた割合（再現率）と、拾ったうち正しかった割合（適合率） | 未測定 | 再現率90%以上、適合率95%以上 | 架空のお知らせ30件 |
 | M4 | LMSを開いた回数のうち、裏の取得が最後まで済んだ割合 | 未測定 | 95%以上 | 拡張機能が手元で数える（回数と成否だけ。SIDや課題の中身は残さない） |

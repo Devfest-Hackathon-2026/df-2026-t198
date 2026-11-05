@@ -17,3 +17,7 @@ export type {
   PreparationPlan,
   Submission,
 } from './types.js';
+export { READER_VERSION, validateDefinition } from './definition.js';
+export type { ReadingDefinition, ValueRule, Marker, PageCheck } from './definition.js';
+export { readPage, parseDeadline } from './html-reader.js';
+export type { PageReading, ReadCourse, ReadAssignment, ReadingContext } from './reading-types.js';

@@ -11,5 +11,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "linkedom": "^0.18.12"
   }
 }

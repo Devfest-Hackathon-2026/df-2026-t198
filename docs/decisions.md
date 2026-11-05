@@ -198,3 +198,21 @@ Discordから開発のエージェントを呼ぶ仕組み（Claude CodeのDisco
 - スクリプトに入れないもの：毎回のCloud Runへのデプロイ（CIから `gcloud run deploy --source`）、HostingとFirestoreの規則（`firebase.json`）。同じものを2つの道具で扱わないため。
 - 手作業が残るもの（OAuthの同意画面、OAuthクライアント、FirebaseをGoogle Cloudのプロジェクトに追加すること）は、手順として書く。
 - 経緯：orangeがTerraformを挙げ、Soraがgcloudではどうかと聞いた。Claudeが上の比べ方を出し、orangeが「そこまで大規模なことはしないので、Terraformはやらなくてよい」と判断した。
+
+## D18. HTMLの読み取りに使うもの（2026-11-06）
+
+- 決めた人：Codex。Soraがこの依頼で依存の追加を承認済み。
+- 選んだもの：`linkedom/worker`（ISC）。Node.jsの試験とservice worker向けのバンドルで同じ読み取りコードを使う。ブラウザのDOMやNode固有APIは読み取りコードから呼ばない。
+
+| 候補 | 判断 | 理由 |
+|---|---|---|
+| [linkedom](https://github.com/WebReflection/linkedom) | 採る | 公式にWeb・service worker向けの入口があり、CSSセレクタで入れ子の表や授業カードを読める。今回の4見本と、DOM・NodeのグローバルAPIがない隔離環境の試験に通った |
+| [htmlparser2](https://github.com/fb55/htmlparser2)＋[css-select](https://github.com/fb55/css-select) | 今回は採らない | HTML解析とセレクタ検索を組み合わせられる代案。今回はlinkedomで要件を満たせたので、木の探索を別のAPIで組み立て直す理由がない |
+| [cheerio](https://cheerio.js.org/docs/intro/) | 今回は採らない | jQuery風の探索APIを使えるが、今回は既存のDOMに近いAPIで足りる。worker向け入口のあるlinkedomを優先した。サイズの優劣は測っていない |
+| [offscreen documentのDOMParser](https://developer.chrome.com/docs/extensions/reference/api/offscreen) | 採らない | 裏画面の作成とメッセージ通信が必要になり、Node.jsの試験と同じ実行経路にならない |
+
+定義は [definition.json](../lms-definitions/coursepower/definition.json)、書式の型と検査は [definition.ts](../packages/core/src/definition.ts)。基本、ページの確認、授業の一覧、教材の一覧、課題の詳細、値の変換を持つ。未知のキーは入れ子も含めて拒否する。変換は固定した4種類のパターン名、曜日・提出状態の対応表、1種類の日付書式に限る。正規表現やJavaScriptを自由に書く欄、HTTPメソッドやホストを指定する欄はない。大学のUTCオフセットは呼び出し側から渡す。
+
+今回は保存HTMLからの中間結果まで。観測の型は変えていない。リンクは見本で除去済みのため、リンク・次ページは`null`のみを受け付ける。ログインの印、空一覧の印、一覧の終わりの印も根拠がないため未設定。0行を成功にせず、取得完了も出力しない。これらの設定と実際の取得処理はC04以降で確かめる。「未評価」から提出済みへの変換は、見本READMEの採取記録に基づく対応であり、別のCoursePower環境での意味は未確認。
+
+M1は [見本README](../lms-definitions/coursepower/samples/README.md) の基準を使う。教材一覧9件と課題詳細1件の各3項目（題名・締切・提出状態）を比較する。締切は`dueText`と`dueAt`が両方一致したときだけ1項目の正解。重複する教材一覧は一度だけ数え、欠落を分母から除かない。一覧の公開期限は締切に置き換えず、正解どおり`null`として比較する。この割合は見本での一致率であり、実物での取得成功率ではない。全項目の比較は [html-reader.test.mjs](../packages/core/tests/html-reader.test.mjs)、worker向けバンドルの確認は [html-reader-worker.test.mjs](../packages/extension/tests/html-reader-worker.test.mjs)。お知らせ2見本はC02・C03の対象外で、今回の読み取りとM1には含めない。

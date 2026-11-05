@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "definitionId": "coursepower",
+  "version": 1,
+  "readerVersion": 1,
+  "pageChecks": {
+    "loggedIn": null,
+    "loggedOut": null,
+    "home": {
+      "present": [
+        {
+          "selector": ".weeklyCourseArea"
+        }
+      ],
+      "empty": null
+    },
+    "materials": {
+      "present": [
+        {
+          "selector": ".kyozai_table .kyozaititleCell"
+        }
+      ],
+      "empty": null
+    },
+    "assignmentDetail": {
+      "present": [
+        {
+          "selector": ".breadCrumb .current"
+        },
+        {
+          "selector": "#cs_centerinVox .cs_table3a"
+        }
+      ],
+      "empty": null
+    }
+  },
+  "courses": {
+    "rows": ".weeklyCourseArea .courseCard",
+    "courseId": {
+      "selector": ".courseCardName a",
+      "attribute": "onclick",
+      "pattern": "course-id"
+    },
+    "name": {
+      "selector": ".courseCardName"
+    },
+    "teacher": {
+      "selector": ".courseCardUser"
+    },
+    "day": {
+      "selector": ".cpLabel",
+      "ancestor": ".dayBox"
+    },
+    "period": {
+      "selector": ".courseCardInfo",
+      "pattern": "period"
+    },
+    "materialsLink": null
+  },
+  "materials": {
+    "rows": ".kyozai_table tr:has(> td.kyozaititleCell[id^=\"REP\"])",
+    "sourceId": {
+      "selector": "td.kyozaititleCell",
+      "attribute": "id",
+      "pattern": "report-id"
+    },
+    "title": {
+      "selector": "td.kyozaititleCell",
+      "pattern": "report-title"
+    },
+    "status": {
+      "selector": "td:nth-child(4) .materialLabe"
+    },
+    "availability": {
+      "selector": "td:nth-child(3)"
+    },
+    "detailLink": null,
+    "nextPage": null,
+    "listEnd": null
+  },
+  "assignmentDetail": {
+    "title": {
+      "selector": ".breadCrumb .current .textoverflow"
+    },
+    "due": {
+      "selector": ".cs_table3a tr:has(> th:contains(\"提出期間\")) td .red3"
+    },
+    "status": {
+      "selector": ".cs_table3a tr:has(> th:contains(\"状況\")) td .green1"
+    }
+  },
+  "transforms": {
+    "weekdays": {
+      "月曜日": 1,
+      "火曜日": 2,
+      "水曜日": 3,
+      "木曜日": 4,
+      "金曜日": 5,
+      "土曜日": 6,
+      "日曜日": 7,
+      "その他": null
+    },
+    "submission": {
+      "未評価": "submitted",
+      "未提出": "not-submitted"
+    },
+    "dateFormat": "yyyy/MM/dd (weekday) HH:mm まで"
+  }
+}
