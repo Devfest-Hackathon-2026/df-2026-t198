@@ -1,0 +1,9 @@
+{
+  "oauthClientId": "",
+  "firebase": {
+    "apiKey": "",
+    "authDomain": "",
+    "projectId": "",
+    "appId": ""
+  }
+}

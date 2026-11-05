@@ -1,0 +1,133 @@
+import { describe, expect, it, vi } from 'vitest';
+import { createProbe, type ProbeDependencies, type ProbeState } from '../src/auth-probe.js';
+
+const token = 'synthetic-secret-access-token';
+const uid = 'synthetic-uid-never-send-in-full';
+
+function fixture() {
+  let state: ProbeState | undefined;
+  const order: string[] = [];
+  const events = new Map<string, unknown>();
+  let calendarCount = 0;
+  const deps: ProbeDependencies = {
+    missing: [],
+    workerId: 'worker-one',
+    namespace: 'synthetic-project:synthetic-client',
+    auth: {
+      restore: vi.fn(async () => { order.push('restore'); return null; }),
+      getToken: vi.fn(async () => { order.push('token'); return token; }),
+      credential: vi.fn((idToken, accessToken) => {
+        expect(idToken).toBe(null);
+        expect(accessToken).toBe(token);
+        order.push('credential');
+        return { synthetic: true };
+      }),
+      signIn: vi.fn(async () => { order.push('signIn'); return uid; }),
+    },
+    read: vi.fn(async () => state && structuredClone(state)),
+    write: vi.fn(async (value) => { state = structuredClone(value); }),
+    newEventId: () => '0123456789abcdef0123456789abcdef',
+    now: () => new Date('2026-11-06T00:00:00Z'),
+    request: vi.fn(async (path, accessToken, body) => {
+      expect(accessToken).toBe(token);
+      if (path === '/calendars') {
+        order.push('calendar');
+        // The creation intent and the event ID must survive an interrupted worker.
+        expect(state?.calendar.status).toBe('creating');
+        expect(state?.event.id).toMatch(/^[a-v0-9]{5,1024}$/);
+        calendarCount++;
+        return { status: 200, data: { id: 'synthetic-calendar' } };
+      }
+      order.push(body ? 'insert' : 'lookup');
+      if (!body) return { status: 200, data: events.values().next().value };
+      const event = body as { id: string };
+      if (events.has(event.id)) return { status: 409 };
+      events.set(event.id, body);
+      return { status: 200, data: body };
+    }),
+  };
+  return { deps, order, events, calendarCount: () => calendarCount, state: () => state };
+}
+
+describe('auth and Calendar probe contract', () => {
+  it('signs in before creating, persists the ID first, and confirms a duplicate on the second click', async () => {
+    const f = fixture();
+    const first = await createProbe(f.deps).run();
+    expect(f.order).toEqual(['restore', 'token', 'credential', 'signIn', 'calendar', 'insert']);
+    expect(first.steps.map((step) => step.status)).toEqual(['ok', 'ok', 'ok', 'ok', 'ok']);
+    expect(first.uidPrefix).toBe(uid.slice(0, 8));
+    expect(first.eventId).toBe(f.state()?.event.id);
+    const second = await createProbe({ ...f.deps, workerId: 'worker-two' }).run();
+    expect(second.steps.at(-1)).toMatchObject({ status: 'ok', code: 'already-exists' });
+    expect(f.events.size).toBe(1);
+    expect(f.calendarCount()).toBe(1);
+    expect(f.order.slice(-2)).toEqual(['insert', 'lookup']);
+    expect(JSON.stringify([first, second])).not.toContain(token);
+    expect(JSON.stringify([first, second])).not.toContain(uid);
+    expect(JSON.stringify(f.state())).not.toContain(token);
+  });
+
+  it('checks the restored full UID without another OAuth request or Calendar write', async () => {
+    const f = fixture();
+    await createProbe(f.deps).run();
+    f.deps.auth.restore = vi.fn(async () => uid);
+    const restored = await createProbe({ ...f.deps, workerId: 'worker-two' }).status();
+    expect(restored).toMatchObject({ uidPrefix: uid.slice(0, 8), sameUid: true, workerChanged: true });
+    expect(f.deps.auth.getToken).toHaveBeenCalledTimes(1);
+    expect(f.events.size).toBe(1);
+  });
+
+  it('reports every missing setting without starting authentication', async () => {
+    const f = fixture();
+    const result = await createProbe({ ...f.deps, missing: ['oauthClientId', 'firebase.apiKey'] }).run();
+    expect(result.steps[0]).toMatchObject({ status: 'error', code: 'missing-config' });
+    expect(result.steps[0]?.message).toContain('oauthClientId');
+    expect(result.steps[0]?.message).toContain('firebase.apiKey');
+    expect(f.order).toEqual([]);
+  });
+
+  it.each(['getToken', 'credential', 'signIn'] as const)('sanitizes %s errors and stops before Calendar', async (method) => {
+    const f = fixture();
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const info = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.mocked(f.deps.auth[method]).mockImplementation(() => { throw new Error(token); });
+    const result = await createProbe(f.deps).run();
+    expect(result.steps.at(-1)?.status).toBe('error');
+    expect(JSON.stringify(result)).not.toContain(token);
+    expect(f.deps.request).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+    expect(info).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it('does not create another calendar after an ambiguous network failure', async () => {
+    const f = fixture();
+    vi.mocked(f.deps.request).mockRejectedValueOnce(new Error(token));
+    const first = await createProbe(f.deps).run();
+    const second = await createProbe(f.deps).run();
+    expect(first.steps.at(-1)?.status).toBe('error');
+    expect(second.steps.at(-1)?.code).toBe('calendar-recovery-required');
+    expect(f.deps.request).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify([first, second])).not.toContain(token);
+  });
+
+  it('does not accept a 409 without a matching live event', async () => {
+    const f = fixture();
+    await createProbe(f.deps).run();
+    vi.mocked(f.deps.request).mockImplementation(async (_path, _token, body) => (
+      body ? { status: 409 } : { status: 200, data: { id: f.state()?.event.id, summary: 'different' } }
+    ));
+    const result = await createProbe(f.deps).run();
+    expect(result.steps.at(-1)).toMatchObject({ status: 'error', code: 'event-mismatch' });
+  });
+
+  it('keeps Calendar state separate when the Google account changes', async () => {
+    const f = fixture();
+    await createProbe(f.deps).run();
+    f.deps.auth.signIn = vi.fn(async () => 'other-synthetic-uid');
+    await createProbe(f.deps).run();
+    expect(f.calendarCount()).toBe(2);
+  });
+});

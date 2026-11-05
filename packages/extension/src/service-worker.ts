@@ -1,6 +1,9 @@
 import { isSessionFound, sessionFromUrl } from './session.js';
+import { handleAuthProbeMessage } from './auth-probe-worker.js';
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
+  const handled = handleAuthProbeMessage(message, sender, respond);
+  if (handled !== undefined) return handled;
   if (!isSessionFound(message)
     || sender.id !== chrome.runtime.id
     || sender.frameId !== 0
