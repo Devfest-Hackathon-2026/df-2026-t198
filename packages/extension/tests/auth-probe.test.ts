@@ -50,6 +50,44 @@ function fixture() {
 }
 
 describe('auth and Calendar probe contract', () => {
+  it('accepts second-precision API timestamps for a previously saved fractional timestamp', async () => {
+    const f = fixture();
+    f.deps.now = () => new Date('2026-11-06T00:00:00.537Z');
+    await createProbe(f.deps).run();
+    const saved = f.state()!;
+    // A previous build may already have persisted milliseconds before creating the event.
+    saved.event.start = '2026-11-07T00:00:00.537Z';
+    saved.event.end = '2026-11-07T00:05:00.537Z';
+    const event = f.events.get(saved.event.id) as Record<string, unknown>;
+    f.events.set(saved.event.id, {
+      ...event,
+      start: { dateTime: '2026-11-07T09:00:00+09:00' },
+      end: { dateTime: '2026-11-07T09:05:00+09:00' },
+    });
+    const result = await createProbe(f.deps).run();
+    expect(result.steps.at(-1)).toMatchObject({ status: 'ok', code: 'already-exists' });
+    expect(f.events.size).toBe(1);
+    expect(f.calendarCount()).toBe(1);
+  });
+
+  it('persists new event times at second precision', async () => {
+    const f = fixture();
+    f.deps.now = () => new Date('2026-11-06T00:00:00.537Z');
+    await createProbe(f.deps).run();
+    expect(f.state()?.event.start).toBe('2026-11-07T00:00:00.000Z');
+    expect(f.state()?.event.end).toBe('2026-11-07T00:05:00.000Z');
+  });
+
+  it('treats a one-minute change to the saved event as a mismatch (deadlines move by minutes)', async () => {
+    const f = fixture();
+    await createProbe(f.deps).run();
+    const saved = f.state()!;
+    const event = f.events.get(saved.event.id) as Record<string, unknown>;
+    f.events.set(saved.event.id, { ...event, start: { dateTime: '2026-11-07T00:01:00Z' } });
+    const result = await createProbe(f.deps).run();
+    expect(result.steps.at(-1)).toMatchObject({ status: 'error', code: 'event-mismatch' });
+  });
+
   it('signs in before creating, persists the ID first, and confirms a duplicate on the second click', async () => {
     const f = fixture();
     const first = await createProbe(f.deps).run();
