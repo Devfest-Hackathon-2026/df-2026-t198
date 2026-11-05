@@ -25,6 +25,7 @@
 
 | 名前・出典 | 用途 | ライセンス |
 |---|---|---|
+| [gitleaks](https://github.com/gitleaks/gitleaks) | Git履歴の秘密検出。固定版・取得元・チェックサム検証は [.github/workflows/ci.yml](../.github/workflows/ci.yml)。公式Actionは使わず本体を実行（2026-11-06、v8.24.3の[LICENSE](https://github.com/gitleaks/gitleaks/blob/v8.24.3/LICENSE)を確認） | MIT |
 | [Node.js](https://github.com/nodejs/node) | 開発とサーバー実行。HTTPサーバーは標準の `node:http` | MIT（同梱部分の告知はNodeのLICENSEを参照） |
 | [pnpm](https://github.com/pnpm/pnpm) | workspaceの依存管理とコマンド実行 | MIT |
 | [actions/checkout](https://github.com/actions/checkout) | CIでソースを取得 | MIT |
