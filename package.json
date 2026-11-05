@@ -6,8 +6,9 @@
   "engines": { "node": "26.x", "pnpm": "11.x" },
   "scripts": {
     "typecheck": "pnpm -r typecheck",
-    "lint": "eslint eslint.config.js scripts/agent-merge*.mjs scripts/notify-decisions.test.mjs && pnpm -r lint",
-    "test": "pnpm test:agent-merge && pnpm test:notify-decisions && pnpm -r test",
+    "lint": "eslint eslint.config.js scripts/agent-merge*.mjs scripts/notify-decisions.test.mjs scripts/firestore-rules.test.mjs && pnpm -r lint",
+    "test": "pnpm test:agent-merge && pnpm test:notify-decisions && pnpm test:firestore-rules && pnpm -r test",
+    "test:firestore-rules": "PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --only firestore --project demo-kadai-hisho-rules \"node --test scripts/firestore-rules.test.mjs\"",
     "test:agent-merge": "node --test scripts/agent-merge.test.mjs",
     "test:notify-decisions": "node --test scripts/notify-decisions.test.mjs",
     "agent-merge": "node scripts/agent-merge.mjs",
@@ -22,7 +23,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^6.0.0",
     "eslint": "^10.14.0",
+    "firebase": "^13.2.0",
     "firebase-tools": "^15.35.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",

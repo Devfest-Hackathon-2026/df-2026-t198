@@ -236,3 +236,11 @@ M1は [見本README](../lms-definitions/coursepower/samples/README.md) の基準
 - 秘密検出はMITのgitleaks本体を固定リリースから取得し、同じリリースのSHA-256一覧と照合してから実行する。organization向けライセンスが必要な公式Actionは使わない（[公式案内](https://github.com/gitleaks/gitleaks/tree/v8.24.3#github-action)）。通常のCIと別jobにし、履歴全体をredact付きで検査する。
 - 同時刻の修正要求は停止側に判定する。package.jsonは差分テキストでなく分岐点とheadの依存オブジェクトを比較し、表示順やscriptsの変更を人の合意が要る変更と誤認しない。取得や比較に失敗したら通さない。
 - gitleaksの除外設定は追加しない。誤検知を実際に確認した場合だけ、理由と狭い対象を `.gitleaks.toml` に書く。
+
+## D21. Firestoreの規則をエミュレーターで試す（2026-11-06）
+
+- 合意の記録：Issue #17でSoraが `firestore.rules`・`firebase.json`・このIssueの依存追加を承認した。設計案の1・2節の範囲を実装し、ほかの設計変更は含めない。
+- 決めた人：Codex。試験はFirebase公式の [`@firebase/rules-unit-testing`](https://firebase.google.com/docs/firestore/security/test-rules-emulator) と既存のFirebase CLIを使う。独自の規則評価や認証モックは作らず、実際のエミュレーターで読み書きする。ルートの開発依存に同ライブラリと、そのpeer依存の `firebase` を追加する。既存のNode標準テストランナーで足りるため、試験フレームワークは追加しない。
+- `pnpm test` に含め、`demo-kadai-hisho-rules` のFirestoreだけを起動して終了する。Javaは手元のHomebrew JDK 21と、[GitHubのUbuntuにある `JAVA_HOME_21_X64`](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#java) を使う。規則・ポートは既存の `firebase.json` を共用する。クラウドへのデプロイは含めない。
+- 共有を許可するのは `scopes` がリストで `all` を含み、`revokedAt` が明示的に `null` の許可文書だけ。欠けた項目や不正な型は許可と扱わない。`sessionContext/current` と `integrations/calendar` は設計の文書名に限定し、未知の文書や下位のコレクションは再帰で許可しない。
+- 境界の確認：学生ごとのデータをWeb SDKが読む際の認可と、直接書き込み禁止を試験する。Admin SDKでのAPI認可、招待の作成、画面から既取得情報を消す動作、実環境への反映は別の作業。この変更はトークンの扱い、外部入力の解析、暗号、課金APIを変更しないため、それらの検査は対象外。
