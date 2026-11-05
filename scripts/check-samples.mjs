@@ -31,11 +31,14 @@ const STRUCTURE = {
     'dayBox cpMargin', 'green1', 'hide', 'htmlwordbreak box01', 'iconText', 'jyugyeditCell',
     'jyugyeditCell checkStBoldJyugyoDy', 'jyugytitleCell', 'kyozaititleCell', 'materialLabe blueblock',
     'quantity', 'red3', 'sortlink', 'tableFixedSet', 'term', 'textoverflow', 'weeklyCourseArea cpMargin',
+    'cpPopupFooter', 'cs_top10',
   ]),
   id: new Set(['HTMLEditor_subject', 'allOpenTxt', 'cs_centerinVox', 'cs_rightTabinVox',
     'cs_rightVox', 'cs_rightinVox', 'list_table0', 'table0', 'title0',
     ...Array.from({ length: 9 }, (_, i) => `ryogyoCheck0_${i + 1}`),
-    'sortlink1', 'sortlink2', 'sortlink3', 'sortlink5', 'sortlink6']),
+    'sortlink1', 'sortlink2', 'sortlink3', 'sortlink5', 'sortlink6',
+    'gakuninLoginForm', 'addMess4Vox', 'addMess4']),
+  name: new Set(['loginButton', 'lginLgirActionForm']), type: new Set(['submit']),
   colspan: new Set(['3', '4', '5']), border: new Set(['0']),
   cellpadding: new Set(['0']), cellspacing: new Set(['0']),
   width: new Set(['10%', '12%', '15%', '16%', '20%', '29%', '30%', '35%']),
@@ -109,29 +112,39 @@ function textGrams(value) {
   // Dates and punctuation are checked as whole values and digit runs separately.
   return (value.match(/[\p{L}\p{M}]{4,}/gu) ?? []).flatMap(grams).filter((gram) => !uiGrams.has(gram));
 }
+function prominentWords(value) {
+  const japanese = (value.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー]{5,}/gu) ?? [])
+    .filter((word) => /[\p{Script=Han}\p{Script=Katakana}]/u.test(word));
+  return [...japanese, ...(value.match(/[a-zA-Z]{6,}/g) ?? [])].filter((word) => !ui.has(word));
+}
 async function privateTerms(directory) {
   const sources = (await files(directory)).filter((path) => /\.html?$/i.test(path));
   if (!sources.length || !await exists(join(directory, 'denylist.local.txt'))) throw new Error('incomplete-local-input');
   const forbidden = new Set();
   const attributes = new Set();
   const textValues = new Set();
+  const prominent = new Set();
   for (const path of sources) {
     const html = await readFile(path, 'utf8');
     for (const { value, attribute } of parts(html)) {
       const token = normalize(value);
       if (!token || structural(attribute, token) || ui.has(token)) continue;
+      for (const word of prominentWords(token)) prominent.add(word);
       if (attribute) attributes.add(token);
       else {
         if (Array.from(token).length >= 4) textValues.add(token);
         for (const gram of textGrams(token)) forbidden.add(gram);
       }
     }
-    for (const digits of decode(html).match(/\d{4,}/g) ?? []) for (const gram of grams(digits)) forbidden.add(gram);
+    for (const digits of decode(html).match(/\d{4,}/g) ?? []) for (const gram of grams(digits)) {
+      forbidden.add(gram);
+      prominent.add(gram);
+    }
   }
   const deny = (await readFile(join(directory, 'denylist.local.txt'), 'utf8')).split(/\r?\n/)
     .map(normalize).filter((line) => line && !line.startsWith('#'));
   if (!deny.length) throw new Error('empty-denylist');
-  return { forbidden, attributes, textValues, deny };
+  return { forbidden, attributes, textValues, prominent, deny };
 }
 
 const JSON_METADATA = new Set(['home', 'materials', 'assignment-detail', 'notice-list', 'notice-detail',
@@ -176,12 +189,16 @@ async function check(root) {
   for (const path of paths) {
     const content = await readFile(path, 'utf8');
     const compact = compactWithOffsets(content);
+    const markdown = /\.md$/i.test(path);
+    const words = new Set(markdown ? prominentWords(normalize(content)) : []);
+    const proseTerms = markdown ? [...terms?.prominent ?? []]
+      .filter((term) => !/^[a-zA-Z]+$/.test(term) || words.has(term)) : [];
     for (const pattern of genericPatterns) {
       for (const match of compact.text.matchAll(new RegExp(pattern.source, `${pattern.flags}g`))) {
         add(path, content, compact.offsets[match.index]);
       }
     }
-    for (const term of terms?.deny ?? []) {
+    for (const term of [...terms?.deny ?? [], ...proseTerms]) {
       const needle = term.replace(/\s+/gu, '');
       let index = compact.text.indexOf(needle);
       while (index !== -1) {
@@ -192,7 +209,7 @@ async function check(root) {
     if (/\.html$/i.test(path)) {
       for (const match of content.matchAll(/<!--|<(?:script|style|link|iframe|object|embed)\b|\s(?:src|srcset|action|style)\s*=/gi)) add(path, content, match.index);
     }
-    if (!terms) continue;
+    if (!terms || markdown) continue;
     const chunks = /\.html$/i.test(path) ? parts(content) : /\.json$/i.test(path) ? jsonChunks(content) : content.split('\n').map((value, i, lines) => ({ value, index: lines.slice(0, i).join('\n').length + (i ? 1 : 0), attribute: null }));
     for (const { value, index, attribute } of chunks) {
       const token = normalize(value);
@@ -226,6 +243,30 @@ async function selfTest() {
       const result = await run(`<p>\n${marker}\n</p>`);
       assert.ok(result.findings.length > 0);
       assert.deepEqual(result.findings, ['lms-definitions/coursepower/samples/synthetic.html:2']);
+    }
+    // Synthetic material only: prose has a different lexical threshold from data.
+    await writeFile(join(local, 'prose.html'), '<p>なかった</p><p>画面から</p><p>ひらがなだけ</p><p>合成専用秘密</p><p>カタカナヒミツ</p><p>ABCDEF</p><p>ABCDE</p>');
+    const documentation = join(sample, 'README.md');
+    const runDocumentation = async (value) => {
+      await writeFile(target, '<p>架空のみ</p>');
+      await writeFile(documentation, value);
+      return check(root);
+    };
+    assert.equal((await runDocumentation('なかった。画面から読む。ひらがなだけ。合成専用。ABCDE。ABCDEFG。')).findings.length, 0);
+    for (const marker of ['合成専用秘密', 'カタカナヒミツ', 'an ABCDEF word', '8765', '禁止試験語',
+      '&#x5408;成専用秘密', '禁止\n試験語']) {
+      const result = await runDocumentation(marker);
+      assert.deepEqual(result.findings, ['lms-definitions/coursepower/samples/README.md:1']);
+      assert.ok(!result.findings.join('\n').includes(marker));
+    }
+    await writeFile(documentation, '架空のみ');
+    for (const marker of ['なかった', '画面から', '合成専用']) {
+      assert.ok((await run(`<p>${marker}</p>`)).findings.length > 0);
+      await writeFile(target, '<p>架空のみ</p>');
+      const json = join(sample, 'synthetic.expected.json');
+      await writeFile(json, JSON.stringify({ value: marker }));
+      assert.deepEqual((await check(root)).findings, ['lms-definitions/coursepower/samples/synthetic.expected.json:1']);
+      await rm(json);
     }
     await writeFile(join(local, 'denylist.local.txt'), '');
     await assert.rejects(() => check(root));
