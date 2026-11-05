@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>課題の秘書 画面の試作（カレンダー比較）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6f5f0; --white:#fffefa;
+  --ink:#273e37; --body:#3e5149; --muted:#6c766d; --line:#dddeda; --line-soft:#e8e9e2;
+  --green:#345d4c; --soft:#e8eee6; --side:#eff1ea;
+  --gold:#8a601f; --gold-bg:#f9f0dc; --gold-line:#e7d7b5; --gold-ink:#694f2b;
+  --blue:#4e667d; --blue-bg:#eaf0f4;
+  --today:#a63d2f; --today-bg:#f8e7e2; /* 赤。今日やらないと間に合わないものだけ。今回のデータでは使わない */
+  --serif:"Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif;
+  --sans:"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:14px/1.7 var(--sans);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+a{color:var(--green)}
+button:focus-visible,a:focus-visible{outline:3px solid #789e8a;outline-offset:4px;border-radius:4px}
+h1,h2,h3,p,ul{margin:0}
+ul{padding:0;list-style:none}
+[hidden]{display:none!important}
+svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+h1{font-family:var(--serif);font-weight:600;font-size:32px;letter-spacing:.035em;line-height:1.45}
+h2{font-size:17px;font-weight:700;letter-spacing:.04em}
+h3{font-size:15px;font-weight:700}
+.muted{color:var(--muted)}
+.tiny{font-size:12px}
+.serif{font-family:var(--serif)}
+q{quotes:"「" "」"}
+
+/* ---------- 切り替え ---------- */
+.preview-bar{min-height:69px;background:var(--white);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:12px 36px;position:sticky;top:0;z-index:40}
+.preview-label{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--muted);margin-right:auto}
+.preview-label span:first-child{border:1px solid var(--line);border-radius:5px;padding:1px 7px;letter-spacing:.08em}
+.tabs{display:flex;gap:5px;background:#eeefe9;padding:4px;border-radius:9px}
+.tab{padding:8px 21px;border-radius:6px;white-space:nowrap;font-size:13px;color:var(--muted);line-height:1.5}
+.tab[aria-selected=true]{background:var(--white);color:var(--green);box-shadow:0 1px 4px #253c2e16;font-weight:700}
+.width-toggle{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--muted)}
+.width-toggle span{margin-right:4px}
+.width-toggle button{padding:5px 11px;border-radius:6px;border:1px solid var(--line);font-size:12px;color:var(--muted)}
+.width-toggle button[aria-pressed=true]{background:var(--green);border-color:var(--green);color:var(--white)}
+.view[hidden]{display:none}
+
+/* ---------- 共通 ---------- */
+.brand{display:flex;align-items:center;gap:10px;letter-spacing:.08em;font-weight:700;font-size:15px}
+.brand-mark{display:flex;align-items:center;justify-content:center;background:var(--green);color:var(--white);width:31px;height:34px;border-radius:8px 8px 8px 2px}
+.brand-mark svg{width:21px;height:21px}
+.eyebrow{font-size:12px;letter-spacing:.06em;color:var(--muted);margin-bottom:10px}
+.course{font-size:12px;color:var(--muted);margin-bottom:4px}
+.section-heading{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.section-heading .range{font-size:12px;color:var(--muted);margin-left:auto}
+.subline{font-size:12px;color:var(--muted);margin-top:-8px;margin-bottom:13px}
+.panel{background:var(--white);border:1px solid var(--line);border-radius:9px;padding:20px}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;color:var(--green);background:var(--soft);white-space:nowrap}
+.badge.new{background:var(--blue-bg);color:var(--blue)}
+.badge.gold{color:var(--gold);background:var(--gold-bg)}
+.badge.done svg{width:12px;height:12px}
+.prep{font-size:12px;color:var(--muted);margin-top:5px}
+.changed-date{font-size:12px;color:var(--muted);text-decoration:line-through;margin-right:6px}
+
+/* 押したときだけ見せる部分 */
+.detail-link{color:var(--muted);padding:6px 0;font-size:12px;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#b7c1b4;display:inline-flex;align-items:center;gap:7px}
+.detail-link:hover{color:var(--green)}
+.detail-link::after{content:"＋";font-size:13px;text-decoration:none;display:inline-block}
+.detail-link[aria-expanded=true]::after{content:"−"}
+.fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .18s ease}
+.fold>div{overflow:hidden}
+.fold.open{grid-template-rows:1fr}
+.source-block{border:1px solid var(--line);border-radius:7px;padding:14px 16px;margin-top:10px;background:var(--white)}
+.source-label{font-size:11px;color:var(--muted);margin-bottom:6px}
+.source-block p{font-size:13px;line-height:1.9}
+.source-block.warning{background:var(--gold-bg);border-color:var(--gold-line)}
+.lms-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--green);margin-top:8px;text-decoration:none}
+.lms-link svg{width:13px;height:13px}
+.lms-link:hover{text-decoration:underline;text-underline-offset:4px}
+.history-heading{font-size:12px;color:var(--muted);margin-top:16px;margin-bottom:8px}
+.history-entry{display:flex;gap:16px;font-size:12px;border-left:2px solid #d9e1d4;padding:4px 0 9px 13px;margin-left:2px}
+.history-entry time{color:var(--muted);flex-shrink:0;width:4.5em}
+.fold-pad{padding-top:6px;padding-bottom:6px}
+
+/* ---------- 1. 学生 ---------- */
+#student{padding-bottom:40px}
+.student-frame{margin:auto;transition:none}
+.student-frame.narrow{max-width:390px;margin:28px auto;background:var(--paper);border:1px solid var(--line);border-radius:28px;overflow:hidden;box-shadow:0 10px 40px #2c40300f}
+.app-header{max-width:1080px;margin:auto;padding:28px 36px;display:flex;align-items:center;justify-content:space-between}
+.identity{color:var(--muted);font-size:12px}
+.identity strong{color:var(--body);font-weight:500;margin-right:5px}
+.student-main{max-width:960px;padding:30px 36px 0;margin:auto}
+.student-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:34px}
+.date-note{font-size:13px;color:var(--body);padding-bottom:6px;white-space:nowrap}
+.date-note strong{font-weight:700;color:var(--green)}
+.student-columns{display:grid;grid-template-columns:1.08fr 1fr;gap:30px;align-items:start}
+.student-columns>div>section+section,.student-columns>div>section+aside,.student-columns>div>aside+section{margin-top:30px}
+
+.due-card{background:var(--white);border:1px solid var(--line);border-top:3px solid var(--green);border-radius:4px 4px 12px 12px;padding:24px}
+.due-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.due-day{color:var(--green);font-size:13px;font-weight:700;display:flex;gap:7px;align-items:center}
+.due-day svg{width:16px;height:16px}
+.due-date{font-size:30px;font-family:var(--serif);line-height:1.25;font-weight:600;letter-spacing:.02em;margin-bottom:18px}
+.due-date span{font:13px var(--sans);margin-left:7px;letter-spacing:0;color:var(--body)}
+.assignment-name{font-size:17px;line-height:1.65;letter-spacing:.01em;font-weight:700}
+.due-card .assignment-name{margin-bottom:18px}
+.due-foot{border-top:1px solid var(--line-soft);padding-top:12px}
+
+.prep-list{margin-top:18px;border-top:1px solid var(--line)}
+.prep-row{display:flex;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.mini-date{border-right:1px solid var(--line);padding-right:15px;text-align:center;flex-shrink:0;min-width:64px}
+.mini-date strong{font:600 22px/1.3 var(--serif);display:block;letter-spacing:.02em}
+.mini-date span{font-size:11px;color:var(--muted);display:block}
+.prep-row h3{font-size:14px;font-weight:500}
+.prep-row .course{margin-bottom:2px}
+.prep-row .badge{margin-left:8px;vertical-align:middle}
+
+.later{margin-top:14px}
+.later>.detail-link{font-size:13px}
+.work-row{display:flex;gap:16px;align-items:flex-start;padding:15px 0;border-bottom:1px solid var(--line)}
+.work-row:last-child{border-bottom:0}
+.work-row h3{font-size:14px;font-weight:500}
+.work-row .mini-date{padding-top:2px}
+.work-row .body{min-width:0;flex:1}
+
+.notice{border:1px solid var(--gold-line);background:var(--gold-bg);border-radius:10px;padding:19px 20px;color:var(--gold-ink)}
+.notice-heading{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;margin-bottom:10px}
+.notice-heading svg{width:17px;height:17px}
+.notice .course{color:#786647}
+.notice h3{font-size:14px;margin-bottom:8px}
+.notice p{font-size:13px;line-height:1.85}
+.notice .detail-link{color:#785a2b;margin-top:7px;text-decoration-color:#d2bd8f}
+.notice .source-block{background:#fffdf7}
+
+.changes{border-top:1px solid var(--line)}
+.change{padding:20px 0;border-bottom:1px solid var(--line)}
+.change-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.change-date{font-size:11px;color:var(--muted)}
+.change h3{font-size:14px;line-height:1.7;font-weight:700}
+.change .course{font-size:11px}
+.change-bottom{margin-top:8px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.deadline{font-size:13px;font-weight:500}
+.change .detail-link{font-size:11px;flex-shrink:0}
+
+.student-footer{display:flex;justify-content:space-between;align-items:flex-start;border-top:1px solid var(--line);margin-top:38px;padding:20px 0 40px;color:var(--muted);font-size:11px;gap:16px}
+.student-footer>p{display:flex;align-items:center;gap:6px}
+.student-footer svg{width:14px;height:14px}
+.student-footer .detail-link{font-size:11px;padding:0}
+.student-footer .fold p{padding-top:8px;text-align:right}
+
+/* 390px（枠の中）と狭い画面 */
+.student-frame.narrow .app-header{padding:23px 22px 20px}
+.student-frame.narrow .brand{font-size:14px;gap:8px}
+.student-frame.narrow .brand-mark{width:27px;height:30px}
+.student-frame.narrow .identity{font-size:11px}
+.student-frame.narrow .student-main{padding:22px 22px 0}
+.student-frame.narrow .student-heading{display:block;margin-bottom:26px}
+.student-frame.narrow .student-heading h1{font-size:28px}
+.student-frame.narrow .eyebrow{font-size:11px;margin-bottom:7px}
+.student-frame.narrow .date-note{margin-top:8px;white-space:normal}
+.student-frame.narrow .student-columns{grid-template-columns:1fr;gap:28px}
+.student-frame.narrow .due-card{padding:20px}
+.student-frame.narrow .due-date{font-size:28px}
+.student-frame.narrow .notice{padding:18px}
+.student-frame.narrow .change{padding:18px 0}
+.student-frame.narrow .student-footer{display:block;margin-top:28px;padding-bottom:28px}
+.student-frame.narrow .student-footer .fold p{text-align:left}
+.student-frame.narrow .mini-date{min-width:58px;padding-right:12px}
+@media (max-width:720px){
+  .app-header{padding:23px 22px 20px}
+  .student-main{padding:22px 22px 0}
+  .student-heading{display:block;margin-bottom:26px}
+  .student-heading h1{font-size:28px}
+  .date-note{margin-top:8px;white-space:normal}
+  .student-columns{grid-template-columns:1fr;gap:28px}
+  .student-footer{display:block;margin-top:28px;padding-bottom:28px}
+  .student-footer .fold p{text-align:left}
+  .student-frame.narrow{margin:0 auto;border:0;border-radius:0;box-shadow:none;max-width:none}
+}
+
+/* ---------- 2. 支援担当 ---------- */
+.support-shell{max-width:1340px;min-height:calc(100vh - 69px);margin:auto;display:grid;grid-template-columns:240px minmax(0,1fr)}
+.sidebar{border-right:1px solid var(--line);background:var(--side);padding:30px 22px}
+.sidebar .brand{font-size:14px;margin-bottom:46px}
+.sidebar-caption{font-size:11px;color:var(--muted);letter-spacing:.09em;margin:0 10px 14px}
+.student-select{display:block;width:100%;padding:16px 13px;border:1px solid transparent;border-radius:9px;margin:5px 0}
+.student-select[aria-pressed=true]{background:var(--white);border-color:var(--line);box-shadow:0 3px 8px #293b2a0a}
+.student-select .student-name{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:700}
+.student-select svg{width:15px;height:15px;color:var(--muted)}
+.student-select .student-note{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:6px}
+.student-note .dot{width:5px;height:5px;background:#b28745;border-radius:50%;display:inline-block}
+.student-select .stale{color:var(--gold)}
+.sidebar-bottom{border-top:1px solid #d7dcd3;margin:35px 10px 0;padding-top:18px;font-size:11px;color:var(--muted)}
+.counselor{display:flex;align-items:center;gap:9px;margin-bottom:6px;color:var(--body);font-size:12px}
+.avatar{width:28px;height:28px;border:1px solid #c8d0c5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--serif)}
+.support-main{padding:34px 42px 40px;min-width:0}
+.support-topline{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;margin-bottom:28px;gap:16px}
+.support-topline span:first-child{display:flex;align-items:center;gap:6px}
+.support-topline svg{width:14px;height:14px}
+.support-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px}
+.support-heading h1{font-size:28px}
+.support-heading h1 span{font:14px var(--sans);margin-left:7px}
+.meeting{font-size:12px;line-height:1.8;text-align:right;color:var(--muted)}
+.meeting strong{display:block;font-weight:700;font-size:15px;color:var(--ink)}
+.support-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:26px;align-items:start}
+.support-section{margin-bottom:27px}
+.support-section .section-heading{margin-bottom:12px}
+.support-section h2{font-size:15px}
+.group-label{font-size:11px;letter-spacing:.08em;color:var(--green);padding:14px 0 4px;border-top:1px solid var(--line)}
+.group-label:first-child{border-top:0;padding-top:0}
+.group-label+.work-row{padding-top:10px}
+.panel .work-row:last-child{padding-bottom:0}
+.work-row .prep{margin-top:3px}
+.work-row .detail-link{font-size:11px;padding:4px 0}
+
+.promise{display:flex;gap:12px;align-items:flex-start}
+.promise+.promise{border-top:1px solid var(--line-soft);margin-top:18px;padding-top:18px}
+.promise-icon{width:24px;height:24px;flex-shrink:0;border-radius:50%;background:var(--soft);color:var(--green);display:flex;align-items:center;justify-content:center}
+.promise-icon svg{width:14px;height:14px}
+.promise-icon.unknown{background:#f0f0eb;color:var(--muted);font-size:12px}
+.promise h3{font-size:13px;font-weight:500;margin-bottom:4px}
+.promise-status{font-size:12px;font-weight:500;color:var(--green)}
+.promise p{font-size:12px;color:var(--muted)}
+.next-step{margin-top:18px;padding:16px 18px;background:#eff2eb;border-radius:6px;font-size:13px}
+.next-label{color:var(--green);font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.04em}
+.next-step li{display:grid;grid-template-columns:8px 1fr;gap:10px;padding:5px 0;line-height:1.75}
+.next-step li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--green);margin-top:11px}
+.next-step li strong{font-weight:700}
+.next-step li small{display:block;font-size:11px;color:var(--muted)}
+.support-main .notice{padding:17px 19px}
+.support-main .notice p{font-size:12px}
+
+.compact-change{display:grid;grid-template-columns:40px 1fr;gap:11px;padding:15px 0;border-bottom:1px solid var(--line)}
+.compact-change:first-child{padding-top:0}
+.timeline-date{font-size:11px;color:var(--muted);padding-top:3px}
+.compact-change h3{font-size:13px;line-height:1.7;margin-top:5px;font-weight:700}
+.compact-change .course{font-size:11px;margin-top:3px;margin-bottom:0}
+.compact-change .deadline{font-size:12px;margin-top:4px}
+.compact-change .detail-link{font-size:11px;padding:3px 0}
+
+.other-profile{max-width:700px}
+.other-profile .notice{margin:25px 0}
+.other-profile .panel{margin-top:24px}
+.other-profile p{font-size:13px}
+
+@media (max-width:1000px){
+  .support-shell{grid-template-columns:205px minmax(0,1fr)}
+  .sidebar{padding:26px 14px}
+  .support-main{padding:30px 25px}
+  .support-grid{grid-template-columns:1fr;gap:0}
+}
+@media (max-width:620px){
+  .preview-bar{padding:10px 16px;gap:10px}
+  .preview-label{display:none}
+  .tabs{width:100%;gap:3px}
+  .tab{padding:9px 5px;font-size:12px;flex:1}
+  .support-shell{display:block}
+  .sidebar{padding:18px 16px;border-right:0;border-bottom:1px solid var(--line)}
+  .sidebar .brand{margin-bottom:18px}
+  .student-list{display:flex;gap:6px}
+  .student-select{padding:10px 8px;margin:0;flex:1;min-width:0}
+  .student-select .student-name{font-size:11px;white-space:nowrap}
+  .student-select svg{display:none}
+  .sidebar-bottom{display:none}
+  .support-main{padding:25px 22px}
+  .support-heading{display:block;margin-bottom:20px}
+  .meeting{text-align:left;margin-top:12px}
+}
+
+/* ---------- 3. 授業ページの隅の知らせ ---------- */
+.lms-surface{position:relative;min-height:calc(100vh - 69px);background:#f2f3f3;padding-bottom:90px}
+.lms-backdrop{color:#747d7e;opacity:.57;pointer-events:none;user-select:none}
+.lms-header{background:#fff;border-bottom:1px solid #d9dede;padding:23px 40px;display:flex;align-items:center;justify-content:space-between}
+.lms-title{font-weight:700;font-size:18px;letter-spacing:.06em}
+.lms-meta{font-size:12px}
+.lms-content{max-width:1160px;padding:35px 40px;margin:auto}
+.lms-breadcrumb{font-size:12px;margin-bottom:30px}
+.lms-layout{display:grid;grid-template-columns:170px 1fr;gap:40px}
+.lms-sidebar div{padding:12px 14px;font-size:13px}
+.lms-sidebar .chosen{background:#e1e5e5;border-radius:4px}
+.lms-main h1{font:500 25px var(--sans);margin:8px 0 27px;letter-spacing:0}
+.lms-box{background:#fff;border:1px solid #dde1e1;border-radius:5px;padding:24px;margin-bottom:25px}
+.lms-box h2{font-size:15px;margin-bottom:15px}
+.lms-news{font-size:13px;padding:14px 0;border-top:1px solid #e5e8e8;display:flex;gap:27px}
+.lms-course-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.lms-course{padding:22px;border:1px solid #e0e3e3;border-radius:4px;line-height:2}
+.lms-course small{display:block}
+.toast{position:fixed;bottom:28px;right:28px;max-width:calc(100vw - 40px);background:var(--white);border:1px solid #d3dcd0;border-radius:12px;box-shadow:0 8px 38px #2c40301a;display:flex;align-items:stretch;transition:opacity .2s ease,transform .2s ease}
+.toast:hover{border-color:var(--green)}
+.toast.gone{opacity:0;transform:translateY(8px);pointer-events:none}
+.toast-open{display:flex;align-items:center;gap:16px;padding:20px 8px 20px 22px}
+.toast-icon{width:36px;height:36px;background:var(--soft);color:var(--green);display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0}
+.toast-label{display:block;font-size:10px;letter-spacing:.08em;color:var(--muted);margin-bottom:3px}
+.toast-text{font-size:13px;font-weight:500}
+.toast-arrow{width:17px;height:17px;color:var(--green)}
+.toast-close{padding:0 14px;color:var(--muted);border-left:1px solid var(--line-soft);display:flex;align-items:center;border-radius:0 12px 12px 0}
+.toast-close:hover{background:var(--soft);color:var(--green)}
+.toast-close svg{width:14px;height:14px}
+.toast-restore{position:fixed;right:28px;bottom:28px;font-size:12px;color:#8a9098;border:1px dashed #c4c9cf;border-radius:8px;padding:6px 10px;background:#fff}
+@media (max-width:620px){
+  .lms-header{padding:22px}
+  .lms-content{padding:25px 22px}
+  .lms-sidebar{display:none}
+  .lms-layout{display:block}
+  .lms-course-grid{grid-template-columns:1fr}
+  .toast{right:16px;bottom:20px;max-width:calc(100vw - 32px)}
+  .toast-open{padding:16px 6px 16px 15px;gap:11px}
+  .toast-text{font-size:12px;line-height:1.85}
+}
+
+@media (prefers-reduced-motion:reduce){.fold,.toast{transition:none}}
+
+/* ---------- 見かたの切り替え（一覧 / 2週間 / 月） ---------- */
+.seg-wrap{display:flex;justify-content:flex-end;margin:-18px 0 22px}
+.seg{display:inline-flex;gap:3px;background:#eeefe9;padding:3px;border-radius:8px}
+.seg button{padding:5px 14px;border-radius:6px;font-size:12px;color:var(--muted);line-height:1.6;white-space:nowrap}
+.seg button[aria-pressed=true]{background:var(--white);color:var(--green);font-weight:700;box-shadow:0 1px 4px #253c2e16}
+.support-main .seg-wrap{margin:-10px 0 24px}
+.cal-note{font-size:12px;color:var(--muted);margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.cal-note .sw{display:inline-block;width:18px;height:8px;border-radius:3px;background:var(--soft);border-right:3px solid var(--green);vertical-align:middle;margin-right:5px}
+.cal-note .sw.two{background:var(--gold-bg);border-right-color:var(--gold)}
+.cal-later{font-size:12px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.cal-later strong{color:var(--body);font-weight:500}
+
+.width-toggle span{white-space:nowrap}
+/* 2週間：横（PC） */
+.tw-h{display:grid;grid-template-columns:132px repeat(14,minmax(0,1fr));align-items:stretch}
+.tw-h .tw-day{text-align:center;padding:6px 0 8px;border-bottom:1px solid var(--line);font-size:10px;color:var(--muted);line-height:1.4;border-left:1px solid var(--line-soft)}
+.tw-h .tw-day strong{display:block;font:600 17px/1.3 var(--serif);color:var(--ink);letter-spacing:.02em}
+.tw-h .tw-day.wk strong{color:var(--muted)}
+.tw-h .tw-day.today{background:var(--soft)}
+.tw-h .tw-day.today strong{color:var(--green)}
+.tw-h .tw-day .mt{display:block;color:var(--green);font-weight:700;font-size:10px;white-space:nowrap}
+.tw-h .tw-cell{border-left:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);min-height:44px}
+.tw-h .tw-cell.today{background:var(--soft)}
+.tw-h .tw-label{font-size:12px;color:var(--body);padding:0 10px 0 0;display:flex;align-items:center;border-bottom:1px solid var(--line-soft);line-height:1.4}
+.tw-h .tw-label.done{color:var(--muted)}
+.tw-h .tw-corner{border-bottom:1px solid var(--line)}
+.tw-h .tw-bar{align-self:center;height:26px;margin:0 2px 0 1px;background:var(--soft);border-radius:6px;border-right:4px solid var(--green);display:flex;align-items:center;justify-content:space-between;gap:4px;padding:0 6px 0 8px;font-size:11px;color:var(--ink);z-index:1;min-width:0;overflow:hidden;white-space:nowrap}
+.tw-h .tw-bar .t{font-weight:700;color:var(--green)}
+.tw-h .tw-two{align-self:center;height:26px;margin:0 2px 0 0;background:var(--gold-bg);border:1px dashed var(--gold);border-right:4px solid var(--gold);border-radius:0 6px 6px 0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gold);z-index:2;white-space:nowrap;overflow:hidden}
+.tw-h .tw-ghost{align-self:center;height:18px;margin:0 3px;border:1px dotted #a9b5a8;border-radius:4px;font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;z-index:1}
+.tw-h .tw-done{align-self:center;justify-self:start;padding-left:6px;display:flex;align-items:center;gap:3px;font-size:11px;color:var(--green);z-index:1;white-space:nowrap}
+.tw-h .tw-done svg{width:14px;height:14px}
+.tw-h .tw-load{height:22px;border-left:1px solid var(--line-soft)}
+.tw-h .tw-load span{display:block;height:6px;margin:8px 3px;border-radius:3px}
+.tw-h .tw-load.l1 span{background:#dfe7dc}
+.tw-h .tw-load.l2 span{background:#bfd0c0}
+.tw-h .tw-load.l3 span{background:#93ad98}
+.tw-h .tw-loadlabel{font-size:11px;color:var(--muted);display:flex;align-items:center}
+
+/* 2週間：縦（390px） */
+.tw-v{display:none;grid-template-columns:56px repeat(3,36px) minmax(0,1fr);grid-auto-rows:46px}
+.tw-v .tw-day{display:flex;flex-direction:column;justify-content:center;padding-left:4px;border-top:1px solid var(--line-soft);font-size:10px;color:var(--muted);line-height:1.2}
+.tw-v .tw-day strong{font:600 17px/1.2 var(--serif);color:var(--ink)}
+.tw-v .tw-day.wk strong{color:var(--muted)}
+.tw-v .tw-row{border-top:1px solid var(--line-soft)}
+.tw-v .today{background:var(--soft)}
+.tw-v .tw-day.today strong{color:var(--green)}
+.tw-v .tw-note{display:flex;flex-direction:column;justify-content:center;gap:1px;padding-left:10px;font-size:11px;color:var(--body);border-top:1px solid var(--line-soft);line-height:1.4}
+.tw-v .tw-note .mt{color:var(--green);font-weight:700}
+.tw-v .tw-note .dl{color:var(--ink)}
+.tw-v .tw-note .dl b{color:var(--green);font-weight:700}
+.tw-v .tw-note .ok{color:var(--green);display:flex;align-items:center;gap:3px}
+.tw-v .tw-note .ok svg{width:13px;height:13px}
+.tw-v .tw-bar{justify-self:center;width:26px;margin:3px 0;background:var(--soft);border-radius:6px;border-bottom:4px solid var(--green);writing-mode:vertical-rl;font-size:11px;color:var(--ink);padding:8px 0;z-index:1;text-align:left;letter-spacing:.05em}
+.tw-v .tw-two{justify-self:center;width:26px;margin:0 0 3px;background:var(--gold-bg);border:1px dashed var(--gold);border-bottom:4px solid var(--gold);border-radius:0 0 6px 6px;writing-mode:vertical-rl;font-size:10px;color:var(--gold);padding:6px 0;z-index:2;letter-spacing:.05em}
+.tw-v .tw-ghost{justify-self:center;width:18px;margin:6px 0;border:1px dotted #a9b5a8;border-radius:4px;writing-mode:vertical-rl;font-size:9px;color:var(--muted);padding:3px 0;z-index:1}
+.student-frame.narrow .tw-h,.student-frame.narrow .tw-loadrow{display:none}
+.student-frame.narrow .tw-v{display:grid}
+@media (max-width:720px){.tw-h{display:none}.tw-v{display:grid}.seg-wrap{justify-content:flex-start;margin-top:-10px}}
+
+/* 月 */
+.mo-head{display:grid;grid-template-columns:repeat(7,1fr);font-size:11px;color:var(--muted);text-align:center;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.mo-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.mo-cell{min-height:92px;padding:6px 5px 8px;border-bottom:1px solid var(--line-soft);border-left:1px solid var(--line-soft);display:flex;flex-direction:column;gap:3px;align-items:stretch;border-radius:0}
+.mo-cell:nth-child(7n+1){border-left:0}
+.mo-cell .n{font:600 14px/1.4 var(--serif);color:var(--ink);align-self:flex-start;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.mo-cell.out .n{color:#b3b8b2}
+.mo-cell.wk .n{color:var(--muted)}
+.mo-cell.today .n{background:var(--green);color:var(--white)}
+.mo-cell.today{background:#f1f4ee}
+.mo-cell[aria-pressed=true]{box-shadow:inset 0 0 0 2px var(--green);border-radius:6px}
+.mo-cell:hover{background:#f3f4ef}
+.mo-chip{font-size:11px;line-height:1.5;padding:1px 5px;border-radius:3px;background:var(--soft);color:var(--green);border-left:3px solid var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mo-chip.prep{background:transparent;color:var(--muted);border-left-color:#cfdccf}
+.mo-chip.two{background:var(--gold-bg);color:var(--gold);border-left-color:var(--gold)}
+.mo-chip.done{background:transparent;color:var(--green);border-left-color:transparent;display:flex;align-items:center;gap:3px}
+.mo-chip.done svg{width:12px;height:12px}
+.mo-chip.mt{background:transparent;color:var(--green);border-left-color:transparent;font-weight:700}
+.mo-dots{display:none;gap:3px;flex-wrap:wrap;margin-top:2px}
+.mo-dots i{width:7px;height:7px;border-radius:50%;background:var(--green);display:block}
+.mo-dots i.prep{background:#cfdccf}
+.mo-dots i.two{background:var(--gold)}
+.mo-dots i.done{background:transparent;border:1.5px solid var(--green);width:6px;height:6px}
+.mo-dots i.mt{background:transparent;border:1.5px solid var(--green);border-radius:2px;width:6px;height:6px}
+.mo-daylist{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.mo-daylist h3{font-size:13px;font-weight:700;margin-bottom:6px}
+.mo-daylist h3 span{font:600 20px/1 var(--serif);margin-right:6px}
+.mo-item{display:grid;grid-template-columns:5em 1fr;gap:10px;padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
+.mo-item:last-child{border-bottom:0}
+.mo-item .k{font-size:12px;color:var(--muted)}
+.mo-item .k.dl{color:var(--green);font-weight:700}
+.mo-item .k.two{color:var(--gold);font-weight:700}
+.mo-item .c{font-size:11px;color:var(--muted);display:block}
+.mo-item .ok{color:var(--green)}
+.student-frame.narrow .mo-cell{min-height:50px;padding:5px 3px}
+.student-frame.narrow .mo-chip{display:none}
+.student-frame.narrow .mo-dots{display:flex}
+.student-frame.narrow .mo-cell .n{font-size:13px;width:22px;height:22px}
+@media (max-width:720px){.mo-cell{min-height:50px;padding:5px 3px}.mo-chip{display:none}.mo-dots{display:flex}.mo-cell .n{font-size:13px;width:22px;height:22px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mark" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/><path d="M9 15l2 2 4-4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M18 14v5H5V6h5"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.5"/></symbol>
+</svg>
+
+<header class="preview-bar">
+  <div class="preview-label"><span>画面の試作</span><span>課題の秘書</span></div>
+  <nav class="tabs" role="tablist" aria-label="画面を切り替え">
+    <button class="tab" role="tab" aria-selected="true" data-view="student">学生</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="support">支援担当</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="lms">授業ページの知らせ</button>
+  </nav>
+  <div class="width-toggle" id="widthToggle">
+    <span>表示幅</span>
+    <button aria-pressed="true" data-width="narrow">390px</button>
+    <button aria-pressed="false" data-width="wide">PC</button>
+  </div>
+</header>
+
+<!-- ================= 1. 学生の画面 ================= -->
+<section id="student" class="view" role="tabpanel">
+ <div class="student-frame narrow" id="studentFrame">
+  <header class="app-header">
+    <div class="brand"><span class="brand-mark"><svg><use href="#i-mark"/></svg></span>課題の秘書</div>
+    <div class="identity"><strong>青木 ひかり</strong>さん</div>
+  </header>
+  <main class="student-main">
+    <div class="student-heading">
+      <div><p class="eyebrow">11月12日 木曜日</p><h1>今週の締切</h1></div>
+      <p class="date-note">森先生との面談 <strong>あす 11:00</strong></p>
+    </div>
+
+    <div class="seg-wrap"><div class="seg" role="group" aria-label="見かた">
+      <button aria-pressed="true" data-cal="list">一覧</button>
+      <button aria-pressed="false" data-cal="twoweek">2週間</button>
+      <button aria-pressed="false" data-cal="month">月</button>
+    </div></div>
+
+    <div class="student-columns" data-calview="list">
+      <div>
+        <!-- いつも見せる：今週の締切 -->
+        <section aria-labelledby="week-title">
+          <article class="due-card">
+            <div class="due-top"><span class="due-day"><svg><use href="#i-sun"/></svg>あす</span></div>
+            <p class="due-date">11/13<span>金曜日 · 17:00</span></p>
+            <p class="course">線形代数</p>
+            <h3 class="assignment-name">演習レポート第5回</h3>
+            <div class="due-foot">
+              <button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button>
+              <div class="fold"><div>
+                <div class="source-block">
+                  <p class="source-label">課題ページ「演習レポート第5回」</p>
+                  <p>締切 <q>11月13日（金）17:00</q></p>
+                  <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                </div>
+              </div></div>
+            </div>
+          </article>
+
+          <div class="prep-list">
+            <div class="prep-row">
+              <div class="mini-date"><strong>14</strong><span>土曜</span></div>
+              <div><p class="course">情報リテラシー · 課題3 データ整理</p><h3>準備を始める日</h3></div>
+            </div>
+            <div class="prep-row">
+              <div class="mini-date"><strong>15</strong><span>日曜</span></div>
+              <div><p class="course">英語プレゼンテーション · 発表スライドの提出</p><h3>準備を始める日</h3></div>
+            </div>
+          </div>
+
+          <div class="later">
+            <button class="detail-link" aria-expanded="false" data-toggle>来週からの締切を見る（17日〜27日）</button>
+            <div class="fold"><div>
+              <div class="work-row">
+                <div class="mini-date"><strong>19</strong><span>木曜 23:59</span></div>
+                <div class="body">
+                  <p class="course">情報リテラシー</p>
+                  <h3>課題3 データ整理</h3>
+                  <p class="prep">お知らせには17日（火）と書いてあります。17日なら14日（土）から準備です</p>
+                </div>
+              </div>
+              <div class="work-row">
+                <div class="mini-date"><strong>18</strong><span>水曜 23:59</span></div>
+                <div class="body">
+                  <p class="course">英語プレゼンテーション</p>
+                  <h3>発表スライドの提出</h3>
+                  <p class="prep">15日（日）から準備</p>
+                  <button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button>
+                  <div class="fold"><div>
+                    <div class="source-block">
+                      <p class="source-label">課題ページ「発表スライドの提出」（11月10日に出た課題）</p>
+                      <p>締切 <q>11月18日（水）23:59</q></p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+              <div class="work-row">
+                <div class="mini-date"><strong>20</strong><span>金曜 17:00</span></div>
+                <div class="body">
+                  <p class="course">熱力学</p>
+                  <h3>小レポート「エントロピー」</h3>
+                  <p class="prep">17日（火）から準備</p>
+                  <button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button>
+                  <div class="fold"><div>
+                    <div class="source-block">
+                      <p class="source-label">課題ページ「小レポート「エントロピー」」</p>
+                      <p>締切 <q>11月20日（金）17:00</q>（11月9日に16日から延びました）</p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+              <div class="work-row">
+                <div class="mini-date"><strong>27</strong><span>金曜 17:00</span></div>
+                <div class="body">
+                  <p class="course">現代物理学入門</p>
+                  <h3>期末レポートの題目の提出</h3>
+                  <p class="prep">24日（火）から準備</p>
+                  <button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button>
+                  <div class="fold"><div>
+                    <div class="source-block">
+                      <p class="source-label">課題ページ「期末レポートの題目の提出」（11月10日に出た課題）</p>
+                      <p>締切 <q>11月27日（金）17:00</q></p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+            </div></div>
+          </div>
+        </section>
+
+        <!-- 問題があるときだけ：事実を見出しにする -->
+        <aside class="notice" aria-labelledby="student-check">
+          <div class="notice-heading" id="student-check"><svg><use href="#i-alert"/></svg>締切の日付が2つあります</div>
+          <p class="course">情報リテラシー</p>
+          <h3>課題3 データ整理</h3>
+          <p>課題の欄は <strong>19日（木）</strong>、お知らせには <strong>17日（火）</strong> と書いてあります。カレンダーは19日のままにして、予定名に「要確認」を付けました。17日なら14日（土）から準備です。</p>
+          <button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button>
+          <div class="fold"><div>
+            <div class="source-block">
+              <p class="source-label">課題の欄</p>
+              <p><q>11月19日（木）23:59</q></p>
+              <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+            </div>
+            <div class="source-block warning">
+              <p class="source-label">11月11日のお知らせ</p>
+              <p><q>課題3は11/17までに変更します</q></p>
+              <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+            </div>
+          </div></div>
+        </aside>
+      </div>
+
+      <!-- いつも見せる：最近の変化 -->
+      <section aria-labelledby="recent-title">
+        <div class="section-heading"><h2 id="recent-title">最近の変化</h2></div>
+        <div class="changes">
+          <article class="change">
+            <div class="change-top"><span class="badge done"><svg><use href="#i-check"/></svg>出せました</span><time class="change-date">11/11</time></div>
+            <p class="course">微分方程式</p>
+            <h3>演習問題10</h3>
+            <div class="change-bottom"><p class="deadline">11/11（水）15:40 に出しました</p><button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button></div>
+            <div class="fold"><div>
+              <div class="source-block">
+                <p class="source-label">課題ページ「演習問題10」</p>
+                <p>提出 <q>11月11日 15:40</q>（締切 11月11日（水）17:00）</p>
+                <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+              </div>
+            </div></div>
+          </article>
+          <article class="change">
+            <div class="change-top"><span class="badge new">新しい課題</span><time class="change-date">11/10</time></div>
+            <p class="course">英語プレゼンテーション</p>
+            <h3>発表スライドの提出</h3>
+            <div class="change-bottom"><p class="deadline">締切 11/18（水）23:59</p><button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button></div>
+            <div class="fold"><div>
+              <div class="source-block">
+                <p class="source-label">課題ページ「発表スライドの提出」</p>
+                <p>締切 <q>11月18日（水）23:59</q></p>
+                <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+              </div>
+            </div></div>
+            <p class="prep">カレンダーに締切と、15日（日）からの準備を入れました</p>
+          </article>
+          <article class="change">
+            <div class="change-top"><span class="badge new">新しい課題</span><time class="change-date">11/10</time></div>
+            <p class="course">現代物理学入門</p>
+            <h3>期末レポートの題目の提出</h3>
+            <div class="change-bottom"><p class="deadline">締切 11/27（金）17:00</p><button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button></div>
+            <div class="fold"><div>
+              <div class="source-block">
+                <p class="source-label">課題ページ「期末レポートの題目の提出」</p>
+                <p>締切 <q>11月27日（金）17:00</q></p>
+                <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+              </div>
+            </div></div>
+            <p class="prep">カレンダーに締切と、24日（火）からの準備を入れました</p>
+          </article>
+          <article class="change">
+            <div class="change-top"><span class="badge">締切が延びました</span><time class="change-date">11/9</time></div>
+            <p class="course">熱力学</p>
+            <h3>小レポート「エントロピー」</h3>
+            <div class="change-bottom"><p class="deadline">締切 <span class="changed-date">11/16</span>11/20（金）17:00</p><button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button></div>
+            <div class="fold"><div>
+              <div class="source-block">
+                <p class="source-label">課題ページ「小レポート「エントロピー」」</p>
+                <p>締切の欄が <q>11月16日（月）17:00</q> から <q>11月20日（金）17:00</q> に変わりました</p>
+                <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+              </div>
+            </div></div>
+            <p class="prep">カレンダーの締切と、準備を始める日の17日（火）も動かしました</p>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <div data-calview="twoweek" hidden>
+      <div class="tw" data-tw></div>
+      <p class="cal-note"><span><span class="sw"></span>準備を始める日から締切まで</span><span><span class="sw two"></span>日付が2つ</span></p>
+      <p class="cal-later">その先 · <strong>27日（金）17:00 現代物理学入門 期末レポートの題目の提出</strong>（24日（火）から準備）</p>
+    </div>
+    <div data-calview="month" hidden>
+      <div class="mo" data-mo></div>
+    </div>
+
+    <footer class="student-footer">
+      <p><svg><use href="#i-cal"/></svg>締切と準備の予定はカレンダーで見られます</p>
+      <div>
+        <button class="detail-link" aria-expanded="false" data-toggle>情報の更新について</button>
+        <div class="fold"><div><p>今日 9:12 時点の情報です。LMSにログインすると更新されます。</p></div></div>
+      </div>
+    </footer>
+  </main>
+ </div>
+</section>
+
+<!-- ================= 2. 支援担当の面談画面 ================= -->
+<section id="support" class="view" role="tabpanel" hidden>
+ <div class="support-shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark"><svg><use href="#i-mark"/></svg></span>課題の秘書</div>
+    <p class="sidebar-caption">担当する学生</p>
+    <nav class="student-list" aria-label="担当する学生">
+      <button class="student-select" data-person="aoki" aria-pressed="true"><span class="student-name">青木 ひかり<svg><use href="#i-chev"/></svg></span><span class="student-note">面談 あす 11:00</span></button>
+      <button class="student-select" data-person="ishida" aria-pressed="false"><span class="student-name">石田 そら<svg><use href="#i-chev"/></svg></span><span class="student-note stale"><span class="dot"></span>11月8日から更新がありません</span></button>
+      <button class="student-select" data-person="ueno" aria-pressed="false"><span class="student-name">上野 まこと<svg><use href="#i-chev"/></svg></span></button>
+    </nav>
+    <div class="sidebar-bottom"><div class="counselor"><span class="avatar">森</span>森 先生</div>学生と一緒に見る画面です</div>
+  </aside>
+
+  <main class="support-main">
+    <div class="support-topline"><span><svg><use href="#i-eye"/></svg>青木さんが見せることにした内容だけ出しています</span><time>今日 9:12 時点</time></div>
+
+    <!-- 青木 ひかり -->
+    <div id="profile-aoki" class="person-profile">
+      <div class="support-heading">
+        <div><p class="eyebrow">面談の準備</p><h1>青木 ひかり<span>さん</span></h1></div>
+        <div class="meeting">次の面談<strong>11/13（金）11:00</strong>前回 11/6（金）</div>
+      </div>
+
+      <div class="seg-wrap"><div class="seg" role="group" aria-label="見かた">
+        <button aria-pressed="true" data-cal="list">一覧</button>
+        <button aria-pressed="false" data-cal="twoweek">2週間</button>
+        <button aria-pressed="false" data-cal="month">月</button>
+      </div></div>
+
+      <div class="support-grid" data-calview="list">
+        <div>
+          <!-- いつも見せる：締切 -->
+          <section class="support-section">
+            <div class="section-heading"><h2>締切</h2><span class="range">あすの面談から次の面談まで</span></div>
+            <div class="panel">
+              <p class="group-label">面談の日</p>
+              <div class="work-row">
+                <div class="mini-date"><strong>13</strong><span>金曜 17:00</span></div>
+                <div class="body">
+                  <p class="course">線形代数</p>
+                  <h3>演習レポート第5回</h3>
+                  <button class="detail-link" aria-expanded="false" data-toggle>これまでの変更を見る</button>
+                  <div class="fold"><div>
+                    <div class="history-entry"><time>11/6 以前</time><span>課題ページに、締切 11月13日（金）17:00 と出ています</span></div>
+                    <div class="source-block">
+                      <p class="source-label">書いてあったこと · 課題ページ「演習レポート第5回」</p>
+                      <p>締切 <q>11月13日（金）17:00</q></p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+
+              <p class="group-label">次の週</p>
+              <div class="work-row">
+                <div class="mini-date"><strong>19</strong><span>木曜 23:59</span></div>
+                <div class="body">
+                  <p class="course">情報リテラシー</p>
+                  <h3>課題3 データ整理 <span class="badge gold">日付が2つ</span></h3>
+                  <p class="prep">お知らせには17日（火）と書いてあります。17日なら14日（土）から準備です</p>
+                  <button class="detail-link" aria-expanded="false" data-toggle>これまでの変更を見る</button>
+                  <div class="fold"><div>
+                    <div class="history-entry"><time>11/6 以前</time><span>課題の欄に、締切 11月19日（木）23:59 と出ています</span></div>
+                    <div class="history-entry"><time>11/11</time><span>お知らせに「課題3は11/17までに変更します」と出ましたが、課題の欄は19日のままです。カレンダーは19日のままにして予定名に「要確認」を付け、準備を始める日を14日（土）にしました</span></div>
+                    <div class="source-block">
+                      <p class="source-label">書いてあったこと · 課題の欄</p>
+                      <p><q>11月19日（木）23:59</q></p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                    <div class="source-block warning">
+                      <p class="source-label">書いてあったこと · 11月11日のお知らせ</p>
+                      <p><q>課題3は11/17までに変更します</q></p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+              <div class="work-row">
+                <div class="mini-date"><strong>18</strong><span>水曜 23:59</span></div>
+                <div class="body">
+                  <p class="course">英語プレゼンテーション</p>
+                  <h3>発表スライドの提出</h3>
+                  <p class="prep">15日（日）から準備 · 11/10 に出た課題</p>
+                  <button class="detail-link" aria-expanded="false" data-toggle>これまでの変更を見る</button>
+                  <div class="fold"><div>
+                    <div class="history-entry"><time>11/10</time><span>新しい課題が出ました（締切 11月18日（水）23:59）。カレンダーに締切と、15日（日）からの準備を入れました</span></div>
+                    <div class="source-block">
+                      <p class="source-label">書いてあったこと · 課題ページ「発表スライドの提出」</p>
+                      <p>締切 <q>11月18日（水）23:59</q></p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+              <div class="work-row">
+                <div class="mini-date"><strong>20</strong><span>金曜 17:00</span></div>
+                <div class="body">
+                  <p class="course">熱力学</p>
+                  <h3>小レポート「エントロピー」</h3>
+                  <p class="prep">17日（火）から準備 · 11/9 に16日から延びました</p>
+                  <button class="detail-link" aria-expanded="false" data-toggle>これまでの変更を見る</button>
+                  <div class="fold"><div>
+                    <div class="history-entry"><time>11/6 以前</time><span>課題ページに、締切 11月16日（月）17:00 と出ていました</span></div>
+                    <div class="history-entry"><time>11/6</time><span>面談で「構成だけ作る」と決めました</span></div>
+                    <div class="history-entry"><time>11/9</time><span>締切が 11月20日（金）17:00 に延びました。カレンダーの締切と、準備を始める日の17日（火）も動かしました</span></div>
+                    <div class="source-block">
+                      <p class="source-label">書いてあったこと · 課題ページ「小レポート「エントロピー」」</p>
+                      <p>締切 <q>11月20日（金）17:00</q></p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+
+              <p class="group-label">その先</p>
+              <div class="work-row">
+                <div class="mini-date"><strong>27</strong><span>金曜 17:00</span></div>
+                <div class="body">
+                  <p class="course">現代物理学入門</p>
+                  <h3>期末レポートの題目の提出</h3>
+                  <p class="prep">24日（火）から準備 · 11/10 に出た課題</p>
+                  <button class="detail-link" aria-expanded="false" data-toggle>これまでの変更を見る</button>
+                  <div class="fold"><div>
+                    <div class="history-entry"><time>11/10</time><span>新しい課題が出ました（締切 11月27日（金）17:00）。カレンダーに締切と、24日（火）からの準備を入れました</span></div>
+                    <div class="source-block">
+                      <p class="source-label">書いてあったこと · 課題ページ「期末レポートの題目の提出」</p>
+                      <p>締切 <q>11月27日（金）17:00</q></p>
+                      <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- いつも見せる：前回からの変化 -->
+          <section class="support-section">
+            <div class="section-heading"><h2>前回の面談からの変化</h2><span class="range">11/6（金）以降</span></div>
+            <div class="compact-change"><time class="timeline-date">11/11</time><div><span class="badge done"><svg><use href="#i-check"/></svg>提出</span><p class="course">微分方程式</p><h3>演習問題10</h3><p class="deadline">11/11（水）15:40 に提出（締切 17:00）</p></div></div>
+            <div class="compact-change"><time class="timeline-date">11/11</time><div><span class="badge gold">日付が2つ</span><p class="course">情報リテラシー</p><h3>課題3 のお知らせ</h3><p class="deadline">お知らせには17日とあり、課題の欄は19日のままです</p></div></div>
+            <div class="compact-change"><time class="timeline-date">11/10</time><div><span class="badge new">新しい課題</span><p class="course">英語プレゼンテーション</p><h3>発表スライドの提出</h3><p class="deadline">締切 11/18（水）23:59</p><p class="course" style="margin-top:10px">現代物理学入門</p><h3>期末レポートの題目の提出</h3><p class="deadline">締切 11/27（金）17:00</p></div></div>
+            <div class="compact-change"><time class="timeline-date">11/9</time><div><span class="badge">締切が延びました</span><p class="course">熱力学</p><h3>小レポート「エントロピー」</h3><p class="deadline">締切 <span class="changed-date">11/16</span>11/20（金）17:00</p></div></div>
+          </section>
+        </div>
+
+        <div>
+          <!-- いつも見せる：前回の約束と次の一歩 -->
+          <section class="support-section">
+            <div class="section-heading"><h2>前回決めたことと今回の相談</h2><span class="range">前回 11/6（金）</span></div>
+            <div class="panel">
+              <div class="promise"><span class="promise-icon"><svg><use href="#i-check"/></svg></span><div><h3>微分方程式の演習問題10を出す</h3><div class="promise-status">出せました</div><p>11/11（水）15:40 に提出</p></div></div>
+              <div class="promise"><span class="promise-icon unknown">?</span><div><h3>熱力学のレポートの構成だけ作る</h3><p>どこまで進んだか、面談で一緒に確かめます</p></div></div>
+              <div class="next-step">
+                <p class="next-label">面談で一緒に決めること</p>
+                <ul>
+                  <li><span><strong>線形代数「演習レポート第5回」</strong>を、今日からあすの午前までにどう仕上げるか決めます<small>面談の日の 17:00 が締切です</small></span></li>
+                  <li><span><strong>熱力学の構成</strong>ができていたら、最初に書く段落を決めます。まだなら、見出しを1つ一緒に考えます<small>17日（火）から準備、締切は 20日（金）です</small></span></li>
+                  <li><span><strong>情報リテラシー「課題3」</strong>のお知らせを一緒に開き、締切が17日か19日かを確かめます<small>17日なら14日（土）から準備</small></span></li>
+                  <li><span><strong>英語プレゼンテーション</strong>は、15日（日）から準備を始める予定でよいか確かめます<small>締切は 18日（水）です</small></span></li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- 問題があるときだけ：一緒に確かめること -->
+          <section class="support-section">
+            <aside class="notice">
+              <div class="notice-heading"><svg><use href="#i-alert"/></svg>一緒に確かめること</div>
+              <p class="course">情報リテラシー · 課題3 データ整理</p>
+              <p>課題の欄は <strong>19日（木）</strong>、お知らせには <strong>17日（火）</strong> と書いてあります。カレンダーは19日のままにして、予定名に「要確認」を付けてあります。</p>
+              <button class="detail-link" aria-expanded="false" data-toggle>書いてあったことを見る</button>
+              <div class="fold"><div>
+                <div class="source-block">
+                  <p class="source-label">課題の欄</p>
+                  <p><q>11月19日（木）23:59</q></p>
+                  <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                </div>
+                <div class="source-block warning">
+                  <p class="source-label">11月11日のお知らせ</p>
+                  <p><q>課題3は11/17までに変更します</q></p>
+                  <a class="lms-link" href="#" onclick="return false">LMSで見る<svg><use href="#i-ext"/></svg></a>
+                </div>
+              </div></div>
+            </aside>
+          </section>
+        </div>
+      </div>
+
+      <div data-calview="twoweek" hidden>
+        <div class="panel">
+          <div class="tw" data-tw></div>
+          <p class="cal-note"><span><span class="sw"></span>準備を始める日から締切まで</span><span><span class="sw two"></span>日付が2つ</span></p>
+          <p class="cal-later">その先 · <strong>27日（金）17:00 現代物理学入門 期末レポートの題目の提出</strong>（24日（火）から準備）</p>
+        </div>
+      </div>
+      <div data-calview="month" hidden>
+        <div class="panel"><div class="mo" data-mo></div></div>
+      </div>
+    </div>
+
+    <!-- 石田 そら：何日も更新がない例 -->
+    <div id="profile-ishida" class="person-profile other-profile" hidden>
+      <p class="eyebrow">面談の準備</p>
+      <h1>石田 そら<span style="font:14px var(--sans);margin-left:7px">さん</span></h1>
+      <div class="notice">
+        <div class="notice-heading"><svg><use href="#i-alert"/></svg>11月8日（日）から更新がありません</div>
+        <p>それよりあとに出た課題や締切の変更が、まだここに入っていません。面談でLMSを一緒に開くと更新されます。</p>
+      </div>
+    </div>
+
+    <!-- 上野 まこと：何もないときは何も書かない -->
+    <div id="profile-ueno" class="person-profile other-profile" hidden>
+      <p class="eyebrow">面談の準備</p>
+      <h1>上野 まこと<span style="font:14px var(--sans);margin-left:7px">さん</span></h1>
+    </div>
+  </main>
+ </div>
+</section>
+
+<!-- ================= 3. 授業ページの隅の知らせ ================= -->
+<section id="lms" class="view" role="tabpanel" hidden>
+ <div class="lms-surface">
+  <div class="lms-backdrop" aria-hidden="true">
+    <header class="lms-header"><div class="lms-title">授業支援ポータル</div><div class="lms-meta">青木 ひかり さん</div></header>
+    <div class="lms-content">
+      <div class="lms-breadcrumb">ホーム　／　履修中の授業</div>
+      <div class="lms-layout">
+        <aside class="lms-sidebar"><div class="chosen">履修中の授業</div><div>お知らせ</div><div>時間割</div><div>利用案内</div></aside>
+        <main class="lms-main">
+          <h1>履修中の授業</h1>
+          <section class="lms-box"><h2>お知らせ</h2>
+            <div class="lms-news"><span>11月11日</span>情報リテラシー：課題3について</div>
+            <div class="lms-news"><span>11月10日</span>英語プレゼンテーション：発表の準備</div>
+            <div class="lms-news"><span>11月10日</span>現代物理学入門：期末レポートについて</div>
+            <div class="lms-news"><span>11月9日</span>熱力学：小レポートの締切について</div>
+          </section>
+          <section class="lms-box"><h2>今学期の授業</h2>
+            <div class="lms-course-grid">
+              <div class="lms-course">線形代数<small>教材・課題・お知らせ</small></div>
+              <div class="lms-course">英語プレゼンテーション<small>教材・課題・お知らせ</small></div>
+              <div class="lms-course">熱力学<small>教材・課題・お知らせ</small></div>
+              <div class="lms-course">情報リテラシー<small>教材・課題・お知らせ</small></div>
+              <div class="lms-course">微分方程式<small>教材・課題・お知らせ</small></div>
+              <div class="lms-course">現代物理学入門<small>教材・課題・お知らせ</small></div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status">
+    <button class="toast-open" data-view="student">
+      <span class="toast-icon"><svg><use href="#i-mark"/></svg></span>
+      <span><span class="toast-label">課題の秘書</span><span class="toast-text">新しい課題2件、締切の変更1件をカレンダーに入れました</span></span>
+      <svg class="toast-arrow"><use href="#i-arrow"/></svg>
+    </button>
+    <button class="toast-close" id="toastClose" aria-label="閉じる"><svg><use href="#i-x"/></svg></button>
+  </div>
+  <button class="toast-restore" id="toastRestore" hidden>知らせをもう一度出す（試作用）</button>
+ </div>
+</section>
+
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.tab[role="tab"]');
+  var views = document.querySelectorAll('.view');
+  var widthToggle = document.getElementById('widthToggle');
+
+  function showView(id) {
+    views.forEach(function (v) { v.hidden = (v.id !== id); });
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.view === id)); });
+    widthToggle.hidden = (id !== 'student');
+    window.scrollTo(0, 0);
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { showView(t.dataset.view); }); });
+
+  // 学生の画面の表示幅
+  var frame = document.getElementById('studentFrame');
+  widthToggle.querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      widthToggle.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      frame.classList.toggle('narrow', b.dataset.width === 'narrow');
+    });
+  });
+
+  // 押したときだけ見せる部分の開閉
+  document.querySelectorAll('[data-toggle]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+      var fold = btn.nextElementSibling;
+      if (fold && fold.classList.contains('fold')) fold.classList.toggle('open', !open);
+    });
+  });
+
+  // 担当する学生の切り替え
+  var selects = document.querySelectorAll('.student-select');
+  selects.forEach(function (s) {
+    s.addEventListener('click', function () {
+      selects.forEach(function (x) { x.setAttribute('aria-pressed', String(x === s)); });
+      document.querySelectorAll('.person-profile').forEach(function (p) {
+        p.hidden = (p.id !== 'profile-' + s.dataset.person);
+      });
+    });
+  });
+
+  // 授業ページの隅の知らせ
+  var toast = document.getElementById('toast');
+  var restore = document.getElementById('toastRestore');
+  toast.querySelector('.toast-open').addEventListener('click', function () { showView('student'); });
+  document.getElementById('toastClose').addEventListener('click', function () { toast.classList.add('gone'); restore.hidden = false; });
+  restore.addEventListener('click', function () { toast.classList.remove('gone'); restore.hidden = true; });
+})();
+</script>
+
+<script>
+(function () {
+  // 2026年11月。12日が木曜。
+  var W = ['月','火','水','木','金','土','日'];
+  function wd(d){ return W[(d + 5) % 7]; } // 11/1 は日曜（index 6）: (1+5)%7=6
+  var TODAY = 12, MEET = 13;
+  var items = [
+    {id:'diff',    course:'微分方程式',       short:'微分方程式', title:'演習問題10',               due:11, time:'17:00', done:'15:40'},
+    {id:'linear',  course:'線形代数',         short:'線形代数',   title:'演習レポート第5回',         due:13, time:'17:00', prep:10},
+    {id:'english', course:'英語プレゼンテーション', short:'英語プレゼン', title:'発表スライドの提出',  due:18, time:'23:59', prep:15},
+    {id:'info',    course:'情報リテラシー',   short:'情報リテ',   title:'課題3 データ整理',          due:19, time:'23:59', prep:14, alt:17},
+    {id:'thermo',  course:'熱力学',           short:'熱力学',     title:'小レポート「エントロピー」', due:20, time:'17:00', prep:17, oldDue:16},
+    {id:'physics', course:'現代物理学入門',   short:'現代物理',   title:'期末レポートの題目の提出',   due:27, time:'17:00', prep:24}
+  ];
+  var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>';
+
+  /* ---- 2週間 ---- */
+  function renderTwoWeek(el) {
+    var S = 9, E = 22, days = [];
+    for (var d = S; d <= E; d++) days.push(d);
+    var col = function (d) { return d - S + 2; };
+    var shown = items.filter(function (it) { return it.due <= E; });
+    var h = '';
+
+    // 横
+    h += '<div class="tw-h" aria-label="11月9日から22日">';
+    h += '<div class="tw-corner" style="grid-row:1"></div>';
+    days.forEach(function (d) {
+      var c = 'tw-day' + (d === TODAY ? ' today' : '') + (wd(d) === '土' || wd(d) === '日' ? ' wk' : '');
+      h += '<div class="' + c + '" style="grid-row:1;grid-column:' + col(d) + '"><strong>' + d + '</strong>' + wd(d) + (d === MEET ? '<span class="mt">面談 11:00</span>' : '') + '</div>';
+    });
+    var row = 2;
+    shown.forEach(function (it) {
+      days.forEach(function (d) {
+        h += '<div class="tw-cell' + (d === TODAY ? ' today' : '') + '" style="grid-row:' + row + ';grid-column:' + col(d) + '"></div>';
+      });
+      h += '<div class="tw-label' + (it.done ? ' done' : '') + '" style="grid-row:' + row + ';grid-column:1">' + it.course + '</div>';
+      if (it.done) {
+        h += '<div class="tw-done" style="grid-row:' + row + ';grid-column:' + col(it.due) + ' / span 2">' + CHECK + '出せました</div>';
+      } else {
+        if (it.oldDue) h += '<div class="tw-ghost" title="延びる前の締切" style="grid-row:' + row + ';grid-column:' + col(it.oldDue) + '">' + it.oldDue + '日まで</div>';
+        h += '<div class="tw-bar" style="grid-row:' + row + ';grid-column:' + col(it.prep) + ' / ' + (col(it.due) + 1) + '"><span>' + it.title + '</span><span class="t">' + it.time + '</span></div>';
+        if (it.alt) h += '<div class="tw-two" style="grid-row:' + row + ';grid-column:' + col(it.alt) + ' / ' + (col(it.due) + 1) + '">日付が2つ ' + it.alt + '・' + it.due + '</div>';
+      }
+      row++;
+    });
+    // 重なり
+    h += '<div class="tw-loadlabel" style="grid-row:' + row + ';grid-column:1">重なり</div>';
+    days.forEach(function (d) {
+      var n = shown.filter(function (it) { return !it.done && it.prep <= d && d <= it.due; }).length;
+      h += '<div class="tw-load l' + Math.min(n, 3) + '" style="grid-row:' + row + ';grid-column:' + col(d) + '"><span></span></div>';
+    });
+    h += '</div>';
+
+    // 縦（390px）
+    var lanes = [];
+    shown.filter(function (it) { return !it.done; }).forEach(function (it) {
+      var l = 0;
+      while (lanes[l] && lanes[l] >= it.prep) l++;
+      lanes[l] = it.due; it.lane = l;
+    });
+    h += '<div class="tw-v" aria-label="11月9日から22日">';
+    days.forEach(function (d, i) {
+      var r = i + 1, t = d === TODAY ? ' today' : '';
+      h += '<div class="tw-day' + t + (wd(d) === '土' || wd(d) === '日' ? ' wk' : '') + '" style="grid-row:' + r + ';grid-column:1"><strong>' + d + '</strong>' + wd(d) + '</div>';
+      for (var l = 0; l < 3; l++) h += '<div class="tw-row' + t + '" style="grid-row:' + r + ';grid-column:' + (l + 2) + '"></div>';
+      var notes = '';
+      if (d === MEET) notes += '<span class="mt">面談 11:00</span>';
+      shown.forEach(function (it) {
+        if (it.due !== d) return;
+        notes += it.done ? '<span class="ok">' + CHECK + it.short + ' 出せました</span>' : '<span class="dl">' + it.short + ' <b>' + it.time + '</b></span>';
+      });
+      h += '<div class="tw-note' + t + '" style="grid-row:' + r + ';grid-column:5">' + notes + '</div>';
+    });
+    shown.filter(function (it) { return !it.done; }).forEach(function (it) {
+      var c = it.lane + 2;
+      if (it.oldDue) h += '<div class="tw-ghost" style="grid-row:' + (it.oldDue - S + 1) + ';grid-column:' + c + '">' + it.oldDue + '日まで</div>';
+      h += '<div class="tw-bar" style="grid-row:' + (it.prep - S + 1) + ' / ' + (it.due - S + 2) + ';grid-column:' + c + '">' + it.short + '</div>';
+      if (it.alt) h += '<div class="tw-two" style="grid-row:' + (it.alt - S + 1) + ' / ' + (it.due - S + 2) + ';grid-column:' + c + '">日付が2つ</div>';
+    });
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  /* ---- 月 ---- */
+  function dayEvents(d) {
+    var ev = [];
+    if (d === MEET) ev.push({k:'mt', label:'面談 11:00', text:'森先生との面談'});
+    items.forEach(function (it) {
+      if (it.done && it.due === d) ev.push({k:'done', label:it.short, text:it.course + ' ' + it.title, note:it.done + ' に出せました'});
+      if (!it.done && it.alt === d) ev.push({k:'two', label:it.short + ' 日付が2つ', text:it.course + ' ' + it.title, note:'お知らせには' + d + '日。課題の欄は' + it.due + '日'});
+      if (!it.done && it.due === d) ev.push({k:'dl', label:it.short, text:it.course + ' ' + it.title, note:'締切 ' + it.time + (it.alt ? '（お知らせには' + it.alt + '日）' : '')});
+      if (!it.done && it.prep === d) ev.push({k:'prep', label:it.short + ' 準備', text:it.course + ' ' + it.title, note:'準備を始める日'});
+    });
+    return ev;
+  }
+  function renderMonth(el) {
+    var h = '<div class="mo-head">' + W.map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</div>';
+    h += '<div class="mo-grid" role="group" aria-label="2026年11月">';
+    // 10/26（月）から 12/6（日）まで 42日
+    for (var i = 0; i < 42; i++) {
+      var d = i - 5; // 10/26 → -5, 11/1 → 1
+      var inMonth = d >= 1 && d <= 30;
+      var label = inMonth ? d : (d < 1 ? 26 + i : d - 30);
+      var wk = i % 7 >= 5;
+      var ev = inMonth ? dayEvents(d) : [];
+      var c = 'mo-cell' + (inMonth ? '' : ' out') + (wk ? ' wk' : '') + (d === TODAY ? ' today' : '');
+      h += '<button class="' + c + '" ' + (inMonth ? 'data-day="' + d + '" aria-pressed="' + (d === MEET) + '"' : 'disabled') + '><span class="n">' + label + '</span>';
+      if (ev.length) {
+        h += ev.map(function (e) { return '<span class="mo-chip ' + e.k + '">' + (e.k === 'done' ? CHECK : '') + e.label + '</span>'; }).join('');
+        h += '<span class="mo-dots">' + ev.map(function (e) { return '<i class="' + e.k + '"></i>'; }).join('') + '</span>';
+      }
+      h += '</button>';
+    }
+    h += '</div><div class="mo-daylist" aria-live="polite"></div>';
+    el.innerHTML = h;
+    var list = el.querySelector('.mo-daylist');
+    function show(d) {
+      var ev = dayEvents(d);
+      var s = '<h3><span>' + d + '</span>' + wd(d) + '曜日</h3>';
+      ev.forEach(function (e) {
+        var k = e.k === 'dl' ? '締切 ' + (e.note.match(/\d+:\d+/) || [''])[0] : e.k === 'prep' ? '準備を始める日' : e.k === 'two' ? '日付が2つ' : e.k === 'done' ? '出せました' : '面談';
+        s += '<div class="mo-item"><span class="k ' + e.k + '">' + k + '</span><span>' + (e.k === 'mt' ? e.text : e.text.replace(/^(\S+) /, '<span class="c">$1</span>')) + (e.k === 'done' ? '<span class="c ok">' + e.note + '</span>' : e.k === 'two' ? '<span class="c">' + e.note + '</span>' : e.k === 'dl' && e.note.indexOf('（') > -1 ? '<span class="c">' + e.note.slice(e.note.indexOf('（')) + '</span>' : '') + '</span></div>';
+      });
+      list.innerHTML = s;
+      el.querySelectorAll('.mo-cell[data-day]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.day === d)); });
+    }
+    el.querySelectorAll('.mo-cell[data-day]').forEach(function (b) { b.addEventListener('click', function () { show(+b.dataset.day); }); });
+    show(MEET);
+  }
+
+  document.querySelectorAll('[data-tw]').forEach(renderTwoWeek);
+  document.querySelectorAll('[data-mo]').forEach(renderMonth);
+
+  /* ---- 一覧 / 2週間 / 月 の切り替え ---- */
+  document.querySelectorAll('.seg').forEach(function (seg) {
+    var scope = seg.closest('.student-main, .person-profile');
+    seg.querySelectorAll('button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        seg.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        scope.querySelectorAll('[data-calview]').forEach(function (v) { v.hidden = (v.dataset.calview !== b.dataset.cal); });
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
