@@ -18,6 +18,7 @@ export type {
   ObservationResult,
   PreparationPlan,
   Submission,
+  SessionContext,
 } from './types.js';
 export { applyObservation } from './ledger.js';
 export { READER_VERSION, validateDefinition } from './definition.js';

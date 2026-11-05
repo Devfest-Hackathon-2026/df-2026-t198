@@ -1,7 +1,7 @@
 import type {
   Assignment, AssignmentChange, Deadline, LedgerAssignment, Observation, ObservationReceipt,
 } from './types.js';
-export type { Assignment, AssignmentChange, Deadline, FetchState, LedgerAssignment,
+export type { Assignment, AssignmentChange, Deadline, FetchState, LedgerAssignment, SessionContext,
   Observation, ObservationReceipt, ObservationResult } from './types.js';
 
 function copyAssignment(value: Assignment): Assignment {
