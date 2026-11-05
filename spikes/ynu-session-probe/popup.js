@@ -11,8 +11,8 @@ async function render() {
   rows.replaceChildren(...log.slice(-40).reverse().map((e) => {
     const tr = document.createElement("tr");
     if (!e.loggedIn) tr.className = "out";
-    const state = e.error ? `失敗 ${e.error}` : `${e.loggedIn ? "ログイン中" : "切れている"} (${e.status})`;
-    for (const text of [new Date(e.at).toLocaleString("ja-JP"), `${e.trigger}/${e.via ?? "worker"}`, state, `${e.path ?? ""} ${e.ms ?? ""}ms`]) {
+    const state = e.error ? `失敗 ${e.error}` : `${e.loggedIn ? "取れた" : "取れない"} (${e.status})`;
+    for (const text of [new Date(e.at).toLocaleString("ja-JP"), `${e.trigger}/${e.via ?? "worker"}${e.withSid ? "+SID" : ""}`, state, `${e.path ?? ""} ${e.ms ?? ""}ms`]) {
       const td = document.createElement("td");
       td.textContent = text;
       tr.append(td);
