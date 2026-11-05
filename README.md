@@ -71,7 +71,24 @@ pnpm emulators:web
 
 Hostingは `http://127.0.0.1:5002/student` と `/session`、管理画面は `http://127.0.0.1:4000`。全体起動時のFirestoreは8085、Authenticationは9099で動く。設定は [firebase.json](firebase.json)。初回はエミュレーターのダウンロードが発生する。
 
-アプリとエミュレーターの接続は未実装。Firestoreの規則は全読み書きを拒否する状態から始める。接続を実装するときに、共有範囲に合わせた規則とテストを追加する。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
+観測APIはAuth・Firestoreのエミュレーターで試験できる（下記）。画面との接続は未実装。Firestoreの規則は全読み書きを拒否したままで、共有範囲に合わせた規則と試験は別途追加する。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
+
+### 観測APIの試験
+
+```sh
+pnpm test:observations:emulator
+```
+
+AuthとFirestoreを `demo-kadai-hisho` で起動し、架空の利用者・観測を使ってAPIへの送信、保存、再送、取消、本人以外の保存先の拒否を試す。通常の `pnpm test` ではエミュレーターの4試験をskipするため、このコマンドも別途実行する。JDKがPATHにない場合は、インストール済みJDKのbinをPATHに加えて実行する。
+
+APIを手動で動かす場合は、`pnpm emulators` の起動後、別のターミナルで次を実行する。
+
+```sh
+pnpm --filter server... build
+GCLOUD_PROJECT=demo-kadai-hisho FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 pnpm --filter server start
+```
+
+送信形とAPIの応答は [データの形](docs/data-shapes.md)。エミュレーター用の環境変数はクラウドでは設定しない。
 
 ## 提出とライセンス
 
