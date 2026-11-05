@@ -37,7 +37,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作
 - [ ] C05 〈Sora〉 裏で取れないときは、開いているページの側で取りに行く。確かめ方：裏の取得を止めた状態で操作
 - [x] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験 → `packages/core/tests/login-state.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`（固定の失敗コード。ログイン前・認証エラーの保存見本で確認）
-- [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）
+- [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）。Issue #10で製品固有のパターンを引数付きに移行し、別製品の読み取り・不正な引数の拒否を `packages/core/tests/parameterized-patterns.test.mjs` で確認
 
 ### 取得：PandA（Sakai）
 
