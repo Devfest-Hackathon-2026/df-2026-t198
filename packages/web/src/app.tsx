@@ -1,3 +1,4 @@
+import { StudentPage } from './student';
 import { SessionPage } from './session-page';
 
 export function App() {
@@ -18,7 +19,7 @@ export function App() {
         </nav>
       </header>
       <main>
-        <h1>{title}</h1>
+        {path === '/student' || path === '/' ? <StudentPage /> : <h1>{title}</h1>}
         {path === '/session' && <div className="session-page"><SessionPage /></div>}
       </main>
     </div>
