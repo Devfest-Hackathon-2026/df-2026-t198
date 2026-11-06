@@ -18,6 +18,7 @@ export type {
   ObservationReceipt,
   ObservationResult,
   PreparationPlan,
+  PreparationPlanInput,
   Submission,
   SessionContext,
 } from './types.js';

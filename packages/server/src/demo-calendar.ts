@@ -30,7 +30,11 @@ export function createDemoCalendarSync(db: Firestore) {
         if (assignment.key.system !== 'demo-lms') throw new DemoForbidden();
         const name = names.find(course => course.system === 'demo-lms' && course.courseId === assignment.latest.courseId)?.name ?? assignment.latest.courseId;
         const item = writeCalendarItem(tx, student, state.items.get(doc.id), doc.id, assignment, name, integration.calendarId);
-        if (!item || item.appliedRevision === item.desiredRevision) continue;
+        if (item) state.items.set(item.itemKey, item);
+      }
+      for (const saved of state.items.values()) {
+        const item = saved.calendarId === integration.calendarId ? saved : { ...saved, calendarId: integration.calendarId, desiredRevision: saved.desiredRevision + 1 };
+        if (item.appliedRevision === item.desiredRevision) continue;
         applyMockEvent(events, item);
         const acknowledged = acknowledgeCalendarItem(item, { itemKey: item.itemKey, generation: item.generation,
           eventId: item.eventId, revision: item.desiredRevision, errorCode: null }, now);

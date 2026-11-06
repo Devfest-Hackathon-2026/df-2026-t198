@@ -46,7 +46,7 @@ describe.skipIf(!enabled)('session API and Web listeners with Auth and Firestore
     expect((await fetch(`${fixture.base}/api/v1/supporter/students`)).status).toBe(401);
     expect((await put('session-student-a', context)).status).toBe(200);
     expect((await fixture.db.doc('students/session-student-a/sessionContext/current').get()).data()).toEqual(context);
-    for (const student of ['session-student-b', 'session-student-c', 'session-malformed', 'session-narrow', 'session-supporter']) {
+    for (const student of ['session-student-b', 'session-student-c', 'session-malformed', 'session-narrow']) {
       expect((await put(student, context)).status).toBe(403);
       expect((await fixture.db.doc(`students/${student}/sessionContext/current`).get()).exists).toBe(false);
     }
@@ -57,7 +57,7 @@ describe.skipIf(!enabled)('session API and Web listeners with Auth and Firestore
     try {
       await expect.poll(() => state?.status).toBe('ready');
       const plan = { assignment: { system: 'demo-lms', sourceId: 'fictional' }, date: '2026-11-10',
-        period: 3, decidedOn: '2026-11-01', calendarEventId: 'fictional' };
+        period: 3, decidedOn: '2026-11-01', planId: 'confirmed', title: '架空の準備', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'session-supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' };
       await fixture.db.doc('students/session-student-a/plans/confirmed').set(plan);
       await expect.poll(() => state?.data.plans).toEqual([plan]);
       expect(state?.data.context).toEqual(context);

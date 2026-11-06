@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
+import { planActions, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
 import { DemoCalendar } from './demo-calendar';
 import { firebase } from './firebase';
 import { watchAccount, type StudentCourse, type StudentData, type StudentState } from './student-data';
@@ -40,7 +41,7 @@ function AssignmentRow({ item }: { item: LedgerAssignment }) {
     <a href={item.latest.url} target="_blank" rel="noreferrer">LMSで見る ›</a>
   </li>;
 }
-export function StudentView({ data, now = Date.now() }: { data: StudentData; now?: number }) {
+export function StudentView({ data, now = Date.now(), actions }: { data: StudentData; now?: number; actions?: PlanActions | undefined }) {
   const [selected, setSelected] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -51,8 +52,9 @@ export function StudentView({ data, now = Date.now() }: { data: StudentData; now
   }, [selected]);
   const course = data.courses.find(item => courseKey(item) === selected);
   const upcoming = pending(data.assignments).filter(item => Number.isFinite(dateKey(deadlineOf(item))));
-  const days = Math.max(5, ...data.courses.flatMap(c => c.slots.map(s => s.weekday)));
-  const periods = Math.max(5, ...data.courses.flatMap(c => c.slots.map(s => s.period)));
+  const plans = data.plans.filter(plan => plan.status === 'active');
+  const days = Math.max(5, ...plans.map(plan => new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7), ...data.courses.flatMap(c => c.slots.map(s => s.weekday)));
+  const periods = Math.max(5, ...plans.map(plan => plan.period), ...data.courses.flatMap(c => c.slots.map(s => s.period)));
   const select = (value: StudentCourse) => setSelected(courseKey(value));
   const unscheduled = data.courses.filter(c => c.slots.length === 0);
   const courseItems = course ? data.assignments.filter(item => belongsTo(item, course)) : [];
@@ -89,7 +91,8 @@ export function StudentView({ data, now = Date.now() }: { data: StudentData; now
                 {(next.reviewReasons.length > 0 || next.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.reviewReasons[0]?.kind === 'unreadable-deadline'
                   ? '締切を確認できていません。' : next.reviewReasons[0]?.detail ?? 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
-          })}</td>)}</tr>)}</tbody>
+          })}{plans.filter(plan => (new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7) === d + 1 && plan.period === p + 1)
+            .map(plan => <div className="preparation-cell" key={plan.planId}><PlanSummary plan={plan} /></div>)}</td>)}</tr>)}</tbody>
       </table></div>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
         <button className="plain-button" key={courseKey(c)} onClick={() => select(c)} aria-controls="course-assignments">{c.name}</button>)}</section>}</div>
       {course && <aside ref={panel} tabIndex={-1} className="course-panel" id="course-assignments" aria-label={`${course.name}の課題`}>
@@ -102,6 +105,9 @@ export function StudentView({ data, now = Date.now() }: { data: StudentData; now
         {!courseItems.length && <p>この授業の課題はまだありません。</p>}
       </aside>}
     </div>
+    {actions && <details className="preparation-add"><summary>準備の予定を入れる</summary>
+      <PlanForm assignments={data.assignments} actions={actions} /></details>}
+    <PlanList plans={data.plans} actions={actions} own />
   </>;
 }
 export function StudentPage() {
@@ -117,7 +123,9 @@ export function StudentPage() {
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><p>拡張機能と同じGoogleアカウントでログインしてください。</p>
       <button className="plain-button" onClick={() => accountAction(client.login)}>Googleでログイン</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
-        {state.status === 'ready' ? <><StudentView data={state} now={now} /><DemoCalendar /></> : <p role="status">{state.status === 'error'
+        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now}
+          actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
+          {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}<DemoCalendar /></> : <p role="status">{state.status === 'error'
           ? '課題を開けませんでした。接続を確かめて、画面を開き直してください。' : '課題を開いています…'}</p>}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;

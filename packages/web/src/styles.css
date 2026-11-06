@@ -54,7 +54,7 @@ ul { list-style: none; padding: 0; margin: 0; }
 .upcoming button { border: 0; background: transparent; text-align: left; width: 100%; }
 .upcoming strong { color: var(--green); margin-right: 12px; }
 .upcoming .muted { display: block; }
-.student-layout { display: grid; gap: 24px; align-items: start; }
+.student-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
 .student-layout.with-course { grid-template-columns: minmax(0, 1fr) 300px; }
 .timetable-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 9px; background: var(--white); }
 .timetable { width: 100%; min-width: 590px; border-spacing: 0; table-layout: fixed; }

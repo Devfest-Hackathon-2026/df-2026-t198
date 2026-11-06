@@ -1,6 +1,6 @@
 import { onAuthStateChanged, type Auth } from 'firebase/auth';
 import { collection, onSnapshot, type Firestore } from 'firebase/firestore';
-import type { Course, FetchState, LedgerAssignment, LmsSystem } from '../../core/src/types';
+import type { Course, FetchState, LedgerAssignment, LmsSystem, PreparationPlan } from '../../core/src/types';
 
 export type StudentCourse = Course & { system: LmsSystem };
 export interface StudentData {
@@ -8,6 +8,7 @@ export interface StudentData {
   assignments: LedgerAssignment[];
   fetchStates: FetchState[];
   online: boolean;
+  plans: PreparationPlan[];
 }
 export type StudentState = { status: 'loading' | 'signed-out' | 'error' } |
   ({ status: 'ready' } & StudentData);
@@ -25,14 +26,14 @@ export function watchAccount(auth: Auth, db: Firestore, next: (state: StudentSta
     stopStudent = () => { current = false; stops.forEach(stop => stop()); };
     const values: Partial<StudentData> = {};
     const cached = new Map<string, boolean>();
-    for (const name of ['courses', 'assignments', 'fetchStates'] as const) {
+    for (const name of ['courses', 'assignments', 'fetchStates', 'plans'] as const) {
       stops.push(onSnapshot(collection(db, 'students', user.uid, name), { includeMetadataChanges: true }, snapshot => {
         if (!current) return;
         Object.assign(values, { [name]: snapshot.docs.map(doc => doc.data()) });
         cached.set(name, snapshot.metadata.fromCache);
-        if (values.courses && values.assignments && values.fetchStates) {
+        if (values.courses && values.assignments && values.fetchStates && values.plans) {
           next({ status: 'ready', courses: values.courses, assignments: values.assignments,
-            fetchStates: values.fetchStates, online: [...cached.values()].every(value => !value) });
+            fetchStates: values.fetchStates, plans: values.plans, online: [...cached.values()].every(value => !value) });
         }
       }, () => {
         if (!current) return;

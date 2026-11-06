@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 24/41（58%）、必須 23/37（62%）
+完成条件：全体 26/41（63%）、必須 25/37（67%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -69,8 +69,8 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 ### 面談画面
 
 - [x] C23 〈未定〉 次の面談までの締切、前回の面談からの変化、要確認のものを出す。確かめ方：画面 → PR #36、`packages/web/tests/session.browser.mjs`（実ブラウザで学生選択・3欄・日時変更・即時更新・共有取消・学生画面とのログイン共有・ログアウト、390px幅）、`pnpm test:sessions:emulator`。記録と画面：`docs/records/2026-11-06-issue-21-verification.md`
-- [ ] C24 〈未定〉 時間割の空いたコマに準備の候補を出し、決めたものだけを準備の予定として保存する。確かめ方：試験と画面 → Issue #39で2画面への分割と候補の表示まで。保存は未実装。`packages/web/tests/session-model.test.ts`、`packages/web/tests/session.browser.mjs`、[比較と確認の記録](docs/records/2026-11-06-session-split.md)
-- [ ] C25 〈未定〉 決めた準備の予定が、学生の時間割とGoogleカレンダーに入る（学生の承認の流れは未決）。確かめ方：画面と実際のカレンダー
+- [x] C24 〈未定〉 時間割の空いたコマに準備の候補を出し、決めたものだけを準備の予定として保存する。確かめ方：試験と画面 → Issue #49、`packages/web/tests/plans.browser.mjs`（支援担当の「入れる」、学生の追加・双方の予定の取消、登録者の表示）、`packages/server/tests/plans.emulator.test.ts`（権限・再送・保存と同期対象）。[確認記録](docs/records/2026-11-06-issue-49.md)
+- [x] C25 〈未定〉 決めた準備の予定が、学生の時間割とGoogleカレンダーに入る。確かめ方：画面と実物または体験用カレンダー → Issue #49の案A・合格範囲に従い、`packages/web/tests/plans.browser.mjs` で時間割と保存済み体験用予定の作成・取消、`packages/server/tests/plans.emulator.test.ts` で実物用の同期対象と版、`packages/extension/tests/calendar-sync.test.ts` で偽APIへの作成・取消・再試行を確認。実物への書き込みは未確認（C15）。[確認記録](docs/records/2026-11-06-issue-49.md)
 - [x] C26 〈未定〉 支援担当は、自分が受け持つ学生のデータだけを読める。確かめ方：Firestoreの規則の試験（エミュレーター）→ `scripts/firestore-rules.test.mjs`、`pnpm test:firestore-rules` 32件成功（本人・許可済み・未許可・取消済み・他人・未ログイン、本人だけの文書と直接書き込み拒否を含む）
 - [ ] C27 〈未定〉 面談の前のまとめを出す。〔削れる〕
 
@@ -129,3 +129,4 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 | 2026-11-06 | C30を必須にした。C03に、全授業の課題の一覧がLMSに無いことを書いた | C30は、別の大学へ広げるときの入口になるため（Sora）。36個すべてを終える前提で進める |
 | 2026-11-06 | C37〜C41（提出物）を足した | 完成条件をすべて満たしても、提出一式がそろわないため（FableとAstraの見直し、D23。Soraが合意、orangeは後でレビュー） |
 | 2026-11-06 | C28 の〔削れる〕を外し、必須にした | 延長や前倒しがお知らせの文にだけ書かれることがあり、利用者が見落とす変化を拾う役目があるため（D23。Soraが合意、orangeは後でレビュー）。D11の削る順の③はC29だけにした |
+| 2026-11-06 | C25の未決の承認フローをIssue #49の案Aに更新。試験は実物または体験用カレンダー | Issue #49の最新コメントと作業依頼に従う。学生と支援担当が保存でき、登録者表示と学生による取消でD13を守る。orangeの合意はmerge前 |

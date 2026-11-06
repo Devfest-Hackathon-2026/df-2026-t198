@@ -34,7 +34,7 @@ describe('学生が締切を確かめる画面', () => {
     expect(html).toContain('架空の集中講義');
   });
   it('初回の案内と、締切なし・不明・タイムゾーン付き日時を区別する', () => {
-    const html = renderToStaticMarkup(<StudentView data={{ courses: [], assignments: [], fetchStates: [], online: true }} />);
+    const html = renderToStaticMarkup(<StudentView data={{ plans: [], courses: [], assignments: [], fetchStates: [], online: true }} />);
     expect(html).toContain('まだ課題がありません');
     expect(html).not.toContain('要確認');
     expect(deadlineText({ kind: 'none', dueText: 'なし', timeZone: 'Asia/Tokyo' })).toBe('締切なし');

@@ -1,0 +1,10 @@
+.preparation-form { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; padding: 1rem; border: 1px solid #c5cfc7; border-radius: .6rem; margin: 1rem 0; }
+.preparation-form label { display: grid; gap: .3rem; min-width: 0; max-width: 100%; }
+.preparation-form select, .preparation-form input { font: inherit; padding: .5rem; min-width: 0; max-width: 100%; }
+.preparation-form p { flex-basis: 100%; margin: .2rem 0; }
+.preparation-list ul { padding: 0; list-style: none; }
+.preparation-list li, .preparation-cell { display: grid; gap: .35rem; padding: .8rem; border-left: 3px solid #54765e; background: #edf3ec; margin: .5rem 0; overflow-wrap: anywhere; }
+.preparation-list button { justify-self: start; }
+.preparation-cell { font-size: .85rem; text-align: left; }
+.preparation-add { margin: 1.5rem 0; }
+.preparation-cell time { white-space: nowrap; }

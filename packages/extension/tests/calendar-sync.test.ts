@@ -79,3 +79,20 @@ it('stops on missing authorization and does not swallow observation upload failu
   await expect(sendObservationAndSync({} as Observation, async () => { throw new Error('upload'); }, after)).rejects.toThrow('upload');
   expect(after).not.toHaveBeenCalled();
 });
+
+it('syncs an explicitly timed preparation plan and retries its creation and removal without duplicates', async () => {
+  const fake = fakeCalendar(); const target = googleCalendarTarget(fake.request);
+  const row = item(); row.kind = 'preparation';
+  row.desired = { state: 'present', event: { summary: '準備：架空の課題', description: '支援担当が入れた準備の予定です。',
+    start: { dateTime: '2030-11-11T13:00:00+09:00', timeZone: 'Asia/Tokyo' },
+    end: { dateTime: '2030-11-11T14:30:00+09:00', timeZone: 'Asia/Tokyo' }, transparency: 'transparent', reminders: { useDefault: true } } };
+  fake.loseNextResponse();
+  await expect(target.apply(row)).rejects.toThrow();
+  await target.apply(row);
+  expect(fake.events.size).toBe(1);
+  expect(fake.events.get(row.eventId)).toMatchObject({ start: { dateTime: '2030-11-11T13:00:00+09:00' }, end: { dateTime: '2030-11-11T14:30:00+09:00' } });
+  row.desired = { state: 'deleted' }; row.desiredRevision++;
+  await target.apply(row); await target.apply(row);
+  expect(fake.events.size).toBe(0);
+  expect(fake.request.mock.calls.filter(call => call[1] === 'POST')).toHaveLength(1);
+});

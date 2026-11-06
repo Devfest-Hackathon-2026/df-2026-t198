@@ -29,7 +29,7 @@ export function createSessionStore(db: Firestore): SessionStore {
       const student = db.collection('students').doc(studentUid);
       await db.runTransaction(async tx => {
         const grant = await tx.get(student.collection('supporters').doc(supporterUid));
-        if (!allowed(grant.data())) throw new SessionForbidden();
+        if (supporterUid !== studentUid && !allowed(grant.data())) throw new SessionForbidden();
         tx.set(student.collection('sessionContext').doc('current'), context);
       });
     },

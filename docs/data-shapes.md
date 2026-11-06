@@ -106,7 +106,7 @@ APIは受領記録、授業、台帳、履歴、取得状態を1つのFirestore�
 
 ## 準備の予定と既存の読み取り部品
 
-`PreparationPlan` はまだ従来の雛形（課題、日付、時限、面談日、カレンダーの予定ID）。本人の確定や同期待ちを扱う型への変更は、このIssueには含めない。
+`PreparationPlan` は下記のIssue #49の保存契約。自動の準備の目安・一時的な候補とは別に扱う。
 
 HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形とは別。従来の `dueAt`・`dueText` を持ち、取得部品が根拠に応じて上の `deadline` に変換する。`dueAt: null` だけから締切なしとは判断しない。`stripSessionId` はpathの `;SID=...` を除く既存の補助で、queryなどを含む一般的な秘密除去ではない。
 
@@ -115,7 +115,7 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 `SessionContext` は `lastSessionAt`・`nextSessionAt` の2項目。どちらもタイムゾーン付きISO 8601日時、未設定なら `null`。保存先は `students/{uid}/sessionContext/current`。APIは実在する日付・時刻・時差を検査し、両方の項目を必須にして、未知の項目を拒否する。未設定の期間を画面が推測することはない。
 
 - `GET /api/v1/supporter/students`：Firebase ID tokenで認証した支援担当について、許可文書の `scopes` がリストで `all` を含み、`revokedAt` が明示的に `null` の学生だけを `{ students: [{ uid }] }` で返す。学生の表示名やメールは返さない。全学生の一覧をクライアントから問い合わせる規則は追加しない。
-- `PUT /api/v1/students/{uid}/session-context`：本文は `SessionContext`、上限2 KiB。支援担当への許可の読み取りと日時の上書きを同じFirestoreトランザクションで行う。許可がない場合は本人でも403。成功時は保存した2項目を200で返す。
+- `PUT /api/v1/students/{uid}/session-context`：本文は `SessionContext`、上限2 KiB。支援担当への許可の読み取りと日時の上書きを同じFirestoreトランザクションで行う。本人または有効な共有許可がある支援担当だけが保存できる（Issue #49）。それ以外は403。成功時は保存した2項目を200で返す。
 - どちらも既存のID token検証（失効確認付き）を使い、応答に `Cache-Control: no-store` を付ける。未認証401、不正な本文400、サイズ超過413、JSON以外415、保存失敗500。エラーは固定コードのみ。実物の入力やSDKの例外を応答・ログに出さない。
 
 画面は許可文書をサーバーから確認してから、授業・課題・変更・更新状態・面談日時を購読する。許可の取消・削除、購読失敗で内容を消し、購読を止める。学生切替・ログアウトでも前の学生の表示と購読を破棄し、遅れて届いた通知で復活させない。台帳の永続キャッシュは作らない。通信が切れている間の取消を即座に検知したり、すでに渡した情報を回収したりするものではない。
@@ -130,9 +130,25 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 - `PreparationCandidate` は `assignment`・`date`・`period` だけ。確定した予定のID、カレンダーのID、承認状態は持たず、Firestoreにもブラウザの永続領域にも保存しない。
 - 対象は、現在から次回の面談までに締切がある、提出済み・取消済み以外の課題。各課題につき2つまで、平日で授業がないコマを日付・時限順に挙げる。同じ空きコマを別の課題にも示すことがある。選ぶ対象の課題だけを時間割に重ねる。
 - 時間割は日本時間。時限数は学生画面と同じく最低5限と授業の最大時限。時限の開始時刻がまだないため、過ぎたコマを勧めないよう翌日以降・締切の前日までに限定する。日付だけの締切にも時刻は補わない。授業以外の個人の予定が空いているとは判断しない。
-- `PreparationConfirmationRequest` は確認依頼の本文の型（`{ candidates: PreparationCandidate[] }`）だけを用意した。送信先・送信処理・学生への配信・学生による確定は未実装。「学生に確認を頼む」は無効にし、その近くに準備中と本人が確定する旨を表示する。送信済み・保存済みとは表示しない。C25の聞き取り後に接続する。
+- Issue #49で無効の「学生に確認を頼む」を「入れる」に置き換えた。候補を選び、開始・終了時刻を入力したときだけ、下記のAPIに送る。既に同じ課題・日付・時限で保存した候補は重ねて出さない。取消した予定は「前回の約束」からも外す。
 
-保存済みの `PreparationPlan` は変更しない。候補を予定として保存する機能がないため、C24全体とC25の完成を意味しない。分け方の比較は [記録](records/2026-11-06-session-split.md)。
+候補と画面分割の経緯は [Issue #39の記録](records/2026-11-06-session-split.md)。現在の保存契約は次節。
+
+## 準備予定の保存と取消（Issue #49）
+
+[案Aの決定](decisions.md#d25-学生と支援担当が準備の予定を入れ学生が外せるようにする2026-11-06issue-49)に従う。型は `PreparationPlanInput` と `PreparationPlan`。保存先は `students/{uid}/plans/{planId}`。既存のFirestore規則で本人・共有中の支援担当が読み取り、クライアントの直接書き込みは拒否する。
+
+- `PUT /api/v1/students/{uid}/plans/{planId}`：`planId` はクライアントが操作ごとに作る小文字UUID v4。同じ内容の再試行では同じIDを送る。本文は `{ assignment: { system, sourceId }, date, period, startsAt, endsAt }` だけ。日付は実在する `YYYY-MM-DD`、時限は1〜24の整数、時刻は同じ日付の `YYYY-MM-DDTHH:mm:00+09:00` で開始より終了が後。時限設定はまだないため、時刻は利用者が入力する。
+- Firebase ID tokenの本人か、`scopes` がリストで `all` を含み `revokedAt: null` の支援担当のみ保存できる。共有許可・体験用プロフィールの確認と保存を同じトランザクションで行う。体験用学生は本人にひも付く学生プロフィールを必要とし、課題の接続先は `demo-lms` だけ。体験用の操作を別の組・実物の学生へ流さない。
+- 新しい予定は、その学生の台帳にある提出済み・取消済み以外の課題を必要とする。開始は未来で、指定曜日・時限に授業が入っていないことをサーバーが検査する。個人のカレンダーや他の準備予定の重なりは判定しない。時限と入力時刻の対応も、時限設定がないため検査しない。
+- APIは入力に加え `planId`・課題の `title`・`decidedOn`（保存日の日本時間）・`timeZone: 'Asia/Tokyo'`・`confirmedBy`（認証済みUID）・`createdByRole: 'student' | 'supporter'`・`confirmedAt`（サーバー時刻）・`status: 'active'`・`revision: 1`・`calendarItemKey` を保存する。登録者や同期先を本文で指定することはできない。
+- 同じ登録者・ID・内容の再送は保存済みの予定を返し、版や時刻を進めない。同じIDで内容や登録者が違う場合、または取消済みの場合は409。取消済みの予定を再度入れるには新しいIDを使う。予定の日時変更は、外して別の予定として入れる。
+- `DELETE` は同じURLで本文なし。学生はどの予定も、共有中の支援担当は自分が入れた予定だけを外せる。`status: 'cancelled'` にし `revision` を1つ増やす。記録を消さず遅れたPUTでの復活を防ぐ。同じDELETEの再送では版を進めない。
+- 予定と `calendarItems/{calendarItemKey}` を同時に保存する。キーは `['preparation', planId]` のJSONのSHA-256、`kind: 'preparation'`、`sourceKey` は課題キー。開始・終了・題名・登録者の区分を保存時に固定し、LMSの締切変更で動かさない。取消は `desired: { state: 'deleted' }` とし、既存の版・世代・予定IDによる結果報告を使う。
+- 保存後、サーバーのプロフィールに従って既存の体験用同期を呼ぶ。実物の学生には模擬同期せず、#40のAPIを通じて拡張機能が処理する。体験用の書き込み失敗時も予定と同期待ちは残り、同じ操作の再試行か次の「LMSを開く」で再試行する。画面表示だけを同期成功としない。
+- 成功は200で保存した `PreparationPlan`。未認証401、不正な入力400、許可なし403、競合・対象課題なし・授業のあるコマ・過去の時刻409、4 KiB超413、PUTのJSON以外415、保存または模擬同期失敗500。応答は `Cache-Control: no-store`、エラーは固定コードのみで入力や例外を返さない。
+
+学生画面も `plans` を購読し、日付と時刻・登録者を時間割の該当コマと予定一覧に表示する。学生変更・ログアウト・購読失敗で前の表示を消す。実物の同期は拡張機能の起動・観測送信後などの既存のきっかけを使い、定期同期は追加していない。
 
 ## お知らせの受信と要確認（Issue #45）
 
@@ -152,9 +168,9 @@ APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の�
 
 ## 締切のカレンダー同期（Issue #40）
 
-型は `CalendarItem`・`CalendarIntegration`・`CalendarReport`（`types.ts`）、予定の組み立てと版の判定は [`calendar.ts`](../packages/core/src/calendar.ts)。締切だけを扱い、準備予定と模擬カレンダー本体は含めない。
+型は `CalendarItem`・`CalendarIntegration`・`CalendarReport`（`types.ts`）、予定の組み立てと版の判定は [`calendar.ts`](../packages/core/src/calendar.ts)。Issue #49で準備予定にも同じ版・世代・結果報告を使用する。締切は台帳から、準備予定は保存・取消APIから同期対象を作る。
 
-- `students/{uid}/calendarItems/{assignmentDocumentKey}` に、`kind: 'deadline'`、`sourceKey`、`calendarId`（未接続はnull）、`eventId`、`generation`、`desiredRevision`、`desired`、`appliedRevision`、`appliedAt`、`lastAttemptedAt`、`lastErrorCode` を保存する。`desired` は `{ state: 'present', event }` または `{ state: 'deleted' }`。版と世代は1から、反映済みの版は0から。予定IDは作成前に決めたUUIDのハイフンを除いた文字列。
+- `students/{uid}/calendarItems/{assignmentDocumentKey}` に、`kind: 'deadline'`（準備は `'preparation'`）、`sourceKey`、`calendarId`（未接続はnull）、`eventId`、`generation`、`desiredRevision`、`desired`、`appliedRevision`、`appliedAt`、`lastAttemptedAt`、`lastErrorCode` を保存する。`desired` は `{ state: 'present', event }` または `{ state: 'deleted' }`。版と世代は1から、反映済みの版は0から。予定IDは作成前に決めたUUIDのハイフンを除いた文字列。
 - 観測から作る同期対象は台帳と同じトランザクションで更新する。予定の中身が同じなら版を進めない。観測の再送では同期対象も書き換えない。Googleへの通信はトランザクションの外で行う。
 - `students/{uid}/integrations/calendar` は `mode: 'google' | 'mock'`、`executor: 'extension' | 'demo'`、`calendarId`、`connectionState: 'connected' | 'reauthorization-required' | 'recovery-required'`。未接続は文書の不在で表す。今回のAPIで登録できるのは既存のGoogle専用カレンダーのみ。模擬側は下記のサーバー内処理が管理する。
 - `GET /api/v1/calendar-sync` は `{ integration: CalendarIntegration | null, items: CalendarItem[] }`。本人のうち、接続先があり、望ましい版と反映済みの版が異なる対象を返す。削除確認後の再出現と、他の台帳更新経路からの変更も、現在の台帳と照合してから返す。
@@ -177,8 +193,8 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 
 - 体験学生の観測を受領した後、サーバーが`demoAccounts/{uid}`の学生本人をトランザクションで確認し、`integrations/calendar`を`mode: 'mock', executor: 'demo', calendarId: 'demo-calendar'`で用意する。既存の実物の接続は上書きしない。通常の利用者はこの処理の対象外。
 - 同文書の任意項目`mockEvents`が模擬の書き込み先。キーは予定ID、値は`{ itemKey, generation, revision, event: DeadlineEvent }`。`calendarItems.desired`とは別の保存済み予定であり、画面が望ましい状態から予定を合成することはない。学生本人だけが既存の規則で読める。
-- 共通の`reconcileCalendarItem`で望ましい予定を計算し、`acknowledgeCalendarItem`で版・世代・予定IDを確認する。模擬予定の作成・移動・削除と成功の記録は同じトランザクションで確定する。取消後の再出現は古い削除を確認してから新しい世代にするため、最大2巡する。Googleへの通信は発生しない。
+- 共通の`reconcileCalendarItem`で望ましい予定を計算し、`acknowledgeCalendarItem`で版・世代・予定IDを確認する。締切と準備の同期対象について、模擬予定の作成・移動・削除と成功の記録は同じトランザクションで確定する。取消後の再出現は古い削除を確認してから新しい世代にするため、最大2巡する。Googleへの通信は発生しない。
 - 同期失敗では成功の版を進めず、HTTPは既存の固定エラーを返す。台帳と観測の受領記録は既に保存されている場合がある。同じ観測を再送すると台帳を重複更新せず模擬同期を再試行する。サーバー停止後も、次の「LMSを開く」で再試行できる。定期の再試行はない。
 - 学生画面は保存済み`mockEvents`と版の差を読み、「体験用カレンダー」と更新待ちを表示する。ログアウト・本人変更・購読失敗で前の表示を消す。支援担当はこの文書を読めず、従来の共有された台帳を面談画面で読む。
 
-少量の架空の体験データ用であり、模擬予定は1文書に収まる範囲。実物のカレンダー同期、準備の予定、大量データ、デプロイ先での成功はこの試験結果に含めない。
+少量の架空の体験データ用であり、模擬予定は1文書に収まる範囲。実物のカレンダー同期、大量データ、デプロイ先での成功はこのローカル試験結果に含めない。準備の予定はIssue #49の試験で確認する。
