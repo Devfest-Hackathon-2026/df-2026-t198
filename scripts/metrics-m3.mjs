@@ -9,25 +9,31 @@ import { createGeminiModel, MODEL } from '../packages/server/dist/announcements/
 import { withEvaluationBudget, estimatedYen } from '../packages/server/dist/announcements/budget.js';
 import { scoreM3, summarizeM3 } from './m3-score.mjs';
 
+const USAGE = 'usage: metrics:m3 [--split development|confirmation | --file <path>]';
+
 async function main() {
   const args = process.argv.slice(2);
-  const split = args.length === 0 ? 'all' : args.length === 2 && args[0] === '--split' ? args[1] : null;
-  if (!['all', 'development', 'confirmation'].includes(split)) throw new Error('usage: metrics:m3 [--split development|confirmation]');
+  const file = args.length === 2 && args[0] === '--file' && args[1] ? args[1] : null;
+  const split = file ? 'file' : args.length === 0 ? 'all' : args.length === 2 && args[0] === '--split' ? args[1] : null;
+  if (!['all', 'development', 'confirmation', 'file'].includes(split) || (split === 'file' && !file)) throw new Error(USAGE);
   const project = process.env.GOOGLE_CLOUD_PROJECT;
   if (!project || !/^[a-z][a-z0-9-]{4,61}[a-z0-9]$/.test(project)) throw new Error('set GOOGLE_CLOUD_PROJECT to the approved existing project');
   const splits = split === 'all' ? ['development', 'confirmation'] : [split];
-  const samples = (await Promise.all(splits.map(async (name) => ({ name,
+  const samples = file ? [{ name: 'file', samples: JSON.parse(await readFile(file, 'utf8')) }] :
+    (await Promise.all(splits.map(async (name) => ({ name,
     samples: JSON.parse(await readFile(new URL(`../lms-definitions/announcements/samples/${name}.json`, import.meta.url), 'utf8')),
   }))));
-  if (samples.some((g) => g.samples.length !== (g.name === 'development' ? 24 : 6))) throw new Error('corpus-count-invalid');
+  if (samples.some((g) => !Array.isArray(g.samples))) throw new Error('corpus-format-invalid');
+  if (!file && samples.some((g) => g.samples.length !== (g.name === 'development' ? 24 : 6))) throw new Error('corpus-count-invalid');
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   // Shared across worktrees and restarted commands for this project. Never store announcement text or responses.
   const state = join(homedir(), '.cache/kadai-hisho/m3', project, 'usage.json');
   await withEvaluationBudget(state, split, day, async (budget) => {
     const extractor = createAnnouncementExtractor(createGeminiModel(project, budget));
     const priorBaseline = budget.measuredBaseline;
+    const scores = [];
+    let completed = false;
     try {
-      const scores = [];
       const reports = [];
       for (const group of samples) {
         const groupScores = [];
@@ -40,7 +46,7 @@ async function main() {
           const score = scoreM3(sample.expected, result.status === 'proposal' ? result.proposal : null);
           groupScores.push(score);
           scores.push(score);
-          console.log(`${sample.id}: ${result.status}; TP=${score.tp} FP=${score.fp} FN=${score.fn}`);
+          if (!file) console.log(`${sample.id}: ${result.status}; TP=${score.tp} FP=${score.fp} FN=${score.fn}`);
         }
         reports.push({ split: group.name, count: groupScores.length, ...summarizeM3(groupScores) });
       }
@@ -50,17 +56,21 @@ async function main() {
         confirmation: 'fixed split; author-known, not a blind holdout', splits: reports, overall: summarizeM3(scores),
         usage: { ...budget.totals }, estimatedYen: estimatedYen(budget.totals.inputTokens, budget.totals.outputTokens),
         dailyYen: budget.dailyYen };
-      console.log(JSON.stringify(report, null, 2));
+      console.log(JSON.stringify(file ? { recall: report.overall.recall, precision: report.overall.precision,
+        count: scores.length, totalTokens: budget.totals.totalTokens } : report, null, file ? undefined : 2));
+      completed = true;
       if (report.overall.recall < 0.9 || report.overall.precision === null || report.overall.precision < 0.95) process.exitCode = 1;
     } finally {
-      console.log(JSON.stringify({ usage: budget.totals, includesUnsettledReservation: budget.hasUnsettledUsage, dailyEstimatedYen: budget.dailyYen }));
+      if (!file) console.log(JSON.stringify({ usage: budget.totals, includesUnsettledReservation: budget.hasUnsettledUsage, dailyEstimatedYen: budget.dailyYen }));
+      // On failure the total conservatively includes any unsettled reservation.
+      else if (!completed) console.log(JSON.stringify({ count: scores.length, totalTokens: budget.totals.totalTokens }));
     }
   });
 }
 try { await main(); } catch (error) {
   // Whitelist only our fixed error codes. Never emit an upstream message or stack.
   const message = error instanceof Error ? error.message : '';
-  const safe = /^(budget-[a-z-]+|corpus-count-invalid|confirmation-already-used|evaluation-stopped:[a-z-]+|set GOOGLE_CLOUD_PROJECT to the approved existing project|usage: metrics:m3 \[--split development\|confirmation\])$/;
-  console.error(safe.test(message) ? message : 'evaluation-failed (upstream details suppressed)');
+  const safe = /^(budget-[a-z-]+|corpus-(count|format)-invalid|confirmation-already-used|evaluation-stopped:[a-z-]+|set GOOGLE_CLOUD_PROJECT to the approved existing project)$/;
+  console.error(message === USAGE || safe.test(message) ? message : 'evaluation-failed (upstream details suppressed)');
   process.exitCode = 1;
 }
