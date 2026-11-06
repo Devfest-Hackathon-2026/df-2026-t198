@@ -87,7 +87,10 @@ function SessionWorkspace({ user, services }: { user: User; services: SessionSer
 function StudentSession({ uid, user, services }: { uid: string; user: User; services: SessionServices }) {
   const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
   const [now, setNow] = useState(() => new Date());
-  useEffect(() => watchSession(services.source, uid, user.uid, setState), [services, uid, user.uid]);
+  useEffect(() => watchSession(services.source, uid, user.uid, state => {
+    setState(state);
+    setNow(new Date());
+  }), [services, uid, user.uid]);
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(interval);

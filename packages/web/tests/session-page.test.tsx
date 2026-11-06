@@ -17,6 +17,7 @@ vi.mock('../src/session-firebase', () => ({ getSessionServices: () => holder.ser
 let root: Root;
 let host: HTMLElement;
 let userChanged: (user: User | null) => void;
+let publishChanges: (value: SessionData['changes']) => void;
 const grants = new Map<string, (allowed: boolean) => void>();
 const data: Record<string, SessionData> = {};
 const save = vi.fn(async () => {});
@@ -47,7 +48,10 @@ beforeEach(() => {
     login: async () => {}, logout: async () => { userChanged(null); }, saveContext: save,
     source: {
       grant: (student, _viewer, next) => { grants.set(student, next); next(true); return () => {}; },
-      watch: (student, name, next) => { next((data[student] ?? emptySession())[name]); return () => {}; },
+      watch: (student, name, next) => {
+        if (name === 'changes') publishChanges = next as typeof publishChanges;
+        next((data[student] ?? emptySession())[name]); return () => {};
+      },
     },
   };
   host = document.getElementById('root')!;
@@ -71,6 +75,19 @@ it('renders deadline, changes, a single decisions section, and clears the previo
   expect(host.textContent).not.toMatch(/一緒に決めること|一緒に確かめること|前回決めたこと|未提出|準備の候補/);
   await click('学生 student-b');
   expect(host.textContent).toContain('物理の演習'); expect(host.textContent).not.toContain('数学のレポート');
+});
+it('shows a newly received change without waiting for the minute timer', async () => {
+  const started = Date.now();
+  vi.spyOn(Date, 'now').mockReturnValue(started);
+  try {
+    await open(); await click('学生 student-a');
+    const later = new Date(started + 5000);
+    vi.useFakeTimers(); vi.setSystemTime(later);
+    const change = { ...data['student-a']!.changes[0]!, changeId: 'newly-arrived', kind: 'title-changed' as const,
+      before: '前の題名', after: '新しい題名', recordedAt: later.toISOString() };
+    await act(async () => { publishChanges([...data['student-a']!.changes, change]); });
+    expect(host.querySelector('#session-changes')?.parentElement?.textContent).toContain('題名が変わりました：前の題名 → 新しい題名');
+  } finally { vi.useRealTimers(); vi.restoreAllMocks(); }
 });
 it('removes all displayed student data on revocation and on logout', async () => {
   await open(); await click('学生 student-a');
