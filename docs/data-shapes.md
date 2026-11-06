@@ -121,3 +121,19 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 - `PreparationConfirmationRequest` は確認依頼の本文の型（`{ candidates: PreparationCandidate[] }`）だけを用意した。送信先・送信処理・学生への配信・学生による確定は未実装。「学生に確認を頼む」は無効にし、その近くに準備中と本人が確定する旨を表示する。送信済み・保存済みとは表示しない。C25の聞き取り後に接続する。
 
 保存済みの `PreparationPlan` は変更しない。候補を予定として保存する機能がないため、C24全体とC25の完成を意味しない。分け方の比較は [記録](records/2026-11-06-session-split.md)。
+
+## お知らせの受信と要確認（Issue #45）
+
+`POST /api/v1/announcements` は観測と別のAPI。Firebase ID tokenで本人を決め、本文は `{ system, courseId, announcement: { announcementId, version, publishedAt, body } }`。`publishedAt` は秒までのタイムゾーン付き日時。本文64 KiB、お知らせ12,000文字、ID200文字、版100文字まで。未知の項目とSID・Cookie等の認証情報を含む文字列を拒否する。任意の文章に埋まる未知の秘密を完全に識別するものではない。
+
+実物の側は無効のまま。既定では503で、`ENABLE_DEMO_ANNOUNCEMENTS=true` とプロジェクトIDの設定がある場合だけ模擬側を有効にする。さらにサーバーの `demoAccounts/{uid}` が `role: 'student', studentId: uid` であることと、`system: 'demo-lms'` を確認する。実際のLMS・未登録の利用者・体験用の支援担当は403。体験アカウントの初期設定と画面からの送信はIssue #19の続きで行う。
+
+候補は本人の同じ接続先・授業の、取消済みでない課題だけ。候補キー・引用・日時を検査した提案だけを反映する。反映直前の台帳をトランザクションで読み直し、`reviewReasons` に `conflicting-deadline` を追加する。`detail` はお知らせID・版・提案日時だけで、引用・お知らせ本文・生のモデル応答は保存しない。公式締切・根拠・提出状態・課題の観測・変更履歴は変えない。提案が現在の公式日時と同じ瞬間なら追加しない。後続の観測でも要確認は残す（解消の操作は対象外）。
+
+同じ本人・接続先・授業・お知らせID・版の組をSHA-256にして、サーバー専用の `students/{uid}/announcementReceipts/{hash}` に処理権を先に保存する。Geminiはトランザクションの外で呼ぶ。同時再送・サーバー再起動後も同じ版を二度処理せず、失敗後や途中停止後も自動で再試行しない。途中停止は `status: 'processing'` のまま残り、管理上の回復は後続の課題。完了時は固定の `status` と `changed` だけを保存する。
+
+200の応答も `{ status, changed }` だけ。statusは `proposal`・`abstained`・`invalid-output`・`invalid-input`・`model-error`・`duplicate`・`budget-limit`。候補なし・50件超など解析の上限外は `invalid-input` でGeminiを呼ばない。未認証401、受信書式不正400、サイズ超過413、JSON以外415、保存失敗500。すべて `Cache-Control: no-store`、エラーは固定コードのみ。モデル失敗・待機は別リクエストの観測処理を止めない。
+
+APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の日付}` で全インスタンス共通に予約・精算する。初回M3測定19,410トークンの3倍以内、呼び出し1回・再試行なし。既存の入力16,000バイト相当と出力4,096トークンの上限も適用する。1日推定3,000円を超える予約を拒否し、失敗・usage不明では予約を残す。単価と換算は `announcements/budget.ts`。ローカルM3評価の別予算や他のAPI利用を合算した実請求額ではないため、それらを並行して回す運用にはしない。
+
+検証は `pnpm test:announcements:emulator`（Auth・Firestore、架空データと代替モデルだけ）。実物のGeminiへの新たな送信・保持条件の確認・デプロイ・模擬LMS画面の描画はこの検証に含まない。
