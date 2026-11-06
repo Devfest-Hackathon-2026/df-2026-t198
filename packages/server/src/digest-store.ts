@@ -81,7 +81,7 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         const old = (await tx.get(ref)).data() as PreparationPlan | undefined;
         if (!old) throw new SessionForbidden();
         // A public revision guards against replay; identity still comes only from the token.
-        const receiptRef = student.collection('planActionReceipts').doc(`${planId}-${revision}`);
+        const receiptRef = student.collection('planActionReceipts').doc(`${planId}-${revision}-${action}`);
         const receipt = (await tx.get(receiptRef)).data() as PlanActionResult | undefined;
         if (receipt) return receipt;
         if (old.revision !== revision) throw new PlanConflict();

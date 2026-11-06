@@ -1,4 +1,4 @@
-import { actionMessage, performPlanAction, planProgress } from './plan-progress';
+import { actionMessage, performPlanAction, planActionErrorMessage, planProgress } from './plan-progress';
 import { useRef, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { LedgerAssignment, PreparationCandidate, PreparationPlan, PreparationPlanInput } from '../../core/src/types';
@@ -84,7 +84,7 @@ export function PlanList({ plans, actions, viewerUid, own }: { plans: Preparatio
     if (!actions?.act || busy) return;
     setBusy(plan.planId); setMessage('');
     try { setMessage(actionMessage((await actions.act(plan.planId, action, plan.revision)).outcome)); }
-    catch { setMessage('変更を確認できませんでした。接続と予定を確かめて、もう一度お試しください。'); }
+    catch (error) { setMessage(planActionErrorMessage(error, '変更を確認できませんでした。接続と予定を確かめて、もう一度お試しください。')); }
     finally { setBusy(null); }
   }
   async function remove(plan: PreparationPlan) {

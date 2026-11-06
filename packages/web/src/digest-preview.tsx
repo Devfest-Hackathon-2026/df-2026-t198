@@ -2,7 +2,7 @@ import { useEffect, useState, type MouseEvent } from 'react';
 import type { User } from 'firebase/auth';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { firebase } from './firebase';
-import { actionMessage, performPlanAction } from './plan-progress';
+import { actionMessage, performPlanAction, planActionErrorMessage } from './plan-progress';
 import './digest-preview.css';
 interface Preview { subject: string; html: string; empty: boolean }
 export function DigestPreview({ user }: { user: User }) {
@@ -43,7 +43,7 @@ export function DigestPreview({ user }: { user: User }) {
     if (!id || (action !== 'done' && action !== 'later') || !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) return;
     setBusy(true); setMessage('');
     try { const result = await performPlanAction(user, id, action, Number(rev)); setMessage(actionMessage(result.outcome)); }
-    catch { setMessage('予定の変更を確認できませんでした。もう一度お試しください。'); }
+    catch (error) { setMessage(planActionErrorMessage(error, '予定の変更を確認できませんでした。もう一度お試しください。')); }
     finally { setBusy(false); }
   }
   return <section className="digest-preview" aria-label="今朝のメール"><h2>今朝のメール</h2>

@@ -87,3 +87,12 @@ it('produces digest and per-plan mail accepted by the merged extension consumer'
   expect(mailIsSafe(data, [])).toBe(true);
   expect(mailIsSafe({ ...data.plans[0]!, to: data.to }, [])).toBe(true);
 });
+
+it.each(['得点の30% sid%3Dfictional', 'Cookie&#58; 設定'])('omits just the task containing an encoded credential marker: %s', title => {
+  const unsafe = row('unsafe'); unsafe.latest.title = title;
+  const data = digest([plan()], [unsafe, row('task')]);
+  expect(data.assignments).toHaveLength(1);
+  expect(data.plans).toHaveLength(1);
+  expect(JSON.stringify(data)).not.toContain(title);
+  expect(mailIsSafe(data, [])).toBe(true);
+});

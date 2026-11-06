@@ -1,8 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { User } from 'firebase/auth';
 import type { PreparationPlan } from '../../core/src/types';
 import { PlanList } from './preparation-plans';
-import { planProgress } from './plan-progress';
+import { performPlanAction, planActionErrorMessage, planProgress } from './plan-progress';
+afterEach(() => vi.unstubAllGlobals());
 const plan: PreparationPlan = { planId: 'fictional', assignment: { system: 'demo-lms', sourceId: 'task' }, title: '架空のレポート',
   date: '2030-11-11', period: 3, startsAt: '2030-11-11T13:00:00+09:00', endsAt: '2030-11-11T14:30:00+09:00',
   timeZone: 'Asia/Tokyo', decidedOn: '2030-11-11', confirmedBy: 'supporter', createdByRole: 'supporter',
@@ -18,4 +20,12 @@ describe('preparation progress belongs to the plan, not LMS submission', () => {
     expect(html).toContain('架空のレポート'); expect(html).toContain('終わった（LMSへの提出は別）');
     expect(html).not.toContain('取消した予定'); expect(html).not.toContain('<button');
   });
+});
+it('distinguishes a stale action conflict from a connection failure and tells the student where to check', async () => {
+  const user = { getIdToken: async () => 'synthetic-test-token' } as User;
+  vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 409 })));
+  const error = await performPlanAction(user, 'fictional', 'done', 1).catch((error: unknown) => error);
+  expect(error).toEqual(new Error('plan-conflict'));
+  expect(planActionErrorMessage(error, '接続を確かめてください。')).toBe('予定が変わりました。学生の画面で確かめてください。');
+  expect(planActionErrorMessage(new Error('plan-action-failed'), '接続を確かめてください。')).toBe('接続を確かめてください。');
 });

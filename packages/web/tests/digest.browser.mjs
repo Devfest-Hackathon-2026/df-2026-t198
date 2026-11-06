@@ -87,6 +87,12 @@ try {
   await linkPage.reload(); await linkPage.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
   assert.deepEqual((await planRef.get()).data(), moved);
   pass('same email link including reload cannot postpone the plan twice');
+  await linkPage.goto(doneUrl);
+  await linkPage.getByRole('status').filter({ hasText: '予定が変わりました。学生の画面で確かめてください' }).waitFor();
+  assert.equal(await linkPage.getByRole('button', { name: 'もう一度試す', exact: true }).count(), 0);
+  assert.deepEqual((await planRef.get()).data(), moved);
+  await screenshot(linkPage, 'stale-action-conflict');
+  pass('old done link after postponement reports a conflict, preserves the plan and points to the student screen');
   await preparationList(studentScreen).getByRole('button', { name: '後回し', exact: true }).click();
   await preparationList(studentScreen).getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
   const movedAgain = (await planRef.get()).data();

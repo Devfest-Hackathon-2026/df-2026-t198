@@ -7,10 +7,12 @@ export function planProgress(plan: PreparationPlan) {
 }
 export const actionMessage = (outcome: string) => outcome === 'done' ? '準備を「終わった」にしました。LMSへの提出は別に行ってください。' :
   outcome === 'moved' ? '次の空いたコマに動かしました。カレンダーの更新は接続中の拡張機能で行います。' : '締切より前の空いたコマを確かめられなかったため、予定を動かしませんでした。';
+export const planActionErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message === 'plan-conflict' ? '予定が変わりました。学生の画面で確かめてください。' : fallback;
 export async function performPlanAction(user: User, id: string, action: 'done' | 'later', revision: number) {
   const response = await fetch(`/api/v1/plans/${encodeURIComponent(id)}/${action}?rev=${revision}`, { method: 'POST', cache: 'no-store',
     headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
-  if (!response.ok) throw new Error('plan-action-failed');
+  if (!response.ok) throw new Error(response.status === 409 ? 'plan-conflict' : 'plan-action-failed');
   return await response.json() as { outcome: 'done' | 'moved' | 'no-slot'; plan: PreparationPlan };
 }
 export function PlanLinkAction({ user }: { user: User }) {
@@ -24,7 +26,10 @@ export function PlanLinkAction({ user }: { user: User }) {
       !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) { setMessage('準備の予定のリンクを確かめてください。'); return; }
     let active = true; setFailed(false);
     void performPlanAction(user, id, action, Number(rev)).then(result => { if (active) setMessage(actionMessage(result.outcome)); })
-      .catch(() => { if (active) { setMessage('この予定を変更できませんでした。本人のアカウントか、接続と予定の状態を確かめてください。'); setFailed(true); } });
+      .catch((error: unknown) => { if (active) {
+        setMessage(planActionErrorMessage(error, 'この予定を変更できませんでした。本人のアカウントか、接続と予定の状態を確かめてください。'));
+        setFailed(!(error instanceof Error && error.message === 'plan-conflict'));
+      } });
     return () => { active = false; };
   }, [user, id, action, rev, retry]);
   return <section className="notice" aria-label="準備の予定の操作"><p role="status">{message}</p>

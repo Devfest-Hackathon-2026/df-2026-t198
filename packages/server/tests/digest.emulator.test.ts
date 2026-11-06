@@ -160,13 +160,36 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect(second).toMatchObject({ outcome: 'moved', plan: { revision: 3 } });
     expect(second.plan.startsAt).not.toBe((first as { plan: PreparationPlan }).plan.startsAt);
     expect(await (await act('later')).json()).toEqual(first);
-    expect(await (await act('done')).json()).toEqual(first);
+    expect((await act('done')).status).toBe(409);
     expect(await (await act('later', owner, 2)).json()).toEqual(second);
     expect((await plans().doc(id).get()).data()!['revision']).toBe(3);
     expect((await act('later', owner, 99)).status).toBe(409);
     expect((await act('done', owner, 3)).status).toBe(200);
     expect(await (await act('later')).json()).toEqual(first);
     expect((await plans().doc(id).get()).data()!['status']).toBe('done');
+  });
+  it.each([['later', 'done'], ['done', 'later']])('rejects stale %s/%s action conflicts without changing the plan or calendar', async (firstAction, conflictingAction) => {
+    const first = await act(firstAction!);
+    expect(first.status).toBe(200);
+    const result = await first.json();
+    const saved = await plans().doc(id).get();
+    const calendar = await student().collection('calendarItems').get();
+    expect((await act(conflictingAction!)).status).toBe(409);
+    expect(await (await act(firstAction!)).json()).toEqual(result);
+    expect((await plans().doc(id).get()).updateTime).toEqual(saved.updateTime);
+    expect((await student().collection('calendarItems').get()).docs.map(doc => doc.data())).toEqual(calendar.docs.map(doc => doc.data()));
+    expect((await student().collection('planActionReceipts').get()).docs.map(doc => doc.id)).toEqual([`${id}-1-${firstAction}`]);
+  });
+  it('allows only one of two different concurrent actions on the same revision', async () => {
+    const actions = ['done', 'later'];
+    const responses = await Promise.all(actions.map(action => act(action)));
+    expect(responses.map(response => response.status).sort()).toEqual([200, 409]);
+    const winner = responses.findIndex(response => response.status === 200);
+    const result = await responses[winner]!.json();
+    expect(await (await act(actions[winner]!)).json()).toEqual(result);
+    expect((await act(actions[1 - winner]!)).status).toBe(409);
+    expect((await plans().doc(id).get()).data()!['revision']).toBe(2);
+    expect((await student().collection('planActionReceipts').get()).size).toBe(1);
   });
   it('rebuilds demo mail plans on a new day or after inactivity, keeps the id, and avoids occupied clock intervals', async () => {
     const initial = await store.prepareDemo(owner);
