@@ -3,9 +3,11 @@ import type { Observation } from '../../core/src/types.js';
 
 const identity = vi.hoisted(() => vi.fn());
 const collect = vi.hoisted(() => vi.fn());
+const sync = vi.hoisted(() => vi.fn());
 vi.mock('../src/auth-probe-browser.js', () => ({ observationIdentity: identity }));
 vi.mock('../src/probe-config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
 vi.mock('../src/collection.js', () => ({ collectObservation: collect }));
+vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: sync }));
 vi.mock('../../core/src/html-reader.js', () => ({ readPage: () => ({ pageType: 'home' }) }));
 const observation: Observation = { schemaVersion: 1, observationId: '00000000-0000-4000-8000-000000000001', system: 'ynu-lms',
   definitionId: 'coursepower', definitionVersion: 3, fetchedAt: '2098-11-01T00:00:00Z', catalogCourses: [], courseResults: [], assignments: [], failures: [] };
@@ -17,6 +19,7 @@ let run: typeof import('../src/collection-worker.js')['runCollection'];
 
 beforeEach(async () => {
   vi.resetModules(); vi.clearAllMocks();
+  sync.mockResolvedValue(undefined);
   for (const key of Object.keys(session)) delete session[key];
   session['ynuSessionId'] = 'synthetic-session';
   identity.mockResolvedValue({ uid: 'synthetic-user', token: 'synthetic-id-token' });
@@ -39,6 +42,8 @@ it('sends one observation with only the Firebase ID token and retains counts wit
   expect(JSON.parse(api[0]![1].body)).toEqual(observation);
   expect(api[0]![1]).toMatchObject({ credentials: 'omit', redirect: 'error', headers: { Authorization: 'Bearer synthetic-id-token' } });
   expect(send).not.toHaveBeenCalled();
+  expect(sync).toHaveBeenCalledTimes(1);
+  expect(fetcher.mock.invocationCallOrder.at(-1)).toBeLessThan(sync.mock.invocationCallOrder[0]!);
   const safeState = { ...session }; delete safeState['ynuSessionId'];
   expect(safeState).toMatchObject({ ynuFetchStats: { attempted: 1, backgroundSucceeded: 1, pageSucceeded: 0 } });
   expect(JSON.stringify(safeState)).not.toMatch(/synthetic-session|synthetic-id-token|page-html|worker-html/);
@@ -91,6 +96,7 @@ it('records a rejected API send without parsing or echoing the error body', asyn
   fetcher.mockResolvedValue({ ok: false, status: 401, json });
   expect(await run(pageUrl, 7)).toEqual({ ok: false, code: 'send-failed' });
   expect(json).not.toHaveBeenCalled();
+  expect(sync).not.toHaveBeenCalled();
   expect(session['ynuFetchStatus']).toBe('send-failed');
 });
 
@@ -102,4 +108,12 @@ it.each([
 ])('does not forward an inconsistent or invalid change receipt: %j', async receipt => {
   fetcher.mockResolvedValue({ ok: true, json: async () => receipt });
   expect(await run(pageUrl, 7)).toEqual({ ok: false, code: 'send-failed' });
+  expect(sync).not.toHaveBeenCalled();
+});
+
+it('keeps an accepted observation and change notice when calendar sync fails', async () => {
+  sync.mockRejectedValue(new Error('synthetic-calendar-unavailable'));
+  expect(await run(pageUrl, 7)).toEqual({ ok: true, changed: true, changeCount: 1 });
+  expect(sync).toHaveBeenCalledTimes(1);
+  expect(session['ynuFetchStatus']).toBe('success');
 });

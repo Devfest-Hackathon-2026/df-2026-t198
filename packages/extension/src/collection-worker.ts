@@ -5,6 +5,7 @@ import { executeLmsRequest, type LmsOperation, type LmsPage } from './lms-reques
 import { readPage } from '../../core/src/html-reader.js';
 import definition from '../../../lms-definitions/coursepower/definition.json' with { type: 'json' };
 import { sessionFromUrl } from './session.js';
+import { syncCalendarInBackground } from './calendar-browser.js';
 
 let running = false;
 interface Stats { attempted: number; backgroundSucceeded: number; pageSucceeded: number; failed: number }
@@ -83,6 +84,8 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       || receipt.changeCount < 0 || receipt.changed !== (receipt.changeCount > 0)) {
       return fail('send-failed');
     }
+    // The observation is already accepted; a pending calendar retry must not undo it.
+    await syncCalendarInBackground().catch(() => undefined);
     success = observation.failures.length === 0;
     outcome = success ? 'success' : 'partial';
     return { ok: true, changed: receipt.changed, changeCount: receipt.changeCount };
