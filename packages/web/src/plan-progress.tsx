@@ -3,10 +3,10 @@ import type { User } from 'firebase/auth';
 import type { PreparationPlan } from '../../core/src/types';
 
 export function planProgress(plan: PreparationPlan) {
-  return plan.status === 'done' ? '終わった（LMSへの提出は別）' : plan.laterResult === 'moved' ? '後回しにした' : 'まだ';
+  return plan.status === 'done' ? '終わった（LMSへの提出は別）' : plan.laterResult === 'moved' ? '後回しにした' : '';
 }
-export const actionMessage = (outcome: string) => outcome === 'done' ? '準備を「終わった」にしました。LMSへの提出は別に行ってください。' :
-  outcome === 'moved' ? '次の空いたコマに動かしました。カレンダーの更新は接続中の拡張機能で行います。' : '締切より前の空いたコマを確かめられなかったため、予定を動かしませんでした。';
+export const actionMessage = (outcome: string) => outcome === 'done' ? '準備が終わりました。LMSへの提出は別に行ってください。' :
+  outcome === 'moved' ? '準備の予定を次の空いたコマに動かしました。カレンダーの予定は、拡張機能がGoogleにつながると動きます。' : '締切より前の空いたコマを確かめられなかったため、準備の予定を動かしませんでした。';
 export const planActionErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message === 'plan-conflict' ? '予定が変わりました。学生の画面で確かめてください。' : fallback;
 export async function performPlanAction(user: User, id: string, action: 'done' | 'later', revision: number) {
