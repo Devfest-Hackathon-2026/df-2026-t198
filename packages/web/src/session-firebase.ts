@@ -1,8 +1,6 @@
-import { initializeApp, type FirebaseOptions } from 'firebase/app';
-import { browserSessionPersistence, connectAuthEmulator, getAuth, GoogleAuthProvider, onAuthStateChanged,
-  setPersistence, signInWithEmailAndPassword, signInWithPopup, signOut, type User } from 'firebase/auth';
-import { collection, connectFirestoreEmulator, doc, getFirestore, onSnapshot,
-  type Firestore } from 'firebase/firestore';
+import { onAuthStateChanged, signInWithEmailAndPassword, type User } from 'firebase/auth';
+import { collection, doc, onSnapshot, type Firestore } from 'firebase/firestore';
+import { firebase } from './firebase';
 import { emptySession, type SessionData } from './session-model';
 import type { SessionContext } from '../../core/src/types';
 import type { SessionSource } from './session-watch';
@@ -41,21 +39,13 @@ export interface SessionServices {
 let services: SessionServices | null | undefined;
 export function getSessionServices(): SessionServices | null {
   if (services !== undefined) return services;
-  const configText = import.meta.env['VITE_FIREBASE_CONFIG'];
-  if (!configText) { services = null; return null; }
-  const config = JSON.parse(configText) as FirebaseOptions;
-  const local = import.meta.env['VITE_USE_EMULATORS'] === 'true';
-  if (local && (!['127.0.0.1', 'localhost'].includes(window.location.hostname) || config.projectId !== 'demo-kadai-hisho')) {
+  const connection = firebase;
+  if (!connection) { services = null; return null; }
+  const local = import.meta.env.DEV && import.meta.env['VITE_USE_FIREBASE_EMULATORS'] === 'true';
+  if (local && !['127.0.0.1', 'localhost'].includes(window.location.hostname)) {
     throw new Error('local-demo-required');
   }
-  const app = initializeApp(config, 'session-web');
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  if (local) {
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-    connectFirestoreEmulator(db, '127.0.0.1', 8085);
-  }
-  const persistence = setPersistence(auth, browserSessionPersistence);
+  const { auth, db } = connection;
   async function api(user: User, path: string, context?: SessionContext) {
     const response = await fetch(path, { method: context ? 'PUT' : 'GET', cache: 'no-store', headers: {
       Authorization: `Bearer ${await user.getIdToken()}`, ...(context ? { 'Content-Type': 'application/json' } : {}),
@@ -67,10 +57,9 @@ export function getSessionServices(): SessionServices | null {
     source: firebaseSessionSource(db), local,
     observeUser: next => onAuthStateChanged(auth, next),
     login: async (email, password) => {
-      await persistence;
-      return local ? signInWithEmailAndPassword(auth, email, password) : signInWithPopup(auth, new GoogleAuthProvider());
+      return local ? signInWithEmailAndPassword(auth, email, password) : connection.login();
     },
-    logout: () => signOut(auth),
+    logout: connection.logout,
     students: async user => (await api(user, '/api/v1/supporter/students') as { students: { uid: string }[] }).students,
     saveContext: async (user, student, context) => { await api(user,
       `/api/v1/students/${encodeURIComponent(student)}/session-context`, context); },

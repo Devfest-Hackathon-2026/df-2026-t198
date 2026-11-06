@@ -23,7 +23,7 @@
 | [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node) | サーバーのNode APIの型 | MIT |
 | [@types/react](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react) | Reactの型 | MIT |
 | [@types/react-dom](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom) | React DOMの型 | MIT |
-| [Playwright](https://github.com/microsoft/playwright) | 手元にある実行環境で学生画面のブラウザ試験を行う。workspaceの依存には追加しない（2026-11-06、実行環境のLICENSEで確認） | Apache-2.0 |
+| [Playwright](https://github.com/microsoft/playwright) | 手元にある実行環境で学生・面談画面のブラウザ試験を行う。workspaceの依存には追加しない（2026-11-06、実行環境のLICENSEで確認） | Apache-2.0 |
 
 ## 実行環境とCI
 

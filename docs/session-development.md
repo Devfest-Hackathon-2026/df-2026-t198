@@ -13,7 +13,7 @@ JDK 21以上が必要。既存のAuth（9099）・Firestore（8085）のエミ�
 ## 画面を開く
 
 1. ルートで `pnpm --filter server... build` を実行する。
-2. 1つめのターミナルで `pnpm emulators` を起動する（JDKのbinをPATHに置く）。
+2. 1つめのターミナルで `pnpm exec firebase emulators:start --project demo-kadai-hisho --only auth,firestore` を起動する（JDKのbinをPATHに置く）。
 3. 別のターミナルで、手元用のパスワードを決めて架空データを入れる。
 
 ```sh
@@ -38,8 +38,7 @@ pnpm --filter server start
 5. 別のターミナルでWebを起動する。Viteの `/api` はローカルの8080番へ転送する。
 
 ```sh
-VITE_FIREBASE_CONFIG='{"projectId":"demo-kadai-hisho","apiKey":"emulator-only","authDomain":"demo-kadai-hisho.firebaseapp.com"}' \
-VITE_USE_EMULATORS=true pnpm --filter web dev
+VITE_USE_FIREBASE_EMULATORS=true pnpm --filter web dev --port 5177 --strictPort
 ```
 
 表示されたURLの `/session` を開き、`demo-supporter@example.invalid` と、手順3で決めたパスワードでログインする。
@@ -52,6 +51,21 @@ VITE_USE_EMULATORS=true pnpm --filter web dev
 - 管理画面 `http://127.0.0.1:4000/firestore` で、選択中の `students/demo-student-a/supporters/demo-supporter` の `revokedAt` を日時の文字列に変える。開いている面談の全内容が消え、日時保存も拒否される。一覧の「一覧を更新」でも学生が消える。
 - ログアウトすると学生の選択肢と内容が消える。学生アカウント（`demo-student-a@example.invalid`、同じ手元用パスワード）では「自分の面談を見る」で読む。面談日時の編集は出ない。
 
+## ブラウザ試験
+
+手元のPlaywrightを使う（workspaceの依存には追加しない）。上のAPIとViteを起動したまま、手動で起動したAuth・Firestoreだけを止め、次を実行する。`PLAYWRIGHT_MODULE` は手元のPlaywrightの `index.mjs` の絶対パス。試験専用のエミュレーターに架空データを入れ、終了後に停止する。
+
+```sh
+GCLOUD_PROJECT=demo-kadai-hisho \
+SESSION_DEMO_PASSWORD='<8文字以上の手元用パスワード>' \
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs \
+PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" \
+pnpm exec firebase emulators:exec --project demo-kadai-hisho --only auth,firestore \
+"node packages/server/scripts/seed-session.mjs && node packages/web/tests/session.browser.mjs"
+```
+
+学生選択・3欄の表示・日時変更と未設定・課題の即時更新・390px幅・共有取消・学生画面とのログイン共有・ログアウトを確認する。操作の結果とスクリーンショットは、既定で `/tmp/kadai-i21-evidence/`。`ARTIFACT_EVIDENCE_DIR` で変えられる。通常の `pnpm test` には含めない。
+
 ## 実環境につなぐ場合
 
-ビルド時に同じ `VITE_FIREBASE_CONFIG` に公開用のFirebase Web設定を与え、`VITE_USE_EMULATORS` は付けない。WebはGoogleログインを使う。APIの `/api` は同じoriginに配信する必要がある。HostingからCloud Runへの転送、認証プロバイダー・許可ドメイン・試す人のアカウントの配備は別途設定する。このIssueでは作成・変更しない。
+学生の画面と同じFirebase接続・ログインを使う。公開用のビルド設定は [READMEの画面](../README.md#画面) を参照し、エミュレーターの指定は付けない。APIの `/api` は同じoriginに配信する必要がある。HostingからCloud Runへの転送、認証プロバイダー・許可ドメイン・試す人のアカウントの配備は別途設定する。このIssueでは作成・変更しない。
