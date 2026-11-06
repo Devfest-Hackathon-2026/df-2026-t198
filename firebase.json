@@ -12,7 +12,7 @@
         "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
       },
       {
-        "source": "/@(student|session|demo-lms)",
+        "source": "/@(student|session|demo-lms){,/**}",
         "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
       },
       {

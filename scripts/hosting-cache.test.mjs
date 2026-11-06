@@ -8,7 +8,7 @@ const { fetch } = globalThis;
 // Run against the Hosting emulator or the deployed site, never Vite's dev server.
 const origin = process.env.HOSTING_ORIGIN ?? 'http://127.0.0.1:5002';
 
-for (const path of ['/', '/index.html', '/student', '/session', '/demo-lms']) {
+for (const path of ['/', '/index.html', '/student', '/session', '/demo-lms', '/session/trial-student', '/session/trial-student/plan']) {
   test(`${path} revalidates the HTML on every visit`, async () => {
     const response = await fetch(new URL(path, origin));
     await response.arrayBuffer();
