@@ -14,8 +14,8 @@ DevFest GDGoC Japan Hackathon 2026 の作品。課題の管理が苦手な大学
 
 | 場所 | 中身 |
 |---|---|
-| `packages/extension/` | Chrome拡張（Manifest V3）。今はYNUのSIDをメモリに受け取る入口のみ |
-| `packages/server/` | Cloud Run のAPI。今は `/healthz` のみ。起動は `src/index.ts` |
+| `packages/extension/` | Chrome拡張（Manifest V3）。YNUの課題の取得・観測の送信、Googleカレンダー同期、学生画面への入口 |
+| `packages/server/` | Cloud RunのAPI。観測の受領と台帳の保存、カレンダー同期、面談・体験用操作、お知らせ解析。起動は `src/index.ts` |
 | `packages/web/` | 学生の画面と支援担当の面談画面（React + Vite、Firebase Hosting） |
 | `packages/core/` | 観測・台帳の型と共通関数。DOM・Node固有APIに依存しない |
 | `lms-definitions/` | LMS製品ごとの宣言的な定義と試験用の見本 |
