@@ -174,7 +174,7 @@ try {
   assert.equal(await eventCard.count(), 1);
   pass(5);
   await timetable.screenshot({ path: `${evidence}/calendar-updated.png`, fullPage: true });
-  await supporter.getByRole('region', { name: '前回の面談からの変化' }).getByText('締切が変わりました', { exact: false }).waitFor();
+  await supporter.getByRole('region', { name: '前回の面談からの変化' }).getByText(/締切が .+ から .+ に変わりました/).waitFor();
   assert.ok((await deadlines.innerText()).includes(expectedDate));
   pass(6);
   // A further open uses a new observation ID but must not duplicate the same event.
