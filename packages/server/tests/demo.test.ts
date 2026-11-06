@@ -5,7 +5,7 @@ import { DemoConflict, DemoForbidden } from '../src/demo-store.js';
 const extend = vi.fn(async (_uid: string, sourceId: string) => ({ sourceId, dueAt: '2026-11-13T08:00:00.000Z' }));
 const verifyToken = vi.fn(async () => 'demo-student');
 const server = createHttpServer({ verifyToken,
-  saveObservation: vi.fn(), demo: { extend } });
+  saveObservation: vi.fn(), demo: { extend, reset: vi.fn(), announce: vi.fn() } });
 let url: string;
 beforeAll(async () => {
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));

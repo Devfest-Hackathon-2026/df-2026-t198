@@ -111,7 +111,7 @@ try {
   await openLms(first.student.page);
   await first.timetable.waitForFunction(previous => globalThis.document.querySelector('.course-panel').innerText !== previous, first.panelBefore);
   await first.supporter.page.waitForFunction(previous => globalThis.document.querySelector('[aria-labelledby="session-deadlines"]').innerText !== previous, first.sessionBefore);
-  await first.supporter.page.getByRole('region', { name: '前回の面談からの変化' }).getByText('締切が変わりました', { exact: false }).waitFor();
+  await first.supporter.page.getByRole('region', { name: '前回の面談からの変化' }).getByText(/締切が .+ から .+ に変わりました/).waitFor();
   await screenshot(first.timetable, 'student-after.png');
   await screenshot(first.supporter.page, 'supporter-after.png');
   phase = 'other-pairs-unchanged-after-refetch';

@@ -38,6 +38,7 @@ try {
   await ready('http://127.0.0.1:8080/api/health', api);
   const vite = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', '5177', '--strictPort'], true);
   await ready('http://127.0.0.1:5177', vite);
+  await finish(start('node', ['packages/web/tests/demo-reset.browser.mjs']));
   await finish(start('node', ['packages/web/tests/demo.browser.mjs']));
 } finally {
   for (const child of children) if (child.exitCode === null) child.kill('SIGTERM');

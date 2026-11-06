@@ -2,12 +2,12 @@
   "home": "/lms/homeHoml/doIndex",
   "course": {
     "path": "/lms/homeHoml/linkKougi",
-    "form": "homeHomlActionForm",
+    "form": "homeHomlForm",
     "fields": ["checkKiList", "findJokenChangeFlg", "groupId", "infId", "infType", "jigen", "kougiCode", "kougiId", "kougiName", "kyoinName", "nendo", "syozoku", "tpcsId", "yobi"]
   },
   "detail": {
     "path": "/lms/corsColl/linkKyozaiTitle",
-    "form": "corsCollActionForm",
+    "form": "main_form",
     "fields": ["jyugyoHiddenId", "kyozaiId", "kyozaiSyCdHidden", "pankuzuHantei", "teijiKikanGaiHyojiData"]
   }
 }

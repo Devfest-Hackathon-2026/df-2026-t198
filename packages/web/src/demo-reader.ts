@@ -1,4 +1,4 @@
-import { readPage, validateDefinition, type CourseSlot, type Observation, type ReadingDefinition } from '@kadai-hisho/core';
+import { readPage, validateDefinition, type DemoAnnouncement, type CourseSlot, type Observation, type ReadingDefinition } from '@kadai-hisho/core';
 import rawDefinition from '../../../lms-definitions/demo-lms/definition.json';
 
 export const demoDefinition = validateDefinition(rawDefinition);
@@ -46,4 +46,20 @@ export function readDemoObservation(root: Element, origin: string, observationId
     }
   }
   return observation;
+}
+
+/** Announcements travel separately from observations and are read from the visible LMS DOM. */
+export function readDemoAnnouncements(root: Element): (DemoAnnouncement & { system: 'demo-lms' })[] {
+  return [...root.querySelectorAll('[data-demo-announcement]')].map(node => {
+    const attribute = (name: string) => {
+      const value = node.getAttribute(name);
+      if (!value) throw new Error('incomplete-demo-announcement');
+      return value;
+    };
+    return { system: 'demo-lms', courseId: attribute('data-course-id'), announcement: {
+      announcementId: attribute('data-announcement-id'), version: attribute('data-version'),
+      publishedAt: attribute('data-published-at'),
+      body: required(node.querySelector('.demo-announcement-body')).textContent ?? '',
+    } };
+  });
 }

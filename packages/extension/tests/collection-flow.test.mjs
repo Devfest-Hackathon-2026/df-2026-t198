@@ -56,10 +56,10 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
     const list = materials.replace(/(<td class="kyozaititleCell" id="(REP\d+)">)([\s\S]*?)(<\/td>)/g,
       (whole, open, id, inner, close) => inner.includes('onclick=') ? whole
         : `${open}${inner}<a onclick="kyozaiTitleLink('${id}','02')"></a>${close}`);
-    const html = url.includes('linkKougi') ? list + '<form name="corsCollActionForm"><input name="jyugyoHiddenId" value="synthetic-folder"></form>'
+    const html = url.includes('linkKougi') ? list + '<form id="main_form" name="corsCollActionForm"><input name="jyugyoHiddenId" value="synthetic-folder"></form>'
       : url.includes('linkKyozaiTitle') ? detail.replaceAll('架空課題04', `架空課題${fields.get('kyozaiId')}`)
         .replaceAll('2098/11/13 (木)', extended ? '2098/11/14 (金)' : '2098/11/13 (木)')
-        : home + '<form name="homeHomlActionForm"><input name="kougiId"><input name="nendo" value="2098"></form>';
+        : home + '<form id="homeHomlForm" name="homeHomlActionForm"><input name="kougiId"><input name="nendo" value="2098"></form>';
     return { ok: true, status: 200, url, text: async () => html };
   });
   const backgroundFetch = lmsFetch(backgroundCalls), pageFetch = lmsFetch(pageCalls);

@@ -65,7 +65,7 @@ export function createHttpServer(dependencies?: ObservationDependencies) {
     if ((request.method === 'PUT' || request.method === 'DELETE') && /^\/api\/v1\/students\/[^/]+\/plans\/[^/]+$/.test(path ?? '')) {
       void receivePlanRequest(request, response, dependencies); return;
     }
-    if (request.method === 'POST' && path === '/api/v1/demo/extend') {
+    if (request.method === 'POST' && (path === '/api/v1/demo/extend' || path === '/api/v1/demo/reset' || path === '/api/v1/demo/announce')) {
       void receiveDemoRequest(request, response, dependencies); return;
     }
     if (path === '/api/v1/calendar-sync' && (request.method === 'GET' || request.method === 'POST')) {

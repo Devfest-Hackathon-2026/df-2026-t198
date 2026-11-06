@@ -1,3 +1,5 @@
+import { fetchStatus } from './fetch-status';
+import { reviewReasonText } from './review-reason';
 import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
 import { planActions, PlanCell, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
@@ -29,7 +31,7 @@ function Review({ item }: { item: LedgerAssignment }) {
   return <>{item.reviewReasons.map((reason, index) => <p className="review" key={index}>
     <span className="badge">要確認</span> {reason.kind === 'unreadable-deadline'
       ? '今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。'
-      : reason.detail}</p>)}{item.presenceState === 'cancellation-candidate' &&
+      : reviewReasonText(reason)}</p>)}{item.presenceState === 'cancellation-candidate' &&
       <p className="review"><span className="badge">要確認</span> LMSの一覧で見つかりませんでした。LMSで確かめてください。</p>}</>;
 }
 function AssignmentRow({ item }: { item: LedgerAssignment }) {
@@ -77,10 +79,10 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions 
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
-      const stale = last && now - Date.parse(last) >= 3 * 86400000;
+      const { stale, failed } = fetchStatus(state, now);
       const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
-      return stale || state.lastResult !== 'success' ? <p className="notice" key={state.system}>
-        {label}：{stale ? `最後にLMSから取ったのは${new Date(last).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。LMSを開くと新しくなります。` :
+      return stale || failed ? <p className="notice" key={state.system}>
+        {label}：{stale ? `最後にLMSから取ったのは${new Date(last!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。LMSを開くと新しくなります。` :
           '一部の課題を確認できていません。LMSを開いて確かめてください。'}</p> : null;
     })}
     {!data.assignments.length && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
@@ -96,7 +98,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions 
               aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
               <strong>{c.name}</strong>{next && <><span>{deadlineText(deadlineOf(next))}</span><span>{next.latest.title}</span>
                 {(next.reviewReasons.length > 0 || next.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.reviewReasons[0]?.kind === 'unreadable-deadline'
-                  ? '締切を確認できていません。' : next.reviewReasons[0]?.detail ?? 'LMSの一覧で見つかりませんでした。'}</span>}</>}
+                  ? '締切を確認できていません。' : next.reviewReasons[0] ? reviewReasonText(next.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
           })}{plans.filter(plan => (new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7) === d + 1 && plan.period === p + 1)
             .map(plan => <PlanCell key={plan.planId} plan={plan} selected={plan.planId === selectedPlanId}

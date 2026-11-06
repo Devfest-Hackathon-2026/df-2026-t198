@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { User } from 'firebase/auth';
 import { applyObservation } from '../../core/src/ledger';
 import { observation } from '../../server/tests/observation-fixture';
-import { emptySession, type SessionData } from '../src/session-model';
+import { dayInZone, emptySession, type SessionData } from '../src/session-model';
 import type { SessionServices } from '../src/session-firebase';
 import { SessionPage } from '../src/session-page';
 import { usePathname } from '../src/session-route';
@@ -142,7 +142,7 @@ it('saves entered session times with an explicit timezone and allows unset dates
 it('loads the planning URL directly and shows saved promises without creating plans', async () => {
   window.location.pathname = '/session/student-a/plan';
   data['student-a']!.plans = [{ assignment: data['student-a']!.assignments[0]!.key,
-    date: '2026-11-10', period: 3, decidedOn: data['student-a']!.context.lastSessionAt!.slice(0, 10), planId: 'fictional', title: '数学のレポート', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' }];
+    date: '2026-11-10', period: 3, decidedOn: dayInZone(new Date(data['student-a']!.context.lastSessionAt!), 'Asia/Tokyo'), planId: 'fictional', title: '数学のレポート', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' }];
   await open();
   expect(host.querySelector('table')).not.toBeNull();
   await click('① 確かめる');
@@ -184,4 +184,34 @@ it('does not treat a pending or failed student list as an empty list', async () 
   await act(async () => { failList(new Error('fictional-offline')); });
   expect(host.textContent).toContain('担当する学生を開けませんでした');
   expect(host.textContent).not.toContain('自分の面談を見る');
+});
+
+it.each([
+  ['2026-11-06T15:29:59.999Z', false],
+  ['2026-11-06T15:30:00Z', true],
+])('shows a stale notice at 72 hours: %s', async (now, stale) => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date(now));
+  try {
+    data['student-a']!.fetchStates = [{ studentId: 'student-a', system: 'ynu-lms',
+      lastAttemptedAt: '2026-11-03T15:30:00Z', lastSucceededAt: '2026-11-03T15:30:00Z',
+      lastResult: 'success', lastFailureKind: null, lastAppliedObservationId: 'fictional' }];
+    await open(); await click('学生 student-a');
+    const notice = host.querySelector('.session-updates .notice');
+    if (stale) expect(notice?.textContent).toBe('YNU LMS：最後にLMSから取ったのは11/4です。学生がLMSを開くと新しくなります。');
+    else {
+      expect(notice).toBeNull();
+      expect(host.querySelector('.session-updates')?.textContent).toContain('11/4(水) 00:30 時点の情報');
+    }
+    await click('② 相談する');
+    expect(host.querySelector('.session-updates')).toBeNull();
+  } finally { vi.useRealTimers(); }
+});
+
+it.each(['partial', 'failed'] as const)('shows incomplete fetching in a notice: %s', async lastResult => {
+  data['student-a']!.fetchStates = [{ studentId: 'student-a', system: 'ynu-lms',
+    lastAttemptedAt: new Date().toISOString(), lastSucceededAt: null,
+    lastResult, lastFailureKind: 'http', lastAppliedObservationId: 'fictional' }];
+  await open(); await click('学生 student-a');
+  expect(host.querySelector('.session-updates .notice')?.textContent).toBe(
+    'YNU LMS：今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。');
 });

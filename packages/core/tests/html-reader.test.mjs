@@ -75,7 +75,7 @@ describe('reading boundaries (in-memory mutations, not new LMS specimens)', () =
     const changed = globalThis.structuredClone(definition); changed.courses.rows = '[invalid';
     expect(() => readPage(changed, home.html, home.context)).toThrow(/^unreadable-page$/);
   });
-  it.each(['2098/02/30 (日) 10:00 まで', '2098/11/13 (木) 24:00 まで', '2098/11/13', '締切なし'])('does not guess dates: %s', (text) => {
+  it.each(['2098/02/30 (日) 10:00 まで', '2098/11/13 (木) 24:01 まで', '2098/11/13', '締切なし'])('does not guess dates: %s', (text) => {
     expect(parseDeadline(text, '+09:00')).toBeNull();
   });
   it('keeps timezone in caller settings', () => {

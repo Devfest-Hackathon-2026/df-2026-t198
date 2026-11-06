@@ -1,3 +1,4 @@
+import { reviewReasonText } from './review-reason';
 import type { AssignmentChange, Course, Deadline, FetchState, LedgerAssignment, LmsSystem,
   PreparationCandidate, PreparationPlan, SessionContext } from '../../core/src/types';
 
@@ -65,8 +66,7 @@ export function changeDescription(change: AssignmentChange) {
 export function reviewDescription(row: LedgerAssignment) {
   const reason = row.reviewReasons[0];
   if (!reason) return row.presenceState === 'cancellation-candidate' ? 'LMSの一覧で見つかりませんでした。' : '';
-  return reason.kind === 'unreadable-deadline' ? '今回、課題の締切を読めませんでした。'
-    : reason.detail || '課題とお知らせの日付が食い違っています。';
+  return reviewReasonText(reason);
 }
 
 // Period times are not configured yet. Use only whole future days before the due date.

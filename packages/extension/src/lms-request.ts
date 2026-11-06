@@ -17,7 +17,7 @@ export function validOperation(input: unknown): input is LmsOperation {
     && typeof value === 'string' && value.length <= 2048)
     && (op.kind === 'course' ? /^[A-Z]{3}\d{13}$/.test(op.fields['kougiId'] ?? '')
       : /^[A-Z]{3}\d{13}$/.test(op.fields['kyozaiId'] ?? '') && /^\d{2}$/.test(op.fields['kyozaiSyCdHidden'] ?? '')
-        && !!op.fields['jyugyoHiddenId']);
+        && Object.hasOwn(op.fields, 'jyugyoHiddenId') && typeof op.fields['jyugyoHiddenId'] === 'string');
 }
 
 /** No arbitrary URL, method, headers, or submission operations cross the tab boundary. */

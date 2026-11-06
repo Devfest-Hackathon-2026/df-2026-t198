@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 27/41（65%）、必須 25/37（67%）
+完成条件：全体 30/41（73%）、必須 28/37（75%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -54,7 +54,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 
 ### カレンダー
 
-- [ ] C15 〈未定〉 拡張機能から `chrome.identity` でGoogleカレンダーに締切の予定を作る。確かめ方：実際のカレンダー
+- [x] C15 〈未定〉 拡張機能から `chrome.identity` でGoogleカレンダーに締切の予定を作る。確かめ方：実際のカレンダー → 本人の実LMSから自動同期した9件を実Googleの予定ID・開始終了時刻と照合。再取得後も9件でID維持（[実機記録](docs/records/2026-11-06-real-lms-check.md)）
 - [x] C16 〈未定〉 締切が変わったら予定を動かし、取消なら予定を消す。同じ課題の予定を二重に作らない。確かめ方：試験と実際のカレンダー → Issue #40の指定に従い偽APIで判定：`packages/extension/tests/calendar-sync.test.ts`（作成・移動・取消・応答喪失時の再試行）、`packages/server/tests/calendar.emulator.test.ts`（版・世代・本人の分離）。実物は `docs/records/2026-11-06-issue-40-manual-check.md` の手順で未確認、C15に残す。Issue #69：`packages/extension/tests/collection-flow.test.mjs`（LMSを開く→取得→台帳→偽Googleへの作成・同じ予定の移動、裏・ページ側の両経路）。実機の通しは `docs/records/2026-11-06-issue-69-real-flow.md` でSoraの確認待ち
 - [x] C17 〈未定〉 確かめが要る課題は、予定名の頭に「【要確認】」を付け、両方の日付を説明欄に1行で書く。確かめ方：試験 → `packages/core/tests/calendar.test.ts`（公式締切の維持・要確認の題名・食い違う日付を1行・本文を転記しない）
 
@@ -63,33 +63,33 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C18 〈未定〉 時間割（曜日×時限）の各授業のマスに、その授業の次の締切を出す（D13の案A）。確かめ方：画面 → `packages/web/src/student.test.tsx`、`packages/web/tests/student.browser.mjs`（Auth・FirestoreエミュレーターとChromiumで授業の2コマ・締切順・週末・6限を確認）。Issue #66：7日カレンダーの位置・札の翌日への移動・390pxを `packages/web/tests/demo.browser.mjs` で確認（[画面と記録](docs/records/2026-11-06-issue-66-verification.md)）
 - [x] C19 〈未定〉 マスを押すと、その授業の課題が横に開く。確かめ方：画面 → `packages/web/tests/student.browser.mjs`（授業欄の開閉・LMSリンク・要確認・提出・取消・390px幅を確認）。Issue #41：授業名・全曜日時限・SIDを含まない授業リンク、URLなしの非表示を `packages/web/tests/student.browser.mjs` で確認
 - [x] C20 〈未定〉 裏の取得が終わると、開いたままの画面の内容が変わる（Firestoreのリアルタイムの更新）。確かめ方：画面を開いたまま取得 → `packages/web/tests/student.browser.mjs`（エミュレーターの架空台帳の締切・提出を変更し、マス・締切順・開いた課題欄の更新を確認。実LMSからの取得との通しは未確認）、`packages/web/src/student-data.test.ts`（本人変更・購読失敗時の表示消去）。Issue #66：開いたままの授業マス・課題欄・帯の札・面談の締切を2秒以内に強調し10秒後に解除する操作、3日以上前の情報の案内を同ブラウザ試験で確認（[記録](docs/records/2026-11-06-issue-66-verification.md)）
-- [ ] C21 〈未定〉 変化があったときだけ、LMSのページの隅に1行で知らせる。押すと学生の画面が開く。変化がなければ何も出さない。確かめ方：実際のLMS
+- [x] C21 〈未定〉 変化があったときだけ、LMSのページの隅に1行で知らせる。押すと学生の画面が開く。変化がなければ何も出さない。確かめ方：実際のLMS → 変化ありの通知とクリックで学生画面が開くこと、同じ内容の再取得で通知0件を確認（[実機記録](docs/records/2026-11-06-real-lms-check.md)）
 - [x] C22 〈未定〉 拡張機能のポップアップは、学生の画面を開くボタンだけにする。確かめ方：画面 → Issue #44、`packages/extension/tests/change-notice.test.mjs`・`packages/extension/tests/probe-build.test.mjs`・`packages/extension/tests/change-notice.browser.mjs`（ボタン1つ・学生画面への遷移・同梱を確認）。[確認記録](docs/records/2026-11-06-issue-44-verification.md)
 
 ### 面談画面
 
-- [x] C23 〈未定〉 次の面談までの締切、前回の面談からの変化、要確認のものを出す。確かめ方：画面 → PR #36、`packages/web/tests/session.browser.mjs`（実ブラウザで学生選択・3欄・日時変更・即時更新・共有取消・学生画面とのログイン共有・ログアウト、390px幅）、`pnpm test:sessions:emulator`。記録と画面：`docs/records/2026-11-06-issue-21-verification.md`。Issue #67：上部の表示・学生IDの補助表示・締切変更の文章・開閉印とキーボード操作を `packages/web/tests/session.browser.mjs` と単体試験で確認。前後の画面：[確認記録](docs/records/2026-11-06-issue-67-verification.md)
+- [x] C23 〈未定〉 次の面談までの締切、前回の面談からの変化、要確認のものを出す。確かめ方：画面 → PR #36、`packages/web/tests/session.browser.mjs`（実ブラウザで学生選択・3欄・日時変更・即時更新・共有取消・学生画面とのログイン共有・ログアウト、390px幅）、`pnpm test:sessions:emulator`。記録と画面：`docs/records/2026-11-06-issue-21-verification.md`。Issue #67：上部の表示・学生IDの補助表示・締切変更の文章・開閉印とキーボード操作を `packages/web/tests/session.browser.mjs` と単体試験で確認。前後の画面：[確認記録](docs/records/2026-11-06-issue-67-verification.md)。Issue #94：取得から72時間の境界・一部成功/失敗の注意帯を単体試験と `packages/web/tests/session.browser.mjs`（1280幅・390幅、失敗後の更新）で確認（[記録](docs/records/2026-11-07-issue-94.md)）
 - [x] C24 〈未定〉 時間割の空いたコマに準備の候補を出し、決めたものだけを準備の予定として保存する。確かめ方：試験と画面 → Issue #49、`packages/web/tests/plans.browser.mjs`（支援担当の「入れる」、学生の追加・双方の予定の取消、登録者の表示）、`packages/server/tests/plans.emulator.test.ts`（権限・再送・保存と同期対象）。[確認記録](docs/records/2026-11-06-issue-49.md)。PR #79の表示修正：[再確認](docs/records/2026-11-06-issue-49-review.md)
 - [x] C25 〈未定〉 決めた準備の予定が、学生の時間割とGoogleカレンダーに入る。確かめ方：画面と実物または体験用カレンダー → Issue #49の案A・合格範囲に従い、`packages/web/tests/plans.browser.mjs` で時間割と保存済み体験用予定の作成・取消、`packages/server/tests/plans.emulator.test.ts` で実物用の同期対象と版、`packages/extension/tests/calendar-sync.test.ts` で偽APIへの作成・取消・再試行を確認。実物への書き込みは未確認（C15）。[確認記録](docs/records/2026-11-06-issue-49.md)。PR #79の表示修正：[再確認](docs/records/2026-11-06-issue-49-review.md)
-- [x] C26 〈未定〉 支援担当は、自分が受け持つ学生のデータだけを読める。確かめ方：Firestoreの規則の試験（エミュレーター）→ `scripts/firestore-rules.test.mjs`、`pnpm test:firestore-rules` 32件成功（本人・許可済み・未許可・取消済み・他人・未ログイン、本人だけの文書と直接書き込み拒否を含む）
+- [x] C26 〈未定〉 支援担当は、自分が受け持つ学生のデータだけを読める。確かめ方：Firestoreの規則の試験（エミュレーター）→ `scripts/firestore-rules.test.mjs`、`pnpm test:firestore-rules` 32件成功（本人・許可済み・未許可・取消済み・他人・未ログイン、本人だけの文書と直接書き込み拒否を含む）。Issue #85：実演用の支援担当への共有を準備し、公開先の担当学生一覧が対象の実学生1人だけ（1/1）であることを確認（[記録](docs/records/2026-11-06-issue-85-verification.md)）。実課題の表示は未確認
 - [x] C27 〈未定〉 面談の前のまとめを出す。〔削れる〕 → 面談画面の「① 確かめる」（前回の約束・前回の面談からの変化・次の面談までの締切）を、面談の前のまとめとする（2026-11-06、Soraが確認）。PR #51、`packages/web/tests/session.browser.mjs`、画面：`docs/records/2026-11-06-session-split/check-wide.png`
 
 ### お知らせの文章（Gemini）
 
-- [x] C28 〈未定〉 お知らせの文章から締切の変更を拾い、課題にひも付けて要確認にする。課題の締切の欄は書き換えない。→ `pnpm test:announcements:emulator`、`packages/server/tests/announcements.emulator.test.ts`（架空のお知らせ・要確認だけの保存・同時再送・解析失敗/待機中の観測更新・公式締切の保持）。実物のお知らせは無効のまま。模擬LMS画面の描画はIssue #19の続き
+- [x] C28 〈未定〉 お知らせの文章から締切の変更を拾い、課題にひも付けて要確認にする。課題の締切の欄は書き換えない。→ `pnpm test:announcements:emulator`、`packages/server/tests/announcements.emulator.test.ts`（架空のお知らせ・要確認だけの保存・同時再送・解析失敗/待機中の観測更新・公式締切の保持）。実物のお知らせは無効のまま。Issue #84：`pnpm test:demo-announcements:emulator`（先生役の投稿→DOMから送信→学生・面談の要確認、公式締切維持、重複・やり直しを偽Geminiで確認）。[画面と記録](docs/records/2026-11-06-issue-84-verification.md)。公開先の有効化・実物のGeminiは未確認
 - [x] C29 〈未定〉 架空のお知らせ30件で、指標M3を測れる。〔削れる〕 → `pnpm metrics:m3`（架空30件、再現率・適合率とも100%、30回・19,410トークン。`docs/records/2026-11-06-m3.md`）。作った本人に未知の確認用の見本での測定は別のIssue
 - [x] C30 〈未定〉 別の大学のLMSのページを保存して渡すと、Geminiが読み取り方の下書きを作り、人が確かめてから `lms-definitions/` に取り込める。確かめ方：模擬LMSのページから下書きを作り、その下書きで取得の試験が通る → Issue #46、`pnpm definition:check docs/records/2026-11-06-issue-46-definition.json`（Gemini実測の下書きで既存試験5件成功）。[実測記録](docs/records/2026-11-06-issue-46.md)
 
 ### 模擬LMSと試し方
 
 - [x] C31 〈未定〉 架空の授業と課題を載せた模擬LMS（CoursePowerとは違う作り）をFirebase Hostingに置く。確かめ方：公開したURL → Issue #59、[公開先の確認記録](docs/records/2026-11-06-issue-59-resumed.md)（Hostingの `/demo-lms` で学生ログイン・架空の授業と課題・先生役の締切延長を確認）
-- [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-calendar-integration.md`
-- [x] C33 〈未定〉 試す人のための学生と支援担当のアカウントがあり、拡張機能を入れなくても一連の操作をブラウザで試せる。確かめ方：入れていないブラウザで操作 → Issue #59、`packages/web/tests/demo-live.browser.mjs`（公開先・3組6文脈・学生と面談の即時更新・他組不変・別組の読み取り24通りを拒否）。[操作結果と画像](docs/records/2026-11-06-issue-59-resumed.md)
+- [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-calendar-integration.md`。Issue #68：定義と詳細の見出し・位置を維持した手順表示とリセット後の読み取りを `packages/web/tests/demo-reset.browser.mjs`・既存M6で確認（[記録](docs/records/2026-11-06-issue-68-verification.md)）
+- [x] C33 〈未定〉 試す人のための学生と支援担当のアカウントがあり、拡張機能を入れなくても一連の操作をブラウザで試せる。確かめ方：入れていないブラウザで操作 → Issue #59、`packages/web/tests/demo-live.browser.mjs`（公開先・3組6文脈・学生と面談の即時更新・他組不変・別組の読み取り24通りを拒否）。[操作結果と画像](docs/records/2026-11-06-issue-59-resumed.md)。Issue #89：`packages/web/tests/demo.browser.mjs`（Auth・FirestoreエミュレーターとChromiumで、体験用でないアカウントへの案内・ログアウト・体験用ログイン欄への復帰を確認）。`pnpm metrics:m6` 8/8（2026-11-06、PR #90取り込み後）
 - [ ] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6 → Issue #47、ローカル・公開先とも8/8（体験用カレンダー。保存済み予定・版と再送時の不変も照合）。[公開先の操作結果と画像](docs/records/2026-11-06-issue-47-live.md)。体験用カレンダーで通った分をC34の合格とするか（design.md 7節の分け方の提案）は2人の合意待ち
 
 ### 提出
 
-- [ ] C35 〈未定〉 READMEに、動かし方、試し方、構成の図、使ったGoogleのサービスを書く。確かめ方：READMEだけを読んで、別の人が試せる → Issue #48で手順・構成図・サービス一覧を整備。ローカルの既存ブラウザ試験は8/8。別系統によるREADMEだけでの試用は未確認（[記録](docs/records/2026-11-06-issue-48-verification.md)）
+- [x] C35 〈未定〉 READMEに、動かし方、試し方、構成の図、使ったGoogleのサービスを書く。確かめ方：READMEだけを読んで、別の人が試せる → Issue #48、別系統のClaudeが公開先で学生・支援担当の手順1〜6をすべて成功（2026-11-06）。案内の修正・試用結果・アカウントを伏せた画面：[確認記録](docs/records/2026-11-06-c35-readme-trial.md)
 - [ ] C36 〈未定〉 提出用のrepoへ、公開してよい内容だけを送る。確かめ方：公開の点検（個人の事情、実際の課題のデータ、秘密の値が無い）
 - [ ] C37 〈Sora〉 説明資料を公式のテンプレートの項目1〜9どおりに書き、Googleドライブのフォルダに置く（文章の下書きはClaude）。確かめ方：項目がそろい、ログインしていないブラウザでフォルダが開ける
 - [ ] C38 〈Sora〉 デモ動画を撮り、同じフォルダに置く。確かめ方：実際の操作を撮ったもので、筋書き（C34）が映っている
@@ -108,7 +108,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 | M3 | お知らせから締切の変更を拾えた割合（再現率）と、拾ったうち正しかった割合（適合率） | 再現率100%（18/18）、適合率100%（18/18）。初回・作成者既知の30件、未知の確認用は未実施（[記録](docs/records/2026-11-06-m3.md)、2026-11-06） | 再現率90%以上、適合率95%以上 | 架空のお知らせ30件 |
 | M4 | LMSを開いた回数のうち、裏の取得が最後まで済んだ割合 | 未測定 | 95%以上 | 拡張機能が手元で数える（回数と成否だけ。SIDや課題の中身は残さない） |
 | M5 | LMSを開いてから、学生の画面とカレンダーに変化が出るまでの時間（中央値） | 未測定 | 30秒以内 | M4と同じ記録の時刻から |
-| M6 | 試し方の筋書き（C34）の手順のうち通った割合 | ローカル8/8・公開先8/8（各100%、体験用カレンダー、2026-11-06、[記録](docs/records/2026-11-06-issue-47-live.md)）。実物のGoogleカレンダーは対象外 | 100% | 筋書きを自動で流す試験 |
+| M6 | 試し方の筋書き（C34）の手順のうち通った割合 | ローカル8/8（100%、2026-11-06、PR #90で、PR #72の締切の変化の新しい文に試験の待機文を合わせた後）・公開先8/8（PR #81、`trial-3`）。体験用カレンダー。実物のGoogleカレンダーは対象外 | 100% | 筋書きを自動で流す試験 |
 | M7 | 実際の課題で、手で作った一覧に対して自動で拾えた割合 | 未測定 | 100% | 一覧は手元だけに置き、割合だけをここに書く |
 
 ## 日程の目安（案）
