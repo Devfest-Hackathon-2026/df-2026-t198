@@ -1,0 +1,54 @@
+{
+  "checkedAt": "2026-11-06T03:01:40.836Z",
+  "sourceCommit": "bd47aa752031209cfc6605725da29b004fde3eec",
+  "build": {
+    "finishTime": "2026-11-06T02:59:40.004646Z",
+    "id": "9d869b08-d55d-49cb-8ba2-e53c7d7bc047",
+    "logUrl": "https://console.cloud.google.com/cloud-build/builds;region=asia-northeast1/9d869b08-d55d-49cb-8ba2-e53c7d7bc047?project=1029141858245",
+    "status": "SUCCESS"
+  },
+  "service": {
+    "spec": {
+      "template": {
+        "spec": {
+          "serviceAccountName": "kadai-hisho-api@project-00439085-4e2d-44c3-9a8.iam.gserviceaccount.com"
+        }
+      }
+    },
+    "status": {
+      "latestReadyRevisionName": "kadai-hisho-api-00007-2dk",
+      "traffic": [
+        {
+          "latestRevision": true,
+          "percent": 100,
+          "revisionName": "kadai-hisho-api-00007-2dk"
+        }
+      ],
+      "url": "https://kadai-hisho-api-vktixqozoa-an.a.run.app"
+    }
+  },
+  "checks": [
+    {
+      "origin": "https://kadai-hisho-api-vktixqozoa-an.a.run.app",
+      "health": 200,
+      "unauthenticatedObservation": 401
+    },
+    {
+      "origin": "https://project-00439085-4e2d-44c3-9a8.web.app",
+      "health": 200,
+      "unauthenticatedObservation": 401
+    },
+    {
+      "path": "/student",
+      "status": 200,
+      "assetsMatchBuild": true
+    },
+    {
+      "path": "/session",
+      "status": 200,
+      "assetsMatchBuild": true
+    }
+  ],
+  "missingApi": 404,
+  "iamChanged": false
+}
