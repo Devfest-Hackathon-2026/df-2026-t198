@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "definitionId": "coursepower",
-  "version": 2,
-  "readerVersion": 1,
+  "version": 3,
+  "readerVersion": 2,
   "pageChecks": {
     "loggedIn": {
       "selector": ".logoutButton, .weeklyCourseArea .courseCard, .kyozai_table .kyozaititleCell, #cs_centerinVox .cs_table3a"
@@ -43,7 +43,16 @@
     "courseId": {
       "selector": ".courseCardName a",
       "attribute": "onclick",
-      "pattern": "course-id"
+      "pattern": [
+        {
+          "type": "call-argument",
+          "name": "formSubmit"
+        },
+        {
+          "type": "prefixed-id",
+          "prefix": "KOG"
+        }
+      ]
     },
     "name": {
       "selector": ".courseCardName"
@@ -57,7 +66,11 @@
     },
     "period": {
       "selector": ".courseCardInfo",
-      "pattern": "period"
+      "pattern": {
+        "type": "number-between",
+        "before": "第",
+        "after": "限"
+      }
     },
     "materialsLink": null
   },
@@ -66,11 +79,17 @@
     "sourceId": {
       "selector": "td.kyozaititleCell",
       "attribute": "id",
-      "pattern": "report-id"
+      "pattern": {
+        "type": "prefixed-id",
+        "prefix": "REP"
+      }
     },
     "title": {
       "selector": "td.kyozaititleCell",
-      "pattern": "report-title"
+      "pattern": {
+        "type": "after-label",
+        "label": "レポート"
+      }
     },
     "status": {
       "selector": "td:nth-child(4) .materialLabe"

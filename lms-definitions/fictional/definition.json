@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "definitionId": "fictional",
+  "version": 1,
+  "readerVersion": 2,
+  "pageChecks": {
+    "loggedIn": null,
+    "loggedOut": null,
+    "home": {
+      "present": [
+        {
+          "selector": "#courses"
+        }
+      ],
+      "empty": null
+    },
+    "materials": {
+      "present": [
+        {
+          "selector": "#tasks"
+        }
+      ],
+      "empty": null
+    },
+    "assignmentDetail": {
+      "present": [
+        {
+          "selector": "#detail"
+        }
+      ],
+      "empty": null
+    }
+  },
+  "courses": {
+    "rows": "#courses article",
+    "courseId": {
+      "selector": "button",
+      "attribute": "onclick",
+      "pattern": [
+        {
+          "type": "call-argument",
+          "name": "openClass"
+        },
+        {
+          "type": "prefixed-id",
+          "prefix": "CLS"
+        }
+      ]
+    },
+    "name": {
+      "selector": "h2"
+    },
+    "teacher": {
+      "selector": ".teacher"
+    },
+    "day": {
+      "selector": ".day"
+    },
+    "period": {
+      "selector": ".slot",
+      "pattern": {
+        "type": "number-between",
+        "before": "[",
+        "after": "]"
+      }
+    },
+    "materialsLink": null
+  },
+  "materials": {
+    "rows": "#tasks article",
+    "sourceId": {
+      "selector": "h2",
+      "attribute": "id",
+      "pattern": {
+        "type": "prefixed-id",
+        "prefix": "TASK"
+      }
+    },
+    "title": {
+      "selector": "h2",
+      "pattern": {
+        "type": "after-label",
+        "label": "Task:"
+      }
+    },
+    "status": {
+      "selector": ".status"
+    },
+    "availability": {
+      "selector": ".availability"
+    },
+    "detailLink": null,
+    "nextPage": null,
+    "listEnd": null
+  },
+  "assignmentDetail": {
+    "title": {
+      "selector": "h2"
+    },
+    "due": {
+      "selector": ".due"
+    },
+    "status": {
+      "selector": ".status"
+    }
+  },
+  "transforms": {
+    "weekdays": {
+      "Mon": 1
+    },
+    "submission": {
+      "Done": "submitted",
+      "Open": "not-submitted"
+    },
+    "dateFormat": "yyyy/MM/dd (weekday) HH:mm まで"
+  }
+}

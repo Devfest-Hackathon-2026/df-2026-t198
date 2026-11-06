@@ -16,6 +16,12 @@ afterAll(async () => {
 });
 
 describe('HTTP server', () => {
+  it('refuses observations without a Firebase ID token', async () => {
+    const response = await fetch(`${baseUrl}/api/v1/observations`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+    });
+    expect(response.status).toBe(401);
+  });
   it.each(['/healthz', '/api/healthz', '/api/healthz?probe=hosting'])('serves its health endpoint at %s', async (path) => {
     const response = await fetch(`${baseUrl}${path}`);
     expect(response.status).toBe(200);

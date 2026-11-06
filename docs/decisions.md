@@ -215,7 +215,20 @@ Discordから開発のエージェントを呼ぶ仕組み（Claude CodeのDisco
 | [cheerio](https://cheerio.js.org/docs/intro/) | 今回は採らない | jQuery風の探索APIを使えるが、今回は既存のDOMに近いAPIで足りる。worker向け入口のあるlinkedomを優先した。サイズの優劣は測っていない |
 | [offscreen documentのDOMParser](https://developer.chrome.com/docs/extensions/reference/api/offscreen) | 採らない | 裏画面の作成とメッセージ通信が必要になり、Node.jsの試験と同じ実行経路にならない |
 
-定義は [definition.json](../lms-definitions/coursepower/definition.json)、書式の型と検査は [definition.ts](../packages/core/src/definition.ts)。基本、ページの確認、授業の一覧、教材の一覧、課題の詳細、値の変換を持つ。未知のキーは入れ子も含めて拒否する。変換は固定した4種類のパターン名、曜日・提出状態の対応表、1種類の日付書式に限る。正規表現やJavaScriptを自由に書く欄、HTTPメソッドやホストを指定する欄はない。大学のUTCオフセットは呼び出し側から渡す。
+定義は [definition.json](../lms-definitions/coursepower/definition.json)、書式の型と検査は [definition.ts](../packages/core/src/definition.ts)。基本、ページの確認、授業の一覧、教材の一覧、課題の詳細、値の変換を持つ。未知のキーは入れ子も含めて拒否する。変換は引数付きの4種類（下記）、曜日・提出状態の対応表、1種類の日付書式に限る。正規表現やJavaScriptを自由に書く欄、HTTPメソッドやホストを指定する欄はない。大学のUTCオフセットは呼び出し側から渡す。
+
+Issue #10で、製品固有の値を定義へ移した（2026-11-06、Codex。Issueの依頼に基づく変更）。`pattern` は次のいずれか1つ、または最大4つの配列とし、配列は前から順に適用する。途中で一致しなければ値を返さない。CoursePowerの授業IDは `call-argument` → `prefixed-id` の順に読む。
+
+| 型 | 引数と読み方 |
+|---|---|
+| `prefixed-id` | `prefix` に続くASCII数字を文字列全体で確認し、ID全体を返す。接頭辞は英字から始まる英数字・`_`・`-`、1〜32文字 |
+| `after-label` | `label`、空白、空でない題名の順に並ぶ文字列から題名を返す |
+| `number-between` | NFKCで正規化した文字列の最初の `before` の直後にASCII数字と `after` があれば、数字を返す。題名には正規化しない |
+| `call-argument` | `name` に一致する関数名、括弧、同じ引用符で囲まれた引数1つだけを読む。実行はしない。名前はJavaScriptのASCII識別子の文字で1〜64文字、引数は英数字・`_`・`-`で1〜128文字 |
+
+`label`・`before`・`after` はUnicodeの文字・数字・句読記号・ASCII空白で1〜64文字とし、空白だけ、制御文字、URLは拒否する。引数を正規表現へ展開せず、文字列比較と固定した正規表現だけを使う。未知の型、余分なキー、配列の入れ子は拒否する。以前のパターン名は受け付けず、`readerVersion` を2、CoursePower定義の `version` を3に更新した。外部からの定義更新を扱う処理は今回追加していない。
+
+採用しなかった案は、製品名付きのパターンを増やす方法（別製品のたびにコード変更が要る）と、定義に任意の正規表現を許す方法（入力から実行する式を組み立てるため）。依存は追加していない。[架空製品の定義](../lms-definitions/fictional/definition.json) と [試験](../packages/core/tests/parameterized-patterns.test.mjs) で、別の接頭辞・ラベル・区切り・関数名を読み取る。この定義は試験専用で、公開済みの模擬LMSやGeminiによる生成の証拠ではない（C30・C32は未完了）。
 
 今回は保存HTMLからの中間結果まで。観測の型は変えていない。リンクは見本で除去済みのため、リンク・次ページは`null`のみを受け付ける。ログインの印、空一覧の印、一覧の終わりの印も根拠がないため未設定。0行を成功にせず、取得完了も出力しない。これらの設定と実際の取得処理はC04以降で確かめる。「未評価」から提出済みへの変換は、見本READMEの採取記録に基づく対応であり、別のCoursePower環境での意味は未確認。
 
@@ -236,3 +249,48 @@ M1は [見本README](../lms-definitions/coursepower/samples/README.md) の基準
 - 秘密検出はMITのgitleaks本体を固定リリースから取得し、同じリリースのSHA-256一覧と照合してから実行する。organization向けライセンスが必要な公式Actionは使わない（[公式案内](https://github.com/gitleaks/gitleaks/tree/v8.24.3#github-action)）。通常のCIと別jobにし、履歴全体をredact付きで検査する。
 - 同時刻の修正要求は停止側に判定する。package.jsonは差分テキストでなく分岐点とheadの依存オブジェクトを比較し、表示順やscriptsの変更を人の合意が要る変更と誤認しない。取得や比較に失敗したら通さない。
 - gitleaksの除外設定は追加しない。誤検知を実際に確認した場合だけ、理由と狭い対象を `.gitleaks.toml` に書く。
+
+## D21. Firestoreの規則をエミュレーターで試す（2026-11-06）
+
+- 合意の記録：Issue #17でSoraが `firestore.rules`・`firebase.json`・このIssueの依存追加を承認した。設計案の1・2節の範囲を実装し、ほかの設計変更は含めない。
+- 決めた人：Codex。試験はFirebase公式の [`@firebase/rules-unit-testing`](https://firebase.google.com/docs/firestore/security/test-rules-emulator) と既存のFirebase CLIを使う。独自の規則評価や認証モックは作らず、実際のエミュレーターで読み書きする。ルートの開発依存に同ライブラリと、そのpeer依存の `firebase` を追加する。既存のNode標準テストランナーで足りるため、試験フレームワークは追加しない。
+- `pnpm test` に含め、`demo-kadai-hisho-rules` のFirestoreだけを起動して終了する。Javaは手元のHomebrew JDK 21と、[GitHubのUbuntuにある `JAVA_HOME_21_X64`](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md#java) を使う。規則・ポートは既存の `firebase.json` を共用する。クラウドへのデプロイは含めない。
+- 共有を許可するのは `scopes` がリストで `all` を含み、`revokedAt` が明示的に `null` の許可文書だけ。欠けた項目や不正な型は許可と扱わない。`sessionContext/current` と `integrations/calendar` は設計の文書名に限定し、未知の文書や下位のコレクションは再帰で許可しない。
+- 境界の確認：学生ごとのデータをWeb SDKが読む際の認可と、直接書き込み禁止を試験する。Admin SDKでのAPI認可、招待の作成、画面から既取得情報を消す動作、実環境への反映は別の作業。この変更はトークンの扱い、外部入力の解析、暗号、課金APIを変更しないため、それらの検査は対象外。
+
+## D22. 観測の受領と台帳の更新（2026-11-06、Issue #16）
+
+- 決めた人：SoraがIssue #16で型・データ形・依存追加を承認し、Codexが実装。契約の詳細と限界は [data-shapes.md](data-shapes.md) にまとめる。
+- 認証と保存には `firebase-admin`（Apache-2.0）を使う。ID tokenの検証とFirestoreのトランザクションを公式SDKに任せ、JWTの検証やRESTでの競合処理は独自実装しない。[認証の公式資料](https://firebase.google.com/docs/auth/admin/verify-id-tokens)、[トランザクションの公式資料](https://firebase.google.com/docs/firestore/manage-data/transactions)を確認した。tokenの失効も検査する。
+- coreは台帳を更新する純粋関数、serverは入力の検査・認証・保存を担当する。server向けに `@kadai-hisho/core/ledger` の入口を分け、HTML読み取り用の型・実行コードを読み込まずに利用できるようにした。YNU取得部品は変更しない。
+- 受領記録を先に読み、授業・台帳・別文書の履歴・取得状態と同じトランザクションで作る。先に受領だけを保存する案は、途中で止まったとき未処理なのに処理済みになり得るため採らない。取得状態の文書も読むことで、空の台帳からの同時受領を直列化する。
+- Issueの指定に従い、通し番号、内容のハッシュ、受領・処理時刻は受領記録に追加しない。同じIDで異なる内容の検出と、新しいIDで遅れて届いた観測の拒否は未実装。この制約を隠すためにPCの時刻で順番を判定することはしない。
+- 試験は架空データだけを使い、AuthとFirestoreのエミュレーターへAPI経由で送る。ローカルの接続先と `demo-kadai-hisho` を検査してからSDKを初期化する。クラウドの資源・認証設定・Firestoreの規則は変更しない。
+
+## D23. 試す人が使う経路を先に通し、仕組みの作り込みは止める（2026-11-06、Sora）
+
+FableとAstraに、作った開発の仕組みが目的に沿っているかを、独立に見直させた（[記録](records/2026-11-06-system-review.md)）。2つとも、品質を守る仕組みは効いているが、拡張機能を入れずに試す人の経路と提出物が後回しになっている、と指摘した。
+
+- 順番：拡張機能を入れずに試す人の経路（模擬LMS → 読み取り → API → 台帳 → 学生の画面・面談画面 → 試す人のアカウント → デプロイ）を、11/7の夜までに、デプロイしたURLで1本通す。YNUの実物での裏の取得の確認（C04・C05）、LMSの隅の知らせ（C21）、ポップアップ（C22）は、そのあと。完成条件はすべて満たす前提のまま。
+- 模擬LMS：Web画面の中でFirestoreの体験データから描き、そのHTMLを同じ読み取りの部品に渡す。Cloud Runで人ごとのHTMLを作る案（design.md 7節）はやめる。
+- C34の合格の条件：模擬のカレンダーで、筋書きが最後まで通ること。実物のGoogleカレンダーへの書き込みは、C15〜C17で別に確かめる。
+- 削る順：お知らせの読み取り（C28）は残す。延長や前倒しが、課題の欄ではなくお知らせの文にだけ書かれることがあり（D11）、利用者が見落とす変化を拾う役目があるため。D11の削る順の③は、C28・C29からC29（30件での評価）だけにする。
+- 提出物：説明資料・デモ動画・著作物利用シート・フォームでの提出・11/14までの稼働を、PLAN.md の C37〜C41 として足した。担当と期限：説明資料（C37）はClaudeが11/9に下書き、Soraが11/10 15:00までに仕上げる。デモ動画（C38）はSoraが11/9に撮り、11/10 15:00までに置く。著作物利用シート（C39）はClaudeが11/10 12:00までに作る。フォームでの提出とフォルダの閲覧の確認（C40）はSoraが11/10 18:00までに行う。11/14までの稼働（C41）は、当面Sora（インフラの担当が決まったら移す）。進み具合は Issue #22 で管理する。
+- 人の印の事前の承認：Soraが、ターミナルの会話で、この決定の推奨をまとめて認めた（2026-11-06 08時台）。orangeは、Discordで先に進めてレビューで直す進め方に同意と言っている（Sora経由、同じ日）。2人の合意が要る変更も、この範囲なら先に進め、orangeのレビューで直す。範囲は次のとおり。
+  - ファイル：`docs/design.md`（main の `6b78444` の時点）の2節・3節・5節・8節に沿った `packages/core/src/types.ts` と `docs/data-shapes.md` の変更、1節・2節に沿った `firestore.rules`、4節・10節に沿った `firebase.json`。
+  - 依存：`firebase-admin`、`@firebase/rules-unit-testing`、`@google/genai`、`@playwright/test`（Soraが2026-11-06に承認）。`linkedom`・`firebase` はmerge済み。
+  - orchestratorは、PRの差分がこの範囲に収まることを確かめてから `human:ok` を付け、根拠（このD23と、該当のIssue）をPRにコメントする。範囲の外（設計と違う形、上に無い依存、権限やGoogle Cloudの設定の変更）は、今までどおり人に聞いて、答えがあるまで止める。
+- 実行役：Codexが、作業用のbranchへのpushとPRの作成まで行う。mergeは関所（D20）を通す。Claudeの見直しは、差分を読むことと、CIの結果を見ることにする（CIと同じ試験を回し直さない）。Claudeが書いたものは、Codexが見直す。
+- やめること：仕組みの作り込み（指標を1つのコマンドで出す仕組み、朝夜の投稿の自動化、関所の強化）。指標は各PRが個別に測って本文に書く（loop.md 2節）。設計の判断ごとの3つのモデルの比較は、大きな判断だけにする。gcloudのスクリプトとWIFのデプロイはやめ、大会中は人の許可でMacから流す（D17を改める）。招待コードはやめ、試す人のアカウントは最初からひも付ける。観測の通し番号はやめる。画像で作る画面の案は、学生の時間割と面談画面の2つで1回だけ選ぶ。
+- Firebaseのweb用の設定（公開を前提とした値）は、repoに入れてよい。
+- 全体の見直し：朝と夜に、Fableが全体を見直す（orchestratorはClaudeのまま）。
+- 公開repoへ送る履歴：最後に点検してから決める。公開してはいけない文が見つかったら、送る写しの側で消す。開発用repoの履歴は書き換えない（AGENTS.md も合わせて直した）。
+
+## D24. お知らせの締切変更を抽出して測る（2026-11-06、Issue #29）
+
+- 合意の記録：Issue #29が `@google/genai` の追加と、設計9節の構造化出力・架空30件の評価を許可。Issueの「D21」は、現在のD21（Firestore規則）とは番号が異なるため、合意はIssue本文を根拠にする。決めた人：Codex。
+- 公式の [Google Gen AI SDK](https://github.com/googleapis/js-genai) を採用し、Vertex AI・`gemini-3.8-flash`・`global` で呼ぶ。独自の認証やHTTPクライアントは作らない。SDKのpreinstallはno-opだが不要なので実行を許可しない。
+- 未知の応答を候補キー・引用・日時で検査して要確認の提案だけ返す。#16（PR #27）のmerge後、既存の台帳型へ `conflicting-deadline` を足す純粋関数まで接続した。同じシステム・授業の候補だけを渡し、公式締切・観測・提出状態を保持する。Firestore保存や呼び出し元への接続時には本人の確認と永続的な版の取得済み判定を渡す。実物のLMSのお知らせは保持条件が確かめられるまで有効にしない。
+- 費用は呼び出す前に予約し、usage（推論込み）で精算する。日次の記録はプロジェクト別のローカルファイルと排他ロックを使う。Firestoreをこのために追加しない。複数Mac・Cloud Runへの接続時には共通の永続ストアが別途必要。料金は[公式表](https://cloud.google.com/model-garden/pricing)の標準単価で保守的に計算する。初回測定・上限・確認用の扱いとコマンドは [見本の説明](../lms-definitions/announcements/README.md)。
+- 脅威の範囲は、お知らせとモデル応答による命令注入・他の課題への誤結合・ログへの本文混入・評価費用。ツールなしの呼び出し、出力検査、固定のエラーコード、予約上限を試験する。API・ログイン・権限・デプロイは変更しないため、このPRでの認可検証の対象外。
+

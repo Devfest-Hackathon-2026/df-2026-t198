@@ -1,6 +1,59 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function hasSharingPermission(uid) {
+      let permission = /databases/$(database)/documents/students/$(uid)/supporters/$(request.auth.uid);
+      return exists(permission)
+        && get(permission).data.revokedAt == null
+        && get(permission).data.scopes is list
+        && 'all' in get(permission).data.scopes;
+    }
+
+    function canReadShared(uid) {
+      return isOwner(uid) || (request.auth != null && hasSharingPermission(uid));
+    }
+
+    match /students/{uid} {
+      // Only these collections are shared; new or nested data stays private by default.
+      match /courses/{courseKey} {
+        allow read: if canReadShared(uid);
+      }
+      match /assignments/{key} {
+        allow read: if canReadShared(uid);
+      }
+      match /changes/{changeId} {
+        allow read: if canReadShared(uid);
+      }
+      match /fetchStates/{system} {
+        allow read: if canReadShared(uid);
+      }
+      match /plans/{planId} {
+        allow read: if canReadShared(uid);
+      }
+      match /sessionContext/current {
+        allow read: if canReadShared(uid);
+      }
+
+      match /calendarItems/{itemKey} {
+        allow read: if isOwner(uid);
+      }
+      match /integrations/calendar {
+        allow read: if isOwner(uid);
+      }
+      match /observationReceipts/{observationId} {
+        allow read: if isOwner(uid);
+      }
+      match /supporters/{supporterUid} {
+        allow read: if isOwner(uid)
+          || (request.auth != null && request.auth.uid == supporterUid);
+      }
+    }
+
+    // Invites, unlisted paths and every client write are denied. Admin SDK bypasses rules.
     match /{document=**} {
       allow read, write: if false;
     }

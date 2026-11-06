@@ -2,14 +2,34 @@ import { parseHTML, type TreeElement } from 'linkedom/worker';
 import { validateDefinition, type Marker, type Pattern, type ReadingDefinition, type ValueRule } from './definition.js';
 import type { PageReading, ReadAssignment, ReadCourse, ReadingContext } from './reading-types.js';
 
-const patterns: Record<Pattern, RegExp> = {
-  'course-id': /^formSubmit\(\s*['"](KOG[0-9]+)['"]\s*\)\s*;?$/,
-  'report-id': /^(REP[0-9]+)$/,
-  'report-title': /^レポート\s+(.+)$/,
-  period: /第([0-9]+)限/,
-};
 const tidy = (value: string): string => value.replace(/\s+/gu, ' ').trim();
 const fail = (): never => { throw new Error('unreadable-page'); };
+
+/** Parameters are literal strings, never regular expressions or executable handlers. */
+function extract(text: string, pattern: Pattern): string | null {
+  switch (pattern.type) {
+    case 'prefixed-id':
+      return text.startsWith(pattern.prefix) && /^[0-9]+$/.test(text.slice(pattern.prefix.length)) ? text : null;
+    case 'after-label': {
+      if (!text.startsWith(pattern.label)) return null;
+      const suffix = text.slice(pattern.label.length);
+      return /^\s+\S/u.test(suffix) ? suffix.trim() : null;
+    }
+    case 'number-between': {
+      const normalized = text.normalize('NFKC');
+      const before = pattern.before.normalize('NFKC'), after = pattern.after.normalize('NFKC');
+      const start = normalized.indexOf(before);
+      if (start < 0) return null;
+      const suffix = normalized.slice(start + before.length);
+      const digits = /^[0-9]+/.exec(suffix)?.[0];
+      return digits && suffix.slice(digits.length).startsWith(after) ? digits : null;
+    }
+    case 'call-argument': {
+      const match = /^([A-Za-z_$][A-Za-z0-9_$]*)\(\s*(['"])([A-Za-z0-9_-]{1,128})\2\s*\)\s*;?$/.exec(text);
+      return match?.[1] === pattern.name ? match[3]! : null;
+    }
+  }
+}
 
 function value(root: TreeElement, rule: ValueRule): string | null {
   const scope = rule.ancestor ? root.closest(rule.ancestor) : root;
@@ -19,8 +39,13 @@ function value(root: TreeElement, rule: ValueRule): string | null {
   const node = nodes[0]!;
   const raw = rule.attribute ? node.getAttribute(rule.attribute) : node.textContent;
   if (raw === null) return null;
-  const text = tidy(raw);
-  return rule.pattern ? patterns[rule.pattern].exec(rule.pattern === 'period' ? text.normalize('NFKC') : text)?.[1] ?? null : text;
+  let text: string | null = tidy(raw);
+  const steps = rule.pattern === undefined ? [] : Array.isArray(rule.pattern) ? rule.pattern : [rule.pattern];
+  for (const step of steps) {
+    text = extract(text, step);
+    if (text === null) break;
+  }
+  return text;
 }
 function required(root: TreeElement, rule: ValueRule): string {
   return value(root, rule) || fail();
