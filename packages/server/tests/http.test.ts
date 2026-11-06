@@ -16,8 +16,8 @@ afterAll(async () => {
 });
 
 describe('HTTP server', () => {
-  it('serves its health endpoint', async () => {
-    const response = await fetch(`${baseUrl}/healthz`);
+  it.each(['/healthz', '/api/healthz', '/api/healthz?probe=hosting'])('serves its health endpoint at %s', async (path) => {
+    const response = await fetch(`${baseUrl}${path}`);
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('application/json');
     expect(await response.json()).toEqual({ status: 'ok' });
@@ -27,6 +27,9 @@ describe('HTTP server', () => {
     ['GET', '/missing'],
     ['GET', '/healthz/extra'],
     ['POST', '/healthz'],
+    ['GET', '/api/missing'],
+    ['GET', '/api/healthz/extra'],
+    ['POST', '/api/healthz'],
   ])('does not expose another endpoint: %s %s', async (method, path) => {
     const response = await fetch(`${baseUrl}${path}`, { method });
     expect(response.status).toBe(404);

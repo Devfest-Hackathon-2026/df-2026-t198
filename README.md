@@ -49,7 +49,7 @@ pnpm --filter server start
 
 既定では `http://localhost:8080/healthz` が `{"status":"ok"}` を返す。`PORT` でポートを変更でき、待ち受け先は `0.0.0.0`。
 
-Cloud Runのソースデプロイではrepoのルートをソースにする。buildpacks用の `gcp-build` がサーバーだけをビルドし、`start` が起動する。Nodeとpnpmの指定はルートの `engines` にある。デプロイはリソース作成と課金の確認を取ってから行う。詳細は [Node.js buildpacks](https://cloud.google.com/docs/buildpacks/nodejs) を参照。
+Cloud RunとFirebase Hostingへのデプロイは [デプロイ手順](docs/deploy.md) を参照。
 
 ## Firebaseエミュレーター
 
