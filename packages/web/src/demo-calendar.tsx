@@ -50,9 +50,9 @@ export function DemoCalendarView({ integration, pending, now = Date.now() }: {
 }
 export function GoogleCalendarStatus({ integration, pending }: { integration: CalendarIntegration | null; pending: boolean }) {
   return <section aria-label="Googleカレンダー"><h2>Googleカレンダー</h2>
-    <p>{!integration ? '準備の予定は保存されています。拡張機能でカレンダーを接続すると、予定が入ります。'
-      : integration.connectionState === 'reauthorization-required' ? 'カレンダーをもう一度接続してください。準備の予定は保存されています。'
-        : integration.connectionState === 'recovery-required' ? 'カレンダーの接続を確かめてください。準備の予定は保存されています。'
+    <p>{!integration ? '予定は保存されています。拡張機能でカレンダーを接続すると、予定が入ります。'
+      : integration.connectionState === 'reauthorization-required' ? 'カレンダーをもう一度接続してください。予定は保存されています。'
+        : integration.connectionState === 'recovery-required' ? 'カレンダーの接続を確かめてください。予定は保存されています。'
           : pending ? '予定は保存されています。カレンダーへの変更を待っています。PCのChromeで拡張機能を起動すると、更新を試みます。'
             : 'カレンダーへの変更が済んでいます。'}</p>
   </section>;
@@ -72,7 +72,7 @@ export function DemoCalendar({ fallback, now }: { fallback?: ReactNode; now?: nu
       let integrationReceived = false;
       const publish = () => {
         if (!active) return;
-        setValue(integrationReceived && items && (integration || items.some(item => item.kind === 'preparation')) ? {
+        setValue(integrationReceived && items && (integration || items.some(item => item.kind === 'preparation' || item.kind === 'manual-deadline')) ? {
           integration: integration ?? null, pending: items.some(item => item.appliedRevision !== item.desiredRevision),
         } : null);
       };

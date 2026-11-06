@@ -31,7 +31,7 @@ it('clears every section on revocation and ignores queued callbacks afterwards',
   const count = f.updates.length;
   f.next['courses']?.([{ courseId: 'secret-from-old-student' }]); f.grant(true);
   expect(f.updates).toHaveLength(count);
-  expect(f.stops).toHaveBeenCalledTimes(7);
+  expect(f.stops).toHaveBeenCalledTimes(8);
 });
 it('clears previous data on listener failure and stops updates after a student switch or logout', () => {
   const f = fixture(); f.ready(); f.fail['assignments']?.();

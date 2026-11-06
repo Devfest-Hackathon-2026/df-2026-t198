@@ -40,7 +40,7 @@ try {
   await ready(`http://127.0.0.1:${apiPort}/api/health`, api);
   const web = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', webPort, '--strictPort'], true);
   await ready(env.KADAI_WEB_ORIGIN, web);
-  await finish(start('node', [process.argv.includes('--demo-regression')
+  await finish(start('node', [process.argv.includes('--manual-assignments') ? 'packages/web/tests/manual-assignments.browser.mjs' : process.argv.includes('--demo-regression')
     ? 'packages/web/tests/demo.browser.mjs' : 'packages/web/tests/plans.browser.mjs']));
 } finally {
   for (const child of children) if (child.exitCode === null) child.kill('SIGTERM');
