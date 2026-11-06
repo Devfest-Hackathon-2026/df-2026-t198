@@ -18,9 +18,9 @@ async function fixture({ enabled = true, now = '2026-11-07T07:29:00+09:00' } = {
   vi.resetModules(); vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(now));
   state.user = { uid: 'owner', email: mail.to }; state.googleUid = 'owner';
   const data = enabled ? { digestPreference: { enabled: true, uid: 'owner', namespace } } : {};
-  const alarms = new Map(); let startup; let onAlarm;
+  const alarms = new Map(); let startup; let installed; let onAlarm;
   const chrome = { runtime: { id: 'extension', getURL: path => `chrome-extension://extension/${path}`,
-    onStartup: { addListener: fn => { startup = fn; } } },
+    onStartup: { addListener: fn => { startup = fn; } }, onInstalled: { addListener: fn => { installed = fn; } } },
     alarms: { get: vi.fn(async name => alarms.get(name)), create: vi.fn(async (name, value) => alarms.set(name, { ...value, scheduledTime: value.when })),
       clear: vi.fn(async name => alarms.delete(name)), onAlarm: { addListener: fn => { onAlarm = fn; } } },
     identity: { getAuthToken: vi.fn(async () => ({ token: 'synthetic-google-token' })), removeCachedAuthToken: vi.fn() },
@@ -48,7 +48,7 @@ async function fixture({ enabled = true, now = '2026-11-07T07:29:00+09:00' } = {
   async function message(message, from = sender) {
     return new Promise(resolve => module.handleDigestMessage(message, from, resolve));
   }
-  return { ...module, chrome, data, digest, sent, fetch, alarms, message, startup: () => startup(), alarm: name => onAlarm({ name }),
+  return { ...module, chrome, data, digest, sent, fetch, alarms, message, startup: () => startup(), installed: () => installed(), alarm: name => onAlarm({ name }),
     failSend: (status = 503) => { sendStatus = status; }, loseResponse: () => { dropResponse = true; } };
 }
 const plan = { planId: '11111111-1111-4111-8111-111111111111', date: '2026-11-07', startsAt: '2026-11-07T13:00:00+09:00', status: 'active',
@@ -138,7 +138,7 @@ it('keeps OFF when the user disables mail while an earlier permission request is
 it('clears a preparation error after a later confirmed send', async () => {
   const f = await fixture({ now: '2026-11-07T10:00:00+09:00' });
   f.digest.date = '2026-11-06'; await f.runDigest(); expect(f.data.digestPreference.problem).toBe('invalid-digest');
-  f.digest.date = '2026-11-07'; await f.runDigest(); expect(f.sent).toHaveLength(1);
+  f.digest.date = '2026-11-07'; vi.setSystemTime(new Date('2026-11-07T10:15:00+09:00')); await f.runDigest(); expect(f.sent).toHaveLength(1);
   expect((await f.message({ type: 'digest-status' })).problem).toBeUndefined();
 });
 it.each(['response-lost', 'http-error', 'unauthorized'])('does not duplicate a mail after %s and exposes only a fixed problem', async reason => {
@@ -148,4 +148,106 @@ it.each(['response-lost', 'http-error', 'unauthorized'])('does not duplicate a m
   expect((await f.message({ type: 'digest-status' })).problem).toBe('send-unconfirmed');
   expect(JSON.stringify(f.data)).not.toMatch(/synthetic-private-response|synthetic-google-token|今日の準備/);
   if (reason === 'unauthorized') expect(f.chrome.identity.removeCachedAuthToken).toHaveBeenCalledWith({ token: 'synthetic-google-token' });
+});
+
+// Review regressions: derive expectations from notification and load requirements.
+it('registers listeners without fetching, and catches up on install', async () => {
+  const f = await fixture({ now: '2026-11-07T10:00:00+09:00' });
+  f.startDigest(); await Promise.resolve(); await Promise.resolve();
+  expect(f.fetch).not.toHaveBeenCalled();
+  f.installed(); await f.runDigest(); expect(f.sent).toHaveLength(1);
+});
+it.each([false, true])('bounds daily requests across 1440 alarm-driven worker restarts (API fails: %s)', async fails => {
+  const f = await fixture({ now: '2026-11-07T00:00:00+09:00' });
+  f.digest.plans = [{ ...plan, startsAt: '2026-11-07T13:07:00+09:00' }];
+  if (fails) f.fetch.mockRejectedValue(new Error('synthetic-unavailable'));
+  for (let minute = 0; minute < 1440; minute++) {
+    vi.setSystemTime(new Date(Date.parse('2026-11-07T00:00:00+09:00') + minute * 60_000));
+    vi.resetModules(); const worker = await import('../src/digest-browser.js');
+    worker.startDigest(); f.alarm('digest-poll'); await worker.runDigest();
+  }
+  const requests = f.fetch.mock.calls.filter(([url]) => url.endsWith('/api/v1/digest'));
+  expect(requests.length).toBeLessThanOrEqual(98); // 96 refreshes + morning + one plan.
+  expect(requests.length).toBe(fails ? 96 : 97);
+  if (!fails) expect(f.sent).toHaveLength(2);
+  expect(JSON.stringify(f.data)).not.toMatch(/今日の準備|13:00の準備|student@example|synthetic-firebase-token/);
+});
+it('isolates unsafe morning and plan mails and still sends the later safe plan', async () => {
+  const f = await fixture({ now: '2026-11-07T12:30:00+09:00' });
+  f.digest.html += 'SID&#61;synthetic';
+  f.digest.plans = [{ ...plan, html: 'Cookie: synthetic' }, { ...plan, planId: 'safe-plan' }];
+  await f.runDigest();
+  expect(f.sent).toHaveLength(1);
+  expect(f.data[receipts].planIds).toEqual(['safe-plan']);
+  expect(f.data.digestPreference.problem).toBe('unsafe-digest');
+});
+it('finishes all asynchronous consent and identity reads before reserving a mail', async () => {
+  const f = await fixture({ now: '2026-11-07T10:00:00+09:00' });
+  const events = [];
+  const read = f.chrome.storage.local.get.getMockImplementation();
+  const save = f.chrome.storage.local.set.getMockImplementation();
+  const fetch = f.fetch.getMockImplementation();
+  f.chrome.storage.local.get.mockImplementation(async key => { events.push('read'); return read(key); });
+  f.chrome.storage.local.set.mockImplementation(async value => {
+    if (value[receipts]?.planIds.includes('morning')) events.push('reserve');
+    return save(value);
+  });
+  f.fetch.mockImplementation(async (url, options) => {
+    if (url.includes('/messages/send')) events.push('send');
+    return fetch(url, options);
+  });
+  await f.runDigest(); expect(f.sent).toHaveLength(1);
+  expect(events.slice(events.indexOf('reserve'), events.indexOf('send') + 1)).toEqual(['reserve', 'send']);
+});
+it('does not keep a reservation if switched off while the reservation is being saved', async () => {
+  const f = await fixture({ now: '2026-11-07T10:00:00+09:00' });
+  const save = f.chrome.storage.local.set.getMockImplementation();
+  f.chrome.storage.local.set.mockImplementation(async value => {
+    await save(value);
+    if (value[receipts]?.planIds.includes('morning')) await f.message({ type: 'digest-setting', enabled: false });
+  });
+  await f.runDigest(); expect(f.sent).toHaveLength(0);
+  expect(f.data[receipts]?.planIds ?? []).toEqual([]);
+  expect(f.data.digestPreference.enabled).toBe(false);
+});
+it('unreserves a plan that expires while saving and continues with the next plan', async () => {
+  const f = await fixture({ now: '2026-11-07T12:59:00+09:00' });
+  f.data[receipts] = { date: '2026-11-07', planIds: ['morning'] };
+  f.digest.plans = [{ ...plan }, { ...plan, planId: 'later-plan', startsAt: '2026-11-07T13:10:00+09:00' }];
+  const save = f.chrome.storage.local.set.getMockImplementation();
+  f.chrome.storage.local.set.mockImplementation(async value => {
+    await save(value);
+    if (value[receipts]?.planIds.includes(plan.planId)) vi.setSystemTime(new Date('2026-11-07T13:00:00+09:00'));
+  });
+  await f.runDigest();
+  expect(f.sent).toHaveLength(1);
+  expect(f.data[receipts].planIds).toEqual(['morning', 'later-plan']);
+});
+it.each(['empty', 'no-due'])('clears a recovered error on a healthy %s result', async kind => {
+  const f = await fixture({ now: '2026-11-07T10:00:00+09:00' });
+  f.data.digestPreference.problem = 'unsafe-digest'; f.data.digestPreference.problemDate = '2026-11-07';
+  if (kind === 'empty') f.digest.empty = true;
+  else f.data[receipts] = { date: '2026-11-07', planIds: ['morning'] };
+  await f.runDigest(); expect(f.data.digestPreference.problem).toBeUndefined();
+});
+it('clears yesterday’s uncertain delivery even before the next morning', async () => {
+  const f = await fixture({ now: '2026-11-08T00:01:00+09:00' });
+  f.data.digestPreference.problem = 'send-unconfirmed'; f.data.digestPreference.problemDate = '2026-11-07';
+  f.digest.date = '2026-11-08'; f.digest.empty = true;
+  await f.runDigest(); expect(f.data.digestPreference.problem).toBeUndefined();
+});
+
+it('uses only cached IDs and times between refreshes, then revalidates a cancelled plan at its window', async () => {
+  const f = await fixture({ now: '2026-11-07T12:29:00+09:00' });
+  f.data[receipts] = { date: '2026-11-07', planIds: ['morning'] };
+  f.digest.plans = [{ ...plan }]; await f.runDigest();
+  const cache = f.data[`digestSchedule:${namespace}:owner`];
+  expect(cache.plans).toEqual([{ planId: plan.planId, startsAt: plan.startsAt }]);
+  f.digest.plans = [];
+  vi.setSystemTime(new Date('2026-11-07T12:30:00+09:00')); await f.runDigest();
+  expect(f.sent).toHaveLength(0); expect(f.fetch).toHaveBeenCalledTimes(2);
+  vi.setSystemTime(new Date('2026-11-07T12:44:00+09:00')); await f.runDigest();
+  expect(f.fetch).toHaveBeenCalledTimes(2);
+  vi.setSystemTime(new Date('2026-11-07T12:45:00+09:00')); await f.runDigest();
+  expect(f.fetch).toHaveBeenCalledTimes(3);
 });

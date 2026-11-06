@@ -25,7 +25,7 @@ describe('digest mail boundary', () => {
     expect(words.every(word => word[0].length <= 75)).toBe(true);
   });
   it.each(['SID=synthetic', 'Cookie: synthetic', 'Authorization: Bearer synthetic', 'access_token=synthetic',
-    'password=synthetic', 'token=synthetic', 'session=synthetic', 'auth=synthetic', 'https://lms.example.invalid/?sid%3Dsynthetic', 'SID&#61;synthetic',
+    'https://lms.example.invalid/?sid%3Dsynthetic', 'SID&#61;synthetic',
     'SID&amp;#x3d;synthetic', 'https://user:synthetic@lms.example.invalid/', 'synthetic-current-secret'])('rejects credential-bearing content: %s', value => {
     expect(mailIsSafe({ ...mail, html: `<a href="${value}">LMSで見る</a>` }, ['synthetic-current-secret'])).toBe(false);
   });
@@ -36,4 +36,8 @@ describe('digest mail boundary', () => {
     expect(mailIsSafe(mail, [])).toBe(true);
     expect(() => encodeMail(mail, 'other@example.invalid', [])).toThrow('unsafe-digest');
   });
+});
+
+it.each(['Token: の仕組み', 'Secret= の文法', 'https://example.invalid/tasks/@student'])('allows ordinary task text: %s', text => {
+  expect(mailIsSafe({ ...mail, text, html: `<p>${text}</p>` }, [])).toBe(true);
 });

@@ -7,8 +7,15 @@ const preferenceKey = 'digestPreference';
 const pollAlarm = 'digest-poll';
 const morningAlarm = 'digest-morning';
 const namespace = `${probeConfig.firebase.projectId}:${probeConfig.oauthClientId}`;
-interface Preference { enabled: boolean; uid: string; namespace: string; problem?: string }
+interface Preference { enabled: boolean; uid: string; namespace: string; problem?: string; problemDate?: string }
 interface Receipt { date: string; planIds: string[] }
+interface Schedule {
+  date: string;
+  checkedAt: number;
+  plans: { planId: string; startsAt: string }[];
+  requestedIds: string[];
+}
+const refreshInterval = 15 * 60_000;
 type Identity = { uid: string; token: string; email: string };
 let queue: Promise<void> = Promise.resolve();
 let preferenceVersion = 0;
@@ -51,6 +58,16 @@ async function requestDigest(user: Identity, date: string) {
   if (!response.ok) throw new Error('digest-unavailable');
   return parseDigest(await response.json(), date);
 }
+async function updateProblem(user: Identity, version: number, problem?: string) {
+  const saved = await preference();
+  if (!matches(saved, user) || version !== preferenceVersion) return;
+  await chrome.storage.local.set({ [preferenceKey]: { enabled: true, uid: user.uid, namespace,
+    ...(problem ? { problem, problemDate: japanDate(new Date()) } : {}) } });
+}
+function duePlan(plan: { startsAt: string }, now: number): boolean {
+  const start = Date.parse(plan.startsAt);
+  return now >= start - 30 * 60_000 && now < start;
+}
 async function tick() {
   const version = preferenceVersion;
   const saved = await preference();
@@ -60,56 +77,91 @@ async function tick() {
   const user = await identity();
   if (!matches(saved, user)) return;
   const date = japanDate(now);
-  const digest = await requestDigest(user, date);
-  if (digest.empty) return;
+  if (saved.problem && saved.problemDate !== date) await updateProblem(user, version);
   const receiptKey = `digestReceipt:${namespace}:${user.uid}`;
-  const prior = (await chrome.storage.local.get(receiptKey))[receiptKey] as Receipt | undefined;
+  const scheduleKey = `digestSchedule:${namespace}:${user.uid}`;
+  const stored = await chrome.storage.local.get([receiptKey, scheduleKey]);
+  const prior = stored[receiptKey] as Receipt | undefined;
   const receipt: Receipt = prior?.date === date ? prior : { date, planIds: [] };
+  const previous = stored[scheduleKey] as Schedule | undefined;
+  const schedule: Schedule = previous?.date === date ? previous : { date, checkedAt: 0, plans: [], requestedIds: [] };
+  const wanted = [
+    ...(now.getTime() >= morningAt(date) ? ['morning'] : []),
+    ...schedule.plans.filter(plan => duePlan(plan, now.getTime())).map(plan => plan.planId),
+  ].filter(id => !receipt.planIds.includes(id) && !schedule.requestedIds.includes(id));
+  if (!wanted.length && now.getTime() - schedule.checkedAt < refreshInterval) return;
+  // Persist attempts before GET, including failures, so worker restarts cannot amplify polling.
+  schedule.checkedAt = now.getTime();
+  schedule.requestedIds.push(...wanted);
+  await chrome.storage.local.set({ [scheduleKey]: schedule });
+  const digest = await requestDigest(user, date);
+  schedule.plans = digest.plans.map(({ planId, startsAt }) => ({ planId, startsAt }));
+  // A regular refresh may discover an already-due plan: it has also been checked now.
+  schedule.requestedIds = [...new Set([...schedule.requestedIds,
+    ...schedule.plans.filter(plan => duePlan(plan, now.getTime())).map(plan => plan.planId)])];
+  await chrome.storage.local.set({ [scheduleKey]: schedule });
   const due: { id: string; mail: DigestMail; expiresAt?: number }[] = [];
-  if (now.getTime() >= morningAt(date) && !receipt.planIds.includes('morning')) due.push({ id: 'morning', mail: digest });
-  for (const plan of digest.plans) {
-    const start = Date.parse(plan.startsAt);
-    if (now.getTime() >= start - 30 * 60_000 && now.getTime() < start && !receipt.planIds.includes(plan.planId)) {
-      due.push({ id: plan.planId, expiresAt: start, mail: { to: digest.to, subject: plan.subject, text: plan.text, html: plan.html } });
+  if (!digest.empty) {
+    if (now.getTime() >= morningAt(date) && !receipt.planIds.includes('morning')) due.push({ id: 'morning', mail: digest });
+    for (const plan of digest.plans) {
+      if (duePlan(plan, now.getTime()) && !receipt.planIds.includes(plan.planId)) {
+        due.push({ id: plan.planId, expiresAt: Date.parse(plan.startsAt),
+          mail: { to: digest.to, subject: plan.subject, text: plan.text, html: plan.html } });
+      }
     }
   }
-  if (!due.length) return;
+  // Unknown delivery remains visible for this day; recoverable errors clear on a healthy response.
+  let problem = saved.problemDate === date && saved.problem === 'send-unconfirmed' ? saved.problem : undefined;
+  if (!due.length) { await updateProblem(user, version, problem); return; }
   const token = await googleToken(user, false);
   const session = await chrome.storage.session.get('ynuSessionId');
   const secrets = [user.token, token, typeof session['ynuSessionId'] === 'string' ? session['ynuSessionId'] : ''];
   for (const item of due) {
-    // Recheck consent and identity after every asynchronous boundary before sending.
-    const current = await identity();
-    if (!matches(await preference(), current) || current.uid !== user.uid || version !== preferenceVersion || japanDate(new Date()) !== date) return;
-    if (item.expiresAt !== undefined && Date.now() >= item.expiresAt) continue;
-    const raw = encodeMail(item.mail, current.email, [...secrets, current.token]);
-    if (receipt.planIds.includes(item.id)) continue;
-    // Gmail has no idempotency key: reserve before POST, including a lost response.
-    receipt.planIds.push(item.id);
-    await chrome.storage.local.set({ [receiptKey]: receipt });
-    const consent = await preference();
-    const owner = await identity();
-    if (!matches(consent, owner) || owner.uid !== user.uid || version !== preferenceVersion || japanDate(new Date()) !== date ||
-      (item.expiresAt !== undefined && Date.now() >= item.expiresAt)) return;
-    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ raw }),
-      credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15_000) })
-      .catch(() => { throw new Error('send-unconfirmed'); });
-    if (response.status === 401) await chrome.identity.removeCachedAuthToken({ token });
-    if (!response.ok) throw new Error('send-unconfirmed');
+    try {
+      // Complete asynchronous identity/consent checks before reserving a send.
+      const current = await identity();
+      const consent = await preference();
+      if (!matches(consent, current) || current.uid !== user.uid || current.email.toLowerCase() !== user.email.toLowerCase() ||
+        version !== preferenceVersion || japanDate(new Date()) !== date) return;
+      if (item.expiresAt !== undefined && Date.now() >= item.expiresAt) continue;
+      const raw = encodeMail(item.mail, current.email, [...secrets, current.token]);
+      if (receipt.planIds.includes(item.id)) continue;
+      // Gmail has no idempotency key: reserve immediately before POST, including a lost response.
+      receipt.planIds.push(item.id);
+      await chrome.storage.local.set({ [receiptKey]: receipt });
+      const owner = firebaseAuth().currentUser;
+      const stopped = version !== preferenceVersion || owner?.uid !== user.uid || owner.email?.toLowerCase() !== user.email.toLowerCase() ||
+        japanDate(new Date()) !== date;
+      if (stopped || (item.expiresAt !== undefined && Date.now() >= item.expiresAt)) {
+        receipt.planIds = receipt.planIds.filter(id => id !== item.id);
+        await chrome.storage.local.set({ [receiptKey]: receipt });
+        if (stopped) return;
+        continue;
+      }
+      const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ raw }),
+        credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15_000) })
+        .catch(() => { throw new Error('send-unconfirmed'); });
+      if (response.status === 401) await chrome.identity.removeCachedAuthToken({ token });
+      if (!response.ok) throw new Error('send-unconfirmed');
+    } catch (error) {
+      // One rejected mail must not suppress unrelated reminders.
+      const failure = digestProblem(error);
+      if (problem !== 'send-unconfirmed') problem = failure;
+    }
   }
-  const latest = await preference();
-  if (matches(latest, user) && version === preferenceVersion && latest?.problem && latest.problem !== 'send-unconfirmed') {
-    await chrome.storage.local.set({ [preferenceKey]: { enabled: true, uid: user.uid, namespace } });
-  }
+  await updateProblem(user, version, problem);
+}
+function digestProblem(error: unknown): string {
+  return error instanceof Error && ['authorization-required', 'send-unconfirmed', 'unsafe-digest', 'invalid-digest'].includes(error.message)
+    ? error.message : 'digest-unavailable';
 }
 export function runDigest(): Promise<void> {
   queue = queue.then(tick).catch(async error => {
     // Do not retain or display response bodies, exceptions or message contents.
     const saved = await preference();
-    const problem = error instanceof Error && ['authorization-required', 'send-unconfirmed', 'unsafe-digest', 'invalid-digest'].includes(error.message)
-      ? error.message : 'digest-unavailable';
-    if (saved?.enabled) await chrome.storage.local.set({ [preferenceKey]: { ...saved, problem } });
+    const problem = digestProblem(error);
+    if (saved?.enabled) await chrome.storage.local.set({ [preferenceKey]: { ...saved, problem, problemDate: japanDate(new Date()) } });
   }).catch(() => undefined);
   return queue;
 }
@@ -117,7 +169,7 @@ export function startDigest() {
   if (!chrome.alarms) return;
   chrome.alarms.onAlarm.addListener(alarm => { if (alarm.name === pollAlarm || alarm.name === morningAlarm) void runDigest(); });
   chrome.runtime.onStartup.addListener(() => { void runDigest(); });
-  void runDigest();
+  chrome.runtime.onInstalled.addListener(() => { void runDigest(); });
 }
 
 export interface DigestStatus { ok: boolean; enabled: boolean; problem?: string }

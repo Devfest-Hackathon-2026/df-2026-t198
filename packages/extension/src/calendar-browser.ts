@@ -72,7 +72,7 @@ export function startCalendarSync() {
   // Only configured builds restore credentials automatically; the probe-only build remains inert.
   if (!probeConfig.apiOrigin) return;
   chrome.runtime.onStartup.addListener(() => { void syncCalendarInBackground(); });
-  void syncCalendarInBackground();
+  chrome.runtime.onInstalled.addListener(() => { void syncCalendarInBackground(); });
 }
 
 /** Only trusted extension UI may request a diagnostic send or immediate sync. */

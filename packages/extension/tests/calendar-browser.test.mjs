@@ -18,7 +18,7 @@ const { outputFiles } = await build({
          export const signInWithCredential = (...args) => sdk.signIn(...args);` }));
   } }],
 });
-function fixture({ savedUid = 'owner', googleUid = 'owner' } = {}) {
+function fixture({ savedUid = 'owner', googleUid = 'owner', boot = true } = {}) {
   const event = { summary: '授業：課題', description: '締切：11月12日', start: { date: '2026-11-12' }, end: { date: '2026-11-13' },
     transparency: 'transparent', reminders: { useDefault: true } };
   const row = { itemKey: 'a'.repeat(64), eventId: 'abcde', generation: 1, desiredRevision: 1, appliedRevision: 0,
@@ -30,10 +30,11 @@ function fixture({ savedUid = 'owner', googleUid = 'owner' } = {}) {
     signIn: vi.fn(async () => ({ user: { uid: googleUid } })) };
   const state = { namespace: `${config.firebase.projectId}:${config.oauthClientId}`, uid: savedUid,
     calendar: { status: 'ready', id: row.calendarId } };
-  let onMessage; let onStartup;
+  let onMessage; const startup = []; const installed = []; let onAlarm;
   const sender = { id: 'synthetic-extension', url: 'chrome-extension://synthetic-extension/options.html', frameId: 0 };
   const chrome = { runtime: { id: sender.id, getURL: path => `chrome-extension://${sender.id}/${path}`,
-    onMessage: { addListener: fn => { onMessage = fn; } }, onStartup: { addListener: fn => { onStartup = fn; } } },
+    onMessage: { addListener: fn => { onMessage = fn; } }, onStartup: { addListener: fn => { startup.push(fn); } }, onInstalled: { addListener: fn => { installed.push(fn); } } },
+    alarms: { onAlarm: { addListener: fn => { onAlarm = fn; } }, clear: vi.fn() },
     storage: { local: { get: async () => ({ authProbeState: state }), setAccessLevel: async () => {} }, session: { set: vi.fn() } },
     identity: { getAuthToken: vi.fn(async options => { expect(options).toEqual({ interactive: false,
       scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created'] }); return { token: googleToken }; }), removeCachedAuthToken: vi.fn() } };
@@ -56,11 +57,12 @@ function fixture({ savedUid = 'owner', googleUid = 'owner' } = {}) {
   });
   runInContext(outputFiles[0].text, createContext({ chrome, sdk, fetch, crypto: { randomUUID: () => 'synthetic-worker' } },
     { codeGeneration: { strings: false, wasm: false } }));
+  if (boot) startup.forEach(fn => fn());
   async function send(message, from = sender) {
     let result; onMessage(message, from, value => { result = value; });
     await vi.waitFor(() => expect(result).toBeDefined()); return result;
   }
-  return { send, onStartup: () => onStartup(), chrome, reports, events, row, calls, fetch, apiBodies, sdk };
+  return { send, onStartup: () => startup.forEach(fn => fn()), onInstalled: () => installed.forEach(fn => fn()), alarm: () => onAlarm({ name: 'digest-poll' }), chrome, reports, events, row, calls, fetch, apiBodies, sdk };
 }
 it('resumes pending work at worker startup with separate credentials and no interactive prompt', async () => {
   const f = fixture(); await vi.waitFor(() => expect(f.row.appliedRevision).toBe(1));
@@ -89,4 +91,11 @@ it('does not write Google events when Chrome and Firebase identify different acc
   await vi.waitFor(() => expect(f.reports).toHaveLength(1));
   expect(f.reports[0].errorCode).toBe('authorization-required'); expect(f.events.size).toBe(0);
   expect(f.calls.every(c => c[0].startsWith(config.apiOrigin))).toBe(true);
+});
+
+it('does not sync the calendar merely on worker load or a digest alarm, but syncs on install', async () => {
+  const f = fixture({ boot: false });
+  f.alarm(); await new Promise(resolve => globalThis.setTimeout(resolve, 0));
+  expect(f.fetch).not.toHaveBeenCalled();
+  f.onInstalled(); await vi.waitFor(() => expect(f.events.size).toBe(1));
 });
