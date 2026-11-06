@@ -167,7 +167,7 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 
 `POST /api/v1/announcements` は観測と別のAPI。Firebase ID tokenで本人を決め、本文は `{ system, courseId, announcement: { announcementId, version, publishedAt, body } }`。`publishedAt` は秒までのタイムゾーン付き日時。本文64 KiB、お知らせ12,000文字、ID200文字、版100文字まで。未知の項目とSID・Cookie等の認証情報を含む文字列を拒否する。任意の文章に埋まる未知の秘密を完全に識別するものではない。
 
-実物の側は無効のまま。既定では503で、`ENABLE_DEMO_ANNOUNCEMENTS=true` とプロジェクトIDの設定がある場合だけ模擬側を有効にする。さらにサーバーの `demoAccounts/{uid}` が `role: 'student', studentId: uid` であることと、`system: 'demo-lms'` を確認する。実際のLMS・未登録の利用者・体験用の支援担当は403。画面からの送信はIssue #84で体験用LMSに接続した。公開先の有効化と実物のGeminiの確認は別途承認待ち。
+実物の側は無効のまま。既定では503で、`ENABLE_DEMO_ANNOUNCEMENTS=true` とプロジェクトIDの設定がある場合だけ模擬側を有効にする。さらにサーバーの `demoAccounts/{uid}` が `role: 'student', studentId: uid` であることと、`system: 'demo-lms'` を確認する。実際のLMS・未登録の利用者・体験用の支援担当は403。画面からの送信はIssue #84で体験用LMSに接続した。公開先での確認は [PR #128の再確認記録](records/2026-11-07-issue-123-review.md#公開先の操作) を参照。
 
 候補は本人の同じ接続先・授業の、取消済みでない課題だけ。候補キー・引用・日時を検査した提案だけを反映する。反映直前の台帳をトランザクションで読み直し、`reviewReasons` に `conflicting-deadline` を追加する。`detail` はお知らせID・版・提案日時だけで、引用・お知らせ本文・生のモデル応答は保存しない。公式締切・根拠・提出状態・課題の観測・変更履歴は変えない。提案が現在の公式日時と同じ瞬間なら追加しない。後続の観測でも要確認は残す（解消の操作は対象外）。
 

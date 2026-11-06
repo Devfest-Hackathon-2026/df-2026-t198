@@ -30,6 +30,9 @@ let reset;
 let cleanupPhase = 'not-started';
 let passed = false;
 let browserErrors = 0;
+let announcementStatus;
+let failureKind;
+const cleanupFailures = [];
 const operations = [];
 for (const page of [student, supporter]) {
   page.setDefaultTimeout(30000);
@@ -157,7 +160,7 @@ try {
   assert.equal(await calendar.innerText(), updatedCalendar);
   assert.equal(await timetable.locator('.course-panel').innerText(), updatedPanel);
   assert.equal(await deadlines.innerText(), updatedSession);
-  const preview = region(student, '今朝のメール');
+  const preview = student.getByRole('region').filter({ has: button(student, '今日の準備の見本を用意する') });
   await button(preview, '今日の準備の見本を用意する').click();
   await preview.getByRole('link', { name: '🕒 後回し', exact: true }).waitFor();
   await screenshot(preview, 'morning-mail.png');
@@ -167,19 +170,30 @@ try {
   await screenshot(plans(timetable), 'preparation-later.png');
   await button(preview, '今日の準備の見本を用意する').click();
   await preview.getByRole('link', { name: '✅ 終わった', exact: true }).click();
-  await preview.getByRole('status').filter({ hasText: '準備を「終わった」にしました' }).waitFor();
+  await preview.getByRole('status').filter({ hasText: 'LMSへの提出は別に行ってください' }).waitFor();
   for (const page of [timetable, supporter]) await plans(page).getByText('終わった（LMSへの提出は別）', { exact: true }).waitFor();
   await screenshot(plans(timetable), 'preparation-done.png');
   operations.push('6: 再取得で予定・変更は増えず、メール見本の後回し・終わったが両画面へ反映');
 
-  phase = 'step-6-announcement-review';
+  phase = 'step-6-announcement-publish';
   await button(student, 'お知らせを出す').click();
   await student.getByRole('status').filter({ hasText: 'お知らせを出しました' }).waitFor();
   assert.deepEqual((await student.locator('.demo-due').first().innerText()).match(/(\d{4})\/(\d{2})\/(\d{2})/), extendedDue);
-  await openLms();
+  phase = 'step-6-announcement-parse';
+  const [response] = await Promise.all([
+    student.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/announcements'),
+    openLms(),
+  ]);
+  const parsed = await response.json();
+  const statuses = ['proposal', 'abstained', 'invalid-output', 'invalid-input', 'model-error', 'duplicate', 'budget-limit'];
+  announcementStatus = { http: response.status(), status: statuses.includes(parsed.status) ? parsed.status : 'unexpected' };
+  assert.equal(announcementStatus.status, 'proposal');
+  phase = 'step-6-announcement-student-review';
   await timetable.locator('.course-panel').getByText('要確認', { exact: true }).waitFor();
   await timetable.locator('.course-panel').getByText(/お知らせでは締切が/).waitFor();
+  phase = 'step-6-announcement-session-review';
   await deadlines.getByText(/お知らせでは締切が/).waitFor();
+  phase = 'step-6-announcement-deadline';
   assert.ok((await timetable.locator('.course-panel').innerText()).includes(expectedDue));
   assert.ok((await deadlines.innerText()).includes(expectedDue));
   await calendar.locator(`td[data-date="${extendedDue[1]}-${extendedDue[2]}-${extendedDue[3]}"]`).getByText('架空の観察ノート', { exact: true }).waitFor();
@@ -188,7 +202,8 @@ try {
   operations.push('6追加: お知らせを出してLMSを開くと両画面に要確認、公式締切・カレンダーの日付と変更件数は維持');
   assert.equal(browserErrors, 0);
   passed = true;
-} catch {
+} catch (error) {
+  failureKind = ['TimeoutError', 'AssertionError'].includes(error.name) ? error.name : 'other';
   process.exitCode = 1;
 } finally {
   try {
@@ -203,7 +218,7 @@ try {
       await timetable.getByText('架空の観察ノート', { exact: true }).waitFor({ state: 'detached' });
     }
     reset = true;
-  } catch { process.exitCode = 1; reset = false; }
+  } catch { process.exitCode = 1; reset = false; cleanupFailures.push(cleanupPhase); }
   let logoutCount = 0;
   for (const [role, page] of [['student', student], ['supporter', supporter]]) {
     try {
@@ -212,12 +227,12 @@ try {
       await button(page, 'ログアウト').click();
       await page.getByLabel('パスワード').waitFor();
       logoutCount++;
-    } catch { process.exitCode = 1; }
+    } catch { process.exitCode = 1; cleanupFailures.push(cleanupPhase); }
   }
   const loggedOut = logoutCount === 2;
   if (reset && loggedOut) cleanupPhase = 'done';
   await browser.close();
-  const result = { status: passed && reset && loggedOut ? 'pass' : 'fail', phase, operations, reset, loggedOut, cleanupPhase, browserErrors };
+  const result = { status: passed && reset && loggedOut ? 'pass' : 'fail', phase, operations, reset, loggedOut, cleanupPhase, cleanupFailures, browserErrors, announcementStatus, failureKind };
   await writeFile(new URL('operations.json', evidence), `${JSON.stringify(result, null, 2)}\n`);
   log(JSON.stringify({ ...result, evidenceDir: evidence.pathname }));
 }

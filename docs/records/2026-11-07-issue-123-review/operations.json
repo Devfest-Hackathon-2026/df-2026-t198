@@ -1,6 +1,6 @@
 {
   "status": "pass",
-  "phase": "step-6-announcement-review",
+  "phase": "step-6-announcement-deadline",
   "operations": [
     "1: 初期状態に戻し、LMSを開いて課題を受領",
     "2: 別タブの授業・締切と体験用カレンダーを表示",
@@ -13,5 +13,10 @@
   "reset": true,
   "loggedOut": true,
   "cleanupPhase": "done",
-  "browserErrors": 0
+  "cleanupFailures": [],
+  "browserErrors": 0,
+  "announcementStatus": {
+    "http": 200,
+    "status": "proposal"
+  }
 }
