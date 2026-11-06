@@ -18,6 +18,19 @@ function deadlineValue(deadline: Deadline | undefined): string {
   }
 }
 
+function pastCourseDeadlineEnded(deadline: Deadline | undefined, fetchedAt: string): boolean {
+  switch (deadline?.kind) {
+    case 'datetime': return Date.parse(deadline.dueAt) < Date.parse(fetchedAt);
+    case 'date': {
+      // A date-only deadline remains open throughout that date in its own timezone.
+      const date = new Intl.DateTimeFormat('sv-SE', { timeZone: deadline.timeZone,
+        year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(fetchedAt));
+      return deadline.date < date;
+    }
+    default: return true;
+  }
+}
+
 /** Apply one validated observation. Receipt and returned writes must be committed together. */
 export function applyObservation(
   current: readonly LedgerAssignment[], observation: Observation, recordedAt: string,
@@ -81,7 +94,8 @@ export function applyObservation(
   const detailed = new Set(observation.assignments.map(a => a.sourceId));
   for (const item of byId.values()) {
     const result = results.get(item.latest.courseId);
-    if (pastCourses.has(item.latest.courseId) || result?.ended.has(item.key.sourceId)) {
+    if ((pastCourses.has(item.latest.courseId) &&
+      pastCourseDeadlineEnded(item.officialDeadline?.deadline, observation.fetchedAt)) || result?.ended.has(item.key.sourceId)) {
       if (item.presenceState !== 'ended') change(item, 'ended', item.presenceState, 'ended');
       item.presenceState = 'ended';
       item.consecutiveMissingCount = 0;

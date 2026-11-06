@@ -107,10 +107,27 @@ try {
   await page.screenshot({ path: `${evidenceDir}/student-ended-narrow.png`, fullPage: true });
   await page.setViewportSize({ width: 1280, height: 960 });
   await page.screenshot({ path: `${evidenceDir}/student-ended-wide.png`, fullPage: true });
+  await panel.getByRole('button', { name: '閉じる' }).click();
+  await student.collection('assignments').doc('a0').update({ submission: 'not-submitted' });
   await student.collection('courses').doc('c0').update({ currentTerm: false });
   await cells.first().waitFor({ state: 'hidden' });
   await panel.waitFor({ state: 'hidden' });
   assert.equal(await cells.count(), 0);
+  // Issue #107: a future deadline from the past term remains reachable without a timetable cell.
+  const pastTask = page.locator('.upcoming').getByRole('button').filter({ hasText: 'レポートB' });
+  await pastTask.waitFor();
+  await pastTask.click();
+  await panel.getByRole('heading', { name: 'レポートB', exact: true }).waitFor();
+  assert.equal(await courseLink.isVisible(), true);
+  assert.equal(await cells.count(), 0);
+  await page.screenshot({ path: `${evidenceDir}/student-past-term-wide.png`, fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await panel.getByRole('button', { name: '閉じる' }).click();
+  await pastTask.click();
+  await panel.getByRole('heading', { name: 'レポートB', exact: true }).waitFor();
+  assert.equal(await courseLink.isVisible(), true);
+  await page.screenshot({ path: `${evidenceDir}/student-past-term-narrow.png`, fullPage: true });
+  await panel.getByRole('button', { name: '閉じる' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: '架空の集中講義' }).click();
   await page.getByText('この授業の課題はまだありません。').waitFor();
@@ -121,7 +138,7 @@ try {
   await page.getByRole('button', { name: 'Googleでログイン' }).waitFor();
   assert.doesNotMatch(await page.locator('body').innerText(), /レポート|架空の線形代数/);
   assert.deepEqual(errors, []);
-  console.log('PASS C18/C19/C20 and #105: existing student operations, ended section, no pending ended tasks, hidden out-of-term course, wide/narrow, logout');
+  console.log('PASS C18/C19/C20 and #105/#107: past-term deadline and detail panel, existing student operations, ended section, no pending ended tasks, hidden out-of-term course, wide/narrow, logout');
 } finally {
   await browser.close();
   if (student) await db.recursiveDelete(student);

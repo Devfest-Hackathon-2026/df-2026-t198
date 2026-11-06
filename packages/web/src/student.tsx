@@ -55,10 +55,8 @@ export function StudentView({ data, now = Date.now(), calendar = false }: { data
     }
   }, [selected]);
   const courses = data.courses.filter(course => course.currentTerm !== false);
-  const pastCourseKeys = new Set(data.courses.filter(course => course.currentTerm === false).map(courseKey));
-  const course = courses.find(item => courseKey(item) === selected);
-  const upcoming = pending(data.assignments).filter(item => Number.isFinite(dateKey(deadlineOf(item))) &&
-    !pastCourseKeys.has(JSON.stringify([item.key.system, item.latest.courseId])));
+  const course = data.courses.find(item => courseKey(item) === selected);
+  const upcoming = pending(data.assignments).filter(item => Number.isFinite(dateKey(deadlineOf(item))));
   const days = Math.max(5, ...courses.flatMap(c => c.slots.map(s => s.weekday)));
   const periods = Math.max(5, ...courses.flatMap(c => c.slots.map(s => s.period)));
   const select = (value: StudentCourse) => setSelected(courseKey(value));
