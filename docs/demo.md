@@ -1,4 +1,4 @@
-# 模擬LMSを手元で試す
+# 模擬LMSを試す
 
 `/demo-lms` から学生・支援担当の体験用アカウントでログインする。学生は授業と課題を見て「LMSを開く」を押し、学生の時間割と支援担当の面談画面を更新する。先生役のボタンはLMSの締切だけを1日延ばし、「LMSを開く」までは時間割・面談画面の締切を変えない。カレンダーはこの経路にまだ接続していない。
 
@@ -27,6 +27,22 @@ seedは台帳を直接作らない。既存の体験データは上書きせず�
 
 ## 公開する担当者へ
 
-Cloud Run・Hosting・Firestore規則の反映はIssue #18側の手順で行う。このIssueではデプロイと実環境のアカウント作成を行っていない。メール／パスワード認証が利用可能であることと、試す人ごとの学生・支援担当アカウントの用意を、実環境の作成権限を持つ人が確認する必要がある。
+Cloud Run・Hostingの反映は [deploy.md](deploy.md)。Issue #59では既存のFirestore規則の反映、メール／パスワード認証の有効化、`trial-1`〜`trial-3`の学生・支援担当の準備も許可されている。OAuthや新しい資源・APIの設定変更は含まない。
+
+初回準備の入口は次のとおり。対象プロジェクトのApplication Default Credentialsが必要。固定プロジェクトと明示引数が一致しない、エミュレーターの設定が混在する、対象アカウント・プロフィール・認証情報ファイルがすでにある場合は停止する。エミュレーター用の上のseedは従来どおり実環境を拒否する。
+
+```sh
+node packages/server/scripts/seed-demo-live.mjs --project project-00439085-4e2d-44c3-9a8 --create-trial-accounts
+```
+
+乱数パスワードは `fixtures-local/demo-accounts.local.json` に権限600で排他的に保存してからアカウントを作る。途中で失敗した場合はファイルを消してやり直さず、対象6アカウントと文書の作成状態を確認する。既存データやパスワードを上書きする入口は用意していない。
+
+公開先の確認は、作成した認証情報ファイルを使って次のコマンドで行う。先生役の操作で`trial-1`の架空の締切を1日延ばす。アカウントやパスワードの映らない画像と、秘密を含まない操作結果だけを `docs/records/2026-11-06-issue-59/` に残す。trace・HAR・通信本文は保存しない。
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node packages/web/tests/demo-live.browser.mjs --verify-live-demo
+```
+
+公開先は [体験画面](https://project-00439085-4e2d-44c3-9a8.web.app/demo-lms)。認証情報は上のローカルファイルから各組へ別途渡し、repo・Issue・PRに載せない。学生と支援担当は別のブラウザ文脈で開く。公開先の結果と残件は [Issue #59の記録](records/2026-11-06-issue-59.md) に残す。
 
 アカウントとデータの対応は [data-shapes.mdの体験用データ](data-shapes.md#体験用データissue-19)。実環境では `demoAccounts/{uid}`、学生の `demo/current`、共有許可、面談日時を同じ組のUIDで用意する。パスワードをrepo・Issue・PRに書かない。ログイン後の支援担当は `/demo-lms` から `/session` に進めば同じ認証状態を使う。体験UIDから実カレンダーAPIへの接続・同期の操作はサーバー側でも拒否する。
