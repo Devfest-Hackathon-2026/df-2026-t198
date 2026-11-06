@@ -112,7 +112,8 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
     }
     return reply(200, applied.result);
   });
-  const common = { URL, URLSearchParams, AbortSignal: globalThis.AbortSignal, crypto: { randomUUID },
+  let elapsed = 0;
+  const common = { Date: class extends Date { static now() { return Date.now() + elapsed; } }, URL, URLSearchParams, AbortSignal: globalThis.AbortSignal, crypto: { randomUUID },
     setTimeout: (fn) => { globalThis.queueMicrotask(fn); return 0; }, console: { warn: vi.fn() } };
   const call = (listener, message, sender) => new Promise(resolve => listener(message, sender, resolve));
   const getAuthToken = vi.fn(async options => { expect(options.interactive).toBe(false); return { token: 'synthetic-google-token' }; });
@@ -172,6 +173,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   const originalIds = [...events.keys()];
   expect([...events.values()].every(event => event.start.dateTime === '2098-11-13T11:53:00+09:00')).toBe(true);
   extended = true;
+  elapsed += 10 * 60_000;
   // Reopen the page, using the same worker and saved calendar, after the LMS changes.
   runInContext(content.outputFiles[0].text, contentContext);
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
@@ -187,6 +189,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   expect(ledger.every(item => item.officialDeadline.deadline.dueAt === '2098-11-14T11:53:00+09:00')).toBe(true);
   expect([...items.values()].every(item => item.appliedRevision === item.desiredRevision && item.desiredRevision === 2)).toBe(true);
   ended = true;
+  elapsed += 10 * 60_000;
   const priorDetailCount = calls.filter(c => c.url.includes('linkKyozaiTitle')).length;
   runInContext(content.outputFiles[0].text, contentContext);
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
