@@ -8,6 +8,8 @@ import { watchSession, type SessionState } from './session-watch';
 import { SessionLink, sessionRoute } from './session-route';
 import { SessionPlanning } from './session-planning';
 import './session.css';
+import { ChangedDeadline } from './deadline-change';
+import { DemoLogin } from './demo-login';
 
 export function SessionPage({ path = '/session' }: { path?: string }) {
   const [services] = useState(() => { try { return getSessionServices(); } catch { return null; } });
@@ -37,6 +39,7 @@ function Login({ services }: { services: SessionServices }) {
   }
   return <form className="session-login panel" onSubmit={event => { void login(event); }}>
     <h2>面談にログイン</h2>
+    <DemoLogin />
     {services.local && <>
       <label>メールアドレス<input type="email" name="email" autoComplete="username" required /></label>
       <label>パスワード<input type="password" name="password" autoComplete="current-password" required /></label>
@@ -178,7 +181,7 @@ function SessionAssignment({ row, data }: { row: LedgerAssignment; data: Session
   return <li><details className="session-task"><summary>
     <span className="eyebrow">{course?.name ?? '授業'}</span>
     <h3>{row.latest.title}</h3>
-    <span className="deadline">{row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確認できていません'}</span>
+    <ChangedDeadline value={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確認できていません'} />
     {reason && <span className="session-review"><span className="review-tag">要確認</span> {reason}</span>}
   </summary><div className="session-task-detail">
     <SourceLink url={row.latest.url} />

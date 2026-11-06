@@ -52,6 +52,15 @@ async function login(page, role) {
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
 }
 try {
+  for (const path of ['/', '/student', '/session']) {
+    await student.goto(`${base}${path}`);
+    const entry = student.locator('main a').first();
+    await entry.waitFor();
+    assert.equal(await entry.getAttribute('href'), '/demo-lms');
+    await entry.click();
+    await student.getByLabel('メールアドレス').waitFor();
+  }
+  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
   await login(student, 'student');
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   await login(supporter, 'supporter');
@@ -73,9 +82,23 @@ try {
   await timetable.locator('.timetable').getByRole('button', { name: /架空の観察入門/ }).click();
   await timetable.getByRole('heading', { name: '架空の観察ノート', exact: true }).waitFor();
   const oldDeadline = (await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt;
-  const calendar = timetable.getByRole('region', { name: '体験用カレンダー', exact: true });
+  const calendar = timetable.getByRole('region', { name: '締切のカレンダー', exact: true });
   await calendar.getByText(/架空の観察ノート/).waitFor();
+  await timetable.emulateMedia({ reducedMotion: 'reduce' });
+  assert.equal(await timetable.locator('.course-cell').first().evaluate(node => globalThis.getComputedStyle(node).transitionDuration), '0s');
   const beforeCalendar = await calendar.innerText();
+  assert.equal(await calendar.locator('th').count(), 7);
+  assert.equal(await timetable.getByRole('heading', { name: '締切の近い課題' }).count(), 0);
+  assert.equal(await timetable.locator('.changed').count(), 0);
+  assert.equal(await supporter.locator('.changed').count(), 0);
+  const eventCard = calendar.locator('.calendar-event').filter({ hasText: '架空の観察ノート' });
+  const eventDay = () => eventCard.locator('..').locator('..').getAttribute('data-date');
+  const oldDay = await eventDay();
+  const jstDay = value => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(value));
+  assert.equal(oldDay, jstDay(oldDeadline));
+  const today = jstDay(Date.now());
+  assert.equal(Date.parse(`${oldDay}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`), 3 * 86400000);
+  assert.equal(await calendar.evaluate(node => node.getBoundingClientRect().bottom < globalThis.document.querySelector('.timetable').getBoundingClientRect().top), true);
   const initialTarget = (await calendarTarget()).data();
   assert.equal(initialTarget.mode, 'mock');
   assert.equal(initialTarget.executor, 'demo');
@@ -85,6 +108,10 @@ try {
   const sessionBefore = await deadlines.innerText();
   const beforeTimetable = await timetable.locator('.course-panel').innerText();
   await mkdir(evidence, { recursive: true });
+  await timetable.screenshot({ path: `${evidence}/student-before-wide.png`, fullPage: true });
+  await timetable.setViewportSize({ width: 390, height: 844 });
+  await timetable.screenshot({ path: `${evidence}/student-before-narrow.png`, fullPage: true });
+  await timetable.setViewportSize({ width: 1280, height: 960 });
   await student.screenshot({ path: `${evidence}/demo-wide.png`, fullPage: true });
   await student.getByRole('button', { name: '「架空の観察ノート」の締切を1日延ばす', exact: true }).click();
   await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
@@ -105,8 +132,18 @@ try {
     await route.fetch();
     await route.abort('failed');
   }, { times: 1 });
+  const openedAt = Date.now();
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('alert').filter({ hasText: '操作が終わりませんでした' }).waitFor();
+  // Observe all highlights immediately after the first applied response (before replay).
+  const highlighted = [timetable.locator('.course-cell').filter({ hasText: '架空の観察入門' }),
+    eventCard, timetable.locator('.course-panel .assignment').filter({ hasText: '架空の観察ノート' }).locator('.deadline'), deadlines.locator('.deadline')];
+  for (const target of highlighted) {
+    await target.locator('xpath=self::*[contains(@class,"changed")]').waitFor({ timeout: Math.max(1, 2000 - (Date.now() - openedAt)) });
+    assert.equal(await target.evaluate(node => globalThis.getComputedStyle(node).backgroundColor), 'rgb(249, 240, 220)');
+  }
+  const highlightAt = Date.now();
+  assert.ok(highlightAt - openedAt <= 2000, 'all deadlines highlight within two seconds of opening LMS');
   const afterApplied = (await changes()).size;
   assert.equal(afterApplied, beforeChanges + 1);
   const replay = student.waitForRequest('**/api/v1/observations');
@@ -121,7 +158,10 @@ try {
   const expectedDate = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(newDue));
   assert.ok((await timetable.locator('.course-panel').innerText()).includes(expectedDate));
   pass(4);
-  await calendar.getByText(expectedDate, { exact: true }).waitFor();
+  await eventCard.waitFor();
+  assert.equal(await eventDay(), jstDay(newDue));
+  assert.equal(Date.parse(`${await eventDay()}T00:00:00Z`) - Date.parse(`${oldDay}T00:00:00Z`), 86400000);
+  assert.match(await eventCard.innerText(), /17:00/);
   const savedTarget = (await calendarTarget()).data();
   assert.equal(Object.keys(savedTarget.mockEvents).length, 2);
   assert.equal(Date.parse(savedTarget.mockEvents[oldEventId].event.start.dateTime), Date.parse(newDue));
@@ -131,7 +171,7 @@ try {
       itemKey: item.itemKey, generation: item.generation, revision: item.appliedRevision, event: item.desired.event,
     });
   }
-  assert.equal(await calendar.locator('li').filter({ hasText: '架空の観察ノート' }).count(), 1);
+  assert.equal(await eventCard.count(), 1);
   pass(5);
   await timetable.screenshot({ path: `${evidence}/calendar-updated.png`, fullPage: true });
   await supporter.getByRole('region', { name: '前回の面談からの変化' }).getByText('締切が変わりました', { exact: false }).waitFor();
@@ -144,6 +184,29 @@ try {
   assert.deepEqual((await calendarTarget()).data(), savedTarget);
   pass(7);
   await supporter.screenshot({ path: `${evidence}/session-updated.png`, fullPage: true });
+  await timetable.waitForTimeout(Math.max(0, 7000 - (Date.now() - highlightAt)));
+  for (const target of highlighted) assert.match(await target.getAttribute('class'), /changed/);
+  await timetable.waitForTimeout(Math.max(0, 10000 - (Date.now() - highlightAt)));
+  for (const target of highlighted) {
+    assert.doesNotMatch(await target.getAttribute('class'), /changed/);
+    assert.notEqual(await target.evaluate(node => globalThis.getComputedStyle(node).backgroundColor), 'rgb(249, 240, 220)');
+  }
+  const fetchState = db.doc('students/trial-student/fetchStates/demo-lms');
+  const fresh = (await fetchState.get()).data().lastSucceededAt;
+  assert.equal(await timetable.getByText('最後にLMSから取ったのは', { exact: false }).count(), 0);
+  await fetchState.update({ lastSucceededAt: new Date(Date.now() - 3 * 86400000 - 60000).toISOString() });
+  await timetable.getByText('最後にLMSから取ったのは', { exact: false }).waitFor();
+  await timetable.screenshot({ path: `${evidence}/stale-wide.png`, fullPage: true });
+  await timetable.setViewportSize({ width: 390, height: 844 });
+  const scroll = timetable.locator('.calendar-scroll');
+  assert.equal(await scroll.evaluate(node => node.scrollWidth > node.clientWidth), true);
+  await scroll.evaluate(node => { node.scrollLeft = node.scrollWidth; });
+  assert.ok(await scroll.evaluate(node => node.scrollLeft) > 0);
+  assert.equal(await timetable.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+  await timetable.screenshot({ path: `${evidence}/stale-narrow.png`, fullPage: true });
+  await scroll.evaluate(node => { node.scrollLeft = 0; });
+  await fetchState.update({ lastSucceededAt: fresh });
+  await timetable.getByText('最後にLMSから取ったのは', { exact: false }).waitFor({ state: 'detached' });
   await student.setViewportSize({ width: 390, height: 844 });
   assert.equal(await student.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
   await student.screenshot({ path: `${evidence}/demo-narrow.png`, fullPage: true });
@@ -155,7 +218,7 @@ try {
   await student.getByLabel('メールアドレス').waitFor();
   assert.doesNotMatch(await student.locator('main').innerText(), /架空の観察ノート|架空の観察入門/);
   await timetable.getByRole('button', { name: 'Googleでログイン', exact: true }).waitFor();
-  assert.equal(await timetable.getByRole('region', { name: '体験用カレンダー', exact: true }).count(), 0);
+  assert.equal(await timetable.getByRole('region', { name: '締切のカレンダー', exact: true }).count(), 0);
   await supporter.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await supporter.getByRole('heading', { name: '面談にログイン', exact: true }).waitFor();
   assert.doesNotMatch(await supporter.locator('main').innerText(), /架空の観察ノート|学生 trial-student/);
@@ -165,6 +228,10 @@ try {
     'rendered outerHTML through the common reader and observations API', 'empty course and submitted assignment',
     'teacher extends source only', 'open LMS changes ledger and both live screens',
     'lost response replay retains observation ID and adds no history', '390px layout', 'logout clears data',
+    '7 JST day columns, event moves one day without reload', 'initial deadlines are not highlighted',
+    'student cells, calendar, panel and session highlight within 2 seconds and clear by 10 seconds',
+    'all signed-out entry routes reach demo login', '72 hour stale notice and fresh data hides it',
+    '390px calendar scrolls within its container',
   ], browserErrors: errors }, null, 2));
   log('PASS C32/C33: rendered HTML, teacher source change, observation replay, live student/session screens, separate logins and logout');
 } catch (error) {
