@@ -1,5 +1,6 @@
 # Upload only the files needed by the server buildpacks build.
 **
+!Procfile
 !package.json
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
