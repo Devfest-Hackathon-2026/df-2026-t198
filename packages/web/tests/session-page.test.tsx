@@ -139,10 +139,14 @@ it('saves entered session times with an explicit timezone and allows unset dates
   expect(host.textContent).toContain('面談日時を保存しました');
 });
 
-it('loads the planning URL directly and shows saved promises without creating plans', async () => {
+it.each([
+  ['2026-11-05T03:00:00Z', '2026-11-05'],
+  ['2026-11-05T17:00:00Z', '2026-11-06'],
+])('loads the planning URL and shows saved promises for the Tokyo session date: %s', async (lastSessionAt, decidedOn) => {
   window.location.pathname = '/session/student-a/plan';
+  data['student-a']!.context.lastSessionAt = lastSessionAt;
   data['student-a']!.plans = [{ assignment: data['student-a']!.assignments[0]!.key,
-    date: '2026-11-10', period: 3, decidedOn: data['student-a']!.context.lastSessionAt!.slice(0, 10), calendarEventId: 'fictional' }];
+    date: '2026-11-10', period: 3, decidedOn, calendarEventId: 'fictional' }];
   await open();
   expect(host.querySelector('table')).not.toBeNull();
   await click('① 確かめる');
