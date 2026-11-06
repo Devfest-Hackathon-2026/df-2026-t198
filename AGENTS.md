@@ -39,7 +39,7 @@ DevFest GDGoC Japan Hackathon 2026 の作品。課題の管理が苦手な大学
 ## 守ること
 
 - mainへ直接pushしない（最初の雛形を除く）。force pushしない。1つのIssueに1つのブランチ。
-- 相手の担当範囲（YNUの取得部品：Sora、京大の取得部品：orange）のファイルは変更しない。必要なら変更案をIssueかPRに書いて止まる。
+- 相手の担当範囲（YNUの取得部品：Sora、京大の取得部品：orange）のファイルは、その担当の人の明示の合意があるまで変更しない。必要なら変更案をIssueかPRに書いて止まる。合意のあとは、エージェントが変更してよい（D29）。
 - 依存の追加、技術の変更、データの形やAPIの変更は、人の合意を取ってから行い、理由を `docs/decisions.md` に書く。
 - APIキー・秘密情報・LMSの認証情報・Cookie・セッションIDをcommitしない。URLに含まれるセッションIDも記録しない。
 - 実物のLMSのページと実際の課題のデータは `fixtures-local/` にだけ置く。commitする見本は、文字と番号を架空のものに置き換えてから `lms-definitions/` に置く。

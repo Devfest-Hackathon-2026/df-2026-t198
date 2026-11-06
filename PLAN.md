@@ -85,7 +85,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C31 〈未定〉 架空の授業と課題を載せた模擬LMS（CoursePowerとは違う作り）をFirebase Hostingに置く。確かめ方：公開したURL → Issue #59、[公開先の確認記録](docs/records/2026-11-06-issue-59-resumed.md)（Hostingの `/demo-lms` で学生ログイン・架空の授業と課題・先生役の締切延長を確認）
 - [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-calendar-integration.md`。Issue #68：定義と詳細の見出し・位置を維持した手順表示とリセット後の読み取りを `packages/web/tests/demo-reset.browser.mjs`・既存M6で確認（[記録](docs/records/2026-11-06-issue-68-verification.md)）
 - [x] C33 〈未定〉 試す人のための学生と支援担当のアカウントがあり、拡張機能を入れなくても一連の操作をブラウザで試せる。確かめ方：入れていないブラウザで操作 → Issue #59、`packages/web/tests/demo-live.browser.mjs`（公開先・3組6文脈・学生と面談の即時更新・他組不変・別組の読み取り24通りを拒否）。[操作結果と画像](docs/records/2026-11-06-issue-59-resumed.md)。Issue #89：`packages/web/tests/demo.browser.mjs`（Auth・FirestoreエミュレーターとChromiumで、体験用でないアカウントへの案内・ログアウト・体験用ログイン欄への復帰を確認）。`pnpm metrics:m6` 8/8（2026-11-06、PR #90取り込み後）
-- [ ] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6 → Issue #47、ローカル・公開先とも8/8（体験用カレンダー。保存済み予定・版と再送時の不変も照合）。[公開先の操作結果と画像](docs/records/2026-11-06-issue-47-live.md)。体験用カレンダーで通った分をC34の合格とするか（design.md 7節の分け方の提案）は2人の合意待ち
+- [ ] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6 → Issue #47、ローカル・公開先とも8/8（体験用カレンダー。保存済み予定・版と再送時の不変も照合）。[公開先の操作結果と画像](docs/records/2026-11-06-issue-47-live.md)。体験用カレンダーで通った分をC34の合格とするか（design.md 7節の分け方の提案）は人の合意待ち
 
 ### 提出
 
