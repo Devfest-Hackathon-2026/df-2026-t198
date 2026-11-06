@@ -1,4 +1,4 @@
-import { reviewReasonText } from './review-reason';
+import { missingDeadlineText, reviewReasonText } from './review-reason';
 import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
 import { DemoCalendar } from './demo-calendar';
@@ -11,6 +11,8 @@ export const courseKey = (course: StudentCourse) => JSON.stringify([course.syste
 const belongsTo = (item: LedgerAssignment, course: StudentCourse) =>
   item.key.system === course.system && item.latest.courseId === course.courseId;
 const deadlineOf = (item: LedgerAssignment | undefined) => item?.officialDeadline?.deadline;
+const displayDeadlineOf = (item: LedgerAssignment | undefined) => deadlineOf(item) ??
+  (item?.latest.deadline.kind === 'unreadable' ? item.latest.deadline : undefined);
 const dateKey = (deadline: Deadline | undefined) => deadline?.kind === 'datetime' ? Date.parse(deadline.dueAt) :
   deadline?.kind === 'date' ? Date.parse(`${deadline.date}T00:00:00Z`) : Infinity;
 export function pending(items: LedgerAssignment[]) {
@@ -18,6 +20,8 @@ export function pending(items: LedgerAssignment[]) {
     .sort((a, b) => dateKey(deadlineOf(a)) - dateKey(deadlineOf(b)) || a.latest.title.localeCompare(b.latest.title, 'ja'));
 }
 export function deadlineText(deadline: Deadline | undefined) {
+  const missing = missingDeadlineText(deadline);
+  if (missing) return missing;
   if (!deadline || deadline.kind === 'unreadable') return '締切を確認できていません';
   if (deadline.kind === 'none') return '締切なし';
   if (deadline.kind === 'date') return `${Number(deadline.date.slice(5, 7))}/${Number(deadline.date.slice(8))}（日付のみ）`;
@@ -28,14 +32,14 @@ export function deadlineText(deadline: Deadline | undefined) {
 function Review({ item }: { item: LedgerAssignment }) {
   return <>{item.reviewReasons.map((reason, index) => <p className="review" key={index}>
     <span className="badge">要確認</span> {reason.kind === 'unreadable-deadline'
-      ? '今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。'
+      ? missingDeadlineText(item.latest.deadline) ?? '今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。'
       : reviewReasonText(reason)}</p>)}{item.presenceState === 'cancellation-candidate' &&
       <p className="review"><span className="badge">要確認</span> LMSの一覧で見つかりませんでした。LMSで確かめてください。</p>}</>;
 }
 function AssignmentRow({ item }: { item: LedgerAssignment }) {
   return <li className="assignment">
     <h3>{item.latest.title}</h3>
-    <p><ChangedDeadline value={deadlineText(deadlineOf(item))} /> {item.submission === 'submitted' && <span className="badge done">出せました</span>}
+    <p><ChangedDeadline value={deadlineText(displayDeadlineOf(item))} /> {item.submission === 'submitted' && <span className="badge done">出せました</span>}
       {item.presenceState === 'cancelled' && <span className="badge">取り消されました</span>}</p>
     <Review item={item} />
     <details><summary>書いてあったこと</summary><p>{deadlineOf(item)?.dueText ?? item.latest.deadline.dueText}</p>
@@ -61,7 +65,7 @@ export function StudentView({ data, now = Date.now(), calendar = false }: { data
   const courseItems = course ? data.assignments.filter(item => belongsTo(item, course)) : [];
   const finished = courseItems.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled');
   const changed = useDeadlineChanges(new Map(data.courses.map(c => [courseKey(c),
-    deadlineText(deadlineOf(pending(data.assignments.filter(item => belongsTo(item, c)))[0]))])));
+    deadlineText(displayDeadlineOf(pending(data.assignments.filter(item => belongsTo(item, c)))[0]))])));
   const upcomingList = !!upcoming.length && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">締切の近い課題</h2>
       <ul>{upcoming.slice(0, 3).map(item => {
         const owner = data.courses.find(c => belongsTo(item, c));
@@ -91,9 +95,9 @@ export function StudentView({ data, now = Date.now(), calendar = false }: { data
             const next = pending(data.assignments.filter(item => belongsTo(item, c)))[0];
             return <button className={`course-cell${changed.has(courseKey(c)) ? ' changed' : ''}`} key={courseKey(c)} onClick={() => select(c)}
               aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
-              <strong>{c.name}</strong>{next && <><span>{deadlineText(deadlineOf(next))}</span><span>{next.latest.title}</span>
+              <strong>{c.name}</strong>{next && <><span>{deadlineText(displayDeadlineOf(next))}</span><span>{next.latest.title}</span>
                 {(next.reviewReasons.length > 0 || next.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.reviewReasons[0]?.kind === 'unreadable-deadline'
-                  ? '締切を確認できていません。' : next.reviewReasons[0] ? reviewReasonText(next.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
+                  ? missingDeadlineText(next.latest.deadline) ?? '締切を確認できていません。' : next.reviewReasons[0] ? reviewReasonText(next.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
           })}</td>)}</tr>)}</tbody>
       </table></div>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>

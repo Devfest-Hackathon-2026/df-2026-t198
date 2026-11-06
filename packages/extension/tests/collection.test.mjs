@@ -72,12 +72,38 @@ it('keeps seen IDs and an incomplete list after a detail HTTP failure', async ()
   expect(parseObservation(observation)).toEqual(observation);
 });
 
+it('sends the literal missing-period display as unreadable, without declaring no deadline', async () => {
+  const f = await fixture();
+  const html = (await sample('assignment-detail-open')).replace(/<span class="red3">[\s\S]*?<\/span>/, '-');
+  const observation = await collectObservation({ ...f.options, request: async operation => operation.kind === 'detail'
+    ? { html, url: 'https://lms.ynu.ac.jp/lms/corsColl/doLinkKyozaiTitle' } : f.request(operation) });
+  expect(observation.assignments).toHaveLength(22 * 6);
+  expect(observation.assignments.every(a => a.deadline.kind === 'unreadable' && a.deadline.dueText === '-')).toBe(true);
+  expect(parseObservation(observation)).toEqual(observation);
+});
+
 it('does not treat a missing materials table as an empty successful list', async () => {
   const f = await fixture();
   const observation = await collectObservation({ ...f.options, request: async (operation) => operation.kind === 'course'
     ? { html: '<div class="logoutButton"></div>', url: 'https://lms.ynu.ac.jp/lms/corsColl/doIndex' } : f.request(operation) });
   expect(observation.courseResults.every(c => !c.listComplete && !c.seenSourceIds.length)).toBe(true);
   expect(observation.failures).toHaveLength(22);
+});
+
+it('records a completed zero-report course without attempting any detail requests', async () => {
+  const f = await fixture();
+  const html = '<!doctype html><html><body><div class="logoutButton"></div>'
+    + '<form id="main_form" name="corsCollActionForm"></form><div id="cs_centerinVox">'
+    + '<p class="box07"><input class="cancelButton"><input class="continueButton"></p></div></body></html>';
+  const request = vi.fn(async operation => operation.kind === 'course'
+    ? { html, url: 'https://lms.ynu.ac.jp/lms/corsColl/doIndex' } : f.request(operation));
+  const observation = await collectObservation({ ...f.options, request });
+  expect(observation.courseResults).toHaveLength(22);
+  expect(observation.courseResults.every(c => c.listComplete && c.seenSourceIds.length === 0)).toBe(true);
+  expect(observation.assignments).toEqual([]);
+  expect(observation.failures).toEqual([]);
+  expect(request.mock.calls.some(([operation]) => operation.kind === 'detail')).toBe(false);
+  expect(parseObservation(observation)).toEqual(observation);
 });
 
 it('sends a fixed not-logged-in failure with no invented catalog', async () => {

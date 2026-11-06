@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { User } from 'firebase/auth';
 import { applyObservation } from '../../core/src/ledger';
 import { observation } from '../../server/tests/observation-fixture';
-import { emptySession, type SessionData } from '../src/session-model';
+import { emptySession, formatDeadline, type SessionData } from '../src/session-model';
 import type { SessionServices } from '../src/session-firebase';
 import { SessionPage } from '../src/session-page';
 import { usePathname } from '../src/session-route';
@@ -106,6 +106,21 @@ it('shows a newly received change without waiting for the minute timer', async (
     await act(async () => { publishChanges([...data['student-a']!.changes, change]); });
     expect(host.querySelector('#session-changes')?.parentElement?.textContent).toContain('題名が変わりました：前の題名 → 新しい題名');
   } finally { vi.useRealTimers(); vi.restoreAllMocks(); }
+});
+it.each([false, true])('explains a literal missing LMS date and preserves the previous deadline: %s', async known => {
+  const row = data['student-a']!.assignments[0]!;
+  const official = row.officialDeadline!;
+  row.latest.deadline = { kind: 'unreadable', dueText: ' - ', timeZone: 'Asia/Tokyo' };
+  if (!known) row.officialDeadline = null;
+  const before = JSON.stringify(row);
+  await open(); await click('学生 student-a');
+  const summary = host.querySelector('.session-task summary')?.textContent;
+  expect(summary).toContain('LMSに締切日時の記載がありません（表示「-」）');
+  expect(summary).toContain('要確認');
+  expect(summary).not.toContain('締切を確認できていません');
+  expect(summary).not.toContain('締切なし');
+  if (known) expect(summary).toContain(formatDeadline(official.deadline));
+  expect(JSON.stringify(row)).toBe(before);
 });
 it('removes all displayed student data on revocation and on logout', async () => {
   await open(); await click('学生 student-a'); await click('② 相談する');
