@@ -10,5 +10,11 @@ export function observationSummary(observation: Observation) {
     read: observation.assignments.length,
     unreadableDeadlines: observation.assignments.filter(a => a.deadline.kind === 'unreadable').length,
     failures,
+    // Anonymous entries retain each failed course's kinds without its ID or name.
+    courseFailures: observation.courseResults.map(result => {
+      const counts: Record<string, number> = {};
+      for (const f of observation.failures.filter(f => f.courseId === result.courseId)) counts[f.kind] = (counts[f.kind] ?? 0) + 1;
+      return counts;
+    }).filter(counts => Object.keys(counts).length > 0),
   };
 }

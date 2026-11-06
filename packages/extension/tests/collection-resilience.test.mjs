@@ -90,3 +90,46 @@ for (const stage of ['course', 'detail']) it(`does not switch routes or retry af
     stage, route: 'background', httpStatus: 403, pageType: 'unknown',
   } });
 });
+
+for (const pageRoute of [false, true]) it(`continues after four unreadable courses and two empty courses (page route: ${pageRoute})`, async () => {
+  const { state, observation, f, send } = await runFake({ unreadableCourses: 4, emptyCourses: 2, moveStudent: false, redirectCourse: true }, pageRoute);
+  expect(state.ynuFetchStatus).toBe('partial');
+  expect(observation.courseResults).toHaveLength(22);
+  expect(observation.courseResults.filter(c => c.listComplete)).toHaveLength(18);
+  expect(observation.courseResults.filter(c => c.listComplete && !c.seenSourceIds.length)).toHaveLength(2);
+  expect(observation.assignments).toHaveLength(16 * 6);
+  expect(observation.failures.map(f => f.kind)).toEqual(['parse', 'parse', 'parse', 'parse']);
+  expect([...f.attempts].filter(([key]) => key.startsWith('course:')).map(([, n]) => n)).toEqual([...Array(4).fill(2), ...Array(18).fill(1)]);
+  expect(f.counts().homeReads).toBe(5);
+  if (!pageRoute) {
+    expect(send).not.toHaveBeenCalled();
+    expect(state.ynuFetchSummary.firstFailure).toMatchObject({ stage: 'course', route: 'background', path: '/lms/homeHoml/doLinkKougi', httpStatus: 200, pageType: 'unknown' });
+  }
+  expect(state.ynuFetchSummary.courseFailures).toEqual(Array(4).fill({ parse: 1 }));
+});
+
+for (const pageRoute of [false, true]) it(`keeps unreadable details local without opening the page circuit (page route: ${pageRoute})`, async () => {
+  const { observation, send, f } = await runFake({ unreadableDetail: true, moveStudent: false }, pageRoute);
+  expect(observation.courseResults).toHaveLength(22);
+  expect(observation.courseResults.every(c => c.seenSourceIds.length === 9)).toBe(true);
+  expect(observation.failures).toHaveLength(22);
+  expect(observation.failures.every(f => f.kind === 'parse')).toBe(true);
+  expect([...f.attempts].filter(([key]) => key.startsWith('detail:')).every(([, n]) => n === 2)).toBe(true);
+  if (!pageRoute) expect(send).not.toHaveBeenCalled();
+});
+
+it('keeps only known redirect action paths in diagnostics', () => {
+  for (const path of ['/lms/homeHoml/doLinkKougi', '/lms/corsColl/doLinkKyozaiTitle']) {
+    expect(safeDiagnostic({ httpStatus: 200, path: `${path};SID=synthetic-secret?private=synthetic#private` }).path).toBe(path);
+  }
+});
+
+for (const pageRoute of [false, true]) it(`stops on a 200 logout page without retry (page route: ${pageRoute})`, async () => {
+  const { observation, state, send, f } = await runFake({ logout: true, logoutStatus: 200 }, pageRoute);
+  expect(observation.courseResults).toHaveLength(1);
+  expect(observation.failures.map(f => f.kind)).toEqual(['not-logged-in']);
+  expect(f.counts().homeReads).toBe(1);
+  expect(state.ynuFetchSummary.recovered).toBe(0);
+  expect([...f.attempts].filter(([key]) => key.startsWith('course:')).map(([, n]) => n)).toEqual([1]);
+  if (!pageRoute) expect(send).not.toHaveBeenCalled();
+});

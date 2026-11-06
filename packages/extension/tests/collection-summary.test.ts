@@ -17,6 +17,6 @@ it('summarizes a partial fetch as counts and failure codes only', () => {
     failures: [{ courseId: 'FICTION2', kind: 'parse', detail: 'detail-unavailable' }] };
   const summary = observationSummary(observation);
   expect(summary).toEqual({ courses: 2, coursesComplete: 1, listed: 3, read: 2, unreadableDeadlines: 1,
-    failures: { 'parse:detail-unavailable': 1 } });
+    failures: { 'parse:detail-unavailable': 1 }, courseFailures: [{ parse: 1 }] });
   expect(JSON.stringify(summary)).not.toMatch(/FICTION|架空|example/);
 });

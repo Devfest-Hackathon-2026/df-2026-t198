@@ -3,11 +3,9 @@ import { observationApiOrigin } from './probe-config.js';
 import { syncCalendarInBackground } from './calendar-browser.js';
 import { collectObservation } from './collection.js';
 import { showCollectionStatus } from './collection-display.js';
-import { LmsReadError, loggedOut, pageDiagnostic, safeDiagnostic, type PageDiagnostic } from './collection-diagnostics.js';
+import { LmsReadError, safeDiagnostic, type PageDiagnostic } from './collection-diagnostics.js';
 import { observationSummary } from './collection-summary.js';
 import { executeLmsRequest, type LmsOperation, type LmsPage } from './lms-request.js';
-import { readPage } from '../../core/src/html-reader.js';
-import definition from '../../../lms-definitions/coursepower/definition.json' with { type: 'json' };
 import { sessionFromUrl } from './session.js';
 
 let running = false;
@@ -62,14 +60,11 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       if (consecutivePageFailures >= 3) throw new Error('http-error');
       if (route === 'background') {
         try {
-          const page = await executeLmsRequest(operation, pageUrl, sid);
-          // A 200 login/error page is also a failed background read.
-          try { readPage(definition, page.html, { utcOffset: '+09:00', courseId: 'probe', sourceId: 'probe' }); }
-          catch (error) { throw new LmsReadError(loggedOut(error) ? 'not-logged-in' : 'parse-error', pageDiagnostic(page)); }
-          return page;
+          return await executeLmsRequest(operation, pageUrl, sid);
         } catch (error) {
           onFailure(operation.kind, error);
-          if (loggedOut(error)) throw error;
+          // Parsing and confirmed logout belong to the reader, not transport fallback.
+          if (!(error instanceof LmsReadError) || error.message !== 'http-error') throw error;
           route = 'page';
         }
       }
@@ -83,13 +78,15 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
         if (url.origin !== 'https://lms.ynu.ac.jp' || !url.pathname.startsWith('/lms/') || url.search || url.hash || /;/.test(url.pathname)) throw new Error('http-error');
         return reply.page;
       } catch (error) {
-        throw new LmsReadError(loggedOut(error) ? 'not-logged-in' : 'http-error',
+        throw new LmsReadError(error instanceof Error && error.message === 'not-logged-in' ? 'not-logged-in' : 'http-error',
           safeDiagnostic(error instanceof LmsReadError ? error.diagnostic : undefined));
       }
     };
     const observation = await collectObservation({ request, observationId: crypto.randomUUID(), fetchedAt: new Date().toISOString(),
       onFailure, onRecovered: () => { recovered++; },
-      onCourseResult: complete => { if (route === 'page') consecutivePageFailures = complete ? 0 : consecutivePageFailures + 1; },
+      onCourseResult: (complete, failureKind) => {
+        if (route === 'page') consecutivePageFailures = !complete && failureKind === 'http' ? consecutivePageFailures + 1 : 0;
+      },
     });
     // Diagnostics only: a failed write must not change sending, syncing, or the counts.
     await chrome.storage.session.set({ ynuFetchSummary: { ...observationSummary(observation), firstFailure, recovered } }).catch(() => {});
