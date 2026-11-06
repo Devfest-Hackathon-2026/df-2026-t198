@@ -223,7 +223,7 @@ try {
   phase = 'live-supporter-screen';
   await supporter.page.waitForFunction(previous =>
     globalThis.document.querySelector('[aria-labelledby="session-deadlines"]').innerText !== previous, sessionBefore);
-  await supporter.page.getByRole('region', { name: '前回の面談からの変化' }).getByText('締切が変わりました', { exact: false }).first().waitFor();
+  await supporter.page.getByRole('region', { name: '前回の面談からの変化' }).getByText(/締切が .+ から .+ に変わりました/).first().waitFor();
   assert.ok((await deadlines.innerText()).includes(expectedDate));
   pass(6);
   await screenshot(supporter.page, 'supporter-after.png');
