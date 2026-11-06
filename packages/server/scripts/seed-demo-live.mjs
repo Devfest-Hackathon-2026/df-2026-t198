@@ -58,8 +58,8 @@ async function seed() {
     // Persist once before remote writes so a partial failure does not lose passwords.
     await saveAccounts(path, { projectId, origin: `https://${projectId}.web.app`, pairs });
     const now = Date.now();
-    const dueDay = new Date(now + 3 * 86400_000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-    const due = new Date(`${dueDay}T17:00:00+09:00`);
+    const due = new Date(now + 3 * 86400_000);
+    due.setUTCHours(8, 0, 0, 0);
     for (const { student, supporter } of pairs) {
       for (const { uid, email, password } of [student, supporter]) await auth.createUser({ uid, email, password });
       const batch = db.batch();

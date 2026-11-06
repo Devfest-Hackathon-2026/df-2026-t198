@@ -2,8 +2,8 @@ import type { DemoData } from '@kadai-hisho/core/ledger';
 
 /** The same fictional scenario as the demo account setup, dated from this run. */
 export function initialDemo(now: number) {
-  const dueDay = new Date(now + 3 * 86400_000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-  const due = new Date(`${dueDay}T17:00:00+09:00`);
+  const due = new Date(now + 3 * 86400_000);
+  due.setUTCHours(8, 0, 0, 0);
   const data: DemoData = { announcements: [], courses: [
     { courseId: 'DEMO101', name: '架空の観察入門', teacher: '架空の先生A', weekday: 1, period: 2, assignments: [
       { sourceId: 'DEMO101_TASK1', title: '架空の観察ノート', dueAt: due.toISOString(), submission: 'not-submitted' },
