@@ -5,9 +5,11 @@ import { getSessionServices, type SessionServices } from './session-firebase';
 import { buildSessionView, changeDescription, dayInZone, emptySession, formatDeadline, formatMoment,
   reviewDescription, type SessionData } from './session-model';
 import { watchSession, type SessionState } from './session-watch';
+import { SessionLink, sessionRoute } from './session-route';
+import { SessionPlanning } from './session-planning';
 import './session.css';
 
-export function SessionPage() {
+export function SessionPage({ path = '/session' }: { path?: string }) {
   const [services] = useState(() => { try { return getSessionServices(); } catch { return null; } });
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
@@ -17,11 +19,10 @@ export function SessionPage() {
   if (!ready) return <p role="status">ログインを確かめています…</p>;
   return <>
     <div className="session-account">
-      <p>学生と一緒に見る画面です</p>
       {user && <button onClick={() => { void services.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')); }}>ログアウト</button>}
     </div>
     {error && <p role="alert">{error}</p>}
-    {user ? <SessionWorkspace key={user.uid} user={user} services={services} /> : <Login services={services} />}
+    {user ? <SessionWorkspace key={user.uid} user={user} services={services} path={path} /> : <Login services={services} />}
   </>;
 }
 function Login({ services }: { services: SessionServices }) {
@@ -44,9 +45,9 @@ function Login({ services }: { services: SessionServices }) {
     {error && <p role="alert">{error}</p>}
   </form>;
 }
-function SessionWorkspace({ user, services }: { user: User; services: SessionServices }) {
+function SessionWorkspace({ user, services, path }: { user: User; services: SessionServices; path: string }) {
   const [students, setStudents] = useState<{ uid: string }[]>([]);
-  const [selected, setSelected] = useState('');
+  const { uid: selected, planning } = sessionRoute(path);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
   useEffect(() => {
@@ -56,10 +57,9 @@ function SessionWorkspace({ user, services }: { user: User; services: SessionSer
         const rows = await services.students(user);
         if (!active) return;
         setStudents(rows); setError('');
-        setSelected(current => current && current !== user.uid && !rows.some(r => r.uid === current) ? '' : current);
       } catch {
         if (!active) return;
-        setStudents([]); setSelected('');
+        setStudents([]);
         setError('担当する学生を開けませんでした。接続とログインを確かめてください。');
       }
     };
@@ -67,26 +67,26 @@ function SessionWorkspace({ user, services }: { user: User; services: SessionSer
     const interval = window.setInterval(() => { void load(); }, 30_000);
     return () => { active = false; window.clearInterval(interval); };
   }, [user, services, revision]);
-  return <div className="session-shell">
-    <aside className="session-sidebar">
-      <h2>担当する学生</h2>
-      <nav aria-label="担当する学生">
-        {students.map(student => <button key={student.uid} aria-pressed={student.uid === selected}
-          onClick={() => setSelected(student.uid)}>学生 {student.uid}</button>)}
-      </nav>
-      <button className="quiet" onClick={() => setRevision(value => value + 1)}>一覧を更新</button>
-      <button className="quiet" aria-pressed={selected === user.uid} onClick={() => setSelected(user.uid)}>自分の面談を見る</button>
-      {error && <p role="alert">{error}</p>}
-    </aside>
-    <div className="session-content">
-      {selected ? <StudentSession key={selected} uid={selected} user={user} services={services} />
-        : <p>面談する学生を選んでください。共有を許可した学生だけを選べます。</p>}
-    </div>
+  if (selected) return <div className="session-content">
+    <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>
+    <StudentSession key={selected} uid={selected} user={user} services={services} planning={planning} />
   </div>;
+  return <section className="session-students">
+    <h2>担当する学生</h2>
+    <p>学生が見せることにした授業と課題だけを出しています。</p>
+    <nav aria-label="担当する学生">
+      {students.map(student => <SessionLink key={student.uid} href={`/session/${encodeURIComponent(student.uid)}`}>
+        学生 {student.uid}</SessionLink>)}
+    </nav>
+    <button className="quiet" onClick={() => setRevision(value => value + 1)}>一覧を更新</button>
+    <SessionLink href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談を見る</SessionLink>
+    {error && <p role="alert">{error}</p>}
+  </section>;
 }
-function StudentSession({ uid, user, services }: { uid: string; user: User; services: SessionServices }) {
+function StudentSession({ uid, user, services, planning }: { uid: string; user: User; services: SessionServices; planning: boolean }) {
   const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
   const [now, setNow] = useState(() => new Date());
+  const [sessionAt] = useState(() => new Date().toISOString());
   useEffect(() => watchSession(services.source, uid, user.uid, state => {
     setState(state);
     setNow(new Date());
@@ -98,62 +98,96 @@ function StudentSession({ uid, user, services }: { uid: string; user: User; serv
   if (state.status === 'loading') return <p role="status">面談の内容を開いています…</p>;
   if (state.status === 'denied') return <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>;
   if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。学生を選び直してください。</p>;
-  return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid}
+  return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning} sessionAt={sessionAt}
     save={context => services.saveContext(user, uid, context)} />;
 }
-export function SessionDetails({ data, now, own, save }: { data: SessionData; now: Date; own: boolean;
+export function SessionDetails({ data, now, own, save, uid, planning, sessionAt }: {
+  data: SessionData; now: Date; own: boolean; uid: string; planning: boolean; sessionAt: string;
   save: (context: SessionContext) => Promise<void> }) {
   const view = buildSessionView(data, now);
-  const courseName = (row: LedgerAssignment) => data.courses.find(course => course.system === row.key.system &&
-    course.courseId === row.latest.courseId)?.name ?? '授業';
-  const assignment = (change: AssignmentChange) => data.assignments.find(row =>
-    row.key.system === change.assignmentKey.system && row.key.sourceId === change.assignmentKey.sourceId);
+  const promises = data.plans.filter(plan => data.context.lastSessionAt &&
+    plan.decidedOn === dayInZone(new Date(data.context.lastSessionAt), 'Asia/Tokyo'));
+  const changeLine = (change: AssignmentChange) => <>
+    <time>{formatMoment(change.recordedAt)}</time>{' '}
+    {data.assignments.find(row => sameAssignment(row, change.assignmentKey))?.latest.title ?? '課題'}：{changeDescription(change)}
+  </>;
+  const base = `/session/${encodeURIComponent(uid)}`;
   return <>
-    <div className="session-heading">
-      <div><p className="eyebrow">面談の準備</p><h2>{own ? '自分の面談' : '今日の面談'}</h2></div>
+    <header className="session-heading">
+      <h1>{own ? '自分の面談' : `学生 ${uid}`}</h1>
       <div className="session-dates">
-        <p>次の面談 <strong>{data.context.nextSessionAt ? formatMoment(data.context.nextSessionAt) : '日時を決めてください'}</strong></p>
         <p>前回 {data.context.lastSessionAt ? formatMoment(data.context.lastSessionAt) : '日時がまだありません'}</p>
+        <p>今回 {formatMoment(sessionAt)}</p>
+        <p>次回 <strong>{data.context.nextSessionAt ? formatMoment(data.context.nextSessionAt) : '日時を決めてください'}</strong></p>
         <span className="muted">面談日時は日本時間</span>
       </div>
-    </div>
+    </header>
+    <nav className="session-steps" aria-label="面談の段階">
+      <SessionLink href={base} aria-current={!planning ? 'step' : undefined}>① 確かめる</SessionLink>
+      <span aria-hidden="true">→</span>
+      <SessionLink href={`${base}/plan`} aria-current={planning ? 'step' : undefined}>② 相談する</SessionLink>
+    </nav>
     {!own && <ContextEditor key={`${data.context.lastSessionAt}/${data.context.nextSessionAt}`} context={data.context} save={save} />}
-    <div className="session-updates">
-      {data.fetchStates.map(state => <p key={state.system}>
-        <strong>{({ 'ynu-lms': 'YNU', panda: 'PandA', 'demo-lms': '模擬LMS' })[state.system]}</strong>{' '}
-        {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
-        {state.lastResult !== 'success' && '。今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。'}
-        {state.lastSucceededAt && now.getTime() - Date.parse(state.lastSucceededAt) >= 3 * 86400_000 && '。しばらく更新がありません。'}
-      </p>)}
-    </div>
-    <div className="session-grid">
-      <div>
-        <section aria-labelledby="session-deadlines"><h2 id="session-deadlines">次の面談までの締切</h2>
-          {!data.context.nextSessionAt && <p>次の面談日時を決めると、この期間の締切が出ます。</p>}
-          {view.deadlines.length > 0 && <ul className="panel session-rows">{view.deadlines.map(row => <li key={JSON.stringify(row.key)}>
-            <p className="eyebrow">{courseName(row)}</p><h3>{row.latest.title}</h3>
-            <p className="deadline">{formatDeadline(row.officialDeadline!.deadline)}</p>
-            <SourceLink url={row.officialDeadline!.url} />
-          </li>)}</ul>}
-        </section>
+    {planning ? <SessionPlanning data={data} now={now} /> : <>
+      <div className="session-updates">
+        {data.fetchStates.map(state => <p key={state.system}>
+          <strong>{({ 'ynu-lms': 'YNU', panda: 'PandA', 'demo-lms': '模擬LMS' })[state.system]}</strong>{' '}
+          {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
+          {state.lastResult !== 'success' && '。今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。'}
+          {state.lastSucceededAt && now.getTime() - Date.parse(state.lastSucceededAt) >= 3 * 86400_000 && '。しばらく更新がありません。'}
+        </p>)}
+      </div>
+      <div className="session-check">
+        {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>
+          <ul className="panel session-rows">{promises.map((plan, i) =>
+            <li key={i}>{data.assignments.find(row => sameAssignment(row, plan.assignment))?.latest.title ?? '課題'}：
+              {plan.date.replaceAll('-', '/')} {plan.period}限に準備</li>)}</ul>
+        </section>}
         <section aria-labelledby="session-changes"><h2 id="session-changes">前回の面談からの変化</h2>
           {!data.context.lastSessionAt && <p>前回の面談日時を入れると、それ以降の変化が出ます。</p>}
-          {view.changes.length > 0 && <ul className="panel session-rows">{view.changes.map(change => <li key={change.changeId}>
-            <time>{formatMoment(change.recordedAt)}</time>
-            <h3>{assignment(change)?.latest.title ?? '課題'}</h3><p>{changeDescription(change)}</p>
+          {!!view.changes.length && <ul className="panel session-rows session-brief">{view.changes.slice(0, 5).map(change => <li key={change.changeId}>
+            {changeLine(change)}
           </li>)}</ul>}
+          {view.changes.length > 5 && <details><summary>ほかの変化</summary><ul className="panel session-rows session-brief">
+            {view.changes.slice(5).map(change => <li key={change.changeId}>{changeLine(change)}</li>)}
+          </ul></details>}
         </section>
+        <section aria-labelledby="session-deadlines"><h2 id="session-deadlines">次の面談までの締切</h2>
+          {!data.context.nextSessionAt && <p>次の面談日時を決めると、この期間の締切が出ます。</p>}
+          {!!view.deadlines.length && <ul className="panel session-rows">{view.deadlines.map(row =>
+            <SessionAssignment key={JSON.stringify(row.key)} row={row} data={data} />)}</ul>}
+        </section>
+        {!!view.review.filter(row => !view.deadlines.includes(row)).length && <ul className="panel session-rows session-other-review"
+          aria-label="締切を確かめる課題">
+          {view.review.filter(row => !view.deadlines.includes(row)).map(row =>
+            <SessionAssignment key={JSON.stringify(row.key)} row={row} data={data} />)}
+        </ul>}
+        <SessionLink className="session-next" href={`${base}/plan`}>準備する時間を相談する →</SessionLink>
       </div>
-      <section className="session-decisions" aria-labelledby="session-decisions"><h2 id="session-decisions">今日決めること</h2>
-        {view.review.length > 0 && <ul className="panel session-rows">{view.review.map(row => <li key={JSON.stringify(row.key)}>
-          <p className="eyebrow">{courseName(row)}</p><h3>{row.latest.title}</h3>
-          <p><span className="review-tag">要確認</span> {reviewDescription(row)}</p>
-          {row.officialDeadline && <p>前に確認できた締切：{formatDeadline(row.officialDeadline.deadline)}</p>}
-          <SourceLink url={row.latest.url} />
-        </li>)}</ul>}
-      </section>
-    </div>
+    </>}
   </>;
+}
+function sameAssignment(row: LedgerAssignment, key: LedgerAssignment['key']) {
+  return row.key.system === key.system && row.key.sourceId === key.sourceId;
+}
+function SessionAssignment({ row, data }: { row: LedgerAssignment; data: SessionData }) {
+  const course = data.courses.find(course => course.system === row.key.system && course.courseId === row.latest.courseId);
+  const changes = data.changes.filter(change => sameAssignment(row, change.assignmentKey))
+    .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
+  const reason = reviewDescription(row);
+  return <li><details className="session-task"><summary>
+    <span className="eyebrow">{course?.name ?? '授業'}</span>
+    <h3>{row.latest.title}</h3>
+    <span className="deadline">{row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確認できていません'}</span>
+    {reason && <span className="session-review"><span className="review-tag">要確認</span> {reason}</span>}
+  </summary><div className="session-task-detail">
+    <SourceLink url={row.latest.url} />
+    <h4>書いてあったこと</h4><p>{row.latest.deadline.dueText}</p>
+    {row.officialDeadline && row.latest.deadline.kind === 'unreadable' && <p>
+      前に確認できた締切：{row.officialDeadline.deadline.dueText}</p>}
+    {!!changes.length && <><h4>これまでの変更</h4><ul>{changes.map(change => <li key={change.changeId}>
+      <time>{formatMoment(change.recordedAt)}</time> {changeDescription(change)}</li>)}</ul></>}
+  </div></details></li>;
 }
 function SourceLink({ url }: { url: string }) {
   try {

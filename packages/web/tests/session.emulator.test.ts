@@ -56,6 +56,10 @@ describe.skipIf(!enabled)('session API and Web listeners with Auth and Firestore
     const stop = watchSession(firebaseSessionSource(db), 'session-student-a', 'session-supporter', next => { state = next; });
     try {
       await expect.poll(() => state?.status).toBe('ready');
+      const plan = { assignment: { system: 'demo-lms', sourceId: 'fictional' }, date: '2026-11-10',
+        period: 3, decidedOn: '2026-11-01', calendarEventId: 'fictional' };
+      await fixture.db.doc('students/session-student-a/plans/confirmed').set(plan);
+      await expect.poll(() => state?.data.plans).toEqual([plan]);
       expect(state?.data.context).toEqual(context);
       const student = await fixture.auth.createUser({ uid: 'session-student-a' });
       const signed = await fetch(`http://${process.env['FIREBASE_AUTH_EMULATOR_HOST']}/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=emulator-only`, {
@@ -77,6 +81,7 @@ describe.skipIf(!enabled)('session API and Web listeners with Auth and Firestore
       await expect.poll(() => state?.status !== 'ready').toBe(true);
       expect(state?.data.assignments).toEqual([]);
       expect(state?.data.changes).toEqual([]);
+      expect(state?.data.plans).toEqual([]);
       expect(state?.data.context).toEqual({ lastSessionAt: null, nextSessionAt: null });
       expect(await (await list()).json()).toEqual({ students: [] });
       expect((await put('session-student-a', { lastSessionAt: null, nextSessionAt: null })).status).toBe(403);

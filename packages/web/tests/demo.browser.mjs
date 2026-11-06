@@ -46,14 +46,14 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('button', { name: '学生 trial-student', exact: true }).click();
+  await supporter.getByRole('link', { name: '学生 trial-student', exact: true }).click();
   const deadlines = supporter.getByRole('region', { name: '次の面談までの締切' });
   assert.equal((await ledger()).size, 0);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
-  await deadlines.getByRole('heading', { name: '架空の観察ノート', exact: true }).waitFor();
+  await deadlines.getByText('架空の観察ノート', { exact: true }).waitFor();
   assert.equal((await ledger()).size, 2);
-  assert.equal(await deadlines.getByRole('heading', { name: '架空の振り返り', exact: true }).count(), 0);
+  assert.equal(await deadlines.getByText('架空の振り返り', { exact: true }).count(), 0);
   const timetable = await studentContext.newPage();
   timetable.setDefaultTimeout(15000);
   timetable.on('pageerror', () => errors.push('browser-error'));

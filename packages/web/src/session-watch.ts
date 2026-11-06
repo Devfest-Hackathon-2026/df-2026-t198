@@ -1,7 +1,7 @@
 import { emptySession, type SessionData } from './session-model';
 
 export type SessionState = { status: 'loading' | 'ready' | 'denied' | 'error'; data: SessionData };
-export type SessionCollection = 'courses' | 'assignments' | 'changes' | 'fetchStates' | 'context';
+export type SessionCollection = 'courses' | 'assignments' | 'changes' | 'fetchStates' | 'context' | 'plans';
 export interface SessionSource {
   grant: (student: string, supporter: string, next: (allowed: boolean) => void, fail: () => void) => () => void;
   watch: <K extends SessionCollection>(student: string, collection: K, next: (value: SessionData[K]) => void,
@@ -22,12 +22,13 @@ export function watchSession(source: SessionSource, student: string, viewer: str
   const start = () => {
     if (!active || started) return;
     started = true;
-    for (const collection of ['courses', 'assignments', 'changes', 'fetchStates', 'context'] as const) {
+    const collections = ['courses', 'assignments', 'changes', 'fetchStates', 'context', 'plans'] as const;
+    for (const collection of collections) {
       const unsubscribe = source.watch(student, collection, value => {
         if (!active) return;
         Object.assign(data, { [collection]: value });
         received.add(collection);
-        if (received.size === 5) update({ status: 'ready', data: { ...data } });
+        if (received.size === collections.length) update({ status: 'ready', data: { ...data } });
       }, () => fail('error'));
       if (!active) unsubscribe(); else stops.push(unsubscribe);
     }
