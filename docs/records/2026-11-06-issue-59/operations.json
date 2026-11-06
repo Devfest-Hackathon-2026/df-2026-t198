@@ -1,0 +1,18 @@
+{
+  "status": "pass",
+  "origin": "https://project-00439085-4e2d-44c3-9a8.web.app",
+  "checkedAt": "2026-11-06T02:47:18.499Z",
+  "pairs": 3,
+  "isolatedBrowserContexts": 6,
+  "deniedCrossPairReads": 24,
+  "operations": [
+    "fresh browser email/password login for all six accounts",
+    "each supporter sees only their student",
+    "LMS read populates all three student timetables and supporter sessions",
+    "teacher extends only the fictional source before refetch",
+    "refetch updates both open trial-1 screens",
+    "other two pairs retain source and ledger deadlines after refetch",
+    "all student/supporter cross-pair source and assignment reads denied"
+  ],
+  "browserErrors": []
+}
