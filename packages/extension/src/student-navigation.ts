@@ -9,9 +9,10 @@ export function protectStudentNavigation(doc: Document, view: Window,
   yieldSession: (departed: boolean) => Promise<unknown>, collect: () => Promise<unknown>, policy: SessionPolicy = navigation) {
   let lastActivity = Date.now(), borrowed = false, departed = false, abandoned = false;
   let idle: ReturnType<typeof setTimeout> | undefined;
+  let departureRecovery: ReturnType<typeof setTimeout> | undefined;
   let waiting = false;
   let navigating = false, replaying = false;
-  let releaseHeld: ((lostWorker?: boolean) => void) | undefined;
+  let discardHeld: (() => void) | undefined;
   let controller = new AbortController();
   const pending: (() => void)[] = [];
   const replayed = new WeakSet<Event>();
@@ -50,7 +51,7 @@ export function protectStudentNavigation(doc: Document, view: Window,
     const finish = (lostWorker = false) => {
       if (resumed) return;
       resumed = true;
-      releaseHeld = undefined;
+      discardHeld = undefined;
       clearTimeout(deadline);
       borrowed = false; waiting = false;
       if (lostWorker) { abandoned = true; controller.abort(); }
@@ -66,7 +67,12 @@ export function protectStudentNavigation(doc: Document, view: Window,
     };
     // Install the escape timer before calling any extension API (which can throw).
     const deadline = setTimeout(() => finish(true), STUDENT_WAIT_MS);
-    releaseHeld = finish;
+    discardHeld = () => {
+      resumed = true;
+      discardHeld = undefined;
+      clearTimeout(deadline);
+      pending.length = 0; waiting = false;
+    };
     void notifyYield(false).then(reply => finish(!(reply && typeof reply === 'object' && 'ok' in reply && reply.ok === true)), () => finish(true));
   };
   const dispatch = (target: EventTarget, event: Event) => { replayed.add(event); target.dispatchEvent(event); };
@@ -135,14 +141,21 @@ export function protectStudentNavigation(doc: Document, view: Window,
     for (const event of ['pointerdown', 'pointermove', 'input', 'scroll']) doc.addEventListener(event, activity, { capture: true, passive: true });
     const depart = () => {
       departed = true; borrowed = false; controller.abort(); clearTimeout(idle);
-      releaseHeld?.(true);
+      clearTimeout(departureRecovery);
+      discardHeld?.();
       void notifyYield(true).catch(() => {});
     };
-    view.addEventListener('beforeunload', depart);
-    view.addEventListener('pagehide', depart);
-    view.addEventListener('pageshow', () => {
+    const resume = () => {
+      clearTimeout(departureRecovery);
       departed = false; abandoned = false; activity();
+    };
+    view.addEventListener('beforeunload', () => {
+      depart();
+      // Downloads and cancelled navigation can leave this document in place.
+      departureRecovery = setTimeout(resume, STUDENT_WAIT_MS);
     });
+    view.addEventListener('pagehide', depart);
+    view.addEventListener('pageshow', resume);
     schedule();
   } else void collect().catch(() => {});
   return {

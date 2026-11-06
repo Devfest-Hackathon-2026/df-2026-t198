@@ -45,6 +45,65 @@ const worker = await bundle('service-worker', [{ name: 'no-external-accounts', s
 const browser = await chromium.launch({ headless: true });
 const results = [];
 try {
+  const lifecycleFailures = [];
+  for (const action of ['back', 'reload', 'cancelled-reload']) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    let collections = 0;
+    await context.route('**/*', route => {
+      assert.equal(new URL(route.request().url()).origin, 'https://lms.ynu.ac.jp');
+      return route.fulfill({ contentType: 'text/html; charset=utf-8', body: home + studentControls });
+    });
+    await page.exposeFunction('recordCollection', () => { collections++; });
+    await page.addInitScript(() => {
+      globalThis.chrome = { runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { globalThis.contentListener = fn; } },
+        sendMessage: message => {
+          if (message.type === 'ynu-session-found') return globalThis.recordCollection().then(() => ({ ok: true }));
+          return message.departed ? Promise.resolve({ ok: true }) : new Promise(() => {});
+        } } };
+    });
+    await page.clock.install({ time: new Date('2098-11-07T00:00:00Z') });
+    await page.clock.pauseAt(new Date('2098-11-07T00:00:01Z'));
+    const claim = () => page.evaluate(() => new Promise(resolve => globalThis.contentListener(
+      { type: 'ynu-collection-claim', sid: 'synthetic-session' }, { id: 'synthetic-extension' }, resolve))).then(reply => reply.ok);
+    try {
+      await page.goto('https://lms.ynu.ac.jp/previous');
+      await page.goto(pageUrl); await page.addScriptTag({ content });
+      // Give the page user activation so Chromium permits an unload confirmation.
+      await page.keyboard.press('Shift');
+      await page.clock.runFor(2000);
+      assert.equal(await claim(), true);
+      await page.locator('#student-count').evaluate(button => {
+        button.onclick = () => globalThis.sessionStorage.setItem('held-actions', String(Number(globalThis.sessionStorage.getItem('held-actions')) + 1));
+      });
+      await page.locator('#student-count').click();
+      assert.equal(await page.evaluate(() => globalThis.sessionStorage.getItem('held-actions')), null);
+      if (action === 'cancelled-reload') {
+        await page.evaluate(() => globalThis.addEventListener('beforeunload', event => { event.preventDefault(); event.returnValue = ''; }));
+        const dialog = page.waitForEvent('dialog');
+        const reload = page.evaluate(() => globalThis.location.reload());
+        await (await dialog).dismiss();
+        await reload;
+        await page.clock.runFor(14_999);
+        assert.equal(collections, 1);
+        assert.equal(await claim(), false);
+        await page.clock.runFor(1 + 1999);
+        assert.equal(collections, 1);
+        await page.clock.runFor(1);
+        await assertEventually(() => collections === 2);
+        assert.equal(await claim(), true);
+      } else {
+        if (action === 'back') await page.goBack(); else await page.reload();
+        await page.clock.runFor(60_000);
+      }
+      assert.equal(await page.evaluate(() => globalThis.sessionStorage.getItem('held-actions')), null, 'a different navigation must discard the held action');
+      results.push(`${action}, held action discarded${action === 'cancelled-reload' ? ', collection resumed' : ''}: PASS`);
+      console.log(results.at(-1));
+    } catch (error) { lifecycleFailures.push(new Error(`${action}: ${error.message}`, { cause: error })); }
+    finally { await context.close(); }
+  }
+  if (lifecycleFailures.length) throw new AggregateError(lifecycleFailures, 'student navigation lifecycle regressions');
+
   for (const pageRoute of [false, true]) for (const scenario of ['complete', 'yield', 'state-error', 'slow-link', 'slow-submit', 'slow-enter']) {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -187,7 +246,7 @@ try {
       .requestSubmit(globalThis.document.querySelector('#student-submit')));
     if (action === 'enter') {
       await page.locator('#student-input').evaluate(input => input.addEventListener('keydown', event => {
-        globalThis.enterReplayCode = event.keyCode;
+        globalThis.sessionStorage.setItem('enterReplayCode', String(event.keyCode));
       }));
       await page.locator('#student-input').focus(); await page.keyboard.press('Enter');
     }
@@ -195,10 +254,15 @@ try {
     await page.clock.runFor(14_999);
     assert.equal(studentRequests, 0);
     if (action === 'two-clicks') assert.equal(await page.evaluate(() => globalThis.replayedCount || 0), 0);
+    const navigation = action === 'two-clicks' ? undefined : page.waitForURL('**/lms/studentCourse*');
     await page.clock.runFor(1);
-    if (action === 'enter') assert.equal(await page.evaluate(() => globalThis.enterReplayCode), 13);
     if (action === 'two-clicks') assert.equal(await page.evaluate(() => globalThis.replayedCount), 2);
-    else { await page.getByRole('heading', { name: '学生の授業' }).waitFor(); assert.equal(studentRequests, 1); }
+    else {
+      await navigation;
+      await page.getByRole('heading', { name: '学生の授業' }).waitFor();
+      assert.equal(studentRequests, 1);
+      if (action === 'enter') assert.equal(await page.evaluate(() => globalThis.sessionStorage.getItem('enterReplayCode')), '13');
+    }
     results.push(`no reply, ${action}, local 15s deadline: PASS`);
     console.log(results.at(-1));
     await context.close();
