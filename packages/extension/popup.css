@@ -1,0 +1,4 @@
+body { margin: 0; padding: 12px; background: #f4faf6; font-family: system-ui, sans-serif; }
+button { padding: 10px 16px; border: 1px solid #b4c7bd; border-radius: 8px; background: white; color: #193c2c; font: inherit; white-space: nowrap; cursor: pointer; }
+button:focus-visible { outline: 2px solid #256b4b; outline-offset: 2px; }
+button:disabled { opacity: .6; cursor: default; }
