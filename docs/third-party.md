@@ -5,7 +5,7 @@
 | 名前・出典 | 用途 | ライセンス |
 |---|---|---|
 | [linkedom](https://github.com/WebReflection/linkedom) | 保存HTMLの解析。Nodeとservice workerで同じworker入口を使う（2026-11-06、導入物のLICENSEとpackage.jsonで確認） | ISC |
-| [@google/genai](https://github.com/googleapis/js-genai) | Vertex AIで架空のお知らせから締切変更を抽出。導入した2.32.0のpackage.jsonとLICENSEで確認（2026-11-06） | Apache-2.0 |
+| [@google/genai](https://github.com/googleapis/js-genai) | Vertex AIで架空のお知らせから締切変更を抽出し、架空HTMLから読み取り定義の下書きを生成（[手順](definition-drafts.md)）。導入した2.32.0のpackage.jsonとLICENSEで確認（2026-11-06） | Apache-2.0 |
 | [TypeScript](https://github.com/microsoft/TypeScript) | strictの型検査、coreとserverのビルド | Apache-2.0 |
 | [ESLint](https://github.com/eslint/eslint) | コードの静的検査 | MIT |
 | [@eslint/js](https://github.com/eslint/eslint) | JavaScriptの推奨lint規則 | MIT |

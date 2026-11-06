@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "definitionId": "demo-lms",
+  "version": 1,
+  "readerVersion": 2,
+  "pageChecks": {
+    "loggedIn": null,
+    "loggedOut": null,
+    "home": {
+      "present": [
+        {
+          "selector": "main[data-demo-page=\"home\"]"
+        }
+      ],
+      "empty": null
+    },
+    "materials": {
+      "present": [
+        {
+          "selector": "main[data-demo-page=\"materials\"]"
+        }
+      ],
+      "empty": {
+        "selector": ".demo-empty"
+      }
+    },
+    "assignmentDetail": {
+      "present": [
+        {
+          "selector": "main[data-demo-page=\"detail\"]"
+        }
+      ],
+      "empty": null
+    }
+  },
+  "courses": {
+    "rows": ".demo-course",
+    "courseId": {
+      "selector": "h2 a",
+      "attribute": "id"
+    },
+    "name": {
+      "selector": "h2 a"
+    },
+    "teacher": {
+      "selector": ".demo-teacher"
+    },
+    "day": {
+      "selector": ".demo-day"
+    },
+    "period": {
+      "selector": ".demo-period"
+    },
+    "materialsLink": null
+  },
+  "materials": {
+    "rows": ".demo-task",
+    "sourceId": {
+      "selector": "a",
+      "attribute": "id"
+    },
+    "title": {
+      "selector": "a"
+    },
+    "status": {
+      "selector": ".demo-status"
+    },
+    "availability": {
+      "selector": ".demo-availability"
+    },
+    "detailLink": null,
+    "nextPage": null,
+    "listEnd": {
+      "selector": ".demo-list-end"
+    }
+  },
+  "assignmentDetail": {
+    "title": {
+      "selector": "h1"
+    },
+    "due": {
+      "selector": ".demo-due"
+    },
+    "status": {
+      "selector": ".demo-status"
+    }
+  },
+  "transforms": {
+    "weekdays": {
+      "月": 1,
+      "火": 2,
+      "水": 3,
+      "木": 4,
+      "金": 5,
+      "土": 6,
+      "日": 7
+    },
+    "submission": {
+      "受付中": "not-submitted",
+      "提出済み": "submitted"
+    },
+    "dateFormat": "yyyy/MM/dd (weekday) HH:mm まで"
+  }
+}
