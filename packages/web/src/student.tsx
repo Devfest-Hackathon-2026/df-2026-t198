@@ -2,6 +2,7 @@ import { fetchStatus } from './fetch-status';
 import { reviewReasonText } from './review-reason';
 import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
+import { planActions, PlanCell, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
 import { DemoCalendar } from './demo-calendar';
 import { ChangedDeadline, useDeadlineChanges } from './deadline-change';
 import { DemoLogin } from './demo-login';
@@ -45,21 +46,24 @@ function AssignmentRow({ item }: { item: LedgerAssignment }) {
     <a href={item.latest.url} target="_blank" rel="noreferrer">LMSで見る ›</a>
   </li>;
 }
-export function StudentView({ data, now = Date.now(), calendar = false }: { data: StudentData; now?: number; calendar?: boolean }) {
+export function StudentView({ data, now = Date.now(), calendar = false, actions }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (selected && window.matchMedia('(max-width: 850px)').matches) {
+    if ((selected || selectedPlanId) && window.matchMedia('(max-width: 850px)').matches) {
       panel.current?.focus({ preventScroll: true });
       panel.current?.scrollIntoView({ block: 'start' });
     }
-  }, [selected]);
+  }, [selected, selectedPlanId]);
   const courses = data.courses.filter(course => course.currentTerm !== false);
   const course = data.courses.find(item => courseKey(item) === selected);
   const upcoming = pending(data.assignments).filter(item => Number.isFinite(dateKey(deadlineOf(item))));
-  const days = Math.max(5, ...courses.flatMap(c => c.slots.map(s => s.weekday)));
-  const periods = Math.max(5, ...courses.flatMap(c => c.slots.map(s => s.period)));
-  const select = (value: StudentCourse) => setSelected(courseKey(value));
+  const plans = data.plans.filter(plan => plan.status === 'active');
+  const selectedPlan = plans.find(plan => plan.planId === selectedPlanId);
+  const days = Math.max(5, ...plans.map(plan => new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7), ...courses.flatMap(c => c.slots.map(s => s.weekday)));
+  const periods = Math.max(5, ...plans.map(plan => plan.period), ...courses.flatMap(c => c.slots.map(s => s.period)));
+  const select = (value: StudentCourse) => { setSelectedPlanId(null); setSelected(courseKey(value)); };
   const unscheduled = courses.filter(c => c.slots.length === 0);
   const courseItems = course ? data.assignments.filter(item => belongsTo(item, course)) : [];
   const finished = courseItems.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled' || item.presenceState === 'ended');
@@ -85,7 +89,7 @@ export function StudentView({ data, now = Date.now(), calendar = false }: { data
     })}
     {!data.assignments.length && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
     {calendar ? <DemoCalendar fallback={upcomingList} now={now} /> : upcomingList}
-    <div className={`student-layout${course ? ' with-course' : ''}`}>
+    <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
       <div><div className="timetable-scroll"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
         <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d}>{'月火水木金土日'[d]}</th>)}</tr></thead>
         <tbody>{Array.from({ length: periods }, (_, p) => <tr key={p}><th scope="row">{p + 1}限</th>
@@ -98,7 +102,9 @@ export function StudentView({ data, now = Date.now(), calendar = false }: { data
                 {(next.reviewReasons.length > 0 || next.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.reviewReasons[0]?.kind === 'unreadable-deadline'
                   ? '締切を確認できていません。' : next.reviewReasons[0] ? reviewReasonText(next.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
-          })}</td>)}</tr>)}</tbody>
+          })}{plans.filter(plan => (new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7) === d + 1 && plan.period === p + 1)
+            .map(plan => <PlanCell key={plan.planId} plan={plan} selected={plan.planId === selectedPlanId}
+              onSelect={() => { setSelected(null); setSelectedPlanId(plan.planId); }} />)}</td>)}</tr>)}</tbody>
       </table></div>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
         <button className="plain-button" key={courseKey(c)} onClick={() => select(c)} aria-controls="course-assignments">{c.name}</button>)}</section>}</div>
       {course && <aside ref={panel} tabIndex={-1} className="course-panel" id="course-assignments" aria-label={`${course.name}の課題`}>
@@ -110,7 +116,14 @@ export function StudentView({ data, now = Date.now(), calendar = false }: { data
           <ul>{finished.map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}</ul></details>}
         {!courseItems.length && <p>この授業の課題はまだありません。</p>}
       </aside>}
+      {selectedPlan && <aside ref={panel} tabIndex={-1} className="course-panel preparation-details" id="preparation-details" aria-label="準備の予定の詳細">
+        <div className="panel-heading"><h2>準備の予定</h2><button onClick={() => setSelectedPlanId(null)}>閉じる</button></div>
+        <PlanSummary plan={selectedPlan} /><span>{selectedPlan.period}限（日本時間）</span>
+      </aside>}
     </div>
+    {actions && <details className="preparation-add"><summary>準備の予定を入れる</summary>
+      <PlanForm assignments={data.assignments} actions={actions} /></details>}
+    <PlanList plans={data.plans} actions={actions} own />
   </>;
 }
 export function StudentPage() {
@@ -126,7 +139,9 @@ export function StudentPage() {
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin />
       <button className="plain-button" onClick={() => accountAction(client.login)}>Googleでログイン</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
-        {state.status === 'ready' ? <StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar /> : <p role="status">{state.status === 'error'
+        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
+          actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
+          {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</> : <p role="status">{state.status === 'error'
           ? '課題を開けませんでした。接続を確かめて、画面を開き直してください。' : '課題を開いています…'}</p>}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;

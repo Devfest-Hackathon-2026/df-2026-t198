@@ -117,13 +117,18 @@ export interface ObservationReceipt {
   result: ObservationResult;
 }
 
-/** Only a preparation slot agreed during a session is stored. */
-export interface PreparationPlan {
-  assignment: AssignmentKey;
-  date: IsoDate;
-  period: number;
+/** Saved by the API; removing a plan leaves a tombstone for delayed retries. */
+export interface PreparationPlan extends PreparationPlanInput {
+  planId: string;
+  title: string;
   decidedOn: IsoDate;
-  calendarEventId: string;
+  timeZone: 'Asia/Tokyo';
+  confirmedBy: string;
+  createdByRole: 'student' | 'supporter';
+  confirmedAt: IsoDateTime;
+  status: 'active' | 'cancelled';
+  revision: number;
+  calendarItemKey: string;
 }
 
 /** Ephemeral suggestion, never a confirmed plan or a calendar event. */
@@ -132,10 +137,9 @@ export interface PreparationCandidate {
   date: IsoDate;
   period: number;
 }
-
-/** Request body shape only; delivery and student confirmation are not implemented. */
-export interface PreparationConfirmationRequest {
-  candidates: PreparationCandidate[];
+export interface PreparationPlanInput extends PreparationCandidate {
+  startsAt: IsoDateTime;
+  endsAt: IsoDateTime;
 }
 
 export interface FetchState {
@@ -161,7 +165,7 @@ export type CalendarDesired = { state: 'present'; event: DeadlineEvent } | { sta
 export type CalendarErrorCode = 'authorization-required' | 'calendar-unavailable' | 'event-conflict' | 'network-error';
 export interface CalendarItem {
   itemKey: string;
-  kind: 'deadline';
+  kind: 'deadline' | 'preparation';
   sourceKey: AssignmentKey;
   calendarId: string | null;
   eventId: string;

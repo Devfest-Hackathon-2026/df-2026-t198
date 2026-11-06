@@ -7,6 +7,7 @@ import { buildSessionView, changeDescription, dayInZone, emptySession, formatDea
   reviewDescription, type SessionData } from './session-model';
 import { watchSession, type SessionState } from './session-watch';
 import { SessionLink, sessionRoute } from './session-route';
+import { planActions, type PlanActions } from './preparation-plans';
 import { SessionPlanning } from './session-planning';
 import './session.css';
 import { ChangedDeadline } from './deadline-change';
@@ -100,13 +101,13 @@ function StudentSession({ uid, user, services, planning }: { uid: string; user: 
   if (state.status === 'denied') return <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>;
   if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。学生を選び直してください。</p>;
   return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning}
-    save={context => services.saveContext(user, uid, context)} />;
+    actions={planActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
 }
-export function SessionDetails({ data, now, own, save, uid, planning }: {
+export function SessionDetails({ data, now, own, save, uid, planning, actions, viewerUid }: {
   data: SessionData; now: Date; own: boolean; uid: string; planning: boolean;
-  save: (context: SessionContext) => Promise<void> }) {
+  actions?: PlanActions | undefined; viewerUid?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
   const view = buildSessionView(data, now);
-  const promises = data.plans.filter(plan => data.context.lastSessionAt &&
+  const promises = data.plans.filter(plan => plan.status !== 'cancelled' && data.context.lastSessionAt &&
     plan.decidedOn === dayInZone(new Date(data.context.lastSessionAt), 'Asia/Tokyo'));
   const changeLine = (change: AssignmentChange) => <>
     <time>{formatMoment(change.recordedAt)}</time>{' '}
@@ -127,8 +128,8 @@ export function SessionDetails({ data, now, own, save, uid, planning }: {
       <span aria-hidden="true">→</span>
       <SessionLink href={`${base}/plan`} aria-current={planning ? 'step' : undefined}>② 相談する</SessionLink>
     </nav>
-    {!own && <ContextEditor key={`${data.context.lastSessionAt}/${data.context.nextSessionAt}`} context={data.context} save={save} />}
-    {planning ? <SessionPlanning data={data} now={now} /> : <>
+    <ContextEditor key={`${data.context.lastSessionAt}/${data.context.nextSessionAt}`} context={data.context} save={save} />
+    {planning ? <SessionPlanning data={data} now={now} actions={actions} own={own} viewerUid={viewerUid} /> : <>
       <div className="session-updates">
         {data.fetchStates.map(state => {
           const { stale, failed } = fetchStatus(state, now.getTime());

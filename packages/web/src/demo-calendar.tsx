@@ -48,8 +48,17 @@ export function DemoCalendarView({ integration, pending, now = Date.now() }: {
     <p className="muted">体験用の予定です。Googleカレンダーには入りません。</p>
   </section>;
 }
+export function GoogleCalendarStatus({ integration, pending }: { integration: CalendarIntegration | null; pending: boolean }) {
+  return <section aria-label="Googleカレンダー"><h2>Googleカレンダー</h2>
+    <p>{!integration ? '準備の予定は保存されています。拡張機能でカレンダーを接続すると、予定が入ります。'
+      : integration.connectionState === 'reauthorization-required' ? 'カレンダーをもう一度接続してください。準備の予定は保存されています。'
+        : integration.connectionState === 'recovery-required' ? 'カレンダーの接続を確かめてください。準備の予定は保存されています。'
+          : pending ? '予定は保存されています。カレンダーへの変更を待っています。PCのChromeで拡張機能を起動すると、更新を試みます。'
+            : 'カレンダーへの変更が済んでいます。'}</p>
+  </section>;
+}
 export function DemoCalendar({ fallback, now }: { fallback?: ReactNode; now?: number }) {
-  const [value, setValue] = useState<{ integration: CalendarIntegration; pending: boolean } | null>(null);
+  const [value, setValue] = useState<{ integration: CalendarIntegration | null; pending: boolean } | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!firebase) return;
@@ -60,10 +69,11 @@ export function DemoCalendar({ fallback, now }: { fallback?: ReactNode; now?: nu
       let active = true;
       let integration: CalendarIntegration | undefined;
       let items: CalendarItem[] | undefined;
+      let integrationReceived = false;
       const publish = () => {
         if (!active) return;
-        setValue(integration?.mode === 'mock' && integration.executor === 'demo' && items ? {
-          integration, pending: items.some(item => item.appliedRevision !== item.desiredRevision),
+        setValue(integrationReceived && items && (integration || items.some(item => item.kind === 'preparation')) ? {
+          integration: integration ?? null, pending: items.some(item => item.appliedRevision !== item.desiredRevision),
         } : null);
       };
       const fail = () => { if (active) { active = false; setValue(null); setFailed(true); } };
@@ -72,7 +82,7 @@ export function DemoCalendar({ fallback, now }: { fallback?: ReactNode; now?: nu
         onSnapshot(doc(firebase!.db, 'students', user.uid, 'integrations', 'calendar'), options, snapshot => {
           if (!active) return;
           if (snapshot.metadata.fromCache) { setValue(null); return; }
-          integration = snapshot.data() as CalendarIntegration | undefined; publish();
+          integration = snapshot.data() as CalendarIntegration | undefined; integrationReceived = true; publish();
         }, fail),
         onSnapshot(collection(firebase!.db, 'students', user.uid, 'calendarItems'), options, snapshot => {
           if (!active) return;
@@ -85,5 +95,7 @@ export function DemoCalendar({ fallback, now }: { fallback?: ReactNode; now?: nu
     return () => { stopAuth(); stopData(); };
   }, []);
   if (failed) return <>{fallback}<p role="alert">カレンダーを開けませんでした。接続を確かめてください。</p></>;
-  return value ? <DemoCalendarView {...value} now={now ?? Date.now()} /> : fallback;
+  return value ? value.integration?.mode === 'mock'
+    ? <DemoCalendarView integration={value.integration} pending={value.pending} now={now ?? Date.now()} />
+      : <>{fallback}<GoogleCalendarStatus {...value} /></> : fallback;
 }
