@@ -1,14 +1,17 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { preparationSlots, preparationPeriodTimes, preparationSlotOccupied, type Course, type LedgerAssignment, type LmsSystem, type PreparationPlan } from '@kadai-hisho/core';
+import { preparationAfterDeadline, preparationSlots, preparationPeriodTimes, preparationSlotOccupied, type Course, type LedgerAssignment, type LmsSystem, type PreparationPlan } from '@kadai-hisho/core';
 import { preparationDesired, reconcileDesiredCalendarItem, type CalendarIntegration, type CalendarItem } from '@kadai-hisho/core/calendar';
 import type { Firestore } from 'firebase-admin/firestore';
 import { buildDigest, japanDay, type Digest } from './digest.js';
 import { isDemoStudent } from './demo-store.js';
 import { documentKey } from './observation-store.js';
-import { PlanConflict } from './plan-store.js';
+import { PlanAfterDeadline, PlanConflict } from './plan-store.js';
 import { SessionForbidden } from './session-store.js';
 
-export interface PlanActionResult { outcome: 'done' | 'moved' | 'no-slot'; plan: PreparationPlan }
+export interface PlanActionResult { outcome: 'done' | 'moved' | 'no-slot' | 'unchanged'; plan: PreparationPlan }
+export class PlanActionConflict extends PlanConflict {
+  constructor(readonly plan: PreparationPlan) { super(); }
+}
 export class DigestUnavailable extends Error {}
 export interface DigestStore {
   read(uid: string, email: string): Promise<Digest>;
@@ -30,16 +33,17 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         const ref = student.collection('plans').doc('11200000-0000-4000-8000-000000000001');
         const old = (await tx.get(ref)).data() as PreparationPlan | undefined;
         const now = clock(); const date = japanDay(now); const weekday = new Date(`${date}T00:00:00Z`).getUTCDay() || 7;
-        if (old?.date === date && old.status === 'active') return old;
+        if (old && japanDay(new Date(old.confirmedAt)) === date && old.status !== 'cancelled') return old;
         const assignments = (await tx.get(student.collection('assignments'))).docs.map(doc => doc.data() as LedgerAssignment);
         const task = assignments.find(row => row.key.system === 'demo-lms' && row.submission !== 'submitted' && row.presenceState !== 'cancelled' && row.presenceState !== 'ended');
         if (!task) throw new PlanConflict();
         const courses = (await tx.get(student.collection('courses'))).docs.map(doc => doc.data() as Course).filter(course => course.currentTerm !== false);
         const plans = (await tx.get(student.collection('plans'))).docs.filter(doc => doc.id !== ref.id).map(doc => doc.data() as PreparationPlan);
         const periods = preparationPeriodTimes['demo-lms']!;
-        const period = [1, 2, 3, 4, 5].find(p => !courses.some(course => course.slots.some(slot => slot.weekday === weekday && slot.period === p)) &&
+        const available = [1, 2, 3, 4, 5].filter(p => !courses.some(course => course.slots.some(slot => slot.weekday === weekday && slot.period === p)) &&
           !preparationSlotOccupied('demo-lms', date, p, plans));
-        if (!period) throw new PlanConflict();
+        const period = available.find(p => !preparationAfterDeadline(`${date}T${periods[p - 1]![0]}:00+09:00`, task.officialDeadline?.deadline));
+        if (!period) { if (available.length) throw new PlanAfterDeadline(); throw new PlanConflict(); }
         const itemKey = createHash('sha256').update(JSON.stringify(['preparation', ref.id])).digest('hex');
         const itemRef = student.collection('calendarItems').doc(itemKey);
         const previous = (await tx.get(itemRef)).data() as CalendarItem | undefined;
@@ -83,9 +87,8 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         // A public revision guards against replay; identity still comes only from the token.
         const receiptRef = student.collection('planActionReceipts').doc(`${planId}-${revision}-${action}`);
         const receipt = (await tx.get(receiptRef)).data() as PlanActionResult | undefined;
-        if (receipt) return receipt;
-        if (old.revision !== revision) throw new PlanConflict();
-        if (old.status !== 'active') throw new PlanConflict();
+        if (receipt) return { outcome: 'unchanged' as const, plan: old };
+        if (old.revision !== revision || old.status !== 'active') throw new PlanActionConflict(old);
         const assignment = (await tx.get(student.collection('assignments').doc(documentKey(old.assignment.system, old.assignment.sourceId)))).data() as LedgerAssignment | undefined;
         if (!assignment || assignment.submission === 'submitted' || assignment.presenceState === 'cancelled' || assignment.presenceState === 'ended') throw new PlanConflict();
         const itemRef = student.collection('calendarItems').doc(old.calendarItemKey);
@@ -106,7 +109,8 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
           const periods = preparationPeriodTimes[old.assignment.system];
           const candidate = candidates.find(slot => {
             const times = periods?.[slot.period - 1];
-            return times && duration > 0 && duration <= Date.parse(`${slot.date}T${times[1]}:00+09:00`) - Date.parse(`${slot.date}T${times[0]}:00+09:00`);
+            return times && !preparationAfterDeadline(`${slot.date}T${times[0]}:00+09:00`, deadline) && duration > 0 &&
+              duration <= Date.parse(`${slot.date}T${times[1]}:00+09:00`) - Date.parse(`${slot.date}T${times[0]}:00+09:00`);
           });
           outcome = candidate ? 'moved' : 'no-slot';
           if (candidate) {

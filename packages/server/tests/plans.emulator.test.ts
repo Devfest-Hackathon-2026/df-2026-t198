@@ -5,6 +5,7 @@ import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { createPlanStore } from '../src/plan-store.js';
 import { createDemoCalendarSync } from '../src/demo-calendar.js';
 import { observation } from './observation-fixture.js';
+import { documentKey } from '../src/observation-store.js';
 
 /** The acceptance contract uses invented users, assignments and times only. */
 describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A preparation plans', () => {
@@ -45,6 +46,33 @@ describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A prepar
     }
   });
   afterAll(async () => { await fixture?.close(); });
+  it('rejects a new plan after the deadline with a fixed code and no partial writes (B2)', async () => {
+    const id = randomUUID();
+    const before = (await items().get()).docs.map(doc => doc.data());
+    const response = await request(student, student, id, 'PUT', { ...input, date: '2030-11-18',
+      startsAt: '2030-11-18T13:00:00+09:00', endsAt: '2030-11-18T14:30:00+09:00' });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'plan-after-deadline' });
+    expect((await plans().doc(id).get()).exists).toBe(false);
+    expect((await items().get()).docs.map(doc => doc.data())).toEqual(before);
+  });
+  it('accepts the exact datetime and the end of a date-only deadline, but rejects later starts', async () => {
+    const task = fixture.db.doc(`students/${student}/assignments/${documentKey('demo-lms', 'fictional/task')}`);
+    for (const [deadline, date, start, status] of [
+      [{ kind: 'datetime', dueAt: '2030-11-15T17:00:00+09:00' }, '2030-11-15', '17:00', 200],
+      [{ kind: 'datetime', dueAt: '2030-11-15T17:00:00+09:00' }, '2030-11-15', '17:01', 409],
+      [{ kind: 'date', date: '2030-11-15' }, '2030-11-15', '23:58', 200],
+      [{ kind: 'date', date: '2030-11-15' }, '2030-11-16', '00:00', 409],
+      [{ kind: 'none' }, '2030-11-18', '17:00', 200],
+      [{ kind: 'unreadable' }, '2030-11-18', '17:00', 200],
+    ] as const) {
+      await task.update({ 'officialDeadline.deadline': { ...deadline, dueText: '架空', timeZone: 'Asia/Tokyo' } });
+      const response = await request(student, student, randomUUID(), 'PUT', { ...input, date,
+        startsAt: `${date}T${start}:00+09:00`, endsAt: `${date}T23:59:00+09:00` });
+      expect(response.status).toBe(status);
+    }
+    await task.update({ 'officialDeadline.deadline': { kind: 'date', date: '2030-11-15', dueText: '架空', timeZone: 'Asia/Tokyo' } });
+  });
   it('allows the supporter to add once, shows the author, and lets the student remove it from the mock destination', async () => {
     const id = randomUUID();
     const response = await request(supporter, student, id);

@@ -1,4 +1,11 @@
-import type { Course, LmsSystem, PreparationCandidate, PreparationPlan } from './types.js';
+import type { Course, Deadline, LmsSystem, PreparationCandidate, PreparationPlan } from './types.js';
+
+/** Date-only deadlines include the whole day in the source's time zone. */
+export function preparationAfterDeadline(startsAt: string, deadline?: Deadline | null): boolean {
+  if (deadline?.kind === 'datetime') return Date.parse(startsAt) > Date.parse(deadline.dueAt);
+  if (deadline?.kind === 'date') return new Date(startsAt).toLocaleDateString('sv-SE', { timeZone: deadline.timeZone }) > deadline.date;
+  return false;
+}
 
 export type PreparationPeriodTimes = readonly (readonly [string, string])[];
 // YNU all-university timetable, as of 2025-03-21. The 2026 table is unverified.

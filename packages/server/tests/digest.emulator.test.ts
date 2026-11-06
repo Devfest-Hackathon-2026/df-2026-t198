@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { CalendarItem, PreparationPlan } from '@kadai-hisho/core';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { createPlanStore } from '../src/plan-store.js';
-import { createDigestStore } from '../src/digest-store.js';
+import { createDigestStore, type PlanActionResult } from '../src/digest-store.js';
 import { createDemoCalendarSync } from '../src/demo-calendar.js';
 import { createHttpServer } from '../src/http.js';
 import { firebaseDependencies } from '../src/firebase.js';
@@ -62,6 +62,40 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     }
   });
   afterAll(async () => { if (server) await new Promise<void>(resolve => server.close(() => resolve())); await fixture?.close(); });
+  it('reports current completion when an old later link is replayed (B1)', async () => {
+    expect((await act('later')).status).toBe(200);
+    const finished = await (await act('done', owner, 2)).json() as PlanActionResult;
+    const saved = await plans().doc(id).get();
+    expect(await (await act('later')).json()).toMatchObject({ outcome: 'unchanged', plan: finished.plan });
+    expect((await plans().doc(id).get()).updateTime).toEqual(saved.updateTime);
+  });
+  it('keeps today\'s sample after later/done and returns the current state for the first email replay (B1/B4)', async () => {
+    const sample = await store.prepareDemo(owner);
+    await store.act(owner, sample.planId, 'later', sample.revision);
+    const moved = (await plans().doc(sample.planId).get()).data();
+    expect(await store.prepareDemo(owner)).toEqual(moved);
+    const finished = await store.act(owner, sample.planId, 'done', moved!['revision']);
+    const saved = await plans().doc(sample.planId).get();
+    expect(await store.prepareDemo(owner)).toEqual(finished.plan);
+    expect(await store.act(owner, sample.planId, 'later', sample.revision)).toMatchObject({ outcome: 'unchanged', plan: finished.plan });
+    expect((await plans().doc(sample.planId).get()).updateTime).toEqual(saved.updateTime);
+  });
+  it('leaves a preparation and its calendar unchanged when no slot remains before the deadline (B2)', async () => {
+    await assignmentRef().update({ 'officialDeadline.deadline': { kind: 'datetime', dueAt: '2030-11-12T08:00:00+09:00', dueText: '架空', timeZone: 'Asia/Tokyo' } });
+    const saved = await plans().doc(id).get();
+    const item = student().collection('calendarItems').doc(saved.data()!['calendarItemKey']);
+    const calendar = (await item.get()).data();
+    expect(await (await act('later')).json()).toMatchObject({ outcome: 'no-slot', plan: saved.data() });
+    expect((await plans().doc(id).get()).updateTime).toEqual(saved.updateTime);
+    expect((await item.get()).data()).toEqual(calendar);
+  });
+  it('does not create a morning sample whose available starts are all after the deadline', async () => {
+    await assignmentRef().update({ 'officialDeadline.deadline': { kind: 'datetime', dueAt: '2030-11-11T08:00:00+09:00', dueText: '架空', timeZone: 'Asia/Tokyo' } });
+    const response = await request('/api/v1/digest/demo-plan');
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'plan-after-deadline' });
+    expect((await plans().get()).size).toBe(1);
+  });
   it('returns only the verified recipient and owner data, never a requested uid or recipient', async () => {
     const response = await request(`/api/v1/digest?uid=${owner}&to=other@example.invalid`, owner, 'GET');
     expect(response.status).toBe(200); const digest = await response.json() as { plans: unknown[] };
@@ -154,28 +188,28 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect((await student().collection('planActionReceipts').get()).empty).toBe(true);
     expect((await plans(real).get()).size).toBe(1);
   });
-  it('moves again with a new revision while replaying each old revision exactly, including after completion', async () => {
+  it('moves with new revisions and returns the current plan for old replays, including after completion', async () => {
     const first = await (await act('later')).json();
     const second = await (await act('later', owner, 2)).json() as { outcome: string; plan: PreparationPlan };
     expect(second).toMatchObject({ outcome: 'moved', plan: { revision: 3 } });
     expect(second.plan.startsAt).not.toBe((first as { plan: PreparationPlan }).plan.startsAt);
-    expect(await (await act('later')).json()).toEqual(first);
+    expect(await (await act('later')).json()).toMatchObject({ outcome: 'unchanged', plan: second.plan });
     expect((await act('done')).status).toBe(409);
-    expect(await (await act('later', owner, 2)).json()).toEqual(second);
+    expect(await (await act('later', owner, 2)).json()).toMatchObject({ outcome: 'unchanged', plan: second.plan });
     expect((await plans().doc(id).get()).data()!['revision']).toBe(3);
     expect((await act('later', owner, 99)).status).toBe(409);
     expect((await act('done', owner, 3)).status).toBe(200);
-    expect(await (await act('later')).json()).toEqual(first);
+    expect(await (await act('later')).json()).toMatchObject({ outcome: 'unchanged', plan: { status: 'done', revision: 4 } });
     expect((await plans().doc(id).get()).data()!['status']).toBe('done');
   });
   it.each([['later', 'done'], ['done', 'later']])('rejects stale %s/%s action conflicts without changing the plan or calendar', async (firstAction, conflictingAction) => {
     const first = await act(firstAction!);
     expect(first.status).toBe(200);
-    const result = await first.json();
+    const result = await first.json() as PlanActionResult;
     const saved = await plans().doc(id).get();
     const calendar = await student().collection('calendarItems').get();
     expect((await act(conflictingAction!)).status).toBe(409);
-    expect(await (await act(firstAction!)).json()).toEqual(result);
+    expect(await (await act(firstAction!)).json()).toEqual({ ...result, outcome: 'unchanged' });
     expect((await plans().doc(id).get()).updateTime).toEqual(saved.updateTime);
     expect((await student().collection('calendarItems').get()).docs.map(doc => doc.data())).toEqual(calendar.docs.map(doc => doc.data()));
     expect((await student().collection('planActionReceipts').get()).docs.map(doc => doc.id)).toEqual([`${id}-1-${firstAction}`]);
@@ -185,8 +219,8 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     const responses = await Promise.all(actions.map(action => act(action)));
     expect(responses.map(response => response.status).sort()).toEqual([200, 409]);
     const winner = responses.findIndex(response => response.status === 200);
-    const result = await responses[winner]!.json();
-    expect(await (await act(actions[winner]!)).json()).toEqual(result);
+    const result = await responses[winner]!.json() as PlanActionResult;
+    expect(await (await act(actions[winner]!)).json()).toEqual({ ...result, outcome: 'unchanged' });
     expect((await act(actions[1 - winner]!)).status).toBe(409);
     expect((await plans().doc(id).get()).data()!['revision']).toBe(2);
     expect((await student().collection('planActionReceipts').get()).size).toBe(1);
@@ -201,9 +235,9 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect(await store.prepareDemo(owner)).toEqual(renewed);
     await store.act(owner, renewed.planId, 'done', 2);
     const afterDone = await store.prepareDemo(owner);
-    expect(afterDone).toMatchObject({ planId: initial.planId, date: '2030-11-12', status: 'active', revision: 4 });
+    expect(afterDone).toMatchObject({ planId: initial.planId, date: '2030-11-12', status: 'done', revision: 3 });
     await plans().doc(initial.planId).update({ status: 'cancelled' });
-    expect(await store.prepareDemo(owner)).toMatchObject({ status: 'active', revision: 5 });
+    expect(await store.prepareDemo(owner)).toMatchObject({ status: 'active', revision: 4 });
   });
 
   it('does not move an unconfigured LMS and skips preparations whose clock intervals overlap another period', async () => {

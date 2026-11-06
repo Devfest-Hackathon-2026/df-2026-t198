@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ObservationDependencies } from './http.js';
 import { InvalidPlan, parsePlan, validPlanId } from './plan-input.js';
-import { PlanConflict } from './plan-store.js';
+import { PlanAfterDeadline, PlanConflict } from './plan-store.js';
 import { SessionForbidden } from './session-store.js';
 
 function json(response: ServerResponse, status: number, body: unknown) {
@@ -36,6 +36,7 @@ export async function receivePlanRequest(request: IncomingMessage, response: Ser
     json(response, 200, await deps.plans.save(actor, student, id, input));
   } catch (error) {
     if (error instanceof SessionForbidden) json(response, 403, { error: 'forbidden' });
+    else if (error instanceof PlanAfterDeadline) json(response, 409, { error: 'plan-after-deadline' });
     else if (error instanceof PlanConflict) json(response, 409, { error: 'plan-conflict' });
     else if (error instanceof InvalidPlan || error instanceof SyntaxError || error instanceof URIError) json(response, 400, { error: 'invalid-plan' });
     else json(response, 500, { error: 'internal-error' });
