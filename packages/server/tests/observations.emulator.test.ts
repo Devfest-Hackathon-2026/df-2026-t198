@@ -105,6 +105,22 @@ describe.skipIf(!enabled)('observation API with Auth and Firestore emulators', (
       .toEqual({ observationId: detailFailed.observationId, result: { status: 'applied', changed: true, changeCount: 1 } });
   });
 
+  it('persists the course URL and removes it when the next observation omits it', async () => {
+    const courseOwner = await account();
+    const body = observation(40);
+    body.catalogCourses[0]!.url = 'https://example.invalid/course?id=fictional';
+    expect((await post(body, courseOwner.token)).status).toBe(200);
+    const ref = db.doc(`students/${courseOwner.uid}/courses/${documentKey(body.system, body.catalogCourses[0]!.courseId)}`);
+    expect((await ref.get()).data()).toMatchObject({ url: body.catalogCourses[0]!.url });
+    const unsafe = observation(41);
+    unsafe.catalogCourses[0]!.url = 'https://example.invalid/course;SID=synthetic-marker';
+    const before = (await ref.get()).data();
+    expect((await post(unsafe, courseOwner.token)).status).toBe(400);
+    expect((await ref.get()).data()).toEqual(before);
+    expect((await post(observation(42), courseOwner.token)).status).toBe(200);
+    expect((await ref.get()).data()).not.toHaveProperty('url');
+  });
+
   it('serializes concurrent retries and keeps different users separate', async () => {
     const body = observation(20);
     const results = await Promise.all([post(body, other.token), post(body, other.token)]);

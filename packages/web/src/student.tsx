@@ -93,6 +93,8 @@ export function StudentView({ data, now = Date.now() }: { data: StudentData; now
         <button className="plain-button" key={courseKey(c)} onClick={() => select(c)} aria-controls="course-assignments">{c.name}</button>)}</section>}</div>
       {course && <aside ref={panel} tabIndex={-1} className="course-panel" id="course-assignments" aria-label={`${course.name}の課題`}>
         <div className="panel-heading"><h2>{course.name}</h2><button onClick={() => setSelected(null)}>閉じる</button></div>
+        {!!course.slots.length && <p>{course.slots.map(slot => `${'月火水木金土日'[slot.weekday - 1]}曜${slot.period}限`).join('・')}</p>}
+        {course.url && <a href={course.url} target="_blank" rel="noreferrer">LMSで授業を開く</a>}
         <ul>{pending(courseItems).map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}</ul>
         {!!finished.length && <details className="finished-assignments"><summary>終了した課題</summary>
           <ul>{finished.map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}</ul></details>}
