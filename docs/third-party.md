@@ -4,7 +4,7 @@
 
 | 名前・出典 | 用途 | ライセンス |
 |---|---|---|
-| [linkedom](https://github.com/WebReflection/linkedom) | 保存HTMLの解析。Nodeとservice workerで同じworker入口を使う（2026-11-06、導入物のLICENSEとpackage.jsonで確認） | ISC |
+| [linkedom](https://github.com/WebReflection/linkedom) | 保存HTMLの解析。Node・service worker・模擬LMSのWeb画面で同じworker入口を使う（2026-11-06、導入物のLICENSEとpackage.jsonで確認） | ISC |
 | [@google/genai](https://github.com/googleapis/js-genai) | Vertex AIで架空のお知らせから締切変更を抽出。導入した2.32.0のpackage.jsonとLICENSEで確認（2026-11-06） | Apache-2.0 |
 | [TypeScript](https://github.com/microsoft/TypeScript) | strictの型検査、coreとserverのビルド | Apache-2.0 |
 | [ESLint](https://github.com/eslint/eslint) | コードの静的検査 | MIT |
@@ -12,7 +12,7 @@
 | [typescript-eslint](https://github.com/typescript-eslint/typescript-eslint) | ESLintでのTypeScript解析と規則 | MIT |
 | [Vitest](https://github.com/vitest-dev/vitest) | 単体テスト、Chrome APIのモック、HTTPテスト | MIT |
 | [firebase-tools](https://github.com/firebase/firebase-tools) | Firebase Local Emulator Suiteの起動 | MIT |
-| [firebase](https://github.com/firebase/firebase-js-sdk) | 拡張機能のGoogle credentialによるログイン。`firebase/auth/web-extension` をIIFEに同梱。ルートの開発依存はFirestoreの規則の試験と、学生・面談画面のログイン・Firestore購読に使う（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
+| [firebase](https://github.com/firebase/firebase-js-sdk) | 拡張機能のGoogle credentialによるログイン。`firebase/auth/web-extension` をIIFEに同梱。ルートの開発依存はFirestoreの規則の試験、Webの直接依存は学生・面談・模擬LMS画面のログイン・Firestore購読に使う（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
 | [@firebase/rules-unit-testing](https://github.com/firebase/firebase-js-sdk/tree/main/packages/rules-unit-testing) | 本人・支援担当・未ログインを模擬したFirestoreの規則の試験（2026-11-06、導入したpackage.jsonで確認） | Apache-2.0 |
 | [firebase-admin](https://github.com/firebase/firebase-admin-node) | サーバーの認証・台帳保存と、学生画面の試験用データをエミュレーターに用意するために使う | Apache-2.0 |
 | [esbuild](https://github.com/evanw/esbuild) | 拡張機能のservice worker・content script・設定画面のバンドル | MIT |
@@ -23,7 +23,7 @@
 | [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node) | サーバーのNode APIの型 | MIT |
 | [@types/react](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react) | Reactの型 | MIT |
 | [@types/react-dom](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom) | React DOMの型 | MIT |
-| [Playwright](https://github.com/microsoft/playwright) | 手元にある実行環境で学生・面談画面のブラウザ試験を行う。workspaceの依存には追加しない（2026-11-06、実行環境のLICENSEで確認） | Apache-2.0 |
+| [Playwright](https://github.com/microsoft/playwright) | 手元にある実行環境で学生・面談・模擬LMS画面のブラウザ試験を行う。workspaceの依存には追加しない（2026-11-06、実行環境のLICENSEで確認） | Apache-2.0 |
 
 ## 実行環境とCI
 

@@ -1,5 +1,6 @@
 import { StudentPage } from './student';
 import { SessionPage } from './session-page';
+import { DemoPage } from './demo-page';
 
 export function App() {
   const path = window.location.pathname;
@@ -16,10 +17,11 @@ export function App() {
         <nav aria-label="画面">
           <a href="/student" aria-current={path === '/student' || path === '/' ? 'page' : undefined}>学生</a>
           <a href="/session" aria-current={path === '/session' ? 'page' : undefined}>面談</a>
+          <a href="/demo-lms" aria-current={path === '/demo-lms' ? 'page' : undefined}>体験</a>
         </nav>
       </header>
       <main>
-        {path === '/student' || path === '/' ? <StudentPage /> : <h1>{title}</h1>}
+        {path === '/student' || path === '/' ? <StudentPage /> : path === '/demo-lms' ? <DemoPage /> : <h1>{title}</h1>}
         {path === '/session' && <div className="session-page"><SessionPage /></div>}
       </main>
     </div>

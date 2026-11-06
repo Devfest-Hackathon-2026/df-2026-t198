@@ -1,0 +1,12 @@
+.demo-shell { max-width: 900px; margin: 0 auto; }
+.demo-shell button { padding: .6rem 1rem; cursor: pointer; }
+.demo-shell button:disabled { cursor: wait; opacity: .6; }
+.demo-shell input { display: block; max-width: 100%; padding: .6rem; }
+.demo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin: 1rem 0; }
+.demo-teacher-action { margin: 1rem 0; }
+.demo-shell section, .demo-shell article { margin: 1.5rem 0; padding: 1rem; background: var(--paper, #fff); border: 1px solid #ddd; border-radius: .5rem; }
+.demo-pages .demo-course { display: inline-block; vertical-align: top; margin-right: 1rem; }
+.demo-pages .demo-status, .demo-pages .demo-availability { margin-left: 1rem; }
+.demo-pages h1 { font-size: 1.3rem; }
+.demo-pages dd { margin: .5rem 0; }
+.demo-shell p, .demo-shell button, .demo-shell a { overflow-wrap: anywhere; }
