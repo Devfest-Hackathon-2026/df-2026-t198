@@ -151,9 +151,9 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 
 [案Aの決定](decisions.md#d25-学生と支援担当が準備の予定を入れ学生が外せるようにする2026-11-06issue-49)に従う。型は `PreparationPlanInput` と `PreparationPlan`。保存先は `students/{uid}/plans/{planId}`。既存のFirestore規則で本人・共有中の支援担当が読み取り、クライアントの直接書き込みは拒否する。
 
-- `PUT /api/v1/students/{uid}/plans/{planId}`：`planId` はクライアントが操作ごとに作る小文字UUID v4。同じ内容の再試行では同じIDを送る。本文は `{ assignment: { system, sourceId }, date, period, startsAt, endsAt }` だけ。日付は実在する `YYYY-MM-DD`、時限は1〜24の整数、時刻は同じ日付の `YYYY-MM-DDTHH:mm:00+09:00` で開始より終了が後。時限設定はまだないため、時刻は利用者が入力する。
+- `PUT /api/v1/students/{uid}/plans/{planId}`：`planId` はクライアントが操作ごとに作る小文字UUID v4。同じ内容の再試行では同じIDを送る。本文は `{ assignment: { system, sourceId }, date, period, startsAt, endsAt }` だけ。日付は実在する `YYYY-MM-DD`、時限は1〜24の整数、時刻は同じ日付の `YYYY-MM-DDTHH:mm:00+09:00` で開始より終了が後。この保存APIは時限から時刻を補わず、時刻は利用者が入力する。
 - Firebase ID tokenの本人か、`scopes` がリストで `all` を含み `revokedAt: null` の支援担当のみ保存できる。共有許可・体験用プロフィールの確認と保存を同じトランザクションで行う。体験用学生は本人にひも付く学生プロフィールを必要とし、課題の接続先は `demo-lms` だけ。体験用の操作を別の組・実物の学生へ流さない。
-- 新しい予定は、その学生の台帳にある提出済み・取消済み以外の課題を必要とする。開始は未来で、指定曜日・時限に授業が入っていないことをサーバーが検査する。個人のカレンダーや他の準備予定の重なりは判定しない。時限と入力時刻の対応も、時限設定がないため検査しない。
+- 新しい予定は、その学生の台帳にある提出済み・取消済み以外の課題を必要とする。開始は未来で、指定曜日・時限に授業が入っていないことをサーバーが検査する。個人のカレンダーや他の準備予定の重なりは判定しない。時限と入力時刻の対応も検査しない。自動の後回しで使う時刻設定は「今日やることと準備の記録」の節を参照。
 - APIは入力に加え `planId`・課題の `title`・`decidedOn`（保存日の日本時間）・`timeZone: 'Asia/Tokyo'`・`confirmedBy`（認証済みUID）・`createdByRole: 'student' | 'supporter'`・`confirmedAt`（サーバー時刻）・`status: 'active'`・`revision: 1`・`calendarItemKey` を保存する。登録者や同期先を本文で指定することはできない。
 - 同じ登録者・ID・内容の再送は保存済みの予定を返し、版や時刻を進めない。同じIDで内容や登録者が違う場合、または取消済みの場合は409。取消済みの予定を再度入れるには新しいIDを使う。予定の日時変更は、外して別の予定として入れる。
 - `DELETE` は同じURLで本文なし。学生はどの予定も、共有中の支援担当は自分が入れた予定だけを外せる。`status: 'cancelled'` にし `revision` を1つ増やす。記録を消さず遅れたPUTでの復活を防ぐ。同じDELETEの再送では版を進めない。
@@ -195,7 +195,7 @@ APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の�
 
 予定名は授業名と課題名、要確認なら先頭に「【要確認】」。説明は締切の原文、LMSのリンク、食い違う日付だけ（`conflicting-deadline.detail` の既存のお知らせ抽出形式から日付を拾い、引用本文は転記しない）。HTMLとして解釈される文字は表示を保つためにescapeする。時刻ありは5分の目印とその説明、日付だけは終日、提出済みは通知を外し、取消・終了は削除する（実物・体験用とも同じ）。締切が読めなければ以前の公式の締切を残す。
 
-拡張機能の `config.local.json` に `apiOrigin`（HTTPSのoriginだけ）を設定すると、その接続先だけをビルド時のhost permissionとCSPへ追加する。空なら接続テストだけが動く。worker起動時・Chrome起動時・接続テスト成功後・`sendObservation` の送信成功後に同期する。同じworker内の同期は直列に実行する。Googleの認可は `interactive: false`、Firebaseと同じuidかも確認してから予定を書く。1学生1Chromeプロファイルが前提。定期確認、実LMSの取得部品への接続、接続状態を表示する製品UIは後続の作業。
+拡張機能の `config.local.json` に `apiOrigin`（HTTPSのoriginだけ）を設定すると、その接続先だけをビルド時のhost permissionとCSPへ追加する。空なら接続テストだけが動く。worker起動時・Chrome起動時・接続テスト成功後・`sendObservation` の送信成功後に同期する。同じworker内の同期は直列に実行する。Googleの認可は `interactive: false`、Firebaseと同じuidかも確認してから予定を書く。1学生1Chromeプロファイルが前提。実LMSの取得後も `sendObservation` を通じて同期する。カレンダー専用の定期同期はない。接続状態は拡張の設定画面で確認する。
 
 設定画面からの内部メッセージ `calendar-sync` と `observation-send` でも同期を試せる。他の拡張機能・LMSのページ・子フレームからの要求は拒否する。`observation-send` の応答は観測の受領結果であり、カレンダー同期の成功とは区別する。同期に失敗しても受領済みの観測を失敗に戻さず、サーバーの同期待ちを次回に処理する。
 
@@ -214,7 +214,7 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 
 ## 今日やることと準備の記録（Issue #112）
 
-- `GET /api/v1/digest`：失効確認付きFirebase ID tokenの本人だけを読む。応答は `{ date, to, subject, text, html, empty, plans, assignments }`。`date` は日本時間の今日、`to` は検証済みtokenのメールだけ。メールが無ければ403。queryの学生ID・宛先は使わず、体験用の支援担当は403。送信は別のIssue #113で拡張から行う。
+- `GET /api/v1/digest`：失効確認付きFirebase ID tokenの本人だけを読む。応答は `{ date, to, subject, text, html, empty, plans, assignments }`。`date` は日本時間の今日、`to` は検証済みtokenのメールだけ。メールが無ければ403。queryの学生ID・宛先は使わず、体験用の支援担当は403。送信は拡張の `digest-browser.ts` がGmail APIで行う（Issue #113）。
 - `plans[]` は今日の `active` な準備の予定で、課題が提出済み・取消済み・終了済みのものは除く。各項目は `{ planId, date, period, startsAt, endsAt, title, courseName, deadline, url, status, doneUrl, laterUrl, subject, text, html }`。項目内の件名と本文はその予定1つ分のメール。件名は「13:00から：課題名の準備」の形で、朝のまとめの件名と分ける。`assignments[]` は48時間以内の未提出・取消/終了以外の課題で `{ title, courseName, deadline, url }`。準備を `done` にしても、LMSで未提出なら締切のまとめには残す。LMSの提出状態は変えない。
 - `deadline` は原文を外した `{ kind: 'datetime', dueAt, timeZone }` / `{ kind: 'date', date, timeZone }` / `{ kind: 'none' | 'unreadable', timeZone }` / `null`。日時は現在と48時間後の両端を含み、日付だけの場合はそのタイムゾーンの両端の日付を含む。時刻を補わない。課題本文・解説・お知らせ本文・締切の原文は本文にもJSONにも複写しない。課題名と授業名の連続する空白・改行は空白1つにまとめる。HTMLは文字とリンクをescapeする。`packages/core/src/mail-safety.ts` の `isSafeMailText` とURL検査で危険な値を含む課題だけを除き、ほかの課題は返す。同関数はHTMLの文字参照と連続するパーセント符号を最大5巡で復号・検査し、収束しなければ拒否する。拡張も同関数を使い、送信直前には現在の認証値を任意の第2引数に渡して、復号した文字列との一致も拒否する。認証値はサーバーには渡さない。送信対象が無ければ `empty: true`。
 - `doneUrl` / `laterUrl` は `<公開先>/student/plan?id=<予定ID>&do=done|later&rev=<revision>`。秘密の値は含まない。公開先はサーバー設定 `PUBLIC_WEB_ORIGIN`（末尾の `/` は除く）。未設定でもAPI全体は起動し、`GET /api/v1/digest` だけ503を返す。準備の操作と体験見本の作成は公開先を必要としないため使える。HTTPSのoriginだけを認め、エミュレーターだけ `http://127.0.0.1:<port>` も使える。要求のHostからは作らない。Webページを開き、未ログインならログインしてから、認証した本人の予定だけをPOSTで操作する。GET APIで書き込まない。
@@ -223,4 +223,10 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - 自動移動の時刻設定は共通核の `preparationPeriodTimes: Partial<Record<LmsSystem, PreparationPeriodTimes>>` で管理し、現在はYNUと架空の体験用だけ。YNUの公表時刻を使う（[D30](decisions.md#d30-今日やることと準備の完了後回し2026-11-07issue-112)）。未設定のPandAや、準備が1コマに収まらない場合は推測して動かさない。個人のカレンダーが空いているかは判断しない。
 - 状態・操作者・時刻・移動先・既存カレンダーの同期対象を同じトランザクションで保存する。done・laterの再送で版や時刻を進めない。体験用は保存後に模擬予定へ同期し、失敗時は同じ要求で再試行する。実物は既存の拡張機能による同期のきっかけを待つ。画面には実物の更新完了とは表示しない。学生と許可済み支援担当が `plans` を購読し、完了した予定も一覧に残す。クライアントからの書き込みは引き続き全拒否。
 - `POST /api/v1/digest/demo-plan`：本文なし、体験学生本人だけ。先に「LMSを開く」で台帳へ入れた架空課題に、今日のメールを試す固定IDの予定を1つだけ作る。前の予定が今日の有効な予定ならそのまま返し、別の日・完了・取消なら同じIDで版を進めて作り直す。授業と別の有効な準備の時間を避ける。過去の開始時刻も含む朝の見本で、実物アカウントや実物カレンダーには使えない。`/demo-lms` はGET digestのHTMLをそのまま描き、ボタンは同じ本人限定APIを呼ぶ。「体験を最初からやり直す」は `plans` と `planActionReceipts` も消し、操作の記録を戻す。
-- 未認証401、不正なID・本文あり400、本人の予定でない／体験条件を満たさない403、完了・取消後の別操作や対象課題の取消・提出409、内部の失敗500。エラーは固定コード、応答は `Cache-Control: no-store`。依存・Google Cloud資源・送信処理・定期実行は追加しない。
+- 未認証401、不正なID・本文あり400、本人の予定でない／体験条件を満たさない403、完了・取消後の別操作や対象課題の取消・提出409、内部の失敗500。エラーは固定コード、応答は `Cache-Control: no-store`。このAPIではメールの送信・定期実行を行わない。拡張の送信処理は次節を参照。
+
+## 今日やることのメール送信（Issue #113）
+
+- 拡張の `digest-browser.ts` が、設定で本人が有効にした場合だけ `gmail.send` の許可を求め、Gmail APIの `users/me/messages/send` で認証済み本人宛てに送る。Googleの送信用トークンをサーバーに送らず、メールの読み取りもしない。設定はFirebase UIDと接続設定にひも付け、別の本人には引き継がない。
+- 日本時間の7:30以降に朝のまとめを1回、今日の有効な準備の開始30分前から開始前までにその準備1件のメールを送る。Chromeの起動・拡張の実行・有効な認可が前提。予定の再取得は通常15分間隔で、送信対象の時刻にも本文を取得する。対象が空なら送らない。
+- 送信前に当日の送信記録を `chrome.storage.local` へ置く。応答が失われた場合も同じメールを自動再送せず、設定画面でGmailの確認を促す。メール本文は保存しない。朝のまとめ・準備ごとの送信と、無効化・本人変更・認可・本文の安全検査は `packages/extension/tests/digest-browser.test.mjs` で検証する。実際のGmailへの配信はこの試験の対象外。
