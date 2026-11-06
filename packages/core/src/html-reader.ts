@@ -72,7 +72,13 @@ export function parseDeadline(text: string, utcOffset: string): string | null {
   const y = Number(year), m = Number(month), d = Number(day);
   const days = [31, y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   if (y < 1 || m < 1 || m > 12 || d < 1 || d > days[m - 1]!
-    || Number(hour) > 23 || Number(minute) > 59) return null;
+    || Number(hour) > 24 || Number(minute) > 59 || (hour === '24' && minute !== '00')) return null;
+  if (hour === '24') {
+    const next = new Date(`${year}-${month}-${day}T00:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    if (next.getUTCFullYear() > 9999) return null;
+    return `${next.toISOString().slice(0, 10)}T00:00:00${utcOffset}`;
+  }
   return `${year}-${month}-${day}T${hour}:${minute}:00${utcOffset}`;
 }
 function readCourses(root: TreeElement, d: ReadingDefinition): PageReading {
