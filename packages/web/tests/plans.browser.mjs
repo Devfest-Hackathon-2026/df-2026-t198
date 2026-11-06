@@ -60,8 +60,10 @@ try {
   const [saved] = await active(); assert.ok(saved); const plan = saved.data();
   assert.equal(plan.confirmedBy, 'trial-supporter'); assert.equal(plan.createdByRole, 'supporter');
   await student.locator('.timetable .preparation-cell').getByText('支援担当が入れました', { exact: true }).waitFor();
-  const calendar = student.getByRole('region', { name: '体験用カレンダー', exact: true });
-  await calendar.getByText(/準備：架空の観察ノート/).waitFor();
+  const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
+  const preparationEvent = calendar.locator('.calendar-event').filter({ hasText: '準備' }).getByText('架空の観察ノート', { exact: true });
+  await calendar.getByText('体験用の予定です。Googleカレンダーには入りません。', { exact: true }).waitFor();
+  await preparationEvent.waitFor();
   const item = (await ref.collection('calendarItems').doc(plan.calendarItemKey).get()).data();
   assert.equal(item.appliedRevision, item.desiredRevision);
   assert.equal((await target()).data().mockEvents[item.eventId].event.start.dateTime, plan.startsAt);
@@ -69,7 +71,7 @@ try {
   await supporter.screenshot({ path: `${evidence}/supporter-wide.png`, fullPage: true });
   await student.screenshot({ path: `${evidence}/student-wide.png`, fullPage: true });
   await student.reload(); await ownList.getByText('支援担当が入れました', { exact: true }).waitFor();
-  await calendar.getByText(/準備：架空の観察ノート/).waitFor();
+  await preparationEvent.waitFor();
   assert.equal((await active()).length, 1); pass('reload retains one saved plan');
   await student.setViewportSize({ width: 390, height: 844 });
   assert.equal(await student.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
@@ -77,7 +79,7 @@ try {
   pass('390px student timetable and removal control remain reachable');
   await ownList.getByRole('button', { name: /準備を外す/ }).click();
   await student.locator('.timetable .preparation-cell').waitFor({ state: 'detached' });
-  await calendar.getByText(/準備：架空の観察ノート/).waitFor({ state: 'detached' });
+  await preparationEvent.waitFor({ state: 'detached' });
   assert.equal((await plans()).docs.find(doc => doc.id === saved.id).data().status, 'cancelled');
   await assertNoPreparationEvents();
   await supporter.getByRole('region', { name: '入れた準備の予定' }).waitFor({ state: 'detached' });
@@ -100,12 +102,12 @@ try {
   await form.getByRole('status').filter({ hasText: '準備の予定を入れました' }).waitFor();
   await ownList.getByText('学生が入れました', { exact: true }).waitFor();
   assert.equal((await active()).length, 1);
-  await calendar.getByText(/準備：架空の観察ノート/).waitFor();
+  await preparationEvent.waitFor();
   pass('student adds a plan; lost response retry keeps one plan and one calendar event');
   await supporter.getByRole('region', { name: '入れた準備の予定' }).getByText('学生が入れました', { exact: true }).waitFor();
   assert.equal(await supporter.getByRole('region', { name: '入れた準備の予定' }).getByRole('button').count(), 0);
   await ownList.getByRole('button', { name: /準備を外す/ }).click();
-  await calendar.getByText(/準備：架空の観察ノート/).waitFor({ state: 'detached' });
+  await preparationEvent.waitFor({ state: 'detached' });
   await assertNoPreparationEvents(); pass('student removes own plan; supporter cannot remove the student plan');
   await student.getByRole('link', { name: '自分の面談日時を見る・変える' }).click();
   await student.getByText('面談日時を変える', { exact: true }).click();

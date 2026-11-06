@@ -80,3 +80,21 @@ summary { cursor: pointer; color: var(--muted); }
   .app { padding: 0 16px; }
   h1 { font-size: 27px; }
 }
+
+.demo-login .plain-button { display: inline-block; text-decoration: none; }
+.demo-login h2 { margin-top: 24px; }
+.deadline-calendar { margin-bottom: 28px; }
+.calendar-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 9px; background: var(--white); }
+.deadline-week { width: 100%; min-width: 840px; table-layout: fixed; border-spacing: 0; }
+.deadline-week th { padding: 10px 4px; font-size: 12px; background: var(--side); }
+.deadline-week td { height: 115px; vertical-align: top; padding: 5px; border-top: 1px solid var(--line-soft); }
+.deadline-week th + th, .deadline-week td + td { border-left: 1px solid var(--line-soft); }
+.deadline-week .calendar-today { background: var(--soft); }
+.calendar-event { padding: 8px; margin-bottom: 5px; border: 1px solid var(--line); border-radius: 5px; background: var(--white); overflow-wrap: anywhere; font-size: 12px; }
+.calendar-event .muted { display: block; }
+.calendar-outside { margin-top: 8px; font-size: 12px; }
+.course-cell, .deadline, .calendar-event { transition: background-color 1s; }
+.course-cell.changed, .deadline.changed, .calendar-event.changed { background: var(--gold-bg); transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .course-cell, .deadline, .calendar-event { transition: none; }
+}

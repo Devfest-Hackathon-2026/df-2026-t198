@@ -37,12 +37,13 @@
 .session-login h2 { margin: 0; font-size: 20px; }
 @media (max-width: 900px) { .session-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) { .session-shell { grid-template-columns: minmax(0, 1fr); gap: 24px; } .session-account { align-items: start; gap: 12px; } .session-heading { display: block; } .session-dates { margin-top: 16px; } }
+.session-page .session-account .logout { background: transparent; border: 0; padding: 0; border-radius: 0; color: var(--muted); font-size: 13px; text-decoration: underline; }
 .session-account { justify-content: flex-end; margin: 0 0 4px; }
 .session-back { display: inline-block; margin-bottom: 24px; font-size: 13px; }
 .session-students { max-width: 600px; }
 .session-students nav { display: grid; gap: 12px; margin: 24px 0; }
 .session-students nav a { background: var(--white); border: 1px solid var(--line); padding: 16px; border-radius: 8px; overflow-wrap: anywhere; }
-.session-students > a { margin-left: 16px; }
+.session-page .session-student-id { display: block; margin: 4px 0 0; font-size: 12px; font-weight: 400; color: var(--muted); overflow-wrap: anywhere; }
 .session-heading h1 { overflow-wrap: anywhere; }
 .session-steps { display: flex; gap: 16px; align-items: center; border-block: 1px solid var(--line); padding: 16px 0; margin: 20px 0; }
 .session-steps a { text-decoration: none; padding: 8px; border-radius: 6px; }
@@ -51,9 +52,13 @@
 .session-check h2, .session-planning h2 { font-size: 17px; color: var(--ink); }
 .session-brief li { padding: 12px 0; }
 .session-other-review { margin-top: 16px; }
-.session-task summary { cursor: pointer; }
+.session-task summary { display: flex; align-items: baseline; gap: 8px; list-style: none; cursor: pointer; font-size: 12px; }
+.session-task summary::-webkit-details-marker { display: none; }
+.session-task summary::before { content: '▸'; flex-shrink: 0; }
+.session-task[open] summary::before { content: '▾'; }
+.session-task summary > div { min-width: 0; }
 .session-task summary .eyebrow, .session-review { display: block; }
-.session-task h3 { display: inline; margin-right: 12px; }
+.session-task h3 { display: block; }
 .session-review { margin-top: 8px; font-size: 13px; color: var(--gold-ink); }
 .session-task-detail { padding: 18px 0 0 16px; }
 .session-task-detail h4 { font-size: 13px; margin: 16px 0 4px; }

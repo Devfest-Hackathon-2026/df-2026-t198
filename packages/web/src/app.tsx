@@ -17,9 +17,9 @@ export function App() {
       <header className="app-header">
         <a className="brand" href="/student">課題の秘書</a>
         <nav aria-label="画面">
+          <a href="/demo-lms" aria-current={path === '/demo-lms' ? 'page' : undefined}>体験用LMS</a>
           <a href="/student" aria-current={path === '/student' || path === '/' ? 'page' : undefined}>学生</a>
           <a href="/session" aria-current={session ? 'page' : undefined}>面談</a>
-          <a href="/demo-lms" aria-current={path === '/demo-lms' ? 'page' : undefined}>体験</a>
         </nav>
       </header>
       <main>

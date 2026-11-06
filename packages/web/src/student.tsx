@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
 import { planActions, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
 import { DemoCalendar } from './demo-calendar';
+import { ChangedDeadline, useDeadlineChanges } from './deadline-change';
+import { DemoLogin } from './demo-login';
 import { firebase } from './firebase';
 import { watchAccount, type StudentCourse, type StudentData, type StudentState } from './student-data';
 
 export const courseKey = (course: StudentCourse) => JSON.stringify([course.system, course.courseId]);
 const belongsTo = (item: LedgerAssignment, course: StudentCourse) =>
   item.key.system === course.system && item.latest.courseId === course.courseId;
-const deadlineOf = (item: LedgerAssignment) => item.officialDeadline?.deadline;
+const deadlineOf = (item: LedgerAssignment | undefined) => item?.officialDeadline?.deadline;
 const dateKey = (deadline: Deadline | undefined) => deadline?.kind === 'datetime' ? Date.parse(deadline.dueAt) :
   deadline?.kind === 'date' ? Date.parse(`${deadline.date}T00:00:00Z`) : Infinity;
 export function pending(items: LedgerAssignment[]) {
@@ -33,7 +35,7 @@ function Review({ item }: { item: LedgerAssignment }) {
 function AssignmentRow({ item }: { item: LedgerAssignment }) {
   return <li className="assignment">
     <h3>{item.latest.title}</h3>
-    <p>{deadlineText(deadlineOf(item))} {item.submission === 'submitted' && <span className="badge done">出せました</span>}
+    <p><ChangedDeadline value={deadlineText(deadlineOf(item))} /> {item.submission === 'submitted' && <span className="badge done">出せました</span>}
       {item.presenceState === 'cancelled' && <span className="badge">取り消されました</span>}</p>
     <Review item={item} />
     <details><summary>書いてあったこと</summary><p>{deadlineOf(item)?.dueText ?? item.latest.deadline.dueText}</p>
@@ -41,7 +43,7 @@ function AssignmentRow({ item }: { item: LedgerAssignment }) {
     <a href={item.latest.url} target="_blank" rel="noreferrer">LMSで見る ›</a>
   </li>;
 }
-export function StudentView({ data, now = Date.now(), actions }: { data: StudentData; now?: number; actions?: PlanActions | undefined }) {
+export function StudentView({ data, now = Date.now(), calendar = false, actions }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined }) {
   const [selected, setSelected] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -59,6 +61,15 @@ export function StudentView({ data, now = Date.now(), actions }: { data: Student
   const unscheduled = data.courses.filter(c => c.slots.length === 0);
   const courseItems = course ? data.assignments.filter(item => belongsTo(item, course)) : [];
   const finished = courseItems.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled');
+  const changed = useDeadlineChanges(new Map(data.courses.map(c => [courseKey(c),
+    deadlineText(deadlineOf(pending(data.assignments.filter(item => belongsTo(item, c)))[0]))])));
+  const upcomingList = !!upcoming.length && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">締切の近い課題</h2>
+      <ul>{upcoming.slice(0, 3).map(item => {
+        const owner = data.courses.find(c => belongsTo(item, c));
+        return <li key={JSON.stringify(item.key)}>{owner ? <button onClick={() => select(owner)} aria-controls="course-assignments">
+          <strong>{deadlineText(deadlineOf(item))}</strong> {item.latest.title}<span className="muted">{owner.name}</span>
+        </button> : <span>{deadlineText(deadlineOf(item))} {item.latest.title}</span>}</li>;
+      })}</ul></section>;
   return <>
     <div className="student-heading"><h1>時間割と課題</h1></div>
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
@@ -67,17 +78,11 @@ export function StudentView({ data, now = Date.now(), actions }: { data: Student
       const stale = last && now - Date.parse(last) >= 3 * 86400000;
       const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
       return stale || state.lastResult !== 'success' ? <p className="notice" key={state.system}>
-        {label}：{stale ? `${new Date(last).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}から更新がありません。` :
-          '一部の課題を確認できていません。'} LMSを開いて確かめてください。</p> : null;
+        {label}：{stale ? `最後にLMSから取ったのは${new Date(last).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。LMSを開くと新しくなります。` :
+          '一部の課題を確認できていません。LMSを開いて確かめてください。'}</p> : null;
     })}
     {!data.assignments.length && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
-    {!!upcoming.length && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">締切の近い課題</h2>
-      <ul>{upcoming.slice(0, 3).map(item => {
-        const owner = data.courses.find(c => belongsTo(item, c));
-        return <li key={JSON.stringify(item.key)}>{owner ? <button onClick={() => select(owner)} aria-controls="course-assignments">
-          <strong>{deadlineText(deadlineOf(item))}</strong> {item.latest.title}<span className="muted">{owner.name}</span>
-        </button> : <span>{deadlineText(deadlineOf(item))} {item.latest.title}</span>}</li>;
-      })}</ul></section>}
+    {calendar ? <DemoCalendar fallback={upcomingList} now={now} /> : upcomingList}
     <div className={`student-layout${course ? ' with-course' : ''}`}>
       <div><div className="timetable-scroll"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
         <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d}>{'月火水木金土日'[d]}</th>)}</tr></thead>
@@ -85,7 +90,7 @@ export function StudentView({ data, now = Date.now(), actions }: { data: Student
           {Array.from({ length: days }, (_, d) => <td key={d}>{data.courses.filter(c =>
             c.slots.some(slot => slot.weekday === d + 1 && slot.period === p + 1)).map(c => {
             const next = pending(data.assignments.filter(item => belongsTo(item, c)))[0];
-            return <button className="course-cell" key={courseKey(c)} onClick={() => select(c)}
+            return <button className={`course-cell${changed.has(courseKey(c)) ? ' changed' : ''}`} key={courseKey(c)} onClick={() => select(c)}
               aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
               <strong>{c.name}</strong>{next && <><span>{deadlineText(deadlineOf(next))}</span><span>{next.latest.title}</span>
                 {(next.reviewReasons.length > 0 || next.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.reviewReasons[0]?.kind === 'unreadable-deadline'
@@ -120,12 +125,12 @@ export function StudentPage() {
   const client = firebase;
   const accountAction = (action: () => Promise<unknown>) => { setAuthError(false); void action().catch(() => setAuthError(true)); };
   return <>
-    {state.status === 'signed-out' ? <><h1>時間割と課題</h1><p>拡張機能と同じGoogleアカウントでログインしてください。</p>
+    {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin />
       <button className="plain-button" onClick={() => accountAction(client.login)}>Googleでログイン</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
-        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now}
+        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
-          {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}<DemoCalendar /></> : <p role="status">{state.status === 'error'
+          {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</> : <p role="status">{state.status === 'error'
           ? '課題を開けませんでした。接続を確かめて、画面を開き直してください。' : '課題を開いています…'}</p>}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;

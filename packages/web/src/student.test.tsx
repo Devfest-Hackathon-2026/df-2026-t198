@@ -22,7 +22,7 @@ describe('学生が締切を確かめる画面', () => {
     expect(html).not.toContain('23:59');
     expect(html).toContain('要確認');
     expect(html).toContain('要確認：締切を確認できていません。');
-    expect(html).toContain('から更新がありません');
+    expect(html).toContain('最後にLMSから取ったのは');
     expect(html).not.toContain('未提出');
   });
   it('同じ授業IDの別大学を混ぜず、週末・6限・複数コマ・時限のない授業を出す', () => {
@@ -43,4 +43,13 @@ describe('学生が締切を確かめる画面', () => {
     expect(pending([assignment('不明', { kind: 'unreadable', dueText: '', timeZone: 'Asia/Tokyo' }),
       assignment('日付あり', dated('2026-11-12'))]).map(a => a.latest.title)).toEqual(['日付あり', '不明']);
   });
+  it('最終成功から72時間の境界で案内を出し、新しい情報には出さない', () => {
+    const data = studentFixture();
+    data.fetchStates = [{ ...data.fetchStates[0]!, lastSucceededAt: '2026-11-03T15:30:00Z', lastResult: 'success' }];
+    const render = (now: string) => renderToStaticMarkup(<StudentView data={data} now={Date.parse(now)} />);
+    expect(render('2026-11-06T15:29:59Z')).not.toContain('最後にLMSから取ったのは');
+    expect(render('2026-11-06T15:30:00Z')).toContain('最後にLMSから取ったのは11/4です。LMSを開くと新しくなります。');
+    expect(render('2026-11-07T15:30:00Z')).not.toContain('changed');
+  });
+
 });
