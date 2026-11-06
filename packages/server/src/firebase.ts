@@ -19,14 +19,12 @@ export function firebaseDependencies() {
   const saveObservation = createObservationStore(db);
   const syncDemoCalendar = createDemoCalendarSync(db);
   const project = app.options.projectId ?? process.env['GOOGLE_CLOUD_PROJECT'] ?? process.env['GCLOUD_PROJECT'];
-  if (!process.env['PUBLIC_WEB_ORIGIN'] && !project) throw new Error('web-origin-required');
   const dependencies: ObservationDependencies = {
     verifyDigestToken: async token => {
       const identity = await getAuth(app).verifyIdToken(token, true);
       return { uid: identity.uid, email: identity.email };
     },
-    digest: createDigestStore(db, syncDemoCalendar, process.env['PUBLIC_WEB_ORIGIN'] ??
-      `https://${project}.web.app`),
+    ...(process.env['PUBLIC_WEB_ORIGIN'] ? { digest: createDigestStore(db, syncDemoCalendar, process.env['PUBLIC_WEB_ORIGIN']) } : {}),
     verifyToken: async (token: string) => (await getAuth(app).verifyIdToken(token, true)).uid,
     saveObservation: async (uid, observation) => {
       const result = await saveObservation(uid, observation);

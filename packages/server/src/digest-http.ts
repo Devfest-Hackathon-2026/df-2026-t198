@@ -25,9 +25,14 @@ export async function receiveDigestRequest(request: IncomingMessage, response: S
       const parts = request.url!.split('?')[0]!.split('/');
       const id = parts[4]!; const action = parts[5]!;
       if (!validPlanId(id) || !['done', 'later'].includes(action)) { json(400, { error: 'invalid-plan' }); return; }
+      const revisions = new URL(request.url!, 'http://localhost').searchParams.getAll('rev');
+      const revision = Number(revisions[0]);
+      if (revisions.length !== 1 || !/^[1-9]\d*$/.test(revisions[0]!) || !Number.isSafeInteger(revision)) {
+        json(400, { error: 'invalid-revision' }); return;
+      }
       // Identity and operation are fixed by verified token and route; never accept a body.
       for await (const chunk of request) if (chunk.length) { json(400, { error: 'body-not-allowed' }); return; }
-      json(200, await deps.digest.act(identity.uid, id, action as 'done' | 'later'));
+      json(200, await deps.digest.act(identity.uid, id, action as 'done' | 'later', revision));
     }
   } catch (error) {
     if (error instanceof SessionForbidden) json(403, { error: 'forbidden' });

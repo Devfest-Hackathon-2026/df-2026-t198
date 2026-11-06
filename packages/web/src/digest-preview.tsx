@@ -39,9 +39,10 @@ export function DigestPreview({ user }: { user: User }) {
     if (url.pathname !== '/student/plan') return;
     event.preventDefault(); if (busy) return;
     const id = url.searchParams.get('id'); const action = url.searchParams.get('do');
-    if (!id || (action !== 'done' && action !== 'later')) return;
+    const rev = url.searchParams.get('rev') ?? '';
+    if (!id || (action !== 'done' && action !== 'later') || !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) return;
     setBusy(true); setMessage('');
-    try { const result = await performPlanAction(user, id, action); setMessage(actionMessage(result.outcome)); }
+    try { const result = await performPlanAction(user, id, action, Number(rev)); setMessage(actionMessage(result.outcome)); }
     catch { setMessage('予定の変更を確認できませんでした。もう一度お試しください。'); }
     finally { setBusy(false); }
   }

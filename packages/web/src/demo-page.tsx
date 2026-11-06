@@ -27,9 +27,11 @@ export function DemoPage() {
     if (!user || !returnTo) return;
     let url: URL;
     try { url = new URL(returnTo, window.location.origin); } catch { return; }
+    const rev = url.searchParams.get('rev') ?? '';
     if (url.origin === window.location.origin && url.pathname === '/student/plan' &&
-      /^[a-f0-9-]{36}$/.test(url.searchParams.get('id') ?? '') && ['done', 'later'].includes(url.searchParams.get('do') ?? '')) {
-      window.location.assign(`/student/plan?id=${encodeURIComponent(url.searchParams.get('id')!)}&do=${url.searchParams.get('do')}`);
+      /^[a-f0-9-]{36}$/.test(url.searchParams.get('id') ?? '') && ['done', 'later'].includes(url.searchParams.get('do') ?? '') &&
+      /^[1-9]\d*$/.test(rev) && Number.isSafeInteger(Number(rev))) {
+      window.location.assign(`/student/plan?id=${encodeURIComponent(url.searchParams.get('id')!)}&do=${url.searchParams.get('do')}&rev=${rev}`);
     }
   }, [user]);
   if (!firebase) return <p>体験画面の準備中です。担当者に確認してください。</p>;

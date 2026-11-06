@@ -16,13 +16,13 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
   let store: ReturnType<typeof createDigestStore>;
   let server: ReturnType<typeof createHttpServer>; let base: string;
   const owner = 'digest-student', supporter = 'digest-supporter', stranger = 'digest-stranger', real = 'digest-real';
-  const tokens = new Map<string, string>(); const now = new Date('2030-11-11T00:00:00Z');
+  const tokens = new Map<string, string>(); let now = new Date('2030-11-11T00:00:00Z');
   let id: string;
   const student = (uid = owner) => fixture.db.collection('students').doc(uid);
   const plans = (uid = owner) => student(uid).collection('plans');
   const assignmentRef = (uid = owner) => student(uid).collection('assignments').doc(documentKey('demo-lms', 'fictional/task'));
   const request = (path: string, uid = owner, method = 'POST') => fetch(base + path, { method, headers: { Authorization: `Bearer ${tokens.get(uid)}` } });
-  const act = (action: string, uid = owner) => request(`/api/v1/plans/${id}/${action}`, uid);
+  const act = (action: string, uid = owner, revision = 1) => request(`/api/v1/plans/${id}/${action}?rev=${revision}`, uid);
   beforeAll(async () => {
     fixture = await sessionEmulatorFixture();
     store = createDigestStore(fixture.db, createDemoCalendarSync(fixture.db), 'https://study.example.invalid', () => now);
@@ -43,8 +43,9 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     await student().collection('demo').doc('current').set({ courses: [] });
   });
   beforeEach(async () => {
+    now = new Date('2030-11-11T00:00:00Z');
     for (const uid of [owner, real]) {
-      for (const name of ['plans', 'calendarItems']) for (const doc of (await student(uid).collection(name).get()).docs) await doc.ref.delete();
+      for (const name of ['plans', 'calendarItems', 'planActionReceipts']) for (const doc of (await student(uid).collection(name).get()).docs) await doc.ref.delete();
       const sample = observation(); sample.definitionId = 'demo-lms'; sample.observationId = randomUUID();
       sample.catalogCourses[0]!.slots = [{ weekday: 2, period: 1 }];
       sample.assignments[0]!.deadline = { kind: 'datetime', dueAt: '2030-11-15T17:00:00+09:00', dueText: 'do not copy source', timeZone: 'Asia/Tokyo' };
@@ -94,7 +95,7 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect((await student().collection('integrations').doc('calendar').get()).data()!['mockEvents'][item['eventId']]).toBeUndefined();
   });
   it('moves once to the next candidate excluding classes and other preparations, with the same durable mock event id', async () => {
-    await plans().doc('blocker').set({ ...(await plans().doc(id).get()).data(), date: '2030-11-12', period: 2, calendarItemKey: 'blocker' });
+    await plans().doc('blocker').set({ ...(await plans().doc(id).get()).data(), date: '2030-11-12', period: 2, startsAt: '2030-11-12T10:30:00+09:00', endsAt: '2030-11-12T12:00:00+09:00', calendarItemKey: 'blocker' });
     const results = await Promise.all([act('later'), act('later')]);
     expect(results.map(r => r.status)).toEqual([200, 200]);
     const next = (await plans().doc(id).get()).data()!;
@@ -116,14 +117,17 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
       period: 2, startsAt: '2030-11-12T10:30:00+09:00', endsAt: '2030-11-12T11:30:00+09:00',
     } });
   });
-  it('no vacant candidate leaves the times intact and returns the same no-slot result on retry', async () => {
+  it('no-slot does not write and recalculates when availability changes', async () => {
     const saved = (await plans().doc(id).get()).data()!;
     const calendarBefore = (await student().collection('calendarItems').doc(saved['calendarItemKey']).get()).data();
     await assignmentRef().update({ 'officialDeadline.deadline.dueAt': '2030-11-12T17:00:00+09:00' });
-    expect(await (await act('later')).json()).toMatchObject({ outcome: 'no-slot', plan: { date: '2030-11-11', startsAt: '2030-11-11T13:00:00+09:00', laterResult: 'no-slot' } });
+    expect(await (await act('later')).json()).toMatchObject({ outcome: 'no-slot', plan: { date: '2030-11-11', startsAt: '2030-11-11T13:00:00+09:00', revision: 1 } });
     expect((await student().collection('calendarItems').doc(saved['calendarItemKey']).get()).data()).toEqual(calendarBefore);
     const updateTime = (await plans().doc(id).get()).updateTime;
     expect((await act('later')).status).toBe(200); expect((await plans().doc(id).get()).updateTime).toEqual(updateTime);
+    expect((await student().collection('planActionReceipts').get()).empty).toBe(true);
+    await assignmentRef().update({ 'officialDeadline.deadline.dueAt': '2030-11-15T17:00:00+09:00' });
+    expect(await (await act('later')).json()).toMatchObject({ outcome: 'moved', plan: { revision: 2 } });
   });
   it('queues real calendar movement with no Google call and keeps pending work through synchronization failure', async () => {
     const response = await act('later', real); expect(response.status).toBe(200);
@@ -132,9 +136,9 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect(item).toMatchObject({ kind: 'preparation', appliedRevision: 0, desired: { state: 'present', event: { start: { dateTime: '2030-11-12T10:30:00+09:00' } } } });
     let fail = true; const sync = createDemoCalendarSync(fixture.db);
     const failing = createDigestStore(fixture.db, async uid => { if (fail) throw new Error('synthetic'); await sync(uid); }, 'https://study.example.invalid', () => now);
-    await expect(failing.act(owner, id, 'later')).rejects.toThrow('synthetic');
+    await expect(failing.act(owner, id, 'later', 1)).rejects.toThrow('synthetic');
     const saved = (await plans().doc(id).get()).data()!; expect(saved['laterResult']).toBe('moved');
-    fail = false; await failing.act(owner, id, 'later');
+    fail = false; await failing.act(owner, id, 'later', 1);
     const applied = (await student().collection('calendarItems').doc(saved['calendarItemKey']).get()).data()!;
     expect(applied['appliedRevision']).toBe(applied['desiredRevision']); expect((await plans().doc(id).get()).data()!['revision']).toBe(2);
   });
@@ -147,6 +151,46 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     await act('done');
     const response = await fetch(`${base}/api/v1/demo/reset`, { method: 'POST', headers: { Authorization: `Bearer ${tokens.get(owner)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ onlyIfStale: false }) });
     expect(response.status).toBe(200); expect((await plans().get()).empty).toBe(true);
+    expect((await student().collection('planActionReceipts').get()).empty).toBe(true);
     expect((await plans(real).get()).size).toBe(1);
   });
+  it('moves again with a new revision while replaying each old revision exactly, including after completion', async () => {
+    const first = await (await act('later')).json();
+    const second = await (await act('later', owner, 2)).json() as { outcome: string; plan: PreparationPlan };
+    expect(second).toMatchObject({ outcome: 'moved', plan: { revision: 3 } });
+    expect(second.plan.startsAt).not.toBe((first as { plan: PreparationPlan }).plan.startsAt);
+    expect(await (await act('later')).json()).toEqual(first);
+    expect(await (await act('done')).json()).toEqual(first);
+    expect(await (await act('later', owner, 2)).json()).toEqual(second);
+    expect((await plans().doc(id).get()).data()!['revision']).toBe(3);
+    expect((await act('later', owner, 99)).status).toBe(409);
+    expect((await act('done', owner, 3)).status).toBe(200);
+    expect(await (await act('later')).json()).toEqual(first);
+    expect((await plans().doc(id).get()).data()!['status']).toBe('done');
+  });
+  it('rebuilds demo mail plans on a new day or after inactivity, keeps the id, and avoids occupied clock intervals', async () => {
+    const initial = await store.prepareDemo(owner);
+    now = new Date('2030-11-12T00:00:00Z');
+    await plans().doc('clock-blocker').set({ ...initial, date: '2030-11-12', period: 5,
+      startsAt: '2030-11-12T10:30:00+09:00', endsAt: '2030-11-12T12:00:00+09:00' });
+    const renewed = await store.prepareDemo(owner);
+    expect(renewed).toMatchObject({ planId: initial.planId, date: '2030-11-12', period: 3, status: 'active', revision: 2 });
+    expect(await store.prepareDemo(owner)).toEqual(renewed);
+    await store.act(owner, renewed.planId, 'done', 2);
+    const afterDone = await store.prepareDemo(owner);
+    expect(afterDone).toMatchObject({ planId: initial.planId, date: '2030-11-12', status: 'active', revision: 4 });
+    await plans().doc(initial.planId).update({ status: 'cancelled' });
+    expect(await store.prepareDemo(owner)).toMatchObject({ status: 'active', revision: 5 });
+  });
+
+  it('does not move an unconfigured LMS and skips preparations whose clock intervals overlap another period', async () => {
+    await plans().doc('clock-blocker').set({ ...(await plans().doc(id).get()).data(), period: 5, date: '2030-11-12',
+      startsAt: '2030-11-12T10:45:00+09:00', endsAt: '2030-11-12T13:15:00+09:00' });
+    expect(await (await act('later')).json()).toMatchObject({ outcome: 'moved', plan: { period: 4, startsAt: '2030-11-12T14:40:00+09:00' } });
+    const task = (await assignmentRef(real).get()).data()!;
+    await student(real).collection('assignments').doc(documentKey('panda', 'fictional/task')).set({ ...task, key: { system: 'panda', sourceId: 'fictional/task' } });
+    await plans(real).doc(id).update({ assignment: { system: 'panda', sourceId: 'fictional/task' } });
+    expect(await (await act('later', real)).json()).toMatchObject({ outcome: 'no-slot', plan: { revision: 1 } });
+  });
+
 });

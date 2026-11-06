@@ -65,6 +65,7 @@ try {
   const doneUrl = await preview.getByRole('link', { name: '終わった', exact: true }).getAttribute('href');
   const laterUrl = await preview.getByRole('link', { name: '後回し', exact: true }).getAttribute('href');
   assert.ok(doneUrl.startsWith(base)); assert.ok(laterUrl.includes('/student/plan?id='));
+  assert.equal(new URL(doneUrl).searchParams.get('rev'), '1'); assert.equal(new URL(laterUrl).searchParams.get('rev'), '1');
   const before = (await planRef.get()).data();
   const beforeItem = (await ref.collection('calendarItems').doc(before.calendarItemKey).get()).data();
   assert.equal(beforeItem.appliedRevision, beforeItem.desiredRevision);
@@ -86,6 +87,13 @@ try {
   await linkPage.reload(); await linkPage.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
   assert.deepEqual((await planRef.get()).data(), moved);
   pass('same email link including reload cannot postpone the plan twice');
+  await preparationList(studentScreen).getByRole('button', { name: '後回し', exact: true }).click();
+  await preparationList(studentScreen).getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
+  const movedAgain = (await planRef.get()).data();
+  assert.equal(movedAgain.revision, moved.revision + 1); assert.notEqual(movedAgain.startsAt, moved.startsAt);
+  await linkPage.goto(laterUrl); await linkPage.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
+  assert.deepEqual((await planRef.get()).data(), movedAgain);
+  pass('student can postpone again using the current revision while the earlier email remains replay safe');
   await supporter.getByRole('link', { name: '② 相談する', exact: true }).click();
   await preparationList(supporter).getByText('後回しにした', { exact: true }).waitFor();
   await screenshot(supporter, 'session-plan-later');
@@ -127,9 +135,16 @@ try {
   await signedOut.getByRole('button', { name: 'ログイン', exact: true }).click();
   await signedOut.getByRole('status').filter({ hasText: '準備を「終わった」にしました' }).waitFor();
   assert.ok(signedOut.url().includes('/student/plan?id='));
+  assert.equal(new URL(signedOut.url()).searchParams.get('rev'), '1');
   assert.deepEqual((await planRef.get()).data(), finished);
   await signedOutContext.close();
   pass('signed-out email link asks for login and resumes only after the owner authenticates');
+  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await preview.getByRole('link', { name: '終わった', exact: true }).waitFor();
+  const renewed = (await planRef.get()).data();
+  assert.equal(renewed.status, 'active'); assert.equal(renewed.revision, finished.revision + 1);
+  assert.equal(new URL(await preview.getByRole('link', { name: '終わった', exact: true }).getAttribute('href')).searchParams.get('rev'), String(renewed.revision));
+  pass('preparing the demo again after completion renews the same plan and publishes current revision links');
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/operations.json`, JSON.stringify({ status: 'pass', operations, browserErrors: 0 }, null, 2));
   log(JSON.stringify({ status: 'pass', operations: operations.length, browserErrors: 0, evidence }));

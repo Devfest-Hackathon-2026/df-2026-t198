@@ -31,6 +31,7 @@ const grants = {
 const deniedPaths = [
   `students/${student}`,
   `students/${student}/futurePrivate/sample`,
+  `students/${student}/planActionReceipts/sample`,
   `students/${student}/sessionContext/other`,
   `students/${student}/integrations/other`,
   ...[...sharedPaths, ...privatePaths, 'supporters/allowed-supporter']

@@ -7,7 +7,7 @@ import './preparation-plans.css';
 export interface PlanActions {
   add: (id: string, input: PreparationPlanInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  act?: (id: string, action: 'done' | 'later') => Promise<{ outcome: string }>;
+  act?: (id: string, action: 'done' | 'later', revision: number) => Promise<{ outcome: string }>;
 }
 export function planActions(user: User, student: string): PlanActions {
   const request = async (id: string, input?: PreparationPlanInput) => {
@@ -18,7 +18,7 @@ export function planActions(user: User, student: string): PlanActions {
     });
     if (!response.ok) throw new Error(response.status === 409 ? 'plan-conflict' : 'request-failed');
   };
-  return { add: request, remove: id => request(id), act: (id, action) => performPlanAction(user, id, action) };
+  return { add: request, remove: id => request(id), act: (id, action, revision) => performPlanAction(user, id, action, revision) };
 }
 export function PlanForm({ assignments, candidate, actions, onSaved }: {
   assignments: LedgerAssignment[]; candidate?: PreparationCandidate; actions: PlanActions; onSaved?: () => void;
@@ -83,7 +83,7 @@ export function PlanList({ plans, actions, viewerUid, own }: { plans: Preparatio
   async function act(plan: PreparationPlan, action: 'done' | 'later') {
     if (!actions?.act || busy) return;
     setBusy(plan.planId); setMessage('');
-    try { setMessage(actionMessage((await actions.act(plan.planId, action)).outcome)); }
+    try { setMessage(actionMessage((await actions.act(plan.planId, action, plan.revision)).outcome)); }
     catch { setMessage('変更を確認できませんでした。接続と予定を確かめて、もう一度お試しください。'); }
     finally { setBusy(null); }
   }
@@ -104,7 +104,7 @@ export function PlanList({ plans, actions, viewerUid, own }: { plans: Preparatio
       <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
       <span>{planProgress(plan)}</span>
       {own && actions?.act && plan.status === 'active' && <><button disabled={busy !== null} onClick={() => { void act(plan, 'done'); }}>終わった</button>
-        {!plan.laterResult && <button disabled={busy !== null} onClick={() => { void act(plan, 'later'); }}>後回し</button>}</>}
+        {Date.parse(plan.startsAt) > Date.now() && <button disabled={busy !== null} onClick={() => { void act(plan, 'later'); }}>後回し</button>}</>}
       {actions && (own || plan.confirmedBy === viewerUid) && <button disabled={busy !== null}
         aria-label={`${plan.title} ${plan.date} ${plan.period}限の準備を外す`} onClick={() => { void remove(plan); }}>外す</button>}
     </li>)}</ul></div>{message && <p role="status">{message}</p>}

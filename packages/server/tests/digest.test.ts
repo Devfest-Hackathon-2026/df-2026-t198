@@ -21,13 +21,13 @@ describe('today digest content contract', () => {
     expect(data.date).toBe('2030-11-11'); expect(data.to).toBe('self@example.invalid'); expect(data.plans).toHaveLength(1);
     expect(data.plans[0]).toMatchObject({ planId: 'p1', period: 3, startsAt: '2030-11-11T13:00:00+09:00', title: '<課題&ノート>', courseName: '架空の授業', status: 'active' });
     expect(data.text).toContain('今日 3限（13:00〜）');
-    expect(data.plans[0]!.doneUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=done');
-    expect(data.plans[0]!.laterUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=later');
+    expect(data.plans[0]!.doneUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=done&rev=1');
+    expect(data.plans[0]!.laterUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=later&rev=1');
     expect(data.html).toContain('&lt;課題&amp;ノート&gt;'); expect(data.html).not.toContain('<課題');
     expect(data.plans[0]!.text).toContain('LMSへの提出は別');
     expect(JSON.stringify(data)).not.toMatch(/DO NOT COPY|PRIVATE ANNOUNCEMENT|private-id|confirmedBy|dueText/);
   });
-  it('includes both 48h boundaries, excludes past, submitted, cancelled and finished preparation', () => {
+  it('includes both 48h boundaries, excludes past, submitted and cancelled but retains unsubmitted work after preparation', () => {
     const submitted = { ...row('submitted'), submission: 'submitted' as const };
     const cancelled = { ...row('cancelled'), presenceState: 'cancelled' as const };
     const ended = { ...row('ended'), presenceState: 'ended' as const };
@@ -36,7 +36,7 @@ describe('today digest content contract', () => {
       row('past', '2030-11-11T00:29:59+09:00'), submitted, cancelled, ended, row('finished')];
     rows.forEach(row => { row.latest.title = row.key.sourceId; });
     const data = digest([finished], rows);
-    expect(data.assignments.map(task => task.title).sort()).toEqual(['edge', 'now']); expect(data.plans).toHaveLength(0);
+    expect(data.assignments.map(task => task.title).sort()).toEqual(['edge', 'finished', 'now']); expect(data.plans).toHaveLength(0);
   });
   it('date-only deadlines keep their precision and unknown deadlines are not invented', () => {
     const a = row('date'); a.officialDeadline!.deadline = { kind: 'date', date: '2030-11-13', timeZone: 'Asia/Tokyo', dueText: 'private original' };
@@ -47,10 +47,33 @@ describe('today digest content contract', () => {
   });
   it('empty signals do not send when nothing actionable remains', () => {
     expect(digest([], []).empty).toBe(true);
-    expect(digest([{ ...plan(), status: 'done' }], [row('task')]).empty).toBe(true);
+    expect(digest([{ ...plan(), status: 'done' }], [row('task')]).empty).toBe(false);
   });
   it.each(['javascript:alert(1)', 'https://lms.example.invalid/?SID=fictional', 'https://u:p@lms.example.invalid/task'])('refuses unsafe stored links: %s', url => {
     const task = row('task'); task.latest.url = url;
-    expect(() => digest([plan()], [task])).toThrow('unsafe-digest-source');
+    expect(digest([plan()], [task])).toMatchObject({ empty: true, plans: [], assignments: [] });
+    expect(digest([plan()], [task, row('safe')]).assignments).toHaveLength(1);
   });
+});
+
+it('keeps safe work when one task or course contains unsafe mail text or links', () => {
+  for (const unsafe of ['Cookie: invented', 'SID: invented', 'SID%253Dinvented', 'Bearer invented', 'id_token=invented']) {
+    const bad = row('bad'); bad.latest.title = unsafe;
+    const good = row('task');
+    const data = digest([plan(), { ...plan('bad-plan'), assignment: bad.key }], [bad, good]);
+    expect(data.plans.map(p => p.planId)).toEqual(['p1']); expect(data.assignments).toHaveLength(1);
+    expect(JSON.stringify(data)).not.toContain(unsafe);
+    bad.latest.title = 'normal'; bad.latest.courseId = 'bad-course';
+    const other = buildDigest('self@example.invalid', [], [bad, good], [...courses,
+      { system: 'ynu-lms', courseId: 'bad-course', name: unsafe, slots: [] }], 'https://study.example.invalid', now);
+    expect(other.assignments).toHaveLength(1);
+  }
+});
+it('collapses whitespace in task and course names and distinguishes the per-plan reminder subject', () => {
+  const task = row('task'); task.latest.title = '架空\r\nレポート\t  A';
+  const data = buildDigest('self@example.invalid', [plan()], [task], [{ ...courses[0]!, name: '架空\n  の授業' }], 'https://study.example.invalid', now);
+  expect(data.plans[0]).toMatchObject({ title: '架空 レポート A', courseName: '架空 の授業', subject: '13:00から：架空 レポート Aの準備' });
+  expect(data.subject).toBe('今日やること（2030/11/11）');
+  expect(data.text).toContain('架空 レポート A'); expect(data.html).toContain('架空 の授業');
+  expect(data.html).not.toContain('架空\r');
 });

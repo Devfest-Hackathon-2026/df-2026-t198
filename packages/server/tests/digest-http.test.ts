@@ -31,10 +31,13 @@ describe('self-only digest and plan actions', () => {
     const path = '/api/v1/plans/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/done';
     expect((await fetch(base + path)).status).toBe(404);
     expect((await fetch(base + path, { method: 'POST' })).status).toBe(401);
-    expect((await fetch(base + path, { method: 'POST', headers: { Authorization: 'Bearer valid' } })).status).toBe(200);
-    expect(digest.act).toHaveBeenCalledExactlyOnceWith('student-a', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'done');
+    expect((await fetch(base + path + '?rev=1', { method: 'POST', headers: { Authorization: 'Bearer valid' } })).status).toBe(200);
+    expect(digest.act).toHaveBeenCalledExactlyOnceWith('student-a', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'done', 1);
     expect((await fetch(`${base}/api/v1/plans/not-an-id/later`, { method: 'POST', headers: { Authorization: 'Bearer valid' } })).status).toBe(400);
     expect((await fetch(base + path, { method: 'POST', headers: { Authorization: 'Bearer valid' }, body: JSON.stringify({ uid: 'other' }) })).status).toBe(400);
+    for (const suffix of ['', '?rev=0', '?rev=-1', '?rev=1.5', '?rev=NaN', '?rev=9007199254740992', '?rev=1&rev=2']) {
+      expect((await fetch(base + path + suffix, { method: 'POST', headers: { Authorization: 'Bearer valid' } })).status).toBe(400);
+    }
     expect(digest.act).toHaveBeenCalledTimes(1);
   });
 });
