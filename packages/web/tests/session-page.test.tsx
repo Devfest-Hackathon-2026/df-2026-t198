@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { User } from 'firebase/auth';
 import { applyObservation } from '../../core/src/ledger';
 import { observation } from '../../server/tests/observation-fixture';
-import { dayInZone, emptySession, type SessionData } from '../src/session-model';
+import { emptySession, formatDeadline, type SessionData } from '../src/session-model';
 import type { SessionServices } from '../src/session-firebase';
 import { SessionPage } from '../src/session-page';
 import { usePathname } from '../src/session-route';
@@ -107,6 +107,21 @@ it('shows a newly received change without waiting for the minute timer', async (
     expect(host.querySelector('#session-changes')?.parentElement?.textContent).toContain('題名が変わりました：前の題名 → 新しい題名');
   } finally { vi.useRealTimers(); vi.restoreAllMocks(); }
 });
+it.each([false, true])('explains a literal missing LMS date and preserves the previous deadline: %s', async known => {
+  const row = data['student-a']!.assignments[0]!;
+  const official = row.officialDeadline!;
+  row.latest.deadline = { kind: 'unreadable', dueText: ' - ', timeZone: 'Asia/Tokyo' };
+  if (!known) row.officialDeadline = null;
+  const before = JSON.stringify(row);
+  await open(); await click('学生 student-a');
+  const summary = host.querySelector('.session-task summary')?.textContent;
+  expect(summary).toContain('LMSに締切日時の記載がありません（表示「-」）');
+  expect(summary).toContain('要確認');
+  expect(summary).not.toContain('締切を確認できていません');
+  expect(summary).not.toContain('締切なし');
+  if (known) expect(summary).toContain(formatDeadline(official.deadline));
+  expect(JSON.stringify(row)).toBe(before);
+});
 it('removes all displayed student data on revocation and on logout', async () => {
   await open(); await click('学生 student-a'); await click('② 相談する');
   await act(async () => { grants.get('student-a')!(false); });
@@ -139,10 +154,14 @@ it('saves entered session times with an explicit timezone and allows unset dates
   expect(host.textContent).toContain('面談日時を保存しました');
 });
 
-it('loads the planning URL directly and shows saved promises without creating plans', async () => {
+it.each([
+  ['2026-11-05T03:00:00Z', '2026-11-05'],
+  ['2026-11-05T17:00:00Z', '2026-11-06'],
+])('loads the planning URL and shows saved promises for the Tokyo session date: %s', async (lastSessionAt, decidedOn) => {
   window.location.pathname = '/session/student-a/plan';
+  data['student-a']!.context.lastSessionAt = lastSessionAt;
   data['student-a']!.plans = [{ assignment: data['student-a']!.assignments[0]!.key,
-    date: '2026-11-10', period: 3, decidedOn: dayInZone(new Date(data['student-a']!.context.lastSessionAt!), 'Asia/Tokyo'), planId: 'fictional', title: '数学のレポート', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' }];
+    date: '2026-11-10', period: 3, decidedOn, planId: 'fictional', title: '数学のレポート', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' }];
   await open();
   expect(host.querySelector('table')).not.toBeNull();
   await click('① 確かめる');

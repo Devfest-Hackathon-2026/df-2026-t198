@@ -19,7 +19,8 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
   // session storage is memory-only and is not exposed to content scripts by default.
   void chrome.storage.session.set({ ynuSessionId: message.sid }).then(
     async () => {
-      if (sender.tab?.id !== undefined) {
+      const path = new URL(sender.url!).pathname.replace(/;SID=[^/;]*/gi, '');
+      if (sender.tab?.id !== undefined && (path === '/lms/homeHoml/' || path === '/lms/homeHoml/doIndex')) {
         respond(await runCollection(sender.url!, sender.tab.id, sender.documentId));
       } else respond({ ok: true });
     },

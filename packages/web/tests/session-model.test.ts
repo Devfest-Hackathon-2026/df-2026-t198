@@ -98,6 +98,8 @@ it('formats deadlines without timezone identifiers and describes extensions in a
   expect(formatDeadline(date('2026-11-12'))).toBe('2026/11/12（日付のみ）');
   expect(formatDeadline({ kind: 'none', dueText: 'なし', timeZone: 'Asia/Tokyo' })).toBe('締切なし');
   expect(formatDeadline({ kind: 'unreadable', dueText: '', timeZone: 'Asia/Tokyo' })).toBe('締切を確認できませんでした');
+  expect(formatDeadline({ kind: 'unreadable', dueText: ' - ', timeZone: 'Asia/Tokyo' }))
+    .toBe('LMSに締切日時の記載がありません（表示「-」）');
   const change: AssignmentChange = { changeId: 'extension', recordedAt: now.toISOString(),
     assignmentKey: { system: 'demo-lms', sourceId: 'task' }, kind: 'deadline-changed',
     before, after, observationId: 'fictional' };
