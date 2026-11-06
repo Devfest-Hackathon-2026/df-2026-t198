@@ -4,6 +4,13 @@ import { deadlineText, pending, StudentView } from './student';
 import { assignment, dated, studentFixture } from './student-fixture';
 
 describe('学生が締切を確かめる画面', () => {
+  it('常設の操作説明を省き、要確認の詳しい説明は授業を選んだ先に置く', () => {
+    const html = renderToStaticMarkup(<StudentView data={studentFixture()} />);
+    expect(html).not.toContain('授業を押すと、課題が開きます。');
+    expect(html).not.toContain('今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。');
+    expect(html).toContain('要確認');
+    expect(html).toContain('締切を確認できていません');
+  });
   it('締切順に並び、提出と取消は次の締切に数えない', () => {
     expect(pending(studentFixture().assignments).map(a => a.latest.title)).toEqual(['レポートA', 'レポートB']);
   });
@@ -14,7 +21,7 @@ describe('学生が締切を確かめる画面', () => {
     expect(html).toContain('11/10（日付のみ）');
     expect(html).not.toContain('23:59');
     expect(html).toContain('要確認');
-    expect(html).toContain('今回、締切を読めませんでした');
+    expect(html).toContain('要確認：締切を確認できていません。');
     expect(html).toContain('から更新がありません');
     expect(html).not.toContain('未提出');
   });
