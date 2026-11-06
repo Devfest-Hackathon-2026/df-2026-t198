@@ -10,10 +10,11 @@ const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-sessio
 // A stateful server, not a request stub accepting the new retry sequence: student
 // navigation invalidates issued form fields. Only reopening the parent renews them.
 export async function fakeLms({ stage = 'course', wrongPage = false, permanent = false, logout = false, logoutStatus = 403,
-  unreadableCourses = 0, emptyCourses = 0, unreadableDetail = false, moveStudent = true, redirectCourse = false } = {}) {
+  unreadableCourses = 0, emptyCourses = 0, unreadableDetail = false, moveStudent = true, redirectCourse = false,
+  stateError = false, errorStatus = 500, errorRedirect = true, strictState = false } = {}) {
   const home = await sample('home'), list = await sample('assignment-list');
   const detail = await sample('assignment-detail-open'), expired = await sample('session-expired');
-  let epoch = 0, moved = false, homeReads = 0, listReads = 0, courseId = '', stageRequests = 0;
+  let epoch = 0, moved = false, homeReads = 0, listReads = 0, courseId = '', stageRequests = 0, screen = 'home';
   const attempts = new Map(), courseOrder = new Map();
   const fetcher = vi.fn(async (url, init) => {
     const fields = new URLSearchParams(init.body);
@@ -24,13 +25,18 @@ export async function fakeLms({ stage = 'course', wrongPage = false, permanent =
     const stale = kind === 'course' ? fields.get('nendo') !== String(epoch)
       : kind === 'detail' && fields.get('jyugyoHiddenId') !== String(epoch);
     let status = 200, html;
-    if (kind === stage && logout) { status = logoutStatus; html = expired; }
+    if ((stateError && kind === stage) || (strictState && kind === 'detail' && screen !== 'course')) {
+      status = errorStatus;
+      html = '<html><body>システムエラーが発生しました。</body></html>';
+      if (errorRedirect) url = new URL('/lms/error/', url).href;
+    }
+    else if (kind === stage && logout) { status = logoutStatus; html = expired; }
     else if (stale) { status = wrongPage ? 200 : 409; html = home; }
     else if (kind === 'home') {
-      homeReads++;
+      homeReads++; screen = 'home';
       html = home + `<form id="homeHomlForm"><input name="nendo" value="${epoch}"></form>`;
     } else if (kind === 'course') {
-      listReads++; courseId = fields.get('kougiId');
+      listReads++; screen = 'course'; courseId = fields.get('kougiId');
       if (!courseOrder.has(courseId)) courseOrder.set(courseId, courseOrder.size);
       html = list + `<form id="main_form"><input name="jyugyoHiddenId" value="${epoch}"></form>`;
       const ordinal = courseOrder.get(courseId);
@@ -46,5 +52,10 @@ export async function fakeLms({ stage = 'course', wrongPage = false, permanent =
   const recovered = vi.fn(), failed = vi.fn();
   const collect = () => collectObservation({ request, observationId: 'synthetic-observation', fetchedAt: '2098-11-01T00:00:00Z',
     onRecovered: recovered, onFailure: failed });
-  return { collect, fetcher, attempts, recovered, failed, counts: () => ({ homeReads, listReads }) };
+  const studentNavigate = () => {
+    if (screen !== 'home') return false;
+    screen = 'student-course';
+    return true;
+  };
+  return { collect, fetcher, attempts, recovered, failed, studentNavigate, counts: () => ({ homeReads, listReads }) };
 }

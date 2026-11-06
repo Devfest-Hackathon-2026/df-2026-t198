@@ -2,7 +2,7 @@ import definition from '../../../lms-definitions/coursepower/definition.json' wi
 import { readCourseTerms, readPage } from '../../core/src/html-reader.js';
 import { readFormFields, readHtmlAttribute } from '../../core/src/html-navigation.js';
 import type { Observation, FetchFailure, CourseSlot } from '../../core/src/types.js';
-import { LmsReadError, loggedOut, pageDiagnostic } from './collection-diagnostics.js';
+import { LmsReadError, isStateError, loggedOut, pageDiagnostic, stopsCollection } from './collection-diagnostics.js';
 import { navigation, type LmsOperation, type LmsPage } from './lms-request.js';
 
 export interface CollectionOptions {
@@ -34,6 +34,7 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
   const read = async (operation: LmsOperation, readingContext = context as Parameters<typeof readPage>[2]) => {
     try {
       const page = await options.request(operation);
+      if (isStateError(page)) throw new LmsReadError('lms-state', pageDiagnostic(page));
       try {
         const reading = readPage(definition, page.html, readingContext);
         const expected = operation.kind === 'home' ? 'home' : operation.kind === 'course' ? 'materials' : 'assignment-detail';
@@ -61,7 +62,7 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
         const open = () => read({ kind: 'course', fields: { ...homeFields, kougiId: courseId } }, { ...context, courseId });
         try { return await open(); }
         catch (error) {
-          if (loggedOut(error) || courseRetried) throw error;
+          if (stopsCollection(error) || loggedOut(error) || courseRetried) throw error;
           courseRetried = true;
           const { page } = await read({ kind: 'home' });
           homeFields = readFormFields(page.html, navigation.course.form, navigation.course.fields);
@@ -94,7 +95,7 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
             let opened;
             try { opened = await openDetail(); }
             catch (error) {
-              if (loggedOut(error)) throw error;
+              if (stopsCollection(error) || loggedOut(error)) throw error;
               ({ page: list } = await openCourse());
               fields = readFormFields(list.html, navigation.detail.form, navigation.detail.fields);
               opened = await openDetail();
@@ -110,6 +111,7 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
               url: detail.url, deadline: { ...(a.dueAt ? { kind: 'datetime' as const, dueAt: a.dueAt } : { kind: 'unreadable' as const }),
                 dueText: a.dueText ?? '', timeZone: 'Asia/Tokyo' }, submission: a.submission });
           } catch (error) {
+            if (stopsCollection(error)) throw error;
             result.listComplete = false;
             if (!detailFailure || (error instanceof Error && error.message === 'not-logged-in')) {
               detailFailure = failure(error, courseId);
@@ -119,13 +121,13 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
           }
         }
         courseFailure = detailFailure;
-      } catch (error) { courseFailure = failure(error, courseId); }
+      } catch (error) { if (stopsCollection(error)) throw error; courseFailure = failure(error, courseId); }
       finally {
         if (courseFailure) observation.failures.push(courseFailure);
         options.onCourseResult?.(result.listComplete, courseFailure?.kind);
       }
       if (observation.failures.at(-1)?.kind === 'not-logged-in') break;
     }
-  } catch (error) { observation.failures.push(failure(error, null)); }
+  } catch (error) { if (stopsCollection(error)) throw error; observation.failures.push(failure(error, null)); }
   return observation;
 }
