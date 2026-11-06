@@ -1,3 +1,4 @@
+import { DigestPreview } from './digest-preview';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, type User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -21,6 +22,18 @@ export function DemoPage() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [error, setError] = useState('');
   useEffect(() => firebase ? onAuthStateChanged(firebase.auth, setUser) : undefined, []);
+  useEffect(() => {
+    const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+    if (!user || !returnTo) return;
+    let url: URL;
+    try { url = new URL(returnTo, window.location.origin); } catch { return; }
+    const rev = url.searchParams.get('rev') ?? '';
+    if (url.origin === window.location.origin && url.pathname === '/student/plan' &&
+      /^[a-f0-9-]{36}$/.test(url.searchParams.get('id') ?? '') && ['done', 'later'].includes(url.searchParams.get('do') ?? '') &&
+      /^[1-9]\d*$/.test(rev) && Number.isSafeInteger(Number(rev))) {
+      window.location.assign(`/student/plan?id=${encodeURIComponent(url.searchParams.get('id')!)}&do=${url.searchParams.get('do')}&rev=${rev}`);
+    }
+  }, [user]);
   if (!firebase) return <p>体験画面の準備中です。担当者に確認してください。</p>;
   const client = firebase;
   async function login(event: FormEvent<HTMLFormElement>) {
@@ -171,6 +184,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         message: '体験を最初の状態に戻しました。「LMSを開く」から始めてください。' });
       return '体験の画面を更新しています…';
     }); }}>体験を最初からやり直す</button>
+    <DigestPreview user={user} />
     <div className="demo-lms"><h2>LMSの画面（架空）</h2>
       <div ref={pages}><DemoPages data={data} /></div>
     </div>

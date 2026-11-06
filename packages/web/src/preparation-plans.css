@@ -11,3 +11,8 @@
 .preparation-cell[aria-pressed='true'] { border-color: var(--green); }
 .preparation-details > strong, .preparation-details > time, .preparation-details > span { display: block; }
 .preparation-add { margin: 1.5rem 0; }
+
+.preparation-mobile-progress { display: none; }
+@media (max-width: 850px) {
+  .preparation-mobile-progress { display: block; padding: .6rem .8rem; border-left: 3px solid #54765e; background: #edf3ec; overflow-wrap: anywhere; }
+}

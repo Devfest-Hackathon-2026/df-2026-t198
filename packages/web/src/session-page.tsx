@@ -1,3 +1,4 @@
+import { planProgress } from './plan-progress';
 import { fetchStatus } from './fetch-status';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
@@ -7,7 +8,7 @@ import { buildSessionView, changeDescription, dayInZone, emptySession, formatDea
   reviewDescription, type SessionData } from './session-model';
 import { watchSession, type SessionState } from './session-watch';
 import { SessionLink, sessionRoute } from './session-route';
-import { planActions, type PlanActions } from './preparation-plans';
+import { planActions, PlanList, type PlanActions } from './preparation-plans';
 import { SessionPlanning } from './session-planning';
 import './session.css';
 import { ChangedDeadline } from './deadline-change';
@@ -144,11 +145,12 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
           </p>;
         })}
       </div>
+      <PlanList plans={data.plans} own={false} />
       <div className="session-check">
         {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>
           <ul className="panel session-rows">{promises.map((plan, i) =>
             <li key={i}>{data.assignments.find(row => sameAssignment(row, plan.assignment))?.latest.title ?? '課題'}：
-              {plan.date.replaceAll('-', '/')} {plan.period}限に準備</li>)}</ul>
+              {plan.date.replaceAll('-', '/')} {plan.period}限に準備 {planProgress(plan)}</li>)}</ul>
         </section>}
         <section aria-labelledby="session-changes"><h2 id="session-changes">前回の面談からの変化</h2>
           {!data.context.lastSessionAt && <p>前回の面談日時を入れると、それ以降の変化が出ます。</p>}
