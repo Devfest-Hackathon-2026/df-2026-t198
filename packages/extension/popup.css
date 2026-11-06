@@ -2,3 +2,5 @@ body { margin: 0; padding: 12px; background: #f4faf6; font-family: system-ui, sa
 button { padding: 10px 16px; border: 1px solid #b4c7bd; border-radius: 8px; background: white; color: #193c2c; font: inherit; white-space: nowrap; cursor: pointer; }
 button:focus-visible { outline: 2px solid #256b4b; outline-offset: 2px; }
 button:disabled { opacity: .6; cursor: default; }
+
+#collection-status { margin: 0 0 10px; max-width: 320px; min-width: 230px; color: #193c2c; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }

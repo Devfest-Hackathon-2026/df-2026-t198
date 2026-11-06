@@ -24,7 +24,8 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
     candidate.assignment.system === task?.key.system && candidate.assignment.sourceId === task.key.sourceId &&
     !data.plans.some(plan => plan.status === 'active' && plan.date === candidate.date && plan.period === candidate.period &&
       plan.assignment.system === candidate.assignment.system && plan.assignment.sourceId === candidate.assignment.sourceId));
-  const periods = Math.max(5, ...data.plans.filter(plan => plan.status === 'active').map(plan => plan.period), ...data.courses.flatMap(course => course.slots.map(slot => slot.period)));
+  const courses = data.courses.filter(course => course.currentTerm !== false);
+  const periods = Math.max(5, ...data.plans.filter(plan => plan.status === 'active').map(plan => plan.period), ...courses.flatMap(course => course.slots.map(slot => slot.period)));
   const weekOf = (date: string) => {
     const monday = new Date(`${date}T00:00:00Z`);
     monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
@@ -59,7 +60,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
         {Number(date.slice(5, 7))}/{Number(date.slice(8))}（{'月火水木金'[i]}）</th>)}</tr></thead>
       <tbody>{Array.from({ length: periods }, (_, i) => <tr key={i}><th scope="row">{i + 1}限</th>
         {dates.map((date, d) => <td key={date}>
-          {data.courses.filter(course => course.slots.some(slot => slot.weekday === d + 1 && slot.period === i + 1))
+          {courses.filter(course => course.slots.some(slot => slot.weekday === d + 1 && slot.period === i + 1))
             .map(course => <span className="session-course" key={JSON.stringify([course.system, course.courseId])}>{course.name}</span>)}
           {candidates.filter(candidate => candidate.date === date && candidate.period === i + 1).map(candidate =>
             <span className="session-candidate" key={JSON.stringify(candidate)}><strong>候補</strong>{task?.latest.title}

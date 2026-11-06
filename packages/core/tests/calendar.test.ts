@@ -21,6 +21,15 @@ function assignment(): LedgerAssignment {
       submission: 'not-submitted', deadline: { kind: 'date', date: '2026-12-31', dueText: '12月31日まで', timeZone: 'Asia/Tokyo' } }] };
   return applyObservation([], input, input.fetchedAt).assignments[0]!;
 }
+it('deletes an ended task event without inventing an event for a task first seen ended', () => {
+  const row = assignment();
+  const first = reconcileCalendarItem(undefined, 'key', row, '授業', 'calendar', () => 'abcde')!;
+  row.presenceState = 'ended';
+  expect(deadlineDesired(row, '授業')).toEqual({ state: 'deleted' });
+  expect(reconcileCalendarItem(first, 'key', row, '授業', 'calendar', () => 'unused'))
+    .toMatchObject({ eventId: 'abcde', generation: 1, desiredRevision: 2, desired: { state: 'deleted' } });
+  expect(reconcileCalendarItem(undefined, 'key', row, '授業', 'calendar', () => 'unused')).toBeUndefined();
+});
 it('uses an all-day event with the exclusive next-day end and compact context', () => {
   expect(deadlineDesired(assignment(), '架空の授業')).toEqual({ state: 'present', event: {
     summary: '架空の授業：架空の課題', description: '締切：12月31日まで\nLMSで開く：https://example.invalid/task',

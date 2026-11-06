@@ -25,6 +25,8 @@ export interface Course {
   slots: CourseSlot[];
   /** Optional course page; session parameters must be removed before sending. */
   url?: string;
+  /** Omitted by older collectors; only explicit false excludes a course. */
+  currentTerm?: boolean;
 }
 
 export type Deadline = { dueText: string; timeZone: string } & (
@@ -60,7 +62,7 @@ export interface Observation {
   definitionVersion: number;
   fetchedAt: IsoDateTime;
   catalogCourses: Course[];
-  courseResults: { courseId: string; listComplete: boolean; seenSourceIds: string[] }[];
+  courseResults: { courseId: string; listComplete: boolean; seenSourceIds: string[]; endedSourceIds?: string[] }[];
   assignments: Assignment[];
   failures: FetchFailure[];
 }
@@ -74,7 +76,7 @@ export interface AssignmentChange {
   changeId: string;
   assignmentKey: AssignmentKey;
   kind: 'new' | 'title-changed' | 'deadline-changed' | 'submitted' |
-    'cancellation-candidate' | 'cancelled' | 'restored';
+    'cancellation-candidate' | 'cancelled' | 'restored' | 'ended';
   before: string | Deadline | null;
   after: string | Deadline | null;
   observationId: string;
@@ -93,7 +95,7 @@ export interface LedgerAssignment {
   preparationStartsAt: IsoDateTime | null;
   submission: Submission;
   submittedAt: IsoDateTime | null;
-  presenceState: 'active' | 'cancellation-candidate' | 'cancelled';
+  presenceState: 'active' | 'cancellation-candidate' | 'cancelled' | 'ended';
   consecutiveMissingCount: number;
   lastSeenObservationId: string;
   lastSeenAt: IsoDateTime;

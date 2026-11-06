@@ -2,7 +2,7 @@ import type { CalendarDesired, CalendarItem, CalendarReport, DeadlineEvent, Ledg
 
 export function deadlineDesired(assignment: LedgerAssignment, courseName: string): CalendarDesired {
   const deadline = assignment.officialDeadline?.deadline;
-  if (assignment.presenceState === 'cancelled' || !deadline || (deadline.kind !== 'date' && deadline.kind !== 'datetime')) {
+  if (assignment.presenceState === 'cancelled' || assignment.presenceState === 'ended' || !deadline || (deadline.kind !== 'date' && deadline.kind !== 'datetime')) {
     return { state: 'deleted' };
   }
   const lines = [`締切：${deadline.dueText}`, `LMSで開く：${assignment.latest.url}`];

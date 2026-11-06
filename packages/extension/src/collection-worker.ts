@@ -2,6 +2,9 @@ import { observationIdentity } from './auth-probe-browser.js';
 import { observationApiOrigin } from './probe-config.js';
 import { syncCalendarInBackground } from './calendar-browser.js';
 import { collectObservation } from './collection.js';
+import { showCollectionStatus } from './collection-display.js';
+import { LmsReadError, loggedOut, pageDiagnostic, safeDiagnostic, type PageDiagnostic } from './collection-diagnostics.js';
+import { observationSummary } from './collection-summary.js';
 import { executeLmsRequest, type LmsOperation, type LmsPage } from './lms-request.js';
 import { readPage } from '../../core/src/html-reader.js';
 import definition from '../../../lms-definitions/coursepower/definition.json' with { type: 'json' };
@@ -25,12 +28,19 @@ function credentialFree(body: string, sid: string): boolean {
 export async function runCollection(pageUrl: string, tabId: number, documentId?: string): Promise<{ ok: boolean; code?: string; changed?: boolean; changeCount?: number }> {
   if (running) return { ok: false, code: 'busy' };
   running = true;
+  let started = false;
   let stats: Stats | undefined;
   let route: 'background' | 'page' = 'background';
   let success = false;
   let outcome = 'incomplete';
   const fail = (code: string) => { outcome = code; return { ok: false, code }; };
   try {
+    const completedAt = (await chrome.storage.session.get('ynuFetchCompletedAt'))['ynuFetchCompletedAt'];
+    if (typeof completedAt === 'number' && Number.isFinite(completedAt) && Date.now() - completedAt < 10 * 60_000 && Date.now() >= completedAt) {
+      return { ok: false, code: 'cooldown' };
+    }
+    started = true;
+    await showCollectionStatus('running');
     const api = observationApiOrigin();
     if (!api) return fail('api-not-configured');
     const identity = await observationIdentity();
@@ -42,33 +52,47 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
     stats = { attempted: (prior?.attempted ?? 0) + 1, backgroundSucceeded: prior?.backgroundSucceeded ?? 0,
       pageSucceeded: prior?.pageSucceeded ?? 0, failed: prior?.failed ?? 0 };
     await chrome.storage.session.set({ ynuFetchStats: stats, ynuFetchStatus: 'running' });
-    let pageUnavailable = false;
+    let consecutivePageFailures = 0;
+    let recovered = 0;
+    let firstFailure: (PageDiagnostic & { stage: LmsOperation['kind']; route: 'background' | 'page' }) | null = null;
+    const onFailure = (stage: LmsOperation['kind'], error: unknown) => {
+      firstFailure ??= { stage, route, ...safeDiagnostic(error instanceof LmsReadError ? error.diagnostic : undefined) };
+    };
     const request = async (operation: LmsOperation): Promise<LmsPage> => {
-      if (pageUnavailable) throw new Error('http-error');
+      if (consecutivePageFailures >= 3) throw new Error('http-error');
       if (route === 'background') {
         try {
           const page = await executeLmsRequest(operation, pageUrl, sid);
           // A 200 login/error page is also a failed background read.
-          readPage(definition, page.html, { utcOffset: '+09:00', courseId: 'probe', sourceId: 'probe' });
+          try { readPage(definition, page.html, { utcOffset: '+09:00', courseId: 'probe', sourceId: 'probe' }); }
+          catch (error) { throw new LmsReadError(loggedOut(error) ? 'not-logged-in' : 'parse-error', pageDiagnostic(page)); }
           return page;
-        } catch { route = 'page'; }
+        } catch (error) {
+          onFailure(operation.kind, error);
+          if (loggedOut(error)) throw error;
+          route = 'page';
+        }
       }
       try {
         const reply = await chrome.tabs.sendMessage(tabId, { type: 'ynu-read-page', operation, sid },
-          { frameId: 0, ...(documentId ? { documentId } : {}) }) as { ok?: boolean; page?: LmsPage; code?: string };
+          { frameId: 0, ...(documentId ? { documentId } : {}) }) as { ok?: boolean; page?: LmsPage; code?: string; diagnostic?: PageDiagnostic };
         if (!reply?.ok || typeof reply.page?.html !== 'string' || reply.page.html.length > 5_000_000) {
-          throw new Error(reply?.code === 'not-logged-in' ? 'not-logged-in' : 'http-error');
+          throw new LmsReadError(reply?.code === 'not-logged-in' ? 'not-logged-in' : 'http-error', safeDiagnostic(reply?.diagnostic));
         }
         const url = new URL(reply.page.url);
         if (url.origin !== 'https://lms.ynu.ac.jp' || !url.pathname.startsWith('/lms/') || url.search || url.hash || /;/.test(url.pathname)) throw new Error('http-error');
         return reply.page;
       } catch (error) {
-        pageUnavailable = true;
-        // eslint-disable-next-line preserve-caught-error
-        throw new Error(error instanceof Error && error.message === 'not-logged-in' ? 'not-logged-in' : 'http-error');
+        throw new LmsReadError(loggedOut(error) ? 'not-logged-in' : 'http-error',
+          safeDiagnostic(error instanceof LmsReadError ? error.diagnostic : undefined));
       }
     };
-    const observation = await collectObservation({ request, observationId: crypto.randomUUID(), fetchedAt: new Date().toISOString() });
+    const observation = await collectObservation({ request, observationId: crypto.randomUUID(), fetchedAt: new Date().toISOString(),
+      onFailure, onRecovered: () => { recovered++; },
+      onCourseResult: complete => { if (route === 'page') consecutivePageFailures = complete ? 0 : consecutivePageFailures + 1; },
+    });
+    // Diagnostics only: a failed write must not change sending, syncing, or the counts.
+    await chrome.storage.session.set({ ynuFetchSummary: { ...observationSummary(observation), firstFailure, recovered } }).catch(() => {});
     const body = JSON.stringify(observation);
     if (!credentialFree(body, sid)) return fail('unsafe-observation');
     const current = await observationIdentity();
@@ -84,17 +108,21 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       || receipt.changeCount < 0 || receipt.changed !== (receipt.changeCount > 0)) {
       return fail('send-failed');
     }
+    await chrome.storage.session.set({ ynuFetchCompletedAt: Date.now() }).catch(() => {});
     void syncCalendarInBackground();
     success = observation.failures.length === 0;
     outcome = success ? 'success' : 'partial';
     return { ok: true, changed: receipt.changed, changeCount: receipt.changeCount };
   } catch { return fail('collection-unavailable'); }
   finally {
-    if (stats) {
-      if (success) { if (route === 'background') stats.backgroundSucceeded++; else stats.pageSucceeded++; }
-      else stats.failed++;
+    if (started) {
+      if (stats) {
+        if (success) { if (route === 'background') stats.backgroundSucceeded++; else stats.pageSucceeded++; }
+        else stats.failed++;
+      }
+      await chrome.storage.session.set({ ...(stats ? { ynuFetchStats: stats } : {}), ynuFetchStatus: outcome }).catch(() => {});
+      await showCollectionStatus(outcome);
     }
-    await chrome.storage.session.set({ ...(stats ? { ynuFetchStats: stats } : {}), ynuFetchStatus: outcome }).catch(() => {});
     running = false;
   }
 }
