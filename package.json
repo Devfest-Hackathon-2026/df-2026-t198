@@ -9,7 +9,7 @@
     "lint": "eslint eslint.config.js scripts/agent-merge*.mjs scripts/notify-decisions.test.mjs scripts/firestore-rules.test.mjs scripts/*m3*.mjs && pnpm -r lint",
     "test": "pnpm test:agent-merge && pnpm test:notify-decisions && pnpm test:firestore-rules && pnpm test:design-mocks && pnpm test:m3-score && pnpm -r test",
     "test:firestore-rules": "PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --only firestore --project demo-kadai-hisho-rules \"node --test scripts/firestore-rules.test.mjs\"",
-    "test:design-mocks": "node --test design/mocks/2026-11-06/gallery.test.mjs",
+    "test:design-mocks": "node --test design/mocks/*/gallery.test.mjs",
     "test:agent-merge": "node --test scripts/agent-merge.test.mjs",
     "test:notify-decisions": "node --test scripts/notify-decisions.test.mjs",
     "agent-merge": "node scripts/agent-merge.mjs",
