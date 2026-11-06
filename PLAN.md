@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 25/41（60%）、必須 23/37（62%）
+完成条件：全体 27/41（65%）、必須 25/37（67%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -54,7 +54,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 
 ### カレンダー
 
-- [ ] C15 〈未定〉 拡張機能から `chrome.identity` でGoogleカレンダーに締切の予定を作る。確かめ方：実際のカレンダー
+- [x] C15 〈未定〉 拡張機能から `chrome.identity` でGoogleカレンダーに締切の予定を作る。確かめ方：実際のカレンダー → 本人の実LMSから自動同期した9件を実Googleの予定ID・開始終了時刻と照合。再取得後も9件でID維持（[実機記録](docs/records/2026-11-06-real-lms-check.md)）
 - [x] C16 〈未定〉 締切が変わったら予定を動かし、取消なら予定を消す。同じ課題の予定を二重に作らない。確かめ方：試験と実際のカレンダー → Issue #40の指定に従い偽APIで判定：`packages/extension/tests/calendar-sync.test.ts`（作成・移動・取消・応答喪失時の再試行）、`packages/server/tests/calendar.emulator.test.ts`（版・世代・本人の分離）。実物は `docs/records/2026-11-06-issue-40-manual-check.md` の手順で未確認、C15に残す。Issue #69：`packages/extension/tests/collection-flow.test.mjs`（LMSを開く→取得→台帳→偽Googleへの作成・同じ予定の移動、裏・ページ側の両経路）。実機の通しは `docs/records/2026-11-06-issue-69-real-flow.md` でSoraの確認待ち
 - [x] C17 〈未定〉 確かめが要る課題は、予定名の頭に「【要確認】」を付け、両方の日付を説明欄に1行で書く。確かめ方：試験 → `packages/core/tests/calendar.test.ts`（公式締切の維持・要確認の題名・食い違う日付を1行・本文を転記しない）
 
@@ -63,7 +63,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C18 〈未定〉 時間割（曜日×時限）の各授業のマスに、その授業の次の締切を出す（D13の案A）。確かめ方：画面 → `packages/web/src/student.test.tsx`、`packages/web/tests/student.browser.mjs`（Auth・FirestoreエミュレーターとChromiumで授業の2コマ・締切順・週末・6限を確認）。Issue #66：7日カレンダーの位置・札の翌日への移動・390pxを `packages/web/tests/demo.browser.mjs` で確認（[画面と記録](docs/records/2026-11-06-issue-66-verification.md)）
 - [x] C19 〈未定〉 マスを押すと、その授業の課題が横に開く。確かめ方：画面 → `packages/web/tests/student.browser.mjs`（授業欄の開閉・LMSリンク・要確認・提出・取消・390px幅を確認）。Issue #41：授業名・全曜日時限・SIDを含まない授業リンク、URLなしの非表示を `packages/web/tests/student.browser.mjs` で確認
 - [x] C20 〈未定〉 裏の取得が終わると、開いたままの画面の内容が変わる（Firestoreのリアルタイムの更新）。確かめ方：画面を開いたまま取得 → `packages/web/tests/student.browser.mjs`（エミュレーターの架空台帳の締切・提出を変更し、マス・締切順・開いた課題欄の更新を確認。実LMSからの取得との通しは未確認）、`packages/web/src/student-data.test.ts`（本人変更・購読失敗時の表示消去）。Issue #66：開いたままの授業マス・課題欄・帯の札・面談の締切を2秒以内に強調し10秒後に解除する操作、3日以上前の情報の案内を同ブラウザ試験で確認（[記録](docs/records/2026-11-06-issue-66-verification.md)）
-- [ ] C21 〈未定〉 変化があったときだけ、LMSのページの隅に1行で知らせる。押すと学生の画面が開く。変化がなければ何も出さない。確かめ方：実際のLMS
+- [x] C21 〈未定〉 変化があったときだけ、LMSのページの隅に1行で知らせる。押すと学生の画面が開く。変化がなければ何も出さない。確かめ方：実際のLMS → 変化ありの通知とクリックで学生画面が開くこと、同じ内容の再取得で通知0件を確認（[実機記録](docs/records/2026-11-06-real-lms-check.md)）
 - [x] C22 〈未定〉 拡張機能のポップアップは、学生の画面を開くボタンだけにする。確かめ方：画面 → Issue #44、`packages/extension/tests/change-notice.test.mjs`・`packages/extension/tests/probe-build.test.mjs`・`packages/extension/tests/change-notice.browser.mjs`（ボタン1つ・学生画面への遷移・同梱を確認）。[確認記録](docs/records/2026-11-06-issue-44-verification.md)
 
 ### 面談画面
