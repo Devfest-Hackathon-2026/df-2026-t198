@@ -44,7 +44,7 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node packages/web/tests/demo-liv
 
 ## M6の手順
 
-ローカルのAuth・FirestoreエミュレーターとChromiumで、次の8手順を固定して成否を記録する。画面の表示だけでなく、保存済み予定の日時・予定ID・反映済みの版を確かめる。デプロイ先と実物のGoogleカレンダーの成績には混ぜない。
+ローカルのAuth・FirestoreエミュレーターとChromium、および公開先で、次の8手順を固定して成否を記録する。画面の表示だけでなく、保存済み予定の日時・予定ID・反映済みの版を確かめる。ローカルと公開先は別々に集計し、実物のGoogleカレンダーの成績には混ぜない。
 
 1. 学生と支援担当が別のブラウザでログインする。
 2. LMSを開いて最初の課題を受け取る。
@@ -55,4 +55,12 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node packages/web/tests/demo-liv
 7. 開いたままの面談画面が変わる。
 8. 応答を失った再送でも履歴と予定が増えない。
 
-実測と未確認事項は [Issue #47の記録](records/2026-11-06-issue-47-verification.md)。デプロイ先での筋書きは#59完了後の別作業。C34とC14の完了は、その証拠を得てから判断する。
+公開先では、作成済みのアカウントを使って次のコマンドを実行する。作業ツリーから実行するときは、`KADAI_DEMO_ACCOUNTS_FILE`で許可された認証情報ファイルの場所を指定する（既定はrepo直下の`fixtures-local/demo-accounts.local.json`）。引数なしでは認証情報を読まず停止する。試験は`trial-1`の締切を1日延ばしたまま残すので、同時に同じ組を試さない。
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node packages/web/tests/demo-m6-live.browser.mjs --verify-live-m6
+```
+
+結果は`docs/records/2026-11-06-issue-47-live/`に保存する。再実行する前に既存の記録を退避し、過去の結果を上書きしない。判定は既存のローカル試験と同じ8手順で、失敗・未到達も分母に残す。認証済み観測の受領記録と台帳を本人の権限で読み、C14の保存も照合する。認証情報・通信本文・trace・HARは記録しない。
+
+公開先の実測と残る確認は [Issue #47の公開先記録](records/2026-11-06-issue-47-live.md)。初回のローカル実測は [以前の記録](records/2026-11-06-issue-47-verification.md) を参照する。
