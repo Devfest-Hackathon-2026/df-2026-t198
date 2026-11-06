@@ -5,7 +5,7 @@ import { DemoForbidden } from '../src/demo-store.js';
 const reset = vi.fn(async () => ({ reset: true, data: { courses: [] } }));
 const verifyToken = vi.fn(async () => 'trial-owner');
 const server = createHttpServer({ verifyToken, saveObservation: vi.fn(), demo: {
-  extend: vi.fn(), reset,
+  extend: vi.fn(), reset, announce: vi.fn(),
 } });
 let url: string;
 beforeAll(async () => {

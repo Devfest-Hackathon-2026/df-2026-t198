@@ -57,6 +57,29 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
     expect(missing.status).toBe(403);
     expect((await source(other.uid).get()).data()).toEqual(data);
   });
+  it('publishes a fictional notice only for its owner without changing source deadlines or ledgers', async () => {
+    const publish = (token: string, sourceId = 'DEMO101_TASK1', expectedDueAt = originalDue) =>
+      post('demo/announce', { sourceId, expectedDueAt }, token);
+    const studentBefore = (await source(student.uid).get()).data();
+    const ledgerBefore = await ledger(other.uid);
+    for (const owner of [supporter, regular]) expect((await publish(owner.token)).status).toBe(403);
+    expect((await publish(other.token, 'OTHER_TASK')).status).toBe(403);
+    expect((await publish(other.token, 'DEMO101_TASK1', '2026-11-11T08:00:00.000Z')).status).toBe(409);
+    expect((await publish(other.token)).status).toBe(200);
+    const after = (await source(other.uid).get()).data()!;
+    expect(after['courses']).toEqual(data.courses);
+    expect(after['announcements']).toHaveLength(1);
+    const notice = after['announcements'][0];
+    expect(notice.courseId).toBe('DEMO101');
+    expect(notice.announcement.body).toMatch(/^架空の観察ノートの提出期限を\d{4}-\d{2}-\d{2} 17:00/);
+    expect(Date.parse(notice.announcement.publishedAt)).toBeGreaterThan(Date.now() - 60000);
+    expect(await ledger(other.uid)).toEqual(ledgerBefore);
+    expect((await source(student.uid).get()).data()).toEqual(studentBefore);
+    expect((await publish(other.token)).status).toBe(200);
+    expect((await source(other.uid).get()).data()!['announcements']).toHaveLength(1);
+    expect((await post('demo/reset', { onlyIfStale: false }, other.token)).status).toBe(200);
+    expect((await source(other.uid).get()).data()!['announcements']).toEqual([]);
+  });
   it('refuses real-LMS observations and masquerading definitions for demo students', async () => {
     const before = await ledger(student.uid);
     for (const system of ['ynu-lms', 'panda'] as const) {

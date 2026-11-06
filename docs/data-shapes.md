@@ -9,8 +9,11 @@ Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用
 - `demoAccounts/{uid}`：`role`（`student` / `supporter`）と、対応する学生の`studentId`。学生は`studentId === uid`。サーバー管理で、本人だけ読み取り可。
 - `students/{uid}/demo/current`：`courses`配列。授業は`courseId`・`name`・`teacher`・`weekday`（月1〜日7）・`period`・`assignments`。課題は`sourceId`・`title`・`dueAt`（UTC、ミリ秒付きのISO日時）・`submission`。本人だけ読み取り可、支援担当にも直接見せない。台帳は従来の共有許可で見せる。
 - `POST /api/v1/demo/extend`：Firebase ID tokenで認証し、`sourceId`と`expectedDueAt`だけを受け取る（上限2 KiB）。本人の学生プロフィールと一致する課題を確認し、期待した締切と等しい場合だけ1日延長。プロフィール・データの読み取りと更新を同じトランザクションで行う。成功は200で`{ sourceId, dueAt }`、不一致409、体験学生でない／課題がない場合403。未認証401、不正な本文400、サイズ超過413、JSON以外415、内部エラー500。すべて`Cache-Control: no-store`、エラーは固定コードのみ。
+- `POST /api/v1/demo/announce`（Issue #84）：延長APIと同じ認証・本文・上限・エラー形式。本人の体験学生の未提出課題と期待する締切を同じトランザクションで確認し、サーバーが架空の締切延長文を作る。日時は操作時刻+4日と課題の締切+1日の遅い側の日本時間17時。成功は200で `{ announcementId }`。課題の締切と台帳は変えない。
+- 体験データの任意の `announcements` 配列は `{ courseId, announcement: { announcementId, version, publishedAt, body } }`。既存データで省略されていれば空として読む。授業ごとに最新1件、IDは投稿ごとに新しいUUID、版は `1`、公開日時は秒まで。架空の本文を保存するのは本人だけの体験用LMS文書に限り、解析APIの受領記録やログには複製しない。「LMSを開く」は描かれたDOMから読み、観測を送った後で既存のお知らせAPIへ別送する。解析の失敗で課題の更新は戻さない。
 - `POST /api/v1/demo/reset`（Issue #68）：認証・本文上限・エラー形式は上の延長APIと同じ。本文は `{ onlyIfStale: boolean }` だけ。`false` は常に初期化、`true` は初回表示時に締切か次の面談が過去／不正／未設定なら初期化する。新しい場合は進行中の体験を保つ。応答は200で `{ reset: boolean, data: DemoData }`。
 - リセットは本人の体験学生プロフィールと元データを同じトランザクションで確認する。授業を初期の架空シナリオへ戻し、締切は操作日+3日の日本時間17時、前回／次回面談は操作時刻の−7日／+7日。`assignments`・`courses`・`changes`・`fetchStates`・`observationReceipts`・`calendarItems` と体験用の `integrations/calendar` を消す。共有許可とアカウント、他の学生は変えない。支援担当・通常利用者・不正なプロフィール・実物カレンダーの接続がある場合は403。少量の架空データ向けで、同じ組の同時利用は同じ体験を共有する。
+- やり直すと `announcements` も空に戻る。解析の受領記録と全体の費用予約は消さない。新しい投稿IDにより、やり直し後も新しい架空のお知らせを処理できる。同じ体験アカウントでの並行操作は従来どおり同じ体験を共有する。
 - 体験UIDの観測は`system: demo-lms`・`definitionId: demo-lms`だけを認める。支援担当や不正なプロフィールも403。プロフィール判定を台帳の保存トランザクション内で行い、再送でも判定する。プロフィールのない既存の利用者の観測契約は変えない。
 - カレンダーAPI（`GET/POST /api/v1/calendar-sync`）は`demoAccounts/{uid}`のある利用者を403で拒否する。接続・同期対象の取得・結果報告の各トランザクションの先頭で確認する。画面のボタンを隠すだけにはしない。
 
@@ -140,7 +143,7 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 
 `POST /api/v1/announcements` は観測と別のAPI。Firebase ID tokenで本人を決め、本文は `{ system, courseId, announcement: { announcementId, version, publishedAt, body } }`。`publishedAt` は秒までのタイムゾーン付き日時。本文64 KiB、お知らせ12,000文字、ID200文字、版100文字まで。未知の項目とSID・Cookie等の認証情報を含む文字列を拒否する。任意の文章に埋まる未知の秘密を完全に識別するものではない。
 
-実物の側は無効のまま。既定では503で、`ENABLE_DEMO_ANNOUNCEMENTS=true` とプロジェクトIDの設定がある場合だけ模擬側を有効にする。さらにサーバーの `demoAccounts/{uid}` が `role: 'student', studentId: uid` であることと、`system: 'demo-lms'` を確認する。実際のLMS・未登録の利用者・体験用の支援担当は403。体験アカウントの初期設定と画面からの送信はIssue #19の続きで行う。
+実物の側は無効のまま。既定では503で、`ENABLE_DEMO_ANNOUNCEMENTS=true` とプロジェクトIDの設定がある場合だけ模擬側を有効にする。さらにサーバーの `demoAccounts/{uid}` が `role: 'student', studentId: uid` であることと、`system: 'demo-lms'` を確認する。実際のLMS・未登録の利用者・体験用の支援担当は403。画面からの送信はIssue #84で体験用LMSに接続した。公開先の有効化と実物のGeminiの確認は別途承認待ち。
 
 候補は本人の同じ接続先・授業の、取消済みでない課題だけ。候補キー・引用・日時を検査した提案だけを反映する。反映直前の台帳をトランザクションで読み直し、`reviewReasons` に `conflicting-deadline` を追加する。`detail` はお知らせID・版・提案日時だけで、引用・お知らせ本文・生のモデル応答は保存しない。公式締切・根拠・提出状態・課題の観測・変更履歴は変えない。提案が現在の公式日時と同じ瞬間なら追加しない。後続の観測でも要確認は残す（解消の操作は対象外）。
 
@@ -150,7 +153,7 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 
 APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の日付}` で全インスタンス共通に予約・精算する。初回M3測定19,410トークンの3倍以内、呼び出し1回・再試行なし。既存の入力16,000バイト相当と出力4,096トークンの上限も適用する。1日推定3,000円を超える予約を拒否し、失敗・usage不明では予約を残す。単価と換算は `announcements/budget.ts`。ローカルM3評価の別予算や他のAPI利用を合算した実請求額ではないため、それらを並行して回す運用にはしない。
 
-検証は `pnpm test:announcements:emulator`（Auth・Firestore、架空データと代替モデルだけ）。実物のGeminiへの新たな送信・保持条件の確認・デプロイ・模擬LMS画面の描画はこの検証に含まない。
+検証は `pnpm test:announcements:emulator`（Auth・Firestore、架空データと代替モデルだけ）。実物のGeminiへの新たな送信・保持条件の確認・デプロイはこの検証に含まない。模擬LMS画面を通す試験は `pnpm test:demo-announcements:emulator`（Playwrightの指定は [demo.md](demo.md)）。
 
 ## 締切のカレンダー同期（Issue #40）
 

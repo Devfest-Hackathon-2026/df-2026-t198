@@ -7,7 +7,10 @@ import { documentKey } from '../src/observation-store.js';
 import { createAnnouncementStore } from '../src/announcements/store.js';
 import { createRuntimeBudget } from '../src/announcements/runtime-budget.js';
 import type { Announcement, AssignmentCandidate } from '../src/announcements/extract.js';
-import { observation } from './observation-fixture.js';
+import { observation as fixtureObservation } from './observation-fixture.js';
+
+// Demo students accept only the demo reading definition (the shared fixture uses the placeholder ID "demo").
+const observation = (index = 1) => ({ ...fixtureObservation(index), definitionId: 'demo-lms' });
 
 const enabled = process.env['RUN_ANNOUNCEMENT_EMULATOR_TESTS'] === '1';
 describe.skipIf(!enabled)('announcement intake with local Auth and Firestore', () => {
