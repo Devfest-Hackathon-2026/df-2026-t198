@@ -69,7 +69,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 ### 面談画面
 
 - [x] C23 〈未定〉 次の面談までの締切、前回の面談からの変化、要確認のものを出す。確かめ方：画面 → PR #36、`packages/web/tests/session.browser.mjs`（実ブラウザで学生選択・3欄・日時変更・即時更新・共有取消・学生画面とのログイン共有・ログアウト、390px幅）、`pnpm test:sessions:emulator`。記録と画面：`docs/records/2026-11-06-issue-21-verification.md`
-- [ ] C24 〈未定〉 時間割の空いたコマに準備の候補を出し、決めたものだけを準備の予定として保存する。確かめ方：試験と画面
+- [ ] C24 〈未定〉 時間割の空いたコマに準備の候補を出し、決めたものだけを準備の予定として保存する。確かめ方：試験と画面 → Issue #39で2画面への分割と候補の表示まで。保存は未実装。`packages/web/tests/session-model.test.ts`、`packages/web/tests/session.browser.mjs`、[比較と確認の記録](docs/records/2026-11-06-session-split.md)
 - [ ] C25 〈未定〉 決めた準備の予定が、学生の時間割とGoogleカレンダーに入る（学生の承認の流れは未決）。確かめ方：画面と実際のカレンダー
 - [x] C26 〈未定〉 支援担当は、自分が受け持つ学生のデータだけを読める。確かめ方：Firestoreの規則の試験（エミュレーター）→ `scripts/firestore-rules.test.mjs`、`pnpm test:firestore-rules` 32件成功（本人・許可済み・未許可・取消済み・他人・未ログイン、本人だけの文書と直接書き込み拒否を含む）
 - [ ] C27 〈未定〉 面談の前のまとめを出す。〔削れる〕

@@ -47,3 +47,29 @@ it('keeps review reasons even outside the deadline interval and does not invent 
   expect(view.deadlines).toEqual([]);
   expect(view.changes).toEqual([]);
 });
+
+it('offers at most two weekday periods per task, before its deadline, without classes or stored plans', async () => {
+  const { preparationCandidates, emptySession } = await import('../src/session-model');
+  const data = { ...emptySession(), context, assignments: [row('next-week', date('2026-11-11')),
+    row('done', date('2026-11-11'), { submission: 'submitted' }),
+    row('cancelled', date('2026-11-11'), { presenceState: 'cancelled' }),
+    row('after-session', date('2026-11-16')), row('tomorrow', date('2026-11-07'))],
+    courses: [{ courseId: 'math', name: '数学', system: 'demo-lms' as const,
+      slots: [{ weekday: 1 as const, period: 1 }, { weekday: 1 as const, period: 2 }] }] };
+  const original = JSON.stringify(data);
+  expect(preparationCandidates(data, now)).toEqual([
+    { assignment: { system: 'demo-lms', sourceId: 'next-week' }, date: '2026-11-09', period: 3 },
+    { assignment: { system: 'demo-lms', sourceId: 'next-week' }, date: '2026-11-09', period: 4 },
+  ]);
+  expect(JSON.stringify(data)).toBe(original);
+  expect(preparationCandidates({ ...data, context: { ...context, nextSessionAt: null } }, now)).toEqual([]);
+});
+
+it('does not suggest a date-only due day or any period in a fully occupied timetable', async () => {
+  const { preparationCandidates, emptySession } = await import('../src/session-model');
+  const data = { ...emptySession(), context, assignments: [row('monday-due', date('2026-11-09'))], courses: [] };
+  expect(preparationCandidates(data, now)).toEqual([]); // Friday now, then weekend, then due day.
+  const full = { courseId: 'full', name: '授業', system: 'demo-lms' as const,
+    slots: ([1, 2, 3, 4, 5] as const).flatMap(weekday => Array.from({ length: 5 }, (_, p) => ({ weekday, period: p + 1 }))) };
+  expect(preparationCandidates({ ...data, courses: [full], assignments: [row('later', date('2026-11-13'))] }, now)).toEqual([]);
+});
