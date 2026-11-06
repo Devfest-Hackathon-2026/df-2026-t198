@@ -45,7 +45,9 @@ VITE_USE_FIREBASE_EMULATORS=true pnpm --filter web dev --port 5177 --strictPort
 
 ## 確かめる操作
 
-- 学生 `demo-student-a` を選び、「次の面談までの締切」「前回の面談からの変化」「今日決めること」を見る。数学レポートの要確認には理由の1文が付く。
+- 学生 `demo-student-a` を選ぶと `/session/demo-student-a` の「確かめる」が開く。変化と締切を見て、要確認の印と理由を確かめる。課題の行を押すとLMSへのリンク・書いてあったこと・これまでの変更が開く。時間割はこの画面には出ない。
+- 「② 相談する」か末尾のリンクで `/session/demo-student-a/plan` に移り、時間割・準備の候補・今日決めることを見る。締切一覧の全文は出ない。「① 確かめる」とブラウザの戻るでも戻れる。確認の依頼は準備中で、ボタンは無効。学生への送信・予定の保存は行わない。
+- 学生を変えるときは「学生を選び直す」で一覧に戻る。共有の案内はこの一覧だけに出る。
 - 学生 `demo-student-b` に切り替えると、物理演習が出て数学レポートは消える。
 - 「面談日時を変える」から次の面談を課題の締切より前にして保存すると、締切の一覧から課題が外れる。空欄にすると期間を推測せず、日時の入力を促す。
 - 管理画面 `http://127.0.0.1:4000/firestore` で、選択中の `students/demo-student-a/supporters/demo-supporter` の `revokedAt` を日時の文字列に変える。開いている面談の全内容が消え、日時保存も拒否される。一覧の「一覧を更新」でも学生が消える。
@@ -64,8 +66,10 @@ pnpm exec firebase emulators:exec --project demo-kadai-hisho --only auth,firesto
 "node packages/server/scripts/seed-session.mjs && node packages/web/tests/session.browser.mjs"
 ```
 
-学生選択・3欄の表示・日時変更と未設定・課題の即時更新・390px幅・共有取消・学生画面とのログイン共有・ログアウトを確認する。操作の結果とスクリーンショットは、既定で `/tmp/kadai-i21-evidence/`。`ARTIFACT_EVIDENCE_DIR` で変えられる。通常の `pnpm test` には含めない。
+2画面の要素分離・行の展開・段階のリンクとブラウザの戻る・直接URL・候補の表示と未保存・日時変更と未設定・課題の即時更新・390px幅・共有取消・ログイン共有・ログアウトを確認する。操作の結果とスクリーンショットは、既定で `/tmp/kadai-i39-evidence/`。`ARTIFACT_EVIDENCE_DIR` で変えられる。通常の `pnpm test` には含めない。
 
 ## 実環境につなぐ場合
 
 学生の画面と同じFirebase接続・ログインを使う。公開用のビルド設定は [READMEの画面](../README.md#画面) を参照し、エミュレーターの指定は付けない。APIの `/api` は同じoriginに配信する必要がある。HostingからCloud Runへの転送、認証プロバイダー・許可ドメイン・試す人のアカウントの配備は別途設定する。このIssueでは作成・変更しない。
+
+ブラウザ試験は開始時刻に時計を固定し、6日後の架空の締切に対する2候補を確認する。曜日や締切日の境界は固定日付の単体試験で確認する。手動の見本では締切までの平日がないと候補が出ない。
