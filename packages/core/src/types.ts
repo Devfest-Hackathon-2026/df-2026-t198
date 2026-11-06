@@ -23,6 +23,8 @@ export interface Course {
   courseId: string;
   name: string;
   slots: CourseSlot[];
+  /** Optional course page; session parameters must be removed before sending. */
+  url?: string;
 }
 
 export type Deadline = { dueText: string; timeZone: string } & (
