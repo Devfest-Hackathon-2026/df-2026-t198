@@ -26,13 +26,15 @@ gcloud run deploy kadai-hisho-api \
   --min 0 --max 1 \
   --memory 256Mi --cpu 1 \
   --update-build-env-vars NODE_ENV=development \
-  --update-env-vars NODE_ENV=production \
+  --update-env-vars NODE_ENV=production,ENABLE_DEMO_ANNOUNCEMENTS=true,GOOGLE_CLOUD_PROJECT=project-00439085-4e2d-44c3-9a8 \
   --quiet
 ```
 
 repoのルートをソースにし、buildpacksがコンテナを作る。ルートの `gcp-build` がcore、serverの順にビルドし、[Procfile](../Procfile) がNodeを直接起動する。起動時にpnpmを取得・実行するメモリーを避けるためで、ビルド時のpnpmは引き続き使う。Cloud Build・Artifact Registry・Cloud RunのAPIと、デプロイ用・ビルド用の権限が必要。権限が足りなければ、自分で広げずに不足をIssueへ記録する。ビルドが失敗したら、原因を記録して止まり、Nodeや依存の指定、ビルド方式を無断で変えない。
 
-`--service-account` は、作成済みのCloud Run専用アカウントを実行時に使う指定。専用アカウントには、Firestoreの読み書きに必要な `roles/datastore.user` と、Firebase Authの利用者・失効状態の確認に必要な `roles/firebaseauth.viewer` の2つだけを付けている（Issue #59で人が許可し、設定済み）。ビルド用の既定アカウントと分け、実行に必要な権限だけを持たせるため、再デプロイでも毎回指定する。この手順ではアカウントの作成やIAMの変更を行わない。
+`--service-account` は、作成済みのCloud Run専用アカウントを実行時に使う指定。専用アカウントには、Firestoreの読み書きに必要な `roles/datastore.user`、Firebase Authの利用者・失効状態の確認に必要な `roles/firebaseauth.viewer`（この2つはIssue #59で人が許可）、体験用LMSのお知らせをGeminiで読む `roles/aiplatform.user`（2026-11-07にSoraが許可）の3つだけを付けている。ビルド用の既定アカウントと分け、実行に必要な権限だけを持たせるため、再デプロイでも毎回指定する。この手順ではアカウントの作成やIAMの変更を行わない。
+
+`ENABLE_DEMO_ANNOUNCEMENTS=true` と `GOOGLE_CLOUD_PROJECT` は、体験用LMSの「お知らせを出す」の解析を有効にする設定（[data-shapes.md](data-shapes.md) の体験用データの節）。Cloud Runは `GOOGLE_CLOUD_PROJECT` を自動では入れないので明示する。実物のLMSのお知らせの解析は、この設定でも無効のまま。
 
 ビルド時の `NODE_ENV=development` はbuildpacksの自動pruneを止めるために明記する。pnpm 11.8.0ではルートの `pnpm prune --prod` 後にserverの `firebase-admin` も消え、起動できないことを手元とCloud Runで確認した。初回デプロイは開発用の依存もイメージに残す。実行時の `NODE_ENV` は別に `production` にする。依存を小さくまとめる対応は、この制約を解消する別の作業とする。
 
