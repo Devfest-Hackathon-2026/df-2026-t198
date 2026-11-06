@@ -6,18 +6,22 @@ import { executeLmsRequest } from '../src/lms-request.js';
 import { parseObservation } from '../../server/src/observation-input.js';
 
 const sample = async (name) => readFile(new URL(`../../../lms-definitions/coursepower/samples/${name}.html`, import.meta.url), 'utf8');
-const homeForm = '<form name="homeHomlActionForm"><input name="nendo" value="2098"><input name="kougiId"><input name="ignoredSecret" value="synthetic-private"></form>';
-const detailForm = '<form name="corsCollActionForm"><input name="jyugyoHiddenId" value="synthetic-folder"><input name="pankuzuHantei" value="0"></form>';
+const homeForm = '<form id="homeHomlForm" name="homeHomlActionForm"><input name="nendo" value="2098"><input name="kougiId"><input name="ignoredSecret" value="synthetic-private"></form>';
+const detailForm = '<form id="main_form" name="corsCollActionForm"><input name="jyugyoHiddenId" value="synthetic-folder"><input name="pankuzuHantei" value="0"></form>';
 const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session?ignored=synthetic-private';
 
-async function fixture() {
+async function fixture({ duplicateFormNames = false } = {}) {
   const home = await sample('home'), list = await sample('assignment-list'), detail = await sample('assignment-detail-open');
   const calls = [];
   const fetcher = vi.fn(async (input, init) => {
     const url = String(input), body = new URLSearchParams(String(init?.body ?? ''));
     calls.push({ url, init });
-    const html = url.includes('linkKougi') ? list + detailForm : url.includes('linkKyozaiTitle')
-      ? detail.replaceAll('架空課題04', `架空課題${body.get('kyozaiId')}`) : home + homeForm;
+    const homeDecoys = duplicateFormNames ? ['homehomlInfo', 'ChangeLang'].map(id =>
+      `<form id="${id}" name="homeHomlActionForm"><input name="nendo" value="wrong-form"></form>`).join('') : '';
+    const detailDecoys = duplicateFormNames ? ['ChangeLang', 'list_form', 'ChangeLang'].map(id =>
+      `<form id="${id}" name="corsCollActionForm"><input name="jyugyoHiddenId" value="wrong-form"></form>`).join('') : '';
+    const html = url.includes('linkKougi') ? list + detailDecoys + detailForm : url.includes('linkKyozaiTitle')
+      ? detail.replaceAll('架空課題04', `架空課題${body.get('kyozaiId')}`) : home + homeDecoys + homeForm;
     return { ok: true, url, text: async () => html };
   });
   const request = (operation) => executeLmsRequest(operation, pageUrl, 'synthetic-session', fetcher, async () => {});
@@ -39,6 +43,21 @@ it('reads every catalog course and creates exactly one API-compatible observatio
   const posts = f.calls.filter(c => c.init.method === 'POST');
   expect(posts.every(c => !String(c.init.body).includes('ignoredSecret'))).toBe(true);
   expect(new URLSearchParams(String(posts[0].init.body)).get('nendo')).toBe('2098');
+});
+
+it('selects the unique main form IDs when unrelated forms reuse the same names', async () => {
+  const f = await fixture({ duplicateFormNames: true });
+  const observation = await collectObservation(f.options);
+  expect(observation.catalogCourses).toHaveLength(22);
+  expect(observation.courseResults).toHaveLength(22);
+  expect(observation.assignments).toHaveLength(22 * 6);
+  const courses = f.calls.filter(call => call.url.includes('linkKougi'));
+  const details = f.calls.filter(call => call.url.includes('linkKyozaiTitle'));
+  expect(courses).toHaveLength(22);
+  expect(details).toHaveLength(22 * 6);
+  expect(courses.every(call => new URLSearchParams(String(call.init.body)).get('nendo') === '2098')).toBe(true);
+  expect(details.every(call => new URLSearchParams(String(call.init.body)).get('jyugyoHiddenId') === 'synthetic-folder')).toBe(true);
+  expect(JSON.stringify(observation)).not.toContain('wrong-form');
 });
 
 it('keeps seen IDs and an incomplete list after a detail HTTP failure', async () => {

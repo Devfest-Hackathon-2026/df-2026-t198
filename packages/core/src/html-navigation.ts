@@ -1,8 +1,8 @@
-import { parseHTML } from 'linkedom/worker';
+import { htmlAttribute, parseHtmlTree } from './html-tree.js';
 
 /** Detached parsing only. Successful controls are restricted to the caller's allowlist. */
 export function readFormFields(html: string, name: string, allowed: readonly string[]): Record<string, string> {
-  const { document } = parseHTML(html);
+  const { document } = parseHtmlTree(html);
   const forms = Array.from(document.querySelectorAll('form')).filter(f => f.getAttribute('name') === name || f.getAttribute('id') === name);
   if (forms.length !== 1) throw new Error('parse-error');
   const fields: Record<string, string> = {};
@@ -20,6 +20,6 @@ export function readFormFields(html: string, name: string, allowed: readonly str
 }
 
 export function readHtmlAttribute(html: string, selector: string, attribute: string): string | null {
-  const nodes = parseHTML(html).document.querySelectorAll(selector);
-  return nodes.length === 1 ? nodes[0]!.getAttribute(attribute) : null;
+  const nodes = parseHtmlTree(html).document.querySelectorAll(selector);
+  return nodes.length === 1 ? htmlAttribute(nodes[0]!, attribute) : null;
 }
