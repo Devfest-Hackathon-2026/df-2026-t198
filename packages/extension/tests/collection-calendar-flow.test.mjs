@@ -81,12 +81,13 @@ async function fixture({ uploadStatus = 200, googleStatus = 200, holdPendingRead
   });
   const chrome = {
     runtime: { id: 'synthetic-extension', getURL: path => `chrome-extension://synthetic-extension/${path}`,
-      onMessage: { addListener: fn => { listener = fn; } }, onStartup: { addListener: vi.fn() } },
+      onMessage: { addListener: fn => { listener = fn; } }, onStartup: { addListener: vi.fn() }, onInstalled: { addListener: vi.fn() } },
     storage: { session: { get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, values) } },
     identity: { getAuthToken, removeCachedAuthToken: vi.fn() },
   };
   runInContext(worker.outputFiles[0].text, createContext({ chrome, fetch, URL, AbortSignal: globalThis.AbortSignal,
     crypto: { randomUUID: () => 'synthetic-worker' } }, { codeGeneration: { strings: false, wasm: false } }));
+  chrome.runtime.onStartup.addListener.mock.calls.forEach(([listener]) => listener());
   await vi.waitFor(() => expect(syncReads).toBe(1));
   // Let the initial empty startup drain finish before creating newly pending work.
   await new Promise(resolve => setImmediate(resolve));

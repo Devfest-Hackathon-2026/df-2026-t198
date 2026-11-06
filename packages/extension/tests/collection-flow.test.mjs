@@ -119,7 +119,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   const getAuthToken = vi.fn(async options => { expect(options.interactive).toBe(false); return { token: 'synthetic-google-token' }; });
   const workerContext = createContext({ ...common, sdk, fetch: fetcher, chrome: {
     identity: { getAuthToken },
-    runtime: { id: 'synthetic-extension', onStartup: { addListener: vi.fn() }, onMessage: { addListener: fn => { workerListener = fn; } } },
+    runtime: { id: 'synthetic-extension', onStartup: { addListener: vi.fn() }, onInstalled: { addListener: vi.fn() }, onMessage: { addListener: fn => { workerListener = fn; } } },
     storage: { session: { set: async values => Object.assign(state, globalThis.structuredClone(values)), get: async () => globalThis.structuredClone(state) } },
     tabs: { sendMessage: async (tabId, message, target) => {
       expect(tabId).toBe(7); expect(target).toEqual({ frameId: 0, documentId: 'synthetic-document' });
