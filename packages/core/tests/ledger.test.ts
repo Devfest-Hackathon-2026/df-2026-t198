@@ -21,6 +21,37 @@ function missing(n: number, complete = true): Observation {
 }
 
 describe('observation ledger', () => {
+  it('ends only existing tasks, retains evidence and never counts them as missing', () => {
+    const first = applyObservation([], observation(1), at);
+    const ended = { ...observation(2), assignments: [], courseResults: [{ courseId: 'c1', listComplete: true,
+      seenSourceIds: ['a1', 'never-imported'], endedSourceIds: ['a1', 'never-imported'] }] };
+    const result = applyObservation(first.assignments, ended, at);
+    expect(result.assignments).toHaveLength(1);
+    expect(result.assignments[0]).toMatchObject({ presenceState: 'ended', consecutiveMissingCount: 0 });
+    expect(result.assignments[0]!.officialDeadline).toEqual(first.assignments[0]!.officialDeadline);
+    expect(result.changes.map(c => c.kind)).toEqual(['ended']);
+    expect(first.assignments[0]!.presenceState).toBe('active');
+    const replay = applyObservation(result.assignments, ended, at, result.receipt);
+    expect(replay.assignments).toEqual(result.assignments);
+    expect(replay.changes).toEqual([]);
+    const absent = applyObservation(result.assignments, missing(3), at);
+    expect(absent.assignments[0]).toMatchObject({ presenceState: 'ended', consecutiveMissingCount: 0 });
+    const unread = applyObservation(absent.assignments, { ...observation(4), assignments: [] }, at);
+    expect(unread.assignments[0]!.presenceState).toBe('ended');
+    const reopened = applyObservation(unread.assignments, observation(5), at);
+    expect(reopened.assignments[0]!.presenceState).toBe('active');
+    expect(reopened.changes.map(c => c.kind)).toEqual(['restored']);
+  });
+
+  it('ends previously fetched tasks in an out-of-term course without requiring a result', () => {
+    const first = applyObservation([], observation(1), at);
+    const past = { ...observation(2), catalogCourses: [{ ...observation(2).catalogCourses[0]!, currentTerm: false }],
+      assignments: [], courseResults: [] };
+    const result = applyObservation(first.assignments, past, at);
+    expect(result.assignments[0]).toMatchObject({ presenceState: 'ended', consecutiveMissingCount: 0 });
+    expect(result.changes.map(c => c.kind)).toEqual(['ended']);
+  });
+
   it('records new assignments, title/deadline changes and submission without mutating input', () => {
     const first = applyObservation([], observation(1), at);
     expect(first.changes.map(c => c.kind)).toEqual(['new']);

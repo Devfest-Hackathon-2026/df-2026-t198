@@ -30,12 +30,18 @@ Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用
 | `system` | 接続先：`ynu-lms`、`panda`、`demo-lms` |
 | `definitionId`、`definitionVersion` | 読み取りに使った定義のIDと正の整数の版 |
 | `fetchedAt` | タイムゾーン付きISO 8601日時。表示と根拠に使い、順序の判定には使わない |
-| `catalogCourses` | ホームで見つけた授業。`courseId`、`name`、`slots`（`weekday`: 月1〜日7、`period`: 1以上）、任意の `url`（授業の参照URL） |
-| `courseResults` | 授業ごとの `courseId`、`listComplete`、`seenSourceIds`（一覧に存在した課題のID） |
+| `catalogCourses` | ホームで見つけた授業。`courseId`、`name`、`slots`（`weekday`: 月1〜日7、`period`: 1以上）、任意の `url`（授業の参照URL）、任意の `currentTerm`（今の学期か。省略はtrue） |
+| `courseResults` | 授業ごとの `courseId`、`listComplete`、`seenSourceIds`（一覧に存在した課題のID）、任意の `endedSourceIds`（一覧にあったが終了した課題のID。省略は空） |
 | `assignments` | 詳細を読めた課題。下表 |
 | `failures` | `courseId`（全体ならnull）、`kind`（`not-logged-in`・`http`・`parse`）、`detail`（固定コード） |
 
 `courseResults` は `catalogCourses` にある授業だけを指す。課題はその授業の `seenSourceIds` に存在しなければならない。`sourceId` は同じ接続先の中で一意で、授業IDを含めてもよい。重複した授業・課題IDは拒否する。詳細を読めなかった課題は一覧のIDを残し、`assignments` に入れない。
+
+Issue #105（[D28](decisions.md#d28-今の学期と終了していない課題に取得を絞る2026-11-07issue-105)）：`currentTerm: false` の授業は開かず、その授業の `courseResults`・`assignments` は送らない。`endedSourceIds` は同じ授業の `seenSourceIds` の部分集合で、重複と `assignments` との重なりを拒否する。上限は1授業1,000件。終了だけの授業も、一覧を最後まで確認できれば `listComplete: true` にする。
+
+YNUの学期は取得時刻の日本時間で4〜9月を春学期、10〜3月を秋学期とする。CoursePower定義の任意の `courses.term` で表示を読み、「通年」・不明・未知の表示は対象に残す。同じ授業の複数カードに異なる表示があれば、対象になるカードが1つでもあるときは取得する。ホームの既存の `readPage` の出力と見本の正解は変えず、`readCourseTerms` で追加の表示を読む。
+
+YNUでは一覧の「公開終了」は詳細を開かず終了とする。詳細の締切が取得時刻より前、または提出期間が文字どおり「-」の場合も終了IDだけを送り、新しい課題として保存しない。締切と取得時刻が等しい場合は終了にしない。「-」以外の読めない締切や、公開終了でない課題の詳細失敗は、従来の要確認・失敗の扱いを維持する。
 
 | 課題の項目 | 内容 |
 |---|---|
@@ -95,17 +101,19 @@ Issue #16の指定に従い、今回は `sequence` と `payloadHash` を持た�
 | `latest` | 最後に詳細を読めた課題の観測。最新の読取結果と確かめ済みの値は区別する |
 | `officialDeadline` | 最後に確認した `deadline` と `url`、`fetchedAt`、`observationId`。未確認ならnull |
 | `submission`、`submittedAt` | 確かめた提出状態と時刻。`unknown` で既知の状態を消さない |
-| `presenceState` | `active`、`cancellation-candidate`、`cancelled` |
+| `presenceState` | `active`、`cancellation-candidate`、`cancelled`、`ended`（終了） |
 | `consecutiveMissingCount` | 完全な一覧で連続して不在だった回数（0〜2、2で上限） |
 | `lastSeenObservationId`、`lastSeenAt` | 一覧で最後に存在を確かめた根拠。詳細の失敗時も更新する |
 | `reviewReasons` | 締切が読めない、文章と食い違うなど。読めない回に公式の締切を消さない |
 | `preparationStartsAt` | 自動で出す準備の目安。今回はnull。確定した準備の予定とは別 |
 
-変更履歴は `changeId`、`assignmentKey`、`kind`、`before`、`after`、`observationId`、サーバー時刻の `recordedAt`。種類は新規、題名の変更、締切の変更、提出、取消の候補、取消、再出現（`restored`）。日時の表記だけが変わって同じ時刻を指す場合は、締切の変更に数えない。
+変更履歴は `changeId`、`assignmentKey`、`kind`、`before`、`after`、`observationId`、サーバー時刻の `recordedAt`。種類は新規、題名の変更、締切の変更、提出、取消の候補、取消、再出現（`restored`）、終了（`ended`）。日時の表記だけが変わって同じ時刻を指す場合は、締切の変更に数えない。
 
 取消の回数は `listComplete: true` で不在のときだけ進める。不完全な一覧は回数を進めず、一覧に再びあれば0に戻す。詳細の失敗は不在とみなさない。候補・取消から再出現したときはactiveに戻し、履歴を残す。提出状態は取消状態と独立して保持する。
 
-取得状態は `studentId`、`system`、`lastAttemptedAt`、`lastSucceededAt`、`lastFailureKind`、`lastResult`（`success`・`partial`・`failed`）、`lastAppliedObservationId`。全授業の一覧・存在した課題の詳細を取得でき、失敗がない回だけ成功時刻を更新する。一部成功や失敗で以前の成功時刻を消さない。
+終了IDと今の学期でない授業は、既存の課題だけを `ended` にし、取消の回数を0に戻す。詳細・公式締切・提出状態は保持し、終了IDの存在を確かめたときだけ最終確認の根拠を更新する。後の一覧から消えても取消の候補にせず、詳細を読めた未終了の課題として再び届いたときだけactiveに戻し `restored` を記録する。終了した課題は学生の「終了した課題」に置き、次の締切・面談の締切と要確認・準備の候補から外す。`currentTerm: false` の授業は学生・面談の時間割と空きコマの判定から外す。
+
+取得状態は `studentId`、`system`、`lastAttemptedAt`、`lastSucceededAt`、`lastFailureKind`、`lastResult`（`success`・`partial`・`failed`）、`lastAppliedObservationId`。今の学期の全授業の一覧と、終了ID以外の課題の詳細を取得でき、失敗がない回だけ成功時刻を更新する。一部成功や失敗で以前の成功時刻を消さない。対象の授業や課題がすべて終了している場合も成功にできる。
 
 APIは受領記録、授業、台帳、履歴、取得状態を1つのFirestoreトランザクションで保存する。再送では文書の更新時刻も変えない。カレンダーの同期対象も同じトランザクションで保存する（Issue #40）。GoogleカレンダーやGeminiの呼び出しは含めない。coreの `applyObservation` はI/Oなしで更新を計算し、既存の受領記録が渡されたときは適用を行わない。
 
@@ -169,7 +177,7 @@ APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の�
 
 両APIともFirebase ID tokenの本人だけを扱い、支援担当の権限では他の学生の同期文書を操作できない。POSTは4 KiB以下、未知の項目と不正なキーを拒否する。エラーは401・400・413・415・409・500の固定コードのみ。応答は `Cache-Control: no-store`。Googleのaccess tokenはAPIに送らない。
 
-予定名は授業名と課題名、要確認なら先頭に「【要確認】」。説明は締切の原文、LMSのリンク、食い違う日付だけ（`conflicting-deadline.detail` の既存のお知らせ抽出形式から日付を拾い、引用本文は転記しない）。HTMLとして解釈される文字は表示を保つためにescapeする。時刻ありは5分の目印とその説明、日付だけは終日、提出済みは通知を外し、取消は削除する。締切が読めなければ以前の公式の締切を残す。
+予定名は授業名と課題名、要確認なら先頭に「【要確認】」。説明は締切の原文、LMSのリンク、食い違う日付だけ（`conflicting-deadline.detail` の既存のお知らせ抽出形式から日付を拾い、引用本文は転記しない）。HTMLとして解釈される文字は表示を保つためにescapeする。時刻ありは5分の目印とその説明、日付だけは終日、提出済みは通知を外し、取消・終了は削除する（実物・体験用とも同じ）。締切が読めなければ以前の公式の締切を残す。
 
 拡張機能の `config.local.json` に `apiOrigin`（HTTPSのoriginだけ）を設定すると、その接続先だけをビルド時のhost permissionとCSPへ追加する。空なら接続テストだけが動く。worker起動時・Chrome起動時・接続テスト成功後・`sendObservation` の送信成功後に同期する。同じworker内の同期は直列に実行する。Googleの認可は `interactive: false`、Firebaseと同じuidかも確認してから予定を書く。1学生1Chromeプロファイルが前提。定期確認、実LMSの取得部品への接続、接続状態を表示する製品UIは後続の作業。
 

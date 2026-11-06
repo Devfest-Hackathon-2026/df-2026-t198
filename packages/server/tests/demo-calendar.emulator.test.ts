@@ -54,6 +54,21 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('persisted demo 
     expect((await post(changed)).status).toBe(200);
     expect((await target().get()).updateTime).toEqual(destination.updateTime);
   });
+  it('removes an ended task from the durable mock calendar and keeps replay idempotent', async () => {
+    expect((await post(sample())).status).toBe(200);
+    const ended = { ...sample(), assignments: [], courseResults: [{ courseId: 'fictional/course',
+      listComplete: true, seenSourceIds: ['fictional/task'], endedSourceIds: ['fictional/task'] }] };
+    expect((await post(ended)).status).toBe(200);
+    const destination = await target().get();
+    expect(destination.data()!['mockEvents']).toEqual({});
+    const item = (await items())[0]!.data();
+    expect(item['desired']).toEqual({ state: 'deleted' });
+    expect(item['appliedRevision']).toBe(item['desiredRevision']);
+    const assignment = (await fixture.db.collection(`students/${uid}/assignments`).get()).docs[0]!.data();
+    expect(assignment).toMatchObject({ presenceState: 'ended', consecutiveMissingCount: 0 });
+    expect((await post(ended)).status).toBe(200);
+    expect((await target().get()).updateTime).toEqual(destination.updateTime);
+  });
   it('does not remove a missing candidate; removes a cancelled event and restores with a new generation', async () => {
     await post(sample());
     const original = (await items())[0]!.data();
