@@ -46,7 +46,9 @@ export async function receiveDemoRequest(request: IncomingMessage, response: Ser
       json(response, 200, await dependencies.demo.reset(uid, body.onlyIfStale)); return;
     }
     if (!validBody(body)) { json(response, 400, { error: 'invalid-demo-request' }); return; }
-    json(response, 200, await dependencies.demo.extend(uid, body.sourceId, body.expectedDueAt));
+    json(response, 200, await (request.url?.split('?')[0] === '/api/v1/demo/announce'
+      ? dependencies.demo.announce(uid, body.sourceId, body.expectedDueAt)
+      : dependencies.demo.extend(uid, body.sourceId, body.expectedDueAt)));
   } catch (error) {
     if (error instanceof DemoForbidden) json(response, 403, { error: 'forbidden' });
     else if (error instanceof DemoConflict) json(response, 409, { error: 'deadline-changed' });

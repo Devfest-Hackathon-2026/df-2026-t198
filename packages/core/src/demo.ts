@@ -18,4 +18,8 @@ export interface DemoCourse {
   period: number;
   assignments: DemoAssignment[];
 }
-export interface DemoData { courses: DemoCourse[] }
+export interface DemoAnnouncement {
+  courseId: string;
+  announcement: { announcementId: string; version: string; publishedAt: string; body: string };
+}
+export interface DemoData { courses: DemoCourse[]; announcements?: DemoAnnouncement[] }

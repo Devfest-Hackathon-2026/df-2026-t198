@@ -4,7 +4,7 @@ import type { DemoData } from '@kadai-hisho/core/ledger';
 export function initialDemo(now: number) {
   const due = new Date(now + 3 * 86400_000);
   due.setUTCHours(8, 0, 0, 0);
-  const data: DemoData = { courses: [
+  const data: DemoData = { announcements: [], courses: [
     { courseId: 'DEMO101', name: '架空の観察入門', teacher: '架空の先生A', weekday: 1, period: 2, assignments: [
       { sourceId: 'DEMO101_TASK1', title: '架空の観察ノート', dueAt: due.toISOString(), submission: 'not-submitted' },
       { sourceId: 'DEMO101_TASK2', title: '架空の振り返り', dueAt: due.toISOString(), submission: 'submitted' },
