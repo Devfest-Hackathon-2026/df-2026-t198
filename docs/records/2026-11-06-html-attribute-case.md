@@ -16,8 +16,14 @@ LinkeDOMの[公式parse処理](https://github.com/WebReflection/linkedom/blob/ma
 
 架空HTMLの属性ケース試験は修正前6失敗・1成功から、修正後7成功。worker束の混在ケースも失敗から成功した。フォーム名が重複する架空応答では修正前に授業ごとの取得へ進めず、ID指定後は22授業・132課題の架空観測を作れた。ここでの課題数は架空の試験値であり、実課題数ではない。
 
-最終版の `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm progress --check`、`pnpm check:samples` はすべて終了コード0。core137件・extension105件・server117件・web35件が成功。通常実行のエミュレーター専用28件はskip。別のFirestore規則38件とHosting検査8件も成功。見本17ファイルは成功し、手元の原本との比較は省略した。
+最終版の `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm progress --check`、`pnpm check:samples` はすべて終了コード0。core137件・extension108件・server117件・web35件が成功。通常実行のエミュレーター専用28件はskip。別のFirestore規則38件とHosting検査8件も成功。見本17ファイルは成功し、手元の原本との比較は省略した。
 
 別系統のClaude Codeの見直しでも、今回の読取差分に取り込みを止める指摘はなかった。SVGの扱いには既存ライブラリとブラウザの差が残るが、今回のLMS定義では使っていないため残件とした。
 
 実LMSから課題を取得して学生画面・カレンダーまで通る実機確認は、この記録の時点では未完了。PLANのチェックは変更していない。
+
+## 詳細フォームの空値
+
+通常の画面操作による詳細POSTでも、`jyugyoHiddenId` は存在するが空文字だった。取得要求の検査も、値の真偽ではなく自身の文字列プロパティの存在で判定する。欠落、継承だけの項目、非文字列、長さ超過は拒否する。許可する通信先・メソッド・フィールド・ID形式・SID照合は変更していない。架空データの回帰試験では空値を含む固定5項目の送信と、境界外の要求を送信前に拒否することを確かめた。
+
+この通常操作ではLMS側のエラー画面への遷移も観測したため、空値の許可だけで実機の詳細取得が成功したとは扱わない。
