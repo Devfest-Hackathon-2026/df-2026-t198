@@ -45,7 +45,7 @@ export function DigestPreview({ user }: { user: User }) {
     const rev = url.searchParams.get('rev') ?? '';
     if (!id || (action !== 'done' && action !== 'later') || !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) return;
     setBusy(true); setMessage('');
-    try { const result = await performPlanAction(user, id, action, Number(rev)); setMessage(actionMessage(result.outcome, result.plan)); }
+    try { const result = await performPlanAction(user, id, action, Number(rev)); setMessage(actionMessage(result.outcome, result.plan, result.demo)); }
     catch (error) { setMessage(planActionErrorMessage(error, '予定の変更を確認できませんでした。もう一度お試しください。')); }
     finally { setBusy(false); }
   }

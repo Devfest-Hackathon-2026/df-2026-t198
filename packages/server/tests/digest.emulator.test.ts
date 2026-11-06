@@ -165,6 +165,7 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
   });
   it('queues real calendar movement with no Google call and keeps pending work through synchronization failure', async () => {
     const response = await act('later', real); expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ outcome: 'moved', demo: false });
     const plan = (await plans(real).doc(id).get()).data()!;
     const item = (await student(real).collection('calendarItems').doc(plan['calendarItemKey']).get()).data()!;
     expect(item).toMatchObject({ kind: 'preparation', appliedRevision: 0, desired: { state: 'present', event: { start: { dateTime: '2030-11-12T10:30:00+09:00' } } } });

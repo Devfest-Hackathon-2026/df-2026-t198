@@ -11,13 +11,17 @@ const plan: PreparationPlan = { planId: 'fictional', assignment: { system: 'demo
   timeZone: 'Asia/Tokyo', decidedOn: '2030-11-11', confirmedBy: 'supporter', createdByRole: 'supporter',
   confirmedAt: '2030-11-10T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'key' };
 describe('preparation progress belongs to the plan, not LMS submission', () => {
+  it('uses the server destination even when a regular account has a demo-lms assignment', () => {
+    expect(actionMessage('moved', plan, false)).toContain('拡張機能がGoogleにつながる');
+    expect(actionMessage('moved', plan, false)).not.toContain('体験用の予定を更新しました');
+  });
   it('reports current state on replay and describes only the calendar destination that was updated', () => {
     const done = { ...plan, status: 'done' as const };
     expect(actionMessage('unchanged', done)).toBe('この準備はもう「終わった」と記録されています。変更していません。');
     expect(actionMessage('unchanged', { ...plan, laterResult: 'moved' })).toContain('2030/11/11 13:00〜14:30');
     expect(actionMessage('unchanged', { ...plan, status: 'cancelled' })).toContain('外されています。変更していません。');
-    expect(actionMessage('moved', plan)).toContain('体験用の予定を更新しました');
-    expect(actionMessage('moved', plan)).not.toContain('拡張機能');
+    expect(actionMessage('moved', plan, true)).toContain('体験用の予定を更新しました');
+    expect(actionMessage('moved', plan, true)).not.toContain('拡張機能');
     expect(actionMessage('moved', { ...plan, assignment: { ...plan.assignment, system: 'ynu-lms' } })).toContain('拡張機能がGoogleにつながる');
   });
   it('keeps an existing plan visible and warns after the task deadline moves before it', () => {

@@ -8,7 +8,7 @@ import { documentKey } from './observation-store.js';
 import { PlanAfterDeadline, PlanConflict } from './plan-store.js';
 import { SessionForbidden } from './session-store.js';
 
-export interface PlanActionResult { outcome: 'done' | 'moved' | 'no-slot' | 'unchanged'; plan: PreparationPlan }
+export interface PlanActionResult { outcome: 'done' | 'moved' | 'no-slot' | 'unchanged'; plan: PreparationPlan; demo: boolean }
 export class PlanActionConflict extends PlanConflict {
   constructor(readonly plan: PreparationPlan) { super(); }
 }
@@ -79,15 +79,16 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
     async act(uid, planId, action, revision) {
       const result = await db.runTransaction(async tx => {
         const profile = (await tx.get(db.doc(`demoAccounts/${uid}`))).data();
-        if (profile && !isDemoStudent(profile, uid)) throw new SessionForbidden();
+        const demo = isDemoStudent(profile, uid);
+        if (profile && !demo) throw new SessionForbidden();
         const student = db.collection('students').doc(uid);
         const ref = student.collection('plans').doc(planId);
         const old = (await tx.get(ref)).data() as PreparationPlan | undefined;
         if (!old) throw new SessionForbidden();
         // A public revision guards against replay; identity still comes only from the token.
         const receiptRef = student.collection('planActionReceipts').doc(`${planId}-${revision}-${action}`);
-        const receipt = (await tx.get(receiptRef)).data() as PlanActionResult | undefined;
-        if (receipt) return { outcome: 'unchanged' as const, plan: old };
+        const receipt = await tx.get(receiptRef);
+        if (receipt.exists) return { outcome: 'unchanged' as const, plan: old, demo };
         if (old.revision !== revision || old.status !== 'active') throw new PlanActionConflict(old);
         const assignment = (await tx.get(student.collection('assignments').doc(documentKey(old.assignment.system, old.assignment.sourceId)))).data() as LedgerAssignment | undefined;
         if (!assignment || assignment.submission === 'submitted' || assignment.presenceState === 'cancelled' || assignment.presenceState === 'ended') throw new PlanConflict();
@@ -120,7 +121,7 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
             next = { ...next, ...candidate, startsAt, endsAt };
           }
           // Availability may change: no-slot neither consumes the revision nor creates a receipt.
-          if (!candidate) return { outcome: 'no-slot' as const, plan: old };
+          if (!candidate) return { outcome: 'no-slot' as const, plan: old, demo };
           next.laterResult = 'moved';
         }
         const item = reconcileDesiredCalendarItem(previous, { itemKey: old.calendarItemKey, kind: 'preparation', sourceKey: old.assignment },
@@ -128,7 +129,7 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         tx.set(ref, next);
         tx.set(receiptRef, { outcome, plan: next });
         if (item && item !== previous) tx.set(itemRef, item);
-        return { outcome, plan: next };
+        return { outcome, plan: next, demo };
       });
       // Repeat requests also retry durable mock work after response/synchronization loss.
       await syncDemo(uid);

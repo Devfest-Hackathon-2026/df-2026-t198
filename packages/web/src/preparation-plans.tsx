@@ -8,7 +8,7 @@ import './preparation-plans.css';
 export interface PlanActions {
   add: (id: string, input: PreparationPlanInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  act?: (id: string, action: 'done' | 'later', revision: number) => Promise<{ outcome: string; plan?: PreparationPlan }>;
+  act?: (id: string, action: 'done' | 'later', revision: number) => Promise<{ outcome: string; plan?: PreparationPlan; demo?: boolean }>;
 }
 export function planActions(user: User, student: string): PlanActions {
   const request = async (id: string, input?: PreparationPlanInput) => {
@@ -94,7 +94,7 @@ export function PlanList({ plans, actions, viewerUid, own, assignments }: { plan
   async function act(plan: PreparationPlan, action: 'done' | 'later') {
     if (!actions?.act || busy) return;
     setBusy(plan.planId); setMessage('');
-    try { const result = await actions.act(plan.planId, action, plan.revision); setMessage(actionMessage(result.outcome, result.plan)); }
+    try { const result = await actions.act(plan.planId, action, plan.revision); setMessage(actionMessage(result.outcome, result.plan, result.demo)); }
     catch (error) { setMessage(planActionErrorMessage(error, '変更を確認できませんでした。接続と予定を確かめて、もう一度お試しください。')); }
     finally { setBusy(null); }
   }
