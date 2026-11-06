@@ -4,6 +4,8 @@ import { InvalidObservation, parseObservation } from './observation-input.js';
 import { receiveCalendarRequest } from './calendar-http.js';
 import type { CalendarStore } from './calendar-store.js';
 import { receiveSessionRequest } from './session-http.js';
+import { receiveManualAssignmentRequest } from './manual-assignment-http.js';
+import type { ManualAssignmentStore } from './manual-assignment-store.js';
 import { receivePlanRequest } from './plan-http.js';
 import type { PlanStore } from './plan-store.js';
 import type { SessionStore } from './session-store.js';
@@ -17,6 +19,7 @@ export interface ObservationDependencies {
   saveObservation: (uid: string, observation: Observation) => Promise<ObservationResult>;
   session?: SessionStore;
   plans?: PlanStore;
+  manualAssignments?: ManualAssignmentStore;
   calendar?: CalendarStore;
   demo?: DemoStore;
   announcements?: ReturnType<typeof createAnnouncementStore>;
@@ -62,6 +65,9 @@ async function receiveObservation(request: IncomingMessage, response: ServerResp
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
+    if ((request.method === 'PUT' || request.method === 'DELETE') && /^\/api\/v1\/students\/[^/]+\/manual-assignments\/[^/]+$/.test(path ?? '')) {
+      void receiveManualAssignmentRequest(request, response, dependencies); return;
+    }
     if ((request.method === 'PUT' || request.method === 'DELETE') && /^\/api\/v1\/students\/[^/]+\/plans\/[^/]+$/.test(path ?? '')) {
       void receivePlanRequest(request, response, dependencies); return;
     }

@@ -17,6 +17,8 @@ export type {
   Observation,
   ObservationReceipt,
   ObservationResult,
+  ManualAssignment,
+  ManualAssignmentInput,
   PreparationPlan,
   PreparationPlanInput,
   Submission,
@@ -29,3 +31,5 @@ export { readPage, parseDeadline } from './html-reader.js';
 export type { PageReading, ReadCourse, ReadAssignment, ReadingContext } from './reading-types.js';
 export type { DeadlineEvent, CalendarDesired, CalendarErrorCode, CalendarItem, CalendarReport, CalendarIntegration } from './types.js';
 export { deadlineDesired, reconcileCalendarItem, acknowledgeCalendarItem } from './calendar.js';
+
+export { manualDeadline } from './manual-assignment.js';

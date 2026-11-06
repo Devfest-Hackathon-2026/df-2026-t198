@@ -35,7 +35,7 @@ export function createDemoStore(db: Firestore): DemoStore {
         const calendar = student.collection('integrations').doc('calendar');
         const integration = (await tx.get(calendar)).data();
         if (integration && (integration['mode'] !== 'mock' || integration['executor'] !== 'demo')) throw new DemoForbidden();
-        const collections = ['assignments', 'courses', 'changes', 'fetchStates', 'observationReceipts', 'calendarItems'];
+        const collections = ['assignments', 'courses', 'changes', 'fetchStates', 'observationReceipts', 'calendarItems', 'plans', 'manualAssignments'];
         const rows = [];
         for (const name of collections) rows.push(await tx.get(student.collection(name)));
         const initial = initialDemo(now);
