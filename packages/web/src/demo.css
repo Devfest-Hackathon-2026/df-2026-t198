@@ -10,3 +10,12 @@
 .demo-pages h1 { font-size: 1.3rem; }
 .demo-pages dd { margin: .5rem 0; }
 .demo-shell p, .demo-shell button, .demo-shell a { overflow-wrap: anywhere; }
+.demo-header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.demo-shell .demo-logout { padding: 0; border: 0; background: transparent; color: inherit; font-size: .875rem; text-decoration: underline; }
+.demo-steps { list-style: none; padding: 0; }
+.demo-steps > li { margin: 1.5rem 0; }
+.demo-steps h2 { font-size: 1.2rem; }
+.demo-lms { margin-top: 2rem; padding: 1rem; background: #f5f5f2; border-radius: .5rem; }
+.demo-pages [data-demo-page="materials"], .demo-pages [data-demo-page="detail"] { background: #fafaf8; border-color: #ddd; }
+.demo-pages [data-demo-page="detail"] { margin-top: .5rem; }
+.demo-list-end, .demo-availability { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

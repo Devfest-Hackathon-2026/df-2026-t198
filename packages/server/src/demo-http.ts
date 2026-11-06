@@ -38,6 +38,13 @@ export async function receiveDemoRequest(request: IncomingMessage, response: Ser
       chunks.push(Buffer.from(chunk));
     }
     const body: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    if (request.url?.split('?')[0] === '/api/v1/demo/reset') {
+      if (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length !== 1 ||
+        !('onlyIfStale' in body) || typeof body.onlyIfStale !== 'boolean') {
+        json(response, 400, { error: 'invalid-demo-request' }); return;
+      }
+      json(response, 200, await dependencies.demo.reset(uid, body.onlyIfStale)); return;
+    }
     if (!validBody(body)) { json(response, 400, { error: 'invalid-demo-request' }); return; }
     json(response, 200, await dependencies.demo.extend(uid, body.sourceId, body.expectedDueAt));
   } catch (error) {

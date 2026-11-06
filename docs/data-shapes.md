@@ -9,10 +9,12 @@ Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用
 - `demoAccounts/{uid}`：`role`（`student` / `supporter`）と、対応する学生の`studentId`。学生は`studentId === uid`。サーバー管理で、本人だけ読み取り可。
 - `students/{uid}/demo/current`：`courses`配列。授業は`courseId`・`name`・`teacher`・`weekday`（月1〜日7）・`period`・`assignments`。課題は`sourceId`・`title`・`dueAt`（UTC、ミリ秒付きのISO日時）・`submission`。本人だけ読み取り可、支援担当にも直接見せない。台帳は従来の共有許可で見せる。
 - `POST /api/v1/demo/extend`：Firebase ID tokenで認証し、`sourceId`と`expectedDueAt`だけを受け取る（上限2 KiB）。本人の学生プロフィールと一致する課題を確認し、期待した締切と等しい場合だけ1日延長。プロフィール・データの読み取りと更新を同じトランザクションで行う。成功は200で`{ sourceId, dueAt }`、不一致409、体験学生でない／課題がない場合403。未認証401、不正な本文400、サイズ超過413、JSON以外415、内部エラー500。すべて`Cache-Control: no-store`、エラーは固定コードのみ。
+- `POST /api/v1/demo/reset`（Issue #68）：認証・本文上限・エラー形式は上の延長APIと同じ。本文は `{ onlyIfStale: boolean }` だけ。`false` は常に初期化、`true` は初回表示時に締切か次の面談が過去／不正／未設定なら初期化する。新しい場合は進行中の体験を保つ。応答は200で `{ reset: boolean, data: DemoData }`。
+- リセットは本人の体験学生プロフィールと元データを同じトランザクションで確認する。授業を初期の架空シナリオへ戻し、締切は操作日+3日の日本時間17時、前回／次回面談は操作時刻の−7日／+7日。`assignments`・`courses`・`changes`・`fetchStates`・`observationReceipts`・`calendarItems` と体験用の `integrations/calendar` を消す。共有許可とアカウント、他の学生は変えない。支援担当・通常利用者・不正なプロフィール・実物カレンダーの接続がある場合は403。少量の架空データ向けで、同じ組の同時利用は同じ体験を共有する。
 - 体験UIDの観測は`system: demo-lms`・`definitionId: demo-lms`だけを認める。支援担当や不正なプロフィールも403。プロフィール判定を台帳の保存トランザクション内で行い、再送でも判定する。プロフィールのない既存の利用者の観測契約は変えない。
 - カレンダーAPI（`GET/POST /api/v1/calendar-sync`）は`demoAccounts/{uid}`のある利用者を403で拒否する。接続・同期対象の取得・結果報告の各トランザクションの先頭で確認する。画面のボタンを隠すだけにはしない。
 
-体験用の文書へのクライアント書き込みは禁止。先生役のAPIは体験データだけを変え、描いたDOMのouterHTMLを既存のreaderで読んだ観測が届くまで台帳は変わらない。ブラウザ内の送信再試行は同じ観測IDを使い、再読み込み後の送信待ちは保持しない。初期設定と操作は [demo.md](demo.md) を参照。
+体験用の文書へのクライアント書き込みは禁止。先生役の延長APIは体験データだけを変え、描いたDOMのouterHTMLを既存のreaderで読んだ観測が届くまで台帳は変わらない。ブラウザ内の送信再試行は通信失敗と5xxに限り、同じ観測IDを使う。4xxでは送信待ちを破棄してアカウントの設定確認を促す。延長は応答の締切が購読で画面に届くまで次の読み取りを止める。再読み込み後の送信待ちは保持しない。初期設定と操作は [demo.md](demo.md) を参照。
 
 ## 観測（取得部品 → サーバー）
 

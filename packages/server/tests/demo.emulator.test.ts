@@ -91,6 +91,63 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
       expect((await connection.get()).data()?.['mode']).not.toBe('google');
     }
   });
+  it('resets only the authenticated demo student, clears derived data, and refreshes stale dates', async () => {
+    const owner = await account();
+    await fixture.db.doc(`demoAccounts/${owner.uid}`).set({ role: 'student', studentId: owner.uid });
+    await source(owner.uid).set(data);
+    const studentRef = fixture.db.doc(`students/${owner.uid}`);
+    const snapshotOther = async () => {
+      const collections = await fixture.db.doc(`students/${student.uid}`).listCollections();
+      return Promise.all(collections.map(async collection => ({ name: collection.id,
+        documents: (await collection.get()).docs.map(doc => ({ id: doc.id, data: doc.data() })),
+      })));
+    };
+    const beforeOther = await snapshotOther();
+    const reset = (onlyIfStale: boolean, token = owner.token) => post('demo/reset', { onlyIfStale }, token);
+    for (const token of [supporter.token, regular.token, other.token]) expect((await reset(false, token)).status).toBe(403);
+    expect((await post('demo/reset', { onlyIfStale: false, studentId: student.uid }, owner.token)).status).toBe(400);
+    const sample = { ...observation(), observationId: randomUUID(), definitionId: 'demo-lms' };
+    expect((await post('observations', sample, owner.token)).status).toBe(200);
+    const names = ['assignments', 'courses', 'changes', 'fetchStates', 'observationReceipts', 'calendarItems'];
+    for (const name of names) expect((await studentRef.collection(name).get()).size).toBeGreaterThan(0);
+    const sharing = studentRef.collection('supporters').doc(supporter.uid);
+    await sharing.set({ scopes: ['all'], revokedAt: null });
+    const start = Date.now();
+    const response = await reset(false);
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as { reset: boolean }).reset).toBe(true);
+    for (const name of names) expect((await studentRef.collection(name).get()).size).toBe(0);
+    const calendar = studentRef.collection('integrations').doc('calendar');
+    expect((await calendar.get()).exists).toBe(false);
+    expect((await sharing.get()).data()).toEqual({ scopes: ['all'], revokedAt: null });
+    expect(await snapshotOther()).toEqual(beforeOther);
+    const initial = (await source(owner.uid).get()).data()!;
+    expect(initial['courses'][0].assignments.map((item: { submission: string }) => item.submission)).toEqual(['not-submitted', 'submitted']);
+    const due = new Date(start + 3 * 86400_000); due.setUTCHours(8, 0, 0, 0);
+    expect(initial['courses'][0].assignments[0].dueAt).toBe(due.toISOString());
+    const contextRef = studentRef.collection('sessionContext').doc('current');
+    const context = (await contextRef.get()).data()!;
+    expect(Date.parse(context['nextSessionAt']) - start).toBeGreaterThanOrEqual(7 * 86400_000);
+    expect(Date.parse(context['lastSessionAt']) - start).toBeLessThan(-6 * 86400_000);
+    // Re-login while fresh must preserve the ongoing scenario and its ledger.
+    expect((await post('observations', sample, owner.token)).status).toBe(200);
+    const changesBefore = (await studentRef.collection('changes').get()).docs.map(doc => doc.data());
+    expect(((await (await reset(true)).json()) as { reset: boolean }).reset).toBe(false);
+    expect((await studentRef.collection('changes').get()).docs.map(doc => doc.data())).toEqual(changesBefore);
+    // An expired source deadline and an expired next session each trigger a fresh start.
+    initial['courses'][0].assignments[0].dueAt = '2000-01-01T08:00:00.000Z';
+    await source(owner.uid).set(initial);
+    expect(((await (await reset(true)).json()) as { reset: boolean }).reset).toBe(true);
+    expect((await ledger(owner.uid))).toEqual([]);
+    await contextRef.update({ nextSessionAt: '2000-01-01T08:00:00.000Z' });
+    expect(((await (await reset(true)).json()) as { reset: boolean }).reset).toBe(true);
+    // A misconfigured real calendar is never erased, even on a demo profile.
+    await calendar.set({ mode: 'google', executor: 'extension' });
+    const before = (await source(owner.uid).get()).data();
+    expect((await reset(false)).status).toBe(403);
+    expect((await source(owner.uid).get()).data()).toEqual(before);
+    expect((await calendar.get()).data()).toEqual({ mode: 'google', executor: 'extension' });
+  });
   it('preserves observation handling for ordinary users and verifies disabled accounts', async () => {
     expect((await post('observations', { ...observation(), system: 'ynu-lms' }, regular.token)).status).toBe(200);
     await fixture.auth.updateUser(student.uid, { disabled: true });
