@@ -1,4 +1,5 @@
-import { parseHTML, type TreeElement } from 'linkedom/worker';
+import type { TreeElement } from 'linkedom/worker';
+import { htmlAttribute, parseHtmlTree } from './html-tree.js';
 import { validateDefinition, type Marker, type Pattern, type ReadingDefinition, type ValueRule } from './definition.js';
 import type { PageReading, ReadAssignment, ReadCourse, ReadingContext } from './reading-types.js';
 
@@ -37,7 +38,7 @@ function value(root: TreeElement, rule: ValueRule): string | null {
   const nodes = scope.querySelectorAll(rule.selector);
   if (nodes.length !== 1) return null;
   const node = nodes[0]!;
-  const raw = rule.attribute ? node.getAttribute(rule.attribute) : node.textContent;
+  const raw = rule.attribute ? htmlAttribute(node, rule.attribute) : node.textContent;
   if (raw === null) return null;
   let text: string | null = tidy(raw);
   const steps = rule.pattern === undefined ? [] : Array.isArray(rule.pattern) ? rule.pattern : [rule.pattern];
@@ -134,7 +135,7 @@ export function readPage(definition: unknown, html: string, context: ReadingCont
   // Bound parser input; exceptions never include the supplied HTML/selector/context.
   if (typeof html !== 'string' || html.length > 5_000_000) throw new Error('invalid-html');
   try {
-    const { document } = parseHTML(html);
+    const { document } = parseHtmlTree(html);
     if (has(document, d.pageChecks.loggedOut)) throw new Error('not-logged-in');
     if (d.pageChecks.loggedIn && !has(document, d.pageChecks.loggedIn)) fail();
     const kinds = (['home', 'materials', 'assignmentDetail'] as const).filter((kind) =>
