@@ -34,7 +34,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C01 〈Sora〉 拡張機能がLMSのページからSIDを受け取り、`chrome.storage.session` にだけ置く。→ PR #1、`packages/extension/tests/service-worker.test.ts`
 - [x] C02 〈Sora〉 ホームの画面から、授業の一覧と曜日・時限を読み取る。確かめ方：保存したページの見本で試験 → ホームの見本の授業・曜日・時限が正解と一致（`packages/core/tests/html-reader.test.mjs`、service worker相当の試験 `packages/extension/tests/html-reader-worker.test.mjs`）
 - [x] C03 〈Sora〉 授業ごとの教材一覧（課題もここに並ぶ。全授業をまとめた課題の一覧はLMSに無い）と課題の詳細から、題名・締切・提出の状態を読み取る。確かめ方：見本で試験 → `packages/core/tests/html-reader.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`、M1 30/30（100%）。保存見本で確認
-- [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作
+- [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作 → Issue #105：今学期・終了課題の扱いを架空HTML、台帳、偽Google、Auth・Firestore、学生のブラウザ操作で確認（[記録](docs/records/2026-11-07-issue-105.md)）。実機のsuccessはmerge・更新後にSoraが確認するため未完了。
 - [ ] C05 〈Sora〉 裏で取れないときは、開いているページの側で取りに行く。確かめ方：裏の取得を止めた状態で操作
 - [x] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験 → `packages/core/tests/login-state.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`（固定の失敗コード。ログイン前・認証エラーの保存見本で確認）
 - [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）。Issue #10で製品固有のパターンを引数付きに移行し、別製品の読み取り・不正な引数の拒否を `packages/core/tests/parameterized-patterns.test.mjs` で確認
