@@ -1,6 +1,7 @@
 import { sessionFromUrl } from './session.js';
 import type { SessionFound } from './session.js';
 import { executeLmsRequest } from './lms-request.js';
+import { showChangeNotice } from './change-notice.js';
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
   if (!message || typeof message !== 'object' || !('type' in message) || message.type !== 'ynu-read-page') return false;
@@ -17,9 +18,9 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
 const sid = sessionFromUrl(window.location.href);
 if (sid) {
   const message: SessionFound = { type: 'ynu-session-found', sid };
-  void chrome.runtime.sendMessage<SessionFound, { ok: boolean }>(message).then(
+  void chrome.runtime.sendMessage<SessionFound, unknown>(message).then(
     (response) => {
-      if (!response?.ok) console.warn('課題の秘書: ログイン状態を受け取れませんでした。');
+      showChangeNotice(response);
     },
     () => console.warn('課題の秘書: 拡張機能を再読み込みしてください。'),
   );

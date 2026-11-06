@@ -13,7 +13,7 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     const extensionDir = join(dir, 'packages/extension');
     await mkdir(extensionDir, { recursive: true });
     // Never read the user's real config or key. Build an isolated copy with dummy values.
-    for (const path of ['src', 'package.json', 'build.mjs', 'build-config.mjs', 'bundle-audit.mjs', 'manifest.json', 'options.html', 'options.css']) {
+    for (const path of ['src', 'package.json', 'build.mjs', 'build-config.mjs', 'bundle-audit.mjs', 'manifest.json', 'options.html', 'options.css', 'popup.html', 'popup.css']) {
       await cp(new URL(`../${path}`, import.meta.url), join(extensionDir, path), { recursive: true });
     }
     await cp(new URL('../../core/src', import.meta.url), join(dir, 'packages/core/src'), { recursive: true });
@@ -31,6 +31,10 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     await promisify(execFile)(process.execPath, ['build.mjs'], { cwd: extensionDir });
     const manifest = JSON.parse(await readFile(join(extensionDir, 'dist/manifest.json'), 'utf8'));
     const original = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+    expect(manifest.action).toEqual({ default_popup: 'popup.html' });
+    expect(await readFile(join(extensionDir, 'dist/popup.html'), 'utf8')).toContain('src="popup.js"');
+    expect(await readFile(join(extensionDir, 'dist/popup.js'), 'utf8')).toContain('chrome.tabs.create');
+    expect(await readFile(join(extensionDir, 'dist/popup.css'), 'utf8')).toContain('button');
     expect(manifest.key).toBe(original.key);
     for (const origin of ['https://lms.ynu.ac.jp', config.apiOrigin]) {
       expect(manifest.host_permissions.filter(host => host === `${origin}/*`)).toHaveLength(1);

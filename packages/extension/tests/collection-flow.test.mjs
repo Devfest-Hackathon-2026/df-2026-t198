@@ -1,9 +1,12 @@
 import { build } from 'esbuild';
 import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { createContext, runInContext } from 'node:vm';
 import { fileURLToPath, URL, URLSearchParams } from 'node:url';
 import { expect, it, vi } from 'vitest';
 import { parseObservation } from '../../server/src/observation-input.js';
+
+const { parseHTML } = createRequire(new URL('../../core/package.json', import.meta.url))('linkedom');
 
 const config = { apiOrigin: 'https://api.example.test', oauthClientId: '123-synthetic.apps.googleusercontent.com',
   firebase: { apiKey: 'synthetic-key', authDomain: 'synthetic.firebaseapp.com', projectId: 'synthetic', appId: 'synthetic-app' } };
@@ -22,7 +25,8 @@ const worker = await build({
   } }],
 });
 const content = await build({ entryPoints: [fileURLToPath(new URL('../src/content.ts', import.meta.url))],
-  bundle: true, write: false, platform: 'browser', format: 'iife', target: 'chrome105' });
+  bundle: true, write: false, platform: 'browser', format: 'iife', target: 'chrome105',
+  define: { __AUTH_PROBE_CONFIG__: JSON.stringify(config) } });
 const samples = new URL('../../../lms-definitions/coursepower/samples/', import.meta.url);
 const home = await readFile(new URL('home.html', samples), 'utf8');
 const materials = await readFile(new URL('assignment-list.html', samples), 'utf8');
@@ -69,7 +73,8 @@ for (const backgroundBlocked of [false, true]) it(`opening an LMS page reads all
       return call(contentListener, message, { id: 'synthetic-extension' });
     } },
   } }, { codeGeneration: { strings: false, wasm: false } });
-  const contentContext = createContext({ ...common, fetch: pageFetch, window: { location: { href: pageUrl } }, chrome: {
+  const { document } = parseHTML('<html><body><main>架空のLMS</main></body></html>');
+  const contentContext = createContext({ ...common, document, fetch: pageFetch, window: { location: { href: pageUrl } }, chrome: {
     runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { contentListener = fn; } },
       sendMessage: message => {
         trigger = call(workerListener, message, { id: 'synthetic-extension', frameId: 0, url: pageUrl, tab: { id: 7 }, documentId: 'synthetic-document' });
@@ -78,7 +83,10 @@ for (const backgroundBlocked of [false, true]) it(`opening an LMS page reads all
   } }, { codeGeneration: { strings: false, wasm: false } });
   runInContext(worker.outputFiles[0].text, workerContext);
   runInContext(content.outputFiles[0].text, contentContext);
-  expect(await trigger).toEqual({ ok: true });
+  expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
+  const notice = [...document.body.children].find(node => node.shadowRoot).shadowRoot.querySelector('a');
+  expect(notice.textContent).toBe('課題の変更が198件あります。学生の画面を開く');
+  expect(notice.href).toBe('https://synthetic.web.app/student');
   expect(apiBodies).toHaveLength(1);
   const observation = apiBodies[0];
   expect(observation.catalogCourses).toHaveLength(22);

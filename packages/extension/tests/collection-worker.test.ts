@@ -33,7 +33,7 @@ beforeEach(async () => {
 afterEach(() => vi.unstubAllGlobals());
 
 it('sends one observation with only the Firebase ID token and retains counts without LMS data', async () => {
-  expect(await run(pageUrl, 7)).toEqual({ ok: true });
+  expect(await run(pageUrl, 7)).toEqual({ ok: true, changed: true, changeCount: 1 });
   const api = fetcher.mock.calls.filter(([url]) => url === 'https://api.example.test/api/v1/observations');
   expect(api).toHaveLength(1);
   expect(JSON.parse(api[0]![1].body)).toEqual(observation);
@@ -49,7 +49,7 @@ it('uses the initiating tab for all reads when the background route fails, then 
     if (url.startsWith('https://lms.ynu.ac.jp/')) throw new Error('synthetic-private');
     return { ok: true, json: async () => ({ status: 'applied', changed: false, changeCount: 0 }) };
   });
-  expect(await run(pageUrl, 7, 'synthetic-document')).toEqual({ ok: true });
+  expect(await run(pageUrl, 7, 'synthetic-document')).toEqual({ ok: true, changed: false, changeCount: 0 });
   expect(send).toHaveBeenCalledWith(7, { type: 'ynu-read-page', operation: { kind: 'home' }, sid: 'synthetic-session' },
     { frameId: 0, documentId: 'synthetic-document' });
   expect(session).toMatchObject({ ynuFetchStats: { attempted: 1, backgroundSucceeded: 0, pageSucceeded: 1 } });
@@ -92,4 +92,14 @@ it('records a rejected API send without parsing or echoing the error body', asyn
   expect(await run(pageUrl, 7)).toEqual({ ok: false, code: 'send-failed' });
   expect(json).not.toHaveBeenCalled();
   expect(session['ynuFetchStatus']).toBe('send-failed');
+});
+
+it.each([
+  { status: 'applied', changed: true, changeCount: -1 },
+  { status: 'applied', changed: true, changeCount: 0 },
+  { status: 'applied', changed: false, changeCount: 2 },
+  { status: 'applied', changed: true, changeCount: 1.5 },
+])('does not forward an inconsistent or invalid change receipt: %j', async receipt => {
+  fetcher.mockResolvedValue({ ok: true, json: async () => receipt });
+  expect(await run(pageUrl, 7)).toEqual({ ok: false, code: 'send-failed' });
 });

@@ -21,7 +21,7 @@ function credentialFree(body: string, sid: string): boolean {
   return false;
 }
 
-export async function runCollection(pageUrl: string, tabId: number, documentId?: string): Promise<{ ok: boolean; code?: string }> {
+export async function runCollection(pageUrl: string, tabId: number, documentId?: string): Promise<{ ok: boolean; code?: string; changed?: boolean; changeCount?: number }> {
   if (running) return { ok: false, code: 'busy' };
   running = true;
   let stats: Stats | undefined;
@@ -78,12 +78,14 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       body, credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15_000) });
     if (!response.ok) return fail('send-failed');
     const receipt = await response.json() as { status?: string; changed?: boolean; changeCount?: number };
-    if (receipt.status !== 'applied' || typeof receipt.changed !== 'boolean' || !Number.isSafeInteger(receipt.changeCount)) {
+    if (receipt.status !== 'applied' || typeof receipt.changed !== 'boolean'
+      || typeof receipt.changeCount !== 'number' || !Number.isSafeInteger(receipt.changeCount)
+      || receipt.changeCount < 0 || receipt.changed !== (receipt.changeCount > 0)) {
       return fail('send-failed');
     }
     success = observation.failures.length === 0;
     outcome = success ? 'success' : 'partial';
-    return { ok: true };
+    return { ok: true, changed: receipt.changed, changeCount: receipt.changeCount };
   } catch { return fail('collection-unavailable'); }
   finally {
     if (stats) {

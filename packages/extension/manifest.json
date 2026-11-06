@@ -16,6 +16,9 @@
     "page": "options.html",
     "open_in_tab": true
   },
+  "action": {
+    "default_popup": "popup.html"
+  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'; connect-src https://www.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com"
   },
