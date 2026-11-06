@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { CalendarReport } from '@kadai-hisho/core/calendar';
 import type { ObservationDependencies } from './http.js';
 import { CalendarConnectionConflict } from './calendar-store.js';
+import { DemoForbidden } from './demo-store.js';
 
 function json(response: ServerResponse, status: number, body: unknown) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -51,7 +52,8 @@ export async function receiveCalendarRequest(request: IncomingMessage, response:
     else await deps.calendar.report(uid, body);
     json(response, 200, { ok: true });
   } catch (error) {
-    if (error instanceof CalendarConnectionConflict) json(response, 409, { error: 'calendar-recovery-required' });
+    if (error instanceof DemoForbidden) json(response, 403, { error: 'forbidden' });
+    else if (error instanceof CalendarConnectionConflict) json(response, 409, { error: 'calendar-recovery-required' });
     else if (error instanceof InvalidCalendarRequest || error instanceof SyntaxError) json(response, 400, { error: 'invalid-calendar-sync' });
     else json(response, 500, { error: 'internal-error' });
   }

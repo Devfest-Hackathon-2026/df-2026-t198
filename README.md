@@ -4,6 +4,8 @@
 
 開発用repoは `shieikan/kadai-hisho`。何が済んで何が残っているかは [PLAN.md](PLAN.md) を参照（`pnpm progress` で数える）。
 
+拡張機能なしで架空の課題と先生役の操作を試す手順は [模擬LMSを手元で試す](docs/demo.md)。
+
 ## 開発を始める
 
 Node 26とpnpm 11を使う。pnpmの固定版は [package.json](package.json) の `packageManager` を参照。`pnpm test` はFirestoreのエミュレーターも起動するため、[JDK 21以上](#firebaseエミュレーター) が必要。

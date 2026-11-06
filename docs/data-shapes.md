@@ -2,6 +2,18 @@
 
 Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observation-input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。カレンダー同期は本書の末尾、未実装の共有の操作は設計案を参照する。
 
+## 体験用データ（Issue #19）
+
+Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用の型は [`demo.ts`](../packages/core/src/demo.ts)。
+
+- `demoAccounts/{uid}`：`role`（`student` / `supporter`）と、対応する学生の`studentId`。学生は`studentId === uid`。サーバー管理で、本人だけ読み取り可。
+- `students/{uid}/demo/current`：`courses`配列。授業は`courseId`・`name`・`teacher`・`weekday`（月1〜日7）・`period`・`assignments`。課題は`sourceId`・`title`・`dueAt`（UTC、ミリ秒付きのISO日時）・`submission`。本人だけ読み取り可、支援担当にも直接見せない。台帳は従来の共有許可で見せる。
+- `POST /api/v1/demo/extend`：Firebase ID tokenで認証し、`sourceId`と`expectedDueAt`だけを受け取る（上限2 KiB）。本人の学生プロフィールと一致する課題を確認し、期待した締切と等しい場合だけ1日延長。プロフィール・データの読み取りと更新を同じトランザクションで行う。成功は200で`{ sourceId, dueAt }`、不一致409、体験学生でない／課題がない場合403。未認証401、不正な本文400、サイズ超過413、JSON以外415、内部エラー500。すべて`Cache-Control: no-store`、エラーは固定コードのみ。
+- 体験UIDの観測は`system: demo-lms`・`definitionId: demo-lms`だけを認める。支援担当や不正なプロフィールも403。プロフィール判定を台帳の保存トランザクション内で行い、再送でも判定する。プロフィールのない既存の利用者の観測契約は変えない。
+- カレンダーAPI（`GET/POST /api/v1/calendar-sync`）は`demoAccounts/{uid}`のある利用者を403で拒否する。接続・同期対象の取得・結果報告の各トランザクションの先頭で確認する。画面のボタンを隠すだけにはしない。
+
+体験用の文書へのクライアント書き込みは禁止。先生役のAPIは体験データだけを変え、描いたDOMのouterHTMLを既存のreaderで読んだ観測が届くまで台帳は変わらない。ブラウザ内の送信再試行は同じ観測IDを使い、再読み込み後の送信待ちは保持しない。初期設定と操作は [demo.md](demo.md) を参照。
+
 ## 観測（取得部品 → サーバー）
 
 `POST /api/v1/observations` にJSONを送る。`Authorization: Bearer <Firebase ID token>` で認証し、保存先のuidは検証したtokenから決める。本文にuidやstudentIdは入れない。LMSのSID・Cookie・Googleのアクセストークンは送らない。

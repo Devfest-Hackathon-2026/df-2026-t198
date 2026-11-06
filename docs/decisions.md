@@ -335,3 +335,12 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 - 予定IDは世代ごとに先に確定する。削除が未確認のまま課題が戻った場合は、その削除を終えてから新世代を作る。すぐ新IDを作る案は、応答が失われた古い予定を残すため採らない。
 - GoogleへのREST要求は既存のfetchを使う。新しいSDKは足さない。公式仕様の[insert](https://developers.google.com/workspace/calendar/api/v3/reference/events/insert)・[update](https://developers.google.com/workspace/calendar/api/v3/reference/events/update)・[delete](https://developers.google.com/workspace/calendar/api/v3/reference/events/delete)を確認し、固定ID・全体更新・削除を使う。例のコードは転用していない。Google以外の書き込み先は `CalendarTarget` で差し替える。
 - 実物の確認はSoraのChromeで行う手順をPRに残し、今回は実施しない。Issueの指定どおりC16・C17を偽APIで判定し、C15は未完了に残す。
+
+## Issue #19. 模擬LMSを既存の読み取りと台帳につなぐ（2026-11-06）
+
+- 合意の記録：PR #30の「人に見てほしいところ」1〜6にSoraが合意し、Issue #19の最新コメントが対象の型・保存先・API・規則・Web依存への人の印を認めている。Cloud Run・Hostingとデプロイは#18の担当。
+- 決めた人：Sora（6項目の契約）、Codex（その範囲内の実装）。WebでFirestoreの架空データをReactで描き、各ページのouterHTMLを既存のcore readerへ渡す。Cloud Runで人ごとのHTMLを返す案より、既存の静的Web・ログイン・Firestore購読を共用できる。設計案7節のHTML生成場所はIssue本文の推奨に従った。
+- Firebaseの既存SDKでメール／パスワード認証・購読・トランザクションを行う。Webには既存版のfirebaseとworkspaceのcoreだけを依存として追加。独自の認証、HTMLパーサー、規則の評価器は作らない。データとAPIの正本は [data-shapes.md](data-shapes.md#体験用データissue-19)、試し方は [demo.md](demo.md)。
+- 先生役では期待した締切との一致を同じトランザクションで確認し、再送は409にする。観測の送信が失敗した場合はブラウザのメモリに同じ観測を残す。再送後に初めて次の観測を作り、台帳の既存の受領記録を使って重複を避ける。永続的な送信待ちの管理は追加しない。
+- 体験プロフィールは観測保存トランザクション内でも確認する。支援担当と不正な体験プロフィールは観測を送れない。先生役は学生本人に限定し、支援担当には台帳だけを既存の許可で共有する。作業中にmainへ入ったカレンダーAPIについても、合意4に従い体験UIDからの接続・同期対象の取得・結果報告を各トランザクション内で拒否する。
+- アカウント初期設定の補助はローカルエミュレーター専用にした。実環境のアカウント作成・設定変更を今回の承認範囲と推測せず、公開担当者への前提として文書に残す。

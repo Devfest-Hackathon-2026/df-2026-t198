@@ -5,6 +5,8 @@ import { receiveCalendarRequest } from './calendar-http.js';
 import type { CalendarStore } from './calendar-store.js';
 import { receiveSessionRequest } from './session-http.js';
 import type { SessionStore } from './session-store.js';
+import { receiveDemoRequest } from './demo-http.js';
+import { DemoForbidden, type DemoStore } from './demo-store.js';
 import { receiveAnnouncement } from './announcements/http.js';
 import type { createAnnouncementStore } from './announcements/store.js';
 
@@ -13,6 +15,7 @@ export interface ObservationDependencies {
   saveObservation: (uid: string, observation: Observation) => Promise<ObservationResult>;
   session?: SessionStore;
   calendar?: CalendarStore;
+  demo?: DemoStore;
   announcements?: ReturnType<typeof createAnnouncementStore>;
 }
 const MAX_BODY = 512 * 1024;
@@ -46,6 +49,7 @@ async function receiveObservation(request: IncomingMessage, response: ServerResp
     const observation = parseObservation(JSON.parse(Buffer.concat(chunks).toString('utf8')));
     json(response, 200, await dependencies.saveObservation(uid, observation));
   } catch (error) {
+    if (error instanceof DemoForbidden) { json(response, 403, { error: 'forbidden' }); return; }
     // Never echo request bodies, authorization headers or upstream error messages.
     json(response, error instanceof InvalidObservation || error instanceof SyntaxError ? 400 : 500,
       { error: error instanceof InvalidObservation || error instanceof SyntaxError ? 'invalid-observation' : 'internal-error' });
@@ -55,6 +59,9 @@ async function receiveObservation(request: IncomingMessage, response: ServerResp
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
+    if (request.method === 'POST' && path === '/api/v1/demo/extend') {
+      void receiveDemoRequest(request, response, dependencies); return;
+    }
     if (path === '/api/v1/calendar-sync' && (request.method === 'GET' || request.method === 'POST')) {
       void receiveCalendarRequest(request, response, dependencies); return;
     }

@@ -87,7 +87,10 @@ function StudentSession({ uid, user, services, planning }: { uid: string; user: 
   const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
   const [now, setNow] = useState(() => new Date());
   const [sessionAt] = useState(() => new Date().toISOString());
-  useEffect(() => watchSession(services.source, uid, user.uid, setState), [services, uid, user.uid]);
+  useEffect(() => watchSession(services.source, uid, user.uid, state => {
+    setState(state);
+    setNow(new Date());
+  }), [services, uid, user.uid]);
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(interval);

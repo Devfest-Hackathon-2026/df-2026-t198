@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { acknowledgeCalendarItem, reconcileCalendarItem, type CalendarIntegration, type CalendarItem,
   type CalendarReport, type Course, type LedgerAssignment } from '@kadai-hisho/core/calendar';
 import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
+import { DemoForbidden } from './demo-store.js';
 
 export class CalendarConnectionConflict extends Error {}
 export interface CalendarStore {
@@ -25,10 +26,14 @@ export function writeCalendarItem(tx: Transaction, student: DocumentReference, p
 }
 
 export function createCalendarStore(db: Firestore): CalendarStore {
+  async function requireRealAccount(tx: Transaction, uid: string) {
+    if ((await tx.get(db.collection('demoAccounts').doc(uid))).exists) throw new DemoForbidden();
+  }
   return {
     async connect(uid, calendarId) {
       const student = db.collection('students').doc(uid);
       await db.runTransaction(async tx => {
+        await requireRealAccount(tx, uid);
         const state = await readCalendarState(tx, student);
         if (state.integration && (state.integration.calendarId !== calendarId || state.integration.mode !== 'google')) {
           throw new CalendarConnectionConflict();
@@ -45,6 +50,7 @@ export function createCalendarStore(db: Firestore): CalendarStore {
     async pending(uid) {
       const student = db.collection('students').doc(uid);
       return db.runTransaction(async tx => {
+        await requireRealAccount(tx, uid);
         const state = await readCalendarState(tx, student);
         const assignments = await tx.get(student.collection('assignments'));
         const courses = await tx.get(student.collection('courses'));
@@ -63,6 +69,7 @@ export function createCalendarStore(db: Firestore): CalendarStore {
       const student = db.collection('students').doc(uid);
       const ref = student.collection('calendarItems').doc(report.itemKey);
       await db.runTransaction(async tx => {
+        await requireRealAccount(tx, uid);
         const item = (await tx.get(ref)).data() as CalendarItem | undefined;
         const integrationRef = student.collection('integrations').doc('calendar');
         const integration = (await tx.get(integrationRef)).data() as CalendarIntegration | undefined;

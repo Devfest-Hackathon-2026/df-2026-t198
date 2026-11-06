@@ -55,6 +55,8 @@ before(async () => {
   await env.withSecurityRulesDisabled(async (context) => {
     const db = context.firestore();
     const batch = writeBatch(db);
+    batch.set(doc(db, `students/${student}/demo/current`), { courses: [] });
+    batch.set(doc(db, `demoAccounts/${student}`), { role: 'student', studentId: student });
     for (const uid of [student, 'student-b']) {
       for (const path of [...sharedPaths, ...privatePaths]) {
         batch.set(doc(db, `students/${uid}/${path}`), { value: 'fictional sample' });
@@ -83,6 +85,16 @@ async function expectRead(request, allowed) {
 }
 
 for (const role of roles) {
+  test(`${role.name}: demo source and profile are owner-only and never client-writable`, async () => {
+    const db = databases.get(role.uid);
+    for (const path of [`students/${student}/demo/current`, `demoAccounts/${student}`]) {
+      await expectRead(getDocFromServer(doc(db, path)), role.private);
+      await assertFails(setDoc(doc(db, path), { role: 'student', studentId: role.uid }));
+      await assertFails(deleteDoc(doc(db, path)));
+      await assertFails(getDocFromServer(doc(db, `${path}/nested/sample`)));
+    }
+    await assertFails(getDocsFromServer(collection(db, 'demoAccounts')));
+  });
   test(`${role.name}: shared documents and collection queries`, async () => {
     const db = databases.get(role.uid);
     for (const path of sharedPaths) {

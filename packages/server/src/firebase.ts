@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { createCalendarStore } from './calendar-store.js';
 import { createObservationStore } from './observation-store.js';
 import { createSessionStore } from './session-store.js';
+import { createDemoStore } from './demo-store.js';
 import { createAnnouncementStore } from './announcements/store.js';
 import { createGeminiModel } from './announcements/gemini.js';
 import { createRuntimeBudget } from './announcements/runtime-budget.js';
@@ -17,6 +18,7 @@ export function firebaseDependencies() {
     saveObservation: createObservationStore(db),
     calendar: createCalendarStore(db),
     session: createSessionStore(db),
+    demo: createDemoStore(db),
   };
   const project = app.options.projectId ?? process.env['GOOGLE_CLOUD_PROJECT'] ?? process.env['GCLOUD_PROJECT'];
   if (process.env['ENABLE_DEMO_ANNOUNCEMENTS'] === 'true' && project) {

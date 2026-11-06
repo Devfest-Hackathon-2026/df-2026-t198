@@ -1,6 +1,7 @@
 import type {
   Assignment, AssignmentChange, Deadline, LedgerAssignment, Observation, ObservationReceipt,
 } from './types.js';
+export type { DemoAccount, DemoAssignment, DemoCourse, DemoData } from './demo.js';
 export type { Assignment, AssignmentChange, Deadline, FetchState, LedgerAssignment, SessionContext,
   Observation, ObservationReceipt, ObservationResult } from './types.js';
 
