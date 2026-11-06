@@ -48,7 +48,7 @@ export function formatDeadline(deadline: Deadline) {
   switch (deadline.kind) {
     case 'date': return `${deadline.date.replaceAll('-', '/')}（日付のみ）`;
     case 'datetime': return new Intl.DateTimeFormat('ja-JP', { timeZone: deadline.timeZone,
-      month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(deadline.dueAt)) + `（${deadline.timeZone}）`;
+      month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(deadline.dueAt));
     case 'none': return '締切なし';
     case 'unreadable': return '締切を確認できませんでした';
   }
@@ -58,7 +58,8 @@ const changeLabels: Record<AssignmentChange['kind'], string> = { new: '課題が
   cancelled: '課題が取り消されました', restored: '一覧に戻りました' };
 export function changeDescription(change: AssignmentChange) {
   const value = (v: AssignmentChange['before']) => typeof v === 'string' ? v : v ? formatDeadline(v) : '—';
-  return changeLabels[change.kind] + (change.kind === 'deadline-changed' || change.kind === 'title-changed'
+  if (change.kind === 'deadline-changed') return `締切が ${value(change.before)} から ${value(change.after)} に変わりました`;
+  return changeLabels[change.kind] + (change.kind === 'title-changed'
     ? `：${value(change.before)} → ${value(change.after)}` : '');
 }
 export function reviewDescription(row: LedgerAssignment) {
