@@ -40,4 +40,3 @@ export async function fakeLms({ stage = 'course', wrongPage = false, permanent =
     onRecovered: recovered, onFailure: failed });
   return { collect, fetcher, attempts, recovered, failed, counts: () => ({ homeReads, listReads }) };
 }
-
