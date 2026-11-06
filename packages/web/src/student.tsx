@@ -54,8 +54,10 @@ export function StudentView({ data, now = Date.now() }: { data: StudentData; now
   const periods = Math.max(5, ...data.courses.flatMap(c => c.slots.map(s => s.period)));
   const select = (value: StudentCourse) => setSelected(courseKey(value));
   const unscheduled = data.courses.filter(c => c.slots.length === 0);
+  const courseItems = course ? data.assignments.filter(item => belongsTo(item, course)) : [];
+  const finished = courseItems.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled');
   return <>
-    <div className="student-heading"><h1>時間割と課題</h1><p className="muted">授業を押すと、課題が開きます。</p></div>
+    <div className="student-heading"><h1>時間割と課題</h1></div>
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
@@ -71,10 +73,10 @@ export function StudentView({ data, now = Date.now() }: { data: StudentData; now
         const owner = data.courses.find(c => belongsTo(item, c));
         return <li key={JSON.stringify(item.key)}>{owner ? <button onClick={() => select(owner)} aria-controls="course-assignments">
           <strong>{deadlineText(deadlineOf(item))}</strong> {item.latest.title}<span className="muted">{owner.name}</span>
-        </button> : <span>{deadlineText(deadlineOf(item))} {item.latest.title}</span>}<Review item={item} /></li>;
+        </button> : <span>{deadlineText(deadlineOf(item))} {item.latest.title}</span>}</li>;
       })}</ul></section>}
     <div className={`student-layout${course ? ' with-course' : ''}`}>
-      <div><div className="timetable-scroll"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption>授業と次の締切</caption>
+      <div><div className="timetable-scroll"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
         <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d}>{'月火水木金土日'[d]}</th>)}</tr></thead>
         <tbody>{Array.from({ length: periods }, (_, p) => <tr key={p}><th scope="row">{p + 1}限</th>
           {Array.from({ length: days }, (_, d) => <td key={d}>{data.courses.filter(c =>
@@ -84,16 +86,17 @@ export function StudentView({ data, now = Date.now() }: { data: StudentData; now
               aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
               <strong>{c.name}</strong>{next && <><span>{deadlineText(deadlineOf(next))}</span><span>{next.latest.title}</span>
                 {(next.reviewReasons.length > 0 || next.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.reviewReasons[0]?.kind === 'unreadable-deadline'
-                  ? '締切を読めませんでした。' : next.reviewReasons[0]?.detail ?? 'LMSの一覧で見つかりませんでした。'}</span>}</>}
+                  ? '締切を確認できていません。' : next.reviewReasons[0]?.detail ?? 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
           })}</td>)}</tr>)}</tbody>
       </table></div>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
         <button className="plain-button" key={courseKey(c)} onClick={() => select(c)} aria-controls="course-assignments">{c.name}</button>)}</section>}</div>
       {course && <aside ref={panel} tabIndex={-1} className="course-panel" id="course-assignments" aria-label={`${course.name}の課題`}>
         <div className="panel-heading"><h2>{course.name}</h2><button onClick={() => setSelected(null)}>閉じる</button></div>
-        <ul>{[...pending(data.assignments), ...data.assignments.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled')]
-          .filter(item => belongsTo(item, course)).map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}</ul>
-        {!data.assignments.some(item => belongsTo(item, course)) && <p>この授業の課題はまだありません。</p>}
+        <ul>{pending(courseItems).map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}</ul>
+        {!!finished.length && <details className="finished-assignments"><summary>終了した課題</summary>
+          <ul>{finished.map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}</ul></details>}
+        {!courseItems.length && <p>この授業の課題はまだありません。</p>}
       </aside>}
     </div>
   </>;

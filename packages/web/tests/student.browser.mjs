@@ -44,12 +44,17 @@ try {
   assert.equal(await cells.count(), 2);
   assert.match(await cells.first().innerText(), /11\/10（日付のみ）/);
   assert.doesNotMatch(await page.locator('.course-cell').filter({ hasText: '架空の別大学の授業' }).innerText(), /レポート/);
+  assert.equal(await page.getByText('授業を押すと、課題が開きます。', { exact: true }).count(), 0);
+  assert.equal(await page.locator('.upcoming .review').count(), 0);
   await cells.first().click();
   const panel = page.getByRole('complementary', { name: '架空の線形代数の課題' });
   await panel.getByRole('heading', { name: 'レポートA', exact: true }).waitFor();
+  assert.doesNotMatch(await panel.innerText(), /出せました|取り消されました/);
+  await panel.getByText('今回、締切を読めませんでした。', { exact: false }).waitFor();
+  await panel.getByText('終了した課題', { exact: true }).click();
   assert.match(await panel.innerText(), /出せました/);
   assert.match(await panel.innerText(), /取り消されました/);
-  await panel.locator('summary').first().click();
+  await panel.getByText('書いてあったこと', { exact: true }).first().click();
   assert.equal(await panel.getByRole('link', { name: 'LMSで見る ›' }).first().getAttribute('href'), 'https://example.invalid/task');
   await page.getByText('から更新がありません。', { exact: false }).waitFor();
   await mkdir(evidenceDir, { recursive: true });
