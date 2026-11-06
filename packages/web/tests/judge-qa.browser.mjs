@@ -56,7 +56,10 @@ try {
       const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
       await calendar.locator('.calendar-event.submitted').getByText('出せました', { exact: true }).waitFor();
       await calendar.getByRole('button', { name: /の締切へ/ }).first().click();
-      assert.ok(await calendar.locator('.calendar-scroll').evaluate(element => element.scrollLeft) >= 0);
+      assert.equal(await calendar.locator('.calendar-event.submitted').evaluate(element => {
+        const box = element.getBoundingClientRect(); const parent = element.closest('.calendar-scroll').getBoundingClientRect();
+        return box.left >= parent.left && box.right <= parent.right;
+      }), true, 'the selected deadline is horizontally visible');
       await calendar.getByRole('button', { name: '今日へ', exact: true }).click();
       assert.equal(await calendar.locator('.calendar-scroll').evaluate(element => Math.round(element.scrollLeft)), 0);
       await student.getByText('時間割は左右に動かせます。', { exact: true }).waitFor();

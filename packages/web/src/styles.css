@@ -9,7 +9,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-variant-numeric: tabular-nums;
 }
-a { color: var(--green); }
+a { color: var(--green); display: inline-flex; align-items: center; min-height: 44px; }
 a:focus-visible, button:focus-visible, summary:focus-visible {
   outline: 3px solid var(--green);
   outline-offset: 4px;
@@ -92,6 +92,10 @@ summary { cursor: pointer; color: var(--muted); }
 .deadline-week .calendar-today { background: var(--soft); }
 .calendar-event { padding: 8px; margin-bottom: 5px; border: 1px solid var(--line); border-radius: 5px; background: var(--white); overflow-wrap: anywhere; font-size: 12px; }
 .calendar-event .muted { display: block; }
+.calendar-event.submitted { background: var(--soft); border-style: dashed; }
+.calendar-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.calendar-navigation button { min-height: 44px; }
+.scroll-hint { color: var(--muted); font-size: 12px; margin: 8px 0; }
 .calendar-outside { margin-top: 8px; font-size: 12px; }
 .course-cell, .deadline, .calendar-event { transition: background-color 1s; }
 .course-cell.changed, .deadline.changed, .calendar-event.changed { background: var(--gold-bg); transition: none; }

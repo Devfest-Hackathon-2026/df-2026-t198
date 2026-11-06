@@ -14,6 +14,7 @@ import './session.css';
 import { ChangedDeadline } from './deadline-change';
 import { missingDeadlineText } from './review-reason';
 import { DemoLogin } from './demo-login';
+import { OperationMessages, useOperationMessage } from './operation-messages';
 
 export function SessionPage({ path = '/session' }: { path?: string }) {
   const [services] = useState(() => { try { return getSessionServices(); } catch { return null; } });
@@ -74,12 +75,12 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
     return () => { active = false; window.clearInterval(interval); };
   }, [user, services]);
   if (selected) return <div className="session-content">
-    <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>
+    {selected !== user.uid && <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>}
     <StudentSession key={selected} uid={selected} user={user} services={services} planning={planning} />
   </div>;
   return <section className="session-students">
-    <h2>担当する学生</h2>
-    <p>学生が見せることにした授業と課題だけを出しています。</p>
+    <h2>{students?.length === 0 ? '自分の面談' : '担当する学生'}</h2>
+    {students?.length !== 0 && <p>学生が見せることにした授業と課題だけを出しています。</p>}
     <nav aria-label="担当する学生">
       {students?.map(student => <SessionLink key={student.uid} href={`/session/${encodeURIComponent(student.uid)}`}>
         <strong>学生</strong>{' '}<span className="session-student-id">{student.uid}</span></SessionLink>)}
@@ -116,7 +117,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
     {data.assignments.find(row => sameAssignment(row, change.assignmentKey))?.latest.title ?? '課題'}：{changeDescription(change)}
   </>;
   const base = `/session/${encodeURIComponent(uid)}`;
-  return <>
+  return <OperationMessages>
     <header className="session-heading">
       <div><h1>{own ? '自分の面談' : '学生'}</h1>
         {!own && <p className="session-student-id">{uid}</p>}</div>
@@ -145,7 +146,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
           </p>;
         })}
       </div>
-      <PlanList plans={data.plans} own={false} />
+      <PlanList plans={data.plans} own={own} />
       <div className="session-check">
         {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>
           <ul className="panel session-rows">{promises.map((plan, i) =>
@@ -174,7 +175,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
         <SessionLink className="session-next" href={`${base}/plan`}>準備する時間を相談する →</SessionLink>
       </div>
     </>}
-  </>;
+  </OperationMessages>;
 }
 function sameAssignment(row: LedgerAssignment, key: LedgerAssignment['key']) {
   return row.key.system === key.system && row.key.sourceId === key.sourceId;
@@ -192,7 +193,7 @@ function SessionAssignment({ row, data }: { row: LedgerAssignment; data: Session
     {reason && <span className="session-review"><span className="review-tag">要確認</span> {reason}</span>}
   </div></summary><div className="session-task-detail">
     <SourceLink url={row.latest.url} />
-    <h4>書いてあったこと</h4><p>{row.latest.deadline.dueText}</p>
+    <h4>LMSの課題ページに書いてあったこと</h4><p>{row.latest.deadline.dueText}</p>
     {row.officialDeadline && row.latest.deadline.kind === 'unreadable' && <p>
       前に確認できた締切：{row.officialDeadline.deadline.dueText}</p>}
     {!!changes.length && <><h4>これまでの変更</h4><ul>{changes.map(change => <li key={change.changeId}>
@@ -208,7 +209,7 @@ function SourceLink({ url }: { url: string }) {
 }
 function ContextEditor({ context, save }: { context: SessionContext; save: (context: SessionContext) => Promise<void> }) {
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useOperationMessage();
   const localInput = (value: string | null) => value ? `${dayInZone(new Date(value), 'Asia/Tokyo')}T${new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))}` : '';
   async function submit(event: FormEvent<HTMLFormElement>) {
