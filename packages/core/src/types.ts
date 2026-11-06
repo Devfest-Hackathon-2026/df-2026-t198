@@ -6,6 +6,12 @@ export type LmsSystem = 'ynu-lms' | 'panda' | 'demo-lms';
 export type Submission = 'submitted' | 'not-submitted' | 'unknown';
 export type FailureKind = 'not-logged-in' | 'http' | 'parse';
 
+/** Shared session dates; null means the date has not been set. */
+export interface SessionContext {
+  lastSessionAt: IsoDateTime | null;
+  nextSessionAt: IsoDateTime | null;
+}
+
 export interface CourseSlot {
   /** Monday = 1, Sunday = 7. */
   weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -17,6 +23,8 @@ export interface Course {
   courseId: string;
   name: string;
   slots: CourseSlot[];
+  /** Optional course page; session parameters must be removed before sending. */
+  url?: string;
 }
 
 export type Deadline = { dueText: string; timeZone: string } & (

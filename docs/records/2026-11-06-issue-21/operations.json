@@ -1,0 +1,23 @@
+{
+  "status": "pass",
+  "operations": [
+    "allowed student selection",
+    "deadline/change/review sections",
+    "student switch",
+    "session time edit",
+    "unset session time",
+    "live assignment update",
+    "390px layout",
+    "revocation clears all sections",
+    "revoked student removed",
+    "shared identity across routes",
+    "logout clears students and data"
+  ],
+  "browserErrors": [],
+  "viewport": [
+    1280,
+    960,
+    390,
+    844
+  ]
+}

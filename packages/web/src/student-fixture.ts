@@ -15,7 +15,7 @@ export function studentFixture(): StudentData {
   return {
     online: true,
     courses: [
-      { system: 'demo-lms', courseId: 'math', name: '架空の線形代数', slots: [{ weekday: 1, period: 2 }, { weekday: 3, period: 2 }] },
+      { system: 'demo-lms', courseId: 'math', name: '架空の線形代数', url: 'https://example.invalid/course?id=math', slots: [{ weekday: 1, period: 2 }, { weekday: 3, period: 2 }] },
       { system: 'panda', courseId: 'math', name: '架空の別大学の授業', slots: [{ weekday: 7, period: 6 }] },
       { system: 'demo-lms', courseId: 'other', name: '架空の集中講義', slots: [] },
     ],

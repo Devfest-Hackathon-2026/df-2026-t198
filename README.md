@@ -26,7 +26,7 @@ pnpm build
 pnpm --filter web dev
 ```
 
-表示されたローカルURLの `/student` に学生の画面、`/session` に面談画面がある。ビルドした画面は `pnpm --filter web preview` で確認できる。
+表示されたローカルURLの `/student` に学生の画面、`/session` に面談画面がある。ビルドした画面は `pnpm --filter web preview` で確認できる。面談のログイン・架空データ・API接続・試験は [面談画面のローカル確認](docs/session-development.md) を参照。
 
 学生の画面は、拡張機能と同じGoogleアカウントでログインし、本人の授業・課題・更新の状態だけをFirestoreから読み取る。時間割と締切順の一覧から授業を選ぶと課題が開き、画面を開いたまま変更を受け取る。画面からFirestoreへの書き込みは行わない。
 

@@ -13,7 +13,7 @@ Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](
 | `system` | 接続先：`ynu-lms`、`panda`、`demo-lms` |
 | `definitionId`、`definitionVersion` | 読み取りに使った定義のIDと正の整数の版 |
 | `fetchedAt` | タイムゾーン付きISO 8601日時。表示と根拠に使い、順序の判定には使わない |
-| `catalogCourses` | ホームで見つけた授業。`courseId`、`name`、`slots`（`weekday`: 月1〜日7、`period`: 1以上） |
+| `catalogCourses` | ホームで見つけた授業。`courseId`、`name`、`slots`（`weekday`: 月1〜日7、`period`: 1以上）、任意の `url`（授業の参照URL） |
 | `courseResults` | 授業ごとの `courseId`、`listComplete`、`seenSourceIds`（一覧に存在した課題のID） |
 | `assignments` | 詳細を読めた課題。下表 |
 | `failures` | `courseId`（全体ならnull）、`kind`（`not-logged-in`・`http`・`parse`）、`detail`（固定コード） |
@@ -37,6 +37,8 @@ Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](
 | `date` | `date`（YYYY-MM-DD） | 日付だけ。23:59などを補わない |
 | `none` | なし | 締切なしと明記されている |
 | `unreadable` | なし | 読めなかった。前に確認した締切を消さない |
+
+授業の `url` は課題と同じく認証情報を含まないHTTP(S) URLのみ。SIDなどを除いてから送信する。未取得なら項目を省略し、学生の授業欄にリンクを出さない。`courses/{courseKey}` にそのまま保存し、次の観測で省略された場合は以前のURLを残さない（Issue #41）。
 
 ### 受信時の検査
 
@@ -95,3 +97,15 @@ APIは受領記録、授業、台帳、履歴、取得状態を1つのFirestore�
 `PreparationPlan` はまだ従来の雛形（課題、日付、時限、面談日、カレンダーの予定ID）。本人の確定や同期待ちを扱う型への変更は、このIssueには含めない。
 
 HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形とは別。従来の `dueAt`・`dueText` を持ち、取得部品が根拠に応じて上の `deadline` に変換する。`dueAt: null` だけから締切なしとは判断しない。`stripSessionId` はpathの `;SID=...` を除く既存の補助で、queryなどを含む一般的な秘密除去ではない。
+
+## 面談日時と担当する学生（Issue #21）
+
+`SessionContext` は `lastSessionAt`・`nextSessionAt` の2項目。どちらもタイムゾーン付きISO 8601日時、未設定なら `null`。保存先は `students/{uid}/sessionContext/current`。APIは実在する日付・時刻・時差を検査し、両方の項目を必須にして、未知の項目を拒否する。未設定の期間を画面が推測することはない。
+
+- `GET /api/v1/supporter/students`：Firebase ID tokenで認証した支援担当について、許可文書の `scopes` がリストで `all` を含み、`revokedAt` が明示的に `null` の学生だけを `{ students: [{ uid }] }` で返す。学生の表示名やメールは返さない。全学生の一覧をクライアントから問い合わせる規則は追加しない。
+- `PUT /api/v1/students/{uid}/session-context`：本文は `SessionContext`、上限2 KiB。支援担当への許可の読み取りと日時の上書きを同じFirestoreトランザクションで行う。許可がない場合は本人でも403。成功時は保存した2項目を200で返す。
+- どちらも既存のID token検証（失効確認付き）を使い、応答に `Cache-Control: no-store` を付ける。未認証401、不正な本文400、サイズ超過413、JSON以外415、保存失敗500。エラーは固定コードのみ。実物の入力やSDKの例外を応答・ログに出さない。
+
+画面は許可文書をサーバーから確認してから、授業・課題・変更・更新状態・面談日時を購読する。許可の取消・削除、購読失敗で内容を消し、購読を止める。学生切替・ログアウトでも前の学生の表示と購読を破棄し、遅れて届いた通知で復活させない。台帳の永続キャッシュは作らない。通信が切れている間の取消を即座に検知したり、すでに渡した情報を回収したりするものではない。
+
+締切の表示期間は現在から次の面談日時まで（両端を含む）。日付だけの締切は、その締切の `timeZone` での今日から面談日までを含め、時刻を補わない。提出済み・取消済みはこの一覧から外す。前回からの変化は、前回の面談日時より後、現在までの変更を新しい順に出す。要確認は締切の表示期間と独立して「今日決めること」にまとめる。3日以上更新がない接続先と、一部しか確認できなかった接続先には更新状況を添える。
