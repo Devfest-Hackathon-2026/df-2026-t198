@@ -124,7 +124,11 @@ export interface PreparationPlan extends PreparationPlanInput {
   confirmedBy: string;
   createdByRole: 'student' | 'supporter';
   confirmedAt: IsoDateTime;
-  status: 'active' | 'cancelled';
+  status: 'active' | 'done' | 'cancelled';
+  /** Absent on plans created before Issue #112; means no action yet. */
+  changedBy?: string;
+  changedAt?: IsoDateTime;
+  laterResult?: 'moved' | 'no-slot';
   revision: number;
   calendarItemKey: string;
 }

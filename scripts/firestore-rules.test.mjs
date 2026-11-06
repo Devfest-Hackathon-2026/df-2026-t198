@@ -206,3 +206,21 @@ for (const role of roles) {
     }
   });
 }
+
+// Issue #112: sharing includes the student's preparation progress, never write authority.
+for (const role of roles) {
+  test(`${role.name}: preparation actions remain server-only and progress follows sharing`, async () => {
+    const db = databases.get(role.uid);
+    const path = studentPath('plans/progress');
+    await env.withSecurityRulesDisabled(context => setDoc(doc(context.firestore(), path), {
+      status: 'done', changedBy: student, changedAt: '2030-11-11T00:00:00Z', laterResult: 'moved',
+    }));
+    await expectRead(getDocFromServer(doc(db, path)), role.shared);
+    if (role.shared) {
+      const value = (await getDocFromServer(doc(db, path))).data();
+      assert.equal(value.status, 'done'); assert.equal(value.changedBy, student);
+    }
+    await assertFails(updateDoc(doc(db, path), { status: 'done', changedBy: role.uid }));
+    await assertFails(updateDoc(doc(db, path), { laterResult: 'moved', startsAt: '2030-11-12T13:00:00+09:00' }));
+  });
+}

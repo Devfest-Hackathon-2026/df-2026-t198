@@ -38,7 +38,7 @@ export function reconcileCalendarItem(previous: CalendarItem | undefined, itemKe
 }
 
 export function preparationDesired(plan: PreparationPlan): CalendarDesired {
-  if (plan.status === 'cancelled') return { state: 'deleted' };
+  if (plan.status !== 'active') return { state: 'deleted' };
   return { state: 'present', event: {
     summary: `準備：${plan.title}`, description: `${plan.createdByRole === 'student' ? '学生' : '支援担当'}が入れた準備の予定です。`,
     start: { dateTime: plan.startsAt, timeZone: plan.timeZone }, end: { dateTime: plan.endsAt, timeZone: plan.timeZone },
