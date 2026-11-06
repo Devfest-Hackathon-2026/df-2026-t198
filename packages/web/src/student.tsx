@@ -1,3 +1,4 @@
+import { PlanLinkAction } from './plan-progress';
 import { fetchStatus } from './fetch-status';
 import { missingDeadlineText, reviewReasonText } from './review-reason';
 import { useEffect, useRef, useState } from 'react';
@@ -140,10 +141,10 @@ export function StudentPage() {
   const client = firebase;
   const accountAction = (action: () => Promise<unknown>) => { setAuthError(false); void action().catch(() => setAuthError(true)); };
   return <>
-    {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin />
+    {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin returnTo={window.location.pathname === '/student/plan' ? window.location.pathname + window.location.search : undefined} />
       <button className="plain-button" onClick={() => accountAction(client.login)}>Googleでログイン</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
-        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
+        {state.status === 'ready' ? <>{window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} />}<StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
           {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</> : <p role="status">{state.status === 'error'
           ? '課題を開けませんでした。接続を確かめて、画面を開き直してください。' : '課題を開いています…'}</p>}</>}

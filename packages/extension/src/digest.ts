@@ -1,3 +1,5 @@
+import { isSafeMailText } from '../../core/src/mail-safety.js';
+
 export interface DigestMail { to: string; subject: string; text: string; html: string }
 // Consumer view of #112. Additional course/deadline fields are not persisted here.
 export interface DigestPlan extends Omit<DigestMail, 'to'> { planId: string; date: string; startsAt: string; status: 'active' }
@@ -19,20 +21,9 @@ export function morningAt(date: string): number { return Date.parse(`${date}T07:
 export function mailIsSafe(mail: DigestMail, secrets: string[]): boolean {
   if (!/^[A-Za-z0-9.!#$%&'*+/?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(mail.to) ||
     /[\r\n]/.test(mail.subject) || !mail.subject.trim()) return false;
-  let body = [mail.to, mail.subject, mail.text, mail.html].join('\n');
+  const body = [mail.to, mail.subject, mail.text, mail.html].join('\n');
   if (body.length > 512_000) return false;
-  for (let pass = 0; pass < 5; pass++) {
-    if (secrets.some(secret => secret && body.includes(secret)) ||
-      /\b(?:sid|jsessionid|session[_-]?id|cookie|authorization|(?:access|refresh|id)[_-]?token)\s*[:=]|\bbearer\s+\S+|https?:\/\/[^\s/<>"']+@/i.test(body)) return false;
-    const decoded = body.replace(/&amp;/gi, '&').replace(/&(?:colon|equals);/gi, entity => entity.toLowerCase() === '&colon;' ? ':' : '=')
-      .replace(/&#(x[\da-f]+|\d+);?/gi, (_all, code: string) => {
-        const value = code[0]!.toLowerCase() === 'x' ? parseInt(code.slice(1), 16) : Number(code);
-        return value <= 0x10ffff ? String.fromCodePoint(value) : '';
-      }).replace(/(?:%[\da-f]{2})+/gi, part => { try { return decodeURIComponent(part); } catch { return part; } });
-    if (decoded === body) return true;
-    body = decoded;
-  }
-  return false;
+  return isSafeMailText(body, secrets);
 }
 function base64(value: string): string {
   return btoa(Array.from(new TextEncoder().encode(value), byte => String.fromCharCode(byte)).join(''));

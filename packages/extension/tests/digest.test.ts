@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { encodeMail, mailIsSafe, morningAt, japanDate } from '../src/digest.js';
+import { isSafeMailText } from '../../core/src/mail-safety.js';
 
 const mail = { to: 'student@example.invalid', subject: '今日やること', text: '今日 3限：架空の課題の準備。', html: '<p>今日 3限：架空の課題の準備。</p>' };
 const decode = (value: string) => new TextDecoder().decode(Uint8Array.from(atob(value.replaceAll('-', '+').replaceAll('_', '/')), char => char.charCodeAt(0)));
@@ -40,4 +41,14 @@ describe('digest mail boundary', () => {
 
 it.each(['Token: の仕組み', 'Secret= の文法', 'https://example.invalid/tasks/@student'])('allows ordinary task text: %s', text => {
   expect(mailIsSafe({ ...mail, text, html: `<p>${text}</p>` }, [])).toBe(true);
+});
+
+it.each(['得点の30% sid%3Dfictional', 'Cookie&#58; 設定', 'SID&amp;#x3d;fictional',
+  '得点の30%の準備', 'Cookie&#32;の仕組み'])('shares the server mail-text decision: %s', text => {
+  expect(mailIsSafe({ ...mail, text, html: '' }, [])).toBe(isSafeMailText(text));
+});
+it.each(['synthetic-current-secret', 'synthetic%2Dcurrent%2Dsecret', 'synthetic&#45;current&#45;secret',
+  '30% synthetic%252Dcurrent%252Dsecret'])('also rejects exact runtime secrets after shared decoding: %s', text => {
+  expect(isSafeMailText(text)).toBe(true);
+  expect(mailIsSafe({ ...mail, text }, ['synthetic-current-secret'])).toBe(false);
 });
