@@ -1,4 +1,5 @@
 export interface ProbeConfig {
+  apiOrigin?: string;
   oauthClientId: string;
   firebase: { apiKey: string; authDomain: string; projectId: string; appId: string };
   invalidJson?: boolean;

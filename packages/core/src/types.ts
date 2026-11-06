@@ -131,3 +131,42 @@ export interface FetchState {
   lastResult: 'success' | 'partial' | 'failed';
   lastAppliedObservationId: string;
 }
+
+/** Calendar API fields owned by the application; no assignment body. */
+export interface DeadlineEvent {
+  summary: string;
+  description: string;
+  start: { date: IsoDate } | { dateTime: IsoDateTime; timeZone: string };
+  end: { date: IsoDate } | { dateTime: IsoDateTime; timeZone: string };
+  transparency: 'transparent';
+  reminders: { useDefault: boolean };
+}
+export type CalendarDesired = { state: 'present'; event: DeadlineEvent } | { state: 'deleted' };
+export type CalendarErrorCode = 'authorization-required' | 'calendar-unavailable' | 'event-conflict' | 'network-error';
+export interface CalendarItem {
+  itemKey: string;
+  kind: 'deadline';
+  sourceKey: AssignmentKey;
+  calendarId: string | null;
+  eventId: string;
+  generation: number;
+  desiredRevision: number;
+  desired: CalendarDesired;
+  appliedRevision: number;
+  appliedAt: IsoDateTime | null;
+  lastAttemptedAt: IsoDateTime | null;
+  lastErrorCode: CalendarErrorCode | null;
+}
+export interface CalendarReport {
+  itemKey: string;
+  generation: number;
+  eventId: string;
+  revision: number;
+  errorCode: CalendarErrorCode | null;
+}
+export interface CalendarIntegration {
+  mode: 'google' | 'mock';
+  executor: 'extension' | 'demo';
+  calendarId: string;
+  connectionState: 'connected' | 'reauthorization-required' | 'recovery-required';
+}

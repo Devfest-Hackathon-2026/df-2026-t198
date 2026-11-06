@@ -302,3 +302,11 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 - 未知の応答を候補キー・引用・日時で検査して要確認の提案だけ返す。#16（PR #27）のmerge後、既存の台帳型へ `conflicting-deadline` を足す純粋関数まで接続した。同じシステム・授業の候補だけを渡し、公式締切・観測・提出状態を保持する。Firestore保存や呼び出し元への接続時には本人の確認と永続的な版の取得済み判定を渡す。実物のLMSのお知らせは保持条件が確かめられるまで有効にしない。
 - 費用は呼び出す前に予約し、usage（推論込み）で精算する。日次の記録はプロジェクト別のローカルファイルと排他ロックを使う。Firestoreをこのために追加しない。複数Mac・Cloud Runへの接続時には共通の永続ストアが別途必要。料金は[公式表](https://cloud.google.com/model-garden/pricing)の標準単価で保守的に計算する。初回測定・上限・確認用の扱いとコマンドは [見本の説明](../lms-definitions/announcements/README.md)。
 - 脅威の範囲は、お知らせとモデル応答による命令注入・他の課題への誤結合・ログへの本文混入・評価費用。ツールなしの呼び出し、出力検査、固定のエラーコード、予約上限を試験する。API・ログイン・権限・デプロイは変更しないため、このPRでの認可検証の対象外。
+
+## 締切の同期の実装（2026-11-06、Issue #40）
+
+- 根拠：Issue #40とD23の事前承認、design.md 5節。Codexがこの範囲で実装を具体化した。依存の追加はない。
+- 台帳と予定の望ましい状態を同じFirestoreトランザクションに保存する。拡張機能が既存の接続テストで作った専用カレンダーを登録し、GETで未反映を取り、版付きPOSTで結果を報告する。接続先の変更は古い予定を置き去りにするため自動では行わない。
+- 予定IDは世代ごとに先に確定する。削除が未確認のまま課題が戻った場合は、その削除を終えてから新世代を作る。すぐ新IDを作る案は、応答が失われた古い予定を残すため採らない。
+- GoogleへのREST要求は既存のfetchを使う。新しいSDKは足さない。公式仕様の[insert](https://developers.google.com/workspace/calendar/api/v3/reference/events/insert)・[update](https://developers.google.com/workspace/calendar/api/v3/reference/events/update)・[delete](https://developers.google.com/workspace/calendar/api/v3/reference/events/delete)を確認し、固定ID・全体更新・削除を使う。例のコードは転用していない。Google以外の書き込み先は `CalendarTarget` で差し替える。
+- 実物の確認はSoraのChromeで行う手順をPRに残し、今回は実施しない。Issueの指定どおりC16・C17を偽APIで判定し、C15は未完了に残す。

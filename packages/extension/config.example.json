@@ -1,5 +1,6 @@
 {
   "oauthClientId": "",
+  "apiOrigin": "",
   "firebase": {
     "apiKey": "",
     "authDomain": "",
