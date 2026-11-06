@@ -31,10 +31,10 @@ try {
         if (!message.type.startsWith('digest-')) return { steps: [] };
         if (globalThis.drop) throw new Error('synthetic-private-transport-error');
         if (message.type === 'digest-setting') {
-          if (globalThis.deny) return { ok: false, enabled: globalThis.preference };
+          if (globalThis.deny) return { ok: false, enabled: globalThis.preference, problem: globalThis.problem };
           globalThis.preference = message.enabled;
         }
-        return { ok: true, enabled: globalThis.preference };
+        return { ok: true, enabled: globalThis.preference, problem: globalThis.problem };
       } } };
     });
     await page.goto('https://extension.example.test/options.html');
@@ -53,6 +53,11 @@ try {
     await page.evaluate(() => { globalThis.deny = true; }); await toggle.click();
     await page.waitForFunction(() => !globalThis.document.querySelector('#digest-enabled').checked);
     assert.match(await status.textContent(), /もう一度操作/);
+    await page.evaluate(() => { globalThis.deny = false; globalThis.problem = 'authorization-required'; });
+    await toggle.click();
+    await status.getByText('メール送信の許可を確認できません。「毎朝、今日やることをGmailで受け取る」を入れ直してください。', { exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+    await page.screenshot({ path: `${dir}/options-authorization-${name}.png`, fullPage: true });
     await page.evaluate(() => { globalThis.drop = true; }); await toggle.click();
     await page.waitForFunction(() => globalThis.document.querySelector('#digest-status').textContent.includes('開き直して'));
     assert.equal((await page.locator('body').textContent()).includes('synthetic-private'), false);

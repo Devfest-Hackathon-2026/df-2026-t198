@@ -102,7 +102,7 @@ try {
   const notice = page.locator('.session-updates .notice');
   await fetchRef.set({ studentId: 'demo-student-a', system: 'ynu-lms', lastSucceededAt: last,
     lastAttemptedAt: last, lastResult: 'success', lastFailureKind: null, lastAppliedObservationId: 'fictional-i94' });
-  await notice.getByText(`YNU LMS：最後にLMSから取ったのは${lastDay}です。学生がLMSを開くと新しくなります。`, { exact: true }).waitFor();
+  await notice.getByText(`YNU LMS：${lastDay}から更新がありません。学生がLMSを開くと新しくなります。`, { exact: true }).waitFor();
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: width === 1280 ? 960 : 844 });
     assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
@@ -112,7 +112,7 @@ try {
   }
   await page.setViewportSize({ width: 1280, height: 960 });
   await fetchRef.update({ lastSucceededAt: now.toISOString(), lastResult: 'failed', lastFailureKind: 'http' });
-  await notice.getByText('YNU LMS：今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。', { exact: true }).waitFor();
+  await notice.getByText('YNU LMS：課題をすべて確認できていません。LMSを一緒に開いて確かめてください。', { exact: true }).waitFor();
   await fetchRef.update({ lastResult: 'success', lastFailureKind: null });
   await notice.waitFor({ state: 'detached' });
   assert.match(await page.locator('.session-updates').innerText(), /YNU.*時点の情報/);

@@ -216,7 +216,7 @@ it.each([
       lastResult: 'success', lastFailureKind: null, lastAppliedObservationId: 'fictional' }];
     await open(); await click('学生 student-a');
     const notice = host.querySelector('.session-updates .notice');
-    if (stale) expect(notice?.textContent).toBe('YNU LMS：最後にLMSから取ったのは11/4です。学生がLMSを開くと新しくなります。');
+    if (stale) expect(notice?.textContent).toBe('YNU LMS：11/4から更新がありません。学生がLMSを開くと新しくなります。');
     else {
       expect(notice).toBeNull();
       expect(host.querySelector('.session-updates')?.textContent).toContain('11/4(水) 00:30 時点の情報');
@@ -232,5 +232,5 @@ it.each(['partial', 'failed'] as const)('shows incomplete fetching in a notice: 
     lastResult, lastFailureKind: 'http', lastAppliedObservationId: 'fictional' }];
   await open(); await click('学生 student-a');
   expect(host.querySelector('.session-updates .notice')?.textContent).toBe(
-    'YNU LMS：今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。');
+    'YNU LMS：課題をすべて確認できていません。LMSを一緒に開いて確かめてください。');
 });

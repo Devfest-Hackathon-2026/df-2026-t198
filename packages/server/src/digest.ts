@@ -66,8 +66,8 @@ export function buildDigest(to: string, plans: PreparationPlan[], assignments: L
     const link = (action: string) => new URL(`/student/plan?id=${encodeURIComponent(plan.planId)}&do=${action}&rev=${plan.revision}`, origin).href;
     const doneUrl = link('done'); const laterUrl = link('later');
     const line = `今日 ${plan.period}限（${plan.startsAt.slice(11, 16)}〜）：${task.title}の準備。締切は${deadlineLabel(task.deadline)}。`;
-    const text = `${line}\n${task.courseName}\nLMSで見る：${task.url}\n終わった：${doneUrl}\n後回し：${laterUrl}\n「終わった」は準備の記録です。LMSへの提出は別に行ってください。`;
-    const html = `<article><p>${escape(line)}</p><p>${escape(task.courseName)}</p><p><a href="${escape(task.url)}">LMSで見る</a></p><p><a href="${escape(doneUrl)}">終わった</a> <a href="${escape(laterUrl)}">後回し</a></p><p>「終わった」は準備の記録です。LMSへの提出は別に行ってください。</p></article>`;
+    const text = `${line}\n${task.courseName}\nLMSで見る：${task.url}\n終わった：${doneUrl}\n後回し：${laterUrl}\n「終わった」は準備が終わったときに押してください。LMSへの提出は別に行ってください。`;
+    const html = `<article><p>${escape(line)}</p><p>${escape(task.courseName)}</p><p><a href="${escape(task.url)}">LMSで見る</a></p><p><a href="${escape(doneUrl)}">終わった</a> <a href="${escape(laterUrl)}">後回し</a></p><p>「終わった」は準備が終わったときに押してください。LMSへの提出は別に行ってください。</p></article>`;
     return [{ ...task, planId: plan.planId, date, period: plan.period, startsAt: plan.startsAt, endsAt: plan.endsAt,
       status: 'active' as const, doneUrl, laterUrl, subject: `${plan.startsAt.slice(11, 16)}から：${task.title}の準備`, text, html }];
   });
