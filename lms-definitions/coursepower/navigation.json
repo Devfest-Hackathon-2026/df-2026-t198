@@ -1,5 +1,12 @@
 {
   "home": "/lms/homeHoml/doIndex",
+  "homePaths": ["/lms/homeHoml/", "/lms/homeHoml/doIndex"],
+  "statefulSession": true,
+  "restore": "home",
+  "errorPage": {
+    "paths": ["/lms/error/", "/lms/error"],
+    "markers": [{ "selector": "body", "text": "システムエラーが発生しました" }]
+  },
   "course": {
     "path": "/lms/homeHoml/linkKougi",
     "form": "homeHomlForm",

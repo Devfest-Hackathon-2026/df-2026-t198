@@ -1,5 +1,5 @@
 import navigation from '../../../lms-definitions/coursepower/navigation.json' with { type: 'json' };
-import { LmsReadError, loggedOut, pageDiagnostic, safeDiagnostic } from './collection-diagnostics.js';
+import { LmsReadError, isStateError, loggedOut, pageDiagnostic, safeDiagnostic, stopsCollection } from './collection-diagnostics.js';
 import { sessionFromUrl } from './session.js';
 import { readPage } from '../../core/src/html-reader.js';
 import definition from '../../../lms-definitions/coursepower/definition.json' with { type: 'json' };
@@ -23,26 +23,37 @@ export function validOperation(input: unknown): input is LmsOperation {
 
 /** No arbitrary URL, method, headers, or submission operations cross the tab boundary. */
 export async function executeLmsRequest(input: unknown, pageUrl: string, sid: string,
-  fetcher: typeof fetch = fetch, pause = () => new Promise<void>(resolve => setTimeout(resolve, 250))): Promise<LmsPage> {
+  fetcher: typeof fetch = fetch, pause = () => new Promise<void>(resolve => setTimeout(resolve, 250)),
+  signal?: AbortSignal, canStart = () => true): Promise<LmsPage> {
   if (!validOperation(input) || sessionFromUrl(pageUrl) !== sid || !/^[A-Za-z0-9._~%+-]{1,512}$/.test(sid)) {
     throw new Error('invalid-request');
   }
   const path = input.kind === 'home' ? navigation.home : navigation[input.kind].path;
   const url = new URL(`${path};SID=${sid}`, new URL(pageUrl).origin);
+  if (signal?.aborted || !canStart()) throw new Error('yielded');
   await pause();
+  if (signal?.aborted || !canStart()) throw new Error('yielded');
   let diagnostic = safeDiagnostic({ path });
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
+  const timeout = setTimeout(abort, 15_000);
   try {
     const response = await fetcher(url.href, {
       method: input.kind === 'home' ? 'GET' : 'POST',
       ...(input.kind === 'home' ? {} : { body: new URLSearchParams(input.fields) }),
       credentials: 'include', cache: 'no-store', referrerPolicy: 'no-referrer', redirect: 'follow',
-      signal: AbortSignal.timeout(15_000),
+      signal: controller.signal,
     });
     diagnostic = safeDiagnostic({ httpStatus: response.status, path: response.url });
     const final = new URL(response.url);
     if (final.origin !== url.origin || !final.pathname.startsWith('/lms/')) throw new Error();
     const html = await response.text();
     if (html.length > 5_000_000) throw new Error();
+    if (signal?.aborted) throw new Error('yielded');
+    if (isStateError({ html, url: response.url })) {
+      throw new LmsReadError('lms-state', pageDiagnostic({ html, url: response.url, status: response.status }));
+    }
     if (!response.ok) {
       diagnostic = pageDiagnostic({ html, url: response.url, status: response.status });
       try { readPage(definition, html, { utcOffset: '+09:00' }); }
@@ -53,6 +64,11 @@ export async function executeLmsRequest(input: unknown, pageUrl: string, sid: st
     final.pathname = final.pathname.replace(/;[^/]*/g, ''); final.search = ''; final.hash = '';
     return { html, url: final.href, status: response.status };
   } catch (error) {
+    if (stopsCollection(error)) throw error;
+    if (signal?.aborted) throw new Error('yielded', { cause: error });
     throw new LmsReadError(loggedOut(error) ? 'not-logged-in' : 'http-error', diagnostic);
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener('abort', abort);
   }
 }

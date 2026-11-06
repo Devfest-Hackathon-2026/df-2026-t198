@@ -47,3 +47,14 @@ it('still rejects invalid IDs, types and unapproved fields before requesting the
   await expect(executeLmsRequest(detail(), pageUrl, 'different-session', fetcher, async () => {})).rejects.toThrow('invalid-request');
   expect(fetcher).not.toHaveBeenCalled();
 });
+
+it('does not issue a request if the student takes over during request pacing', async () => {
+  let resume, allowed = true;
+  const fetcher = vi.fn();
+  const pending = executeLmsRequest({ kind: 'home' }, pageUrl, 'synthetic-session', fetcher,
+    () => new Promise(resolve => { resume = resolve; }), undefined, () => allowed);
+  allowed = false;
+  resume();
+  await expect(pending).rejects.toThrow('yielded');
+  expect(fetcher).not.toHaveBeenCalled();
+});
