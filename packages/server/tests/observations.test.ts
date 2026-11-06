@@ -122,3 +122,30 @@ describe('observation wire validation', () => {
     for (const value of invalid) expect(() => parseObservation(value)).toThrow('invalid-observation');
   });
 });
+
+
+describe('授業の参照URL', () => {
+  it('安全なURLを受け取り、URLのない従来の観測も受け取る', () => {
+    const body = observation();
+    const url = 'https://example.invalid/course?id=fictional';
+    const withUrl = { ...body, catalogCourses: body.catalogCourses.map(course => ({ ...course, url })) };
+    expect(parseObservation(withUrl)).toEqual(withUrl);
+    expect(parseObservation(body)).toEqual(body);
+  });
+  it.each([
+    'https://example.invalid/course;SID=synthetic-marker',
+    'https://example.invalid/course?SID=synthetic-marker',
+    'https://example.invalid/course?%53%49%44=synthetic-marker',
+    'https://example.invalid/course%3BSID%3Dsynthetic-marker',
+    'https://example.invalid/course?access_token=synthetic-marker',
+    'https://example.invalid/course?auth=synthetic-marker',
+    'https://user:synthetic-marker@example.invalid/course',
+    'https://example.invalid/course#synthetic-marker',
+    'javascript:alert(1)', '', null,
+  ])('認証情報や不正な授業URLを拒否する (%s)', url => {
+    const body = observation();
+    expect(() => parseObservation({ ...body,
+      catalogCourses: body.catalogCourses.map(course => ({ ...course, url })),
+    })).toThrow('invalid-observation');
+  });
+});

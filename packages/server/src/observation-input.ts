@@ -51,6 +51,17 @@ function oneOf(value: unknown, choices: readonly string[]) {
   requireValid(typeof value === 'string' && choices.includes(value));
 }
 
+function referenceUrl(value: unknown) {
+  text(value, 2048);
+  try {
+    const url = new URL(value);
+    requireValid(['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !url.hash);
+    for (const key of url.searchParams.keys()) {
+      requireValid(!/(?:sid|session|cookie|token|auth|password|secret|api[_-]?key)/i.test(key));
+    }
+  } catch { throw new InvalidObservation(); }
+}
+
 function deadline(value: unknown) {
   const base = record(value, ['kind', 'dueText', 'timeZone'], ['dueAt', 'date']);
   text(base['dueText'], 1000, true);
@@ -78,8 +89,9 @@ export function parseObservation(value: unknown): Observation {
   requireValid(Number.isSafeInteger(input['definitionVersion']) && Number(input['definitionVersion']) > 0);
   timestamp(input['fetchedAt']);
   const courseIds = list(input['catalogCourses'], 100).map(value => {
-    const course = record(value, ['courseId', 'name', 'slots']);
+    const course = record(value, ['courseId', 'name', 'slots'], ['url']);
     id(course['courseId']); text(course['name']);
+    if (Object.hasOwn(course, 'url')) referenceUrl(course['url']);
     for (const value of list(course['slots'], 50)) {
       const slot = record(value, ['weekday', 'period']);
       requireValid(Number.isInteger(slot['weekday']) && Number(slot['weekday']) >= 1 && Number(slot['weekday']) <= 7);
@@ -103,14 +115,7 @@ export function parseObservation(value: unknown): Observation {
     const assignment = record(value, ['sourceId', 'courseId', 'title', 'url', 'deadline', 'submission'], ['submittedAt']);
     id(assignment['sourceId']); id(assignment['courseId']); text(assignment['title']);
     requireValid(seen.get(assignment['sourceId']) === assignment['courseId']);
-    text(assignment['url'], 2048);
-    try {
-      const url = new URL(assignment['url']);
-      requireValid(['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !url.hash);
-      for (const key of url.searchParams.keys()) {
-        requireValid(!/(?:sid|session|cookie|token|auth|password|secret|api[_-]?key)/i.test(key));
-      }
-    } catch { throw new InvalidObservation(); }
+    referenceUrl(assignment['url']);
     deadline(assignment['deadline']);
     oneOf(assignment['submission'], ['submitted', 'not-submitted', 'unknown']);
     if (Object.hasOwn(assignment, 'submittedAt')) {

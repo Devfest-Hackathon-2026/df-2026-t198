@@ -23,6 +23,8 @@ export interface Course {
   courseId: string;
   name: string;
   slots: CourseSlot[];
+  /** Optional course page; session parameters must be removed before sending. */
+  url?: string;
 }
 
 export type Deadline = { dueText: string; timeZone: string } & (
@@ -120,6 +122,18 @@ export interface PreparationPlan {
   period: number;
   decidedOn: IsoDate;
   calendarEventId: string;
+}
+
+/** Ephemeral suggestion, never a confirmed plan or a calendar event. */
+export interface PreparationCandidate {
+  assignment: AssignmentKey;
+  date: IsoDate;
+  period: number;
+}
+
+/** Request body shape only; delivery and student confirmation are not implemented. */
+export interface PreparationConfirmationRequest {
+  candidates: PreparationCandidate[];
 }
 
 export interface FetchState {

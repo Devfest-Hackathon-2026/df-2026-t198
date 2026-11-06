@@ -8,6 +8,7 @@ import { observation } from '../../server/tests/observation-fixture';
 import { emptySession, type SessionData } from '../src/session-model';
 import type { SessionServices } from '../src/session-firebase';
 import { SessionPage } from '../src/session-page';
+import { usePathname } from '../src/session-route';
 
 // Reuse the workspace's existing DOM parser for component tests; no browser automation or new dependency.
 const requireCore = createRequire(new URL('../../core/package.json', import.meta.url));
@@ -24,6 +25,8 @@ beforeEach(() => {
   const { window, document } = parseHTML('<!doctype html><html><body><div id="root"></div></body></html>');
   vi.stubGlobal('window', window); vi.stubGlobal('document', document);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  window.location = { pathname: '/session' };
+  window.history = { pushState: (_state: unknown, _title: string, path: string) => { window.location.pathname = path; } };
   vi.stubGlobal('FormData', class {
     constructor(private form: HTMLFormElement) {}
     get(name: string) { return this.form.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.value ?? null; }
@@ -54,31 +57,47 @@ beforeEach(() => {
   root = createRoot(host);
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
-async function open() { await act(async () => { root.render(<SessionPage />); }); }
+function RoutedSession() { const path = usePathname(); return <SessionPage path={path} />; }
+async function open() { await act(async () => { root.render(<RoutedSession />); }); }
 async function click(text: string) {
-  const button = [...host.querySelectorAll('button')].find(button => button.textContent === text);
+  const button = [...host.querySelectorAll('button, a')].find(button => button.textContent?.trim() === text);
   expect(button, text).toBeDefined();
-  await act(async () => { button!.click(); });
+  await act(async () => { const event = new window.Event('click', { bubbles: true, cancelable: true });
+    Object.assign(event, { button: 0 }); button!.dispatchEvent(event); });
 }
-it('renders deadline, changes, a single decisions section, and clears the previous student on selection', async () => {
+it('separates checking from planning and opens source details only inside the assignment row', async () => {
   await open();
-  expect(host.textContent).not.toContain('数学のレポート');
+  expect(host.textContent).toContain('学生が見せることにした');
   await click('学生 student-a');
+  expect(window.location.pathname).toBe('/session/student-a');
   expect(host.querySelector('#session-deadlines')?.parentElement?.textContent).toContain('数学のレポート');
   expect(host.querySelector('#session-changes')?.parentElement?.textContent).toContain('課題が出ました');
+  expect(host.querySelector('#session-decisions')).toBeNull();
+  expect(host.querySelector('table')).toBeNull();
+  expect(host.querySelector('.session-task:not([open]) a')?.textContent).toContain('LMSで見る');
+  expect(host.querySelector('.session-task summary')?.textContent).toContain('要確認');
+  expect(host.textContent).not.toContain('学生が見せることにした');
+  await click('② 相談する');
+  expect(window.location.pathname).toBe('/session/student-a/plan');
+  expect(host.querySelector('table')).not.toBeNull();
+  expect(host.querySelector('#session-deadlines')).toBeNull();
+  expect(host.querySelector('#session-changes')).toBeNull();
   expect(host.querySelectorAll('#session-decisions')).toHaveLength(1);
-  expect(host.querySelector('#session-decisions')?.parentElement?.textContent).toContain('要確認');
-  expect(host.textContent).not.toMatch(/一緒に決めること|一緒に確かめること|前回決めたこと|未提出|準備の候補/);
-  await click('学生 student-b');
+  expect(host.querySelector('button[aria-describedby="session-confirm-help"]')?.hasAttribute('disabled')).toBe(true);
+  expect(host.textContent).toContain('確認の依頼は準備中');
+  expect(save).not.toHaveBeenCalled();
+  await click('① 確かめる');
+  await click('学生を選び直す'); await click('学生 student-b');
   expect(host.textContent).toContain('物理の演習'); expect(host.textContent).not.toContain('数学のレポート');
 });
 it('removes all displayed student data on revocation and on logout', async () => {
-  await open(); await click('学生 student-a');
+  await open(); await click('学生 student-a'); await click('② 相談する');
   await act(async () => { grants.get('student-a')!(false); });
   expect(host.textContent).toContain('表示していた内容を消しました');
   expect(host.textContent).not.toContain('数学のレポート');
   expect(host.querySelector('#session-changes')).toBeNull();
-  await click('学生 student-b'); await click('ログアウト');
+  expect(host.querySelector('table')).toBeNull();
+  await click('学生を選び直す'); await click('学生 student-b'); await click('ログアウト');
   expect(host.textContent).toContain('面談にログイン');
   expect(host.textContent).not.toContain('物理の演習');
   expect(host.textContent).not.toContain('学生 student-a');
@@ -100,4 +119,15 @@ it('saves entered session times with an explicit timezone and allows unset dates
     lastSessionAt: null, nextSessionAt: '2026-11-13T11:00:00+09:00',
   });
   expect(host.textContent).toContain('面談日時を保存しました');
+});
+
+it('loads the planning URL directly and shows saved promises without creating plans', async () => {
+  window.location.pathname = '/session/student-a/plan';
+  data['student-a']!.plans = [{ assignment: data['student-a']!.assignments[0]!.key,
+    date: '2026-11-10', period: 3, decidedOn: data['student-a']!.context.lastSessionAt!.slice(0, 10), calendarEventId: 'fictional' }];
+  await open();
+  expect(host.querySelector('table')).not.toBeNull();
+  await click('① 確かめる');
+  expect(host.querySelector('#session-promises')?.parentElement?.textContent).toContain('3限に準備');
+  expect(save).not.toHaveBeenCalled();
 });
