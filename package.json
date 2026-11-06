@@ -14,7 +14,7 @@
     "test:notify-decisions": "node --test scripts/notify-decisions.test.mjs",
     "agent-merge": "node scripts/agent-merge.mjs",
     "build": "pnpm -r build",
-    "gcp-build": "pnpm --filter server build",
+    "gcp-build": "pnpm --filter server... build",
     "start": "pnpm --filter server start",
     "emulators": "firebase emulators:start --project demo-kadai-hisho",
     "emulators:web": "firebase emulators:start --project demo-kadai-hisho --only auth,hosting",

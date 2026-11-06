@@ -17,3 +17,5 @@
 !packages/server/tsconfig.build.json
 !packages/server/src/
 !packages/server/src/*.ts
+!packages/server/src/announcements/
+!packages/server/src/announcements/*.ts
