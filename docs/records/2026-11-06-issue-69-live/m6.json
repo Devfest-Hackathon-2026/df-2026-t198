@@ -2,11 +2,11 @@
   "environment": "deployed Cloud Run + Firebase Hosting/Auth/Firestore + Chromium",
   "origin": "https://project-00439085-4e2d-44c3-9a8.web.app",
   "calendar": "mock",
-  "pair": "trial-2",
-  "measuredAt": "2026-11-06T04:06:06.621Z",
-  "passed": 6,
+  "pair": "trial-3",
+  "measuredAt": "2026-11-06T04:11:49.739Z",
+  "passed": 8,
   "total": 8,
-  "percent": 75,
+  "percent": 100,
   "steps": [
     {
       "name": "学生と支援担当が別のブラウザでログインする",
@@ -34,16 +34,16 @@
     },
     {
       "name": "開いたままの面談画面が変わる",
-      "status": "fail"
+      "status": "pass"
     },
     {
       "name": "応答を失った再送でも履歴と予定が増えない",
-      "status": "not-run"
+      "status": "pass"
     }
   ],
   "c14": true,
   "sourceDeadlineBefore": "2026-11-09T17:00:00+09:00",
   "sourceDeadlineAfter": "2026-11-10T08:00:00.000Z",
   "browserErrors": 0,
-  "failurePhase": "live-supporter-screen"
+  "failurePhase": null
 }
