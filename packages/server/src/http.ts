@@ -5,12 +5,15 @@ import { receiveSessionRequest } from './session-http.js';
 import type { SessionStore } from './session-store.js';
 import { receiveDemoRequest } from './demo-http.js';
 import { DemoForbidden, type DemoStore } from './demo-store.js';
+import { receiveAnnouncement } from './announcements/http.js';
+import type { createAnnouncementStore } from './announcements/store.js';
 
 export interface ObservationDependencies {
   verifyToken: (token: string) => Promise<string>;
   saveObservation: (uid: string, observation: Observation) => Promise<ObservationResult>;
   session?: SessionStore;
   demo?: DemoStore;
+  announcements?: ReturnType<typeof createAnnouncementStore>;
 }
 const MAX_BODY = 512 * 1024;
 function json(response: ServerResponse, status: number, body: unknown) {
@@ -55,6 +58,10 @@ export function createHttpServer(dependencies?: ObservationDependencies) {
     const path = request.url?.split('?')[0];
     if (request.method === 'POST' && path === '/api/v1/demo/extend') {
       void receiveDemoRequest(request, response, dependencies);
+      return;
+    }
+    if (request.method === 'POST' && path === '/api/v1/announcements') {
+      void receiveAnnouncement(request, response, dependencies);
       return;
     }
     if ((request.method === 'GET' && path === '/api/v1/supporter/students') ||

@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 17/41（41%）、必須 16/37（43%）
+完成条件：全体 18/41（43%）、必須 17/37（45%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -76,14 +76,14 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 
 ### お知らせの文章（Gemini）
 
-- [ ] C28 〈未定〉 お知らせの文章から締切の変更を拾い、課題にひも付けて要確認にする。課題の締切の欄は書き換えない。
+- [x] C28 〈未定〉 お知らせの文章から締切の変更を拾い、課題にひも付けて要確認にする。課題の締切の欄は書き換えない。→ `pnpm test:announcements:emulator`、`packages/server/tests/announcements.emulator.test.ts`（架空のお知らせ・要確認だけの保存・同時再送・解析失敗/待機中の観測更新・公式締切の保持）。実物のお知らせは無効のまま。模擬LMS画面の描画はIssue #19の続き
 - [x] C29 〈未定〉 架空のお知らせ30件で、指標M3を測れる。〔削れる〕 → `pnpm metrics:m3`（架空30件、再現率・適合率とも100%、30回・19,410トークン。`docs/records/2026-11-06-m3.md`）。作った本人に未知の確認用の見本での測定は別のIssue
 - [x] C30 〈未定〉 別の大学のLMSのページを保存して渡すと、Geminiが読み取り方の下書きを作り、人が確かめてから `lms-definitions/` に取り込める。確かめ方：模擬LMSのページから下書きを作り、その下書きで取得の試験が通る → Issue #46、`pnpm definition:check docs/records/2026-11-06-issue-46-definition.json`（Gemini実測の下書きで既存試験5件成功）。[実測記録](docs/records/2026-11-06-issue-46.md)
 
 ### 模擬LMSと試し方
 
 - [ ] C31 〈未定〉 架空の授業と課題を載せた模擬LMS（CoursePowerとは違う作り）をFirebase Hostingに置く。確かめ方：公開したURL
-- [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-verification.md`
+- [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-main-integration.md`
 - [ ] C33 〈未定〉 試す人のための学生と支援担当のアカウントがあり、拡張機能を入れなくても一連の操作をブラウザで試せる。確かめ方：入れていないブラウザで操作
 - [ ] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6
 
