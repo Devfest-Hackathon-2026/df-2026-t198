@@ -1,4 +1,5 @@
 export interface ProbeConfig {
+  apiOrigin?: string;
   oauthClientId: string;
   firebase: { apiKey: string; authDomain: string; projectId: string; appId: string };
   invalidJson?: boolean;
@@ -19,3 +20,10 @@ export function missingConfig(config: ProbeConfig): string[] {
 export const probeConfig: ProbeConfig = typeof __AUTH_PROBE_CONFIG__ === 'undefined'
   ? { oauthClientId: '', firebase: { apiKey: '', authDomain: '', projectId: '', appId: '' } }
   : __AUTH_PROBE_CONFIG__;
+
+export function observationApiOrigin(): string | null {
+  try {
+    const url = new URL(probeConfig.apiOrigin ?? '');
+    return url.protocol === 'https:' && url.origin === probeConfig.apiOrigin ? url.origin : null;
+  } catch { return null; }
+}

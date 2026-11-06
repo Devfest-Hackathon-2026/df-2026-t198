@@ -40,4 +40,18 @@ describe('local probe build config', () => {
       await expect(auditBundle({ outputs: { [file]: { imports: [{ external: true }] } } })).rejects.toThrow('unresolved imports');
     } finally { await rm(dir, { recursive: true }); }
   });
+
+  it('grants LMS access and only a configured HTTPS API origin', async () => {
+    const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+    for (const apiOrigin of ['', 'https://api.example.test/path', 'http://api.example.test', 'https://user:secret@api.example.test', 'https://api.example.test?token=synthetic']) {
+      const result = configureManifest(manifest, { apiOrigin });
+      expect(result.host_permissions).toContain('https://lms.ynu.ac.jp/*');
+      expect(result.host_permissions.some(host => host.includes('example.test'))).toBe(false);
+      expect(result.content_security_policy.extension_pages).not.toContain('example.test');
+    }
+    const result = configureManifest(manifest, { apiOrigin: 'https://api.example.test' });
+    expect(result.host_permissions).toContain('https://api.example.test/*');
+    expect(result.content_security_policy.extension_pages).toContain('https://api.example.test');
+    expect(manifest.host_permissions).not.toContain('https://api.example.test/*');
+  });
 });
