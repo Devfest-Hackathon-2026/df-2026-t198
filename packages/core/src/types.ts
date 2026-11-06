@@ -179,6 +179,8 @@ export interface CalendarReport {
   errorCode: CalendarErrorCode | null;
 }
 export interface CalendarIntegration {
+  /** Persisted mock destination; never populated by the Google executor. */
+  mockEvents?: Record<string, { itemKey: string; generation: number; revision: number; event: DeadlineEvent }>;
   mode: 'google' | 'mock';
   executor: 'extension' | 'demo';
   calendarId: string;
