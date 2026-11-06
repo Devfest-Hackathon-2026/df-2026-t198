@@ -3,6 +3,7 @@ import type { Course, PreparationCandidate, PreparationPlan } from './types.js';
 /** Same conservative candidate policy for the session screen and postponement. */
 export function preparationSlots(assignment: PreparationCandidate['assignment'], dueDate: string,
   courses: Course[], now: Date, limit = 2, occupied: PreparationPlan[] = [], after?: PreparationCandidate): PreparationCandidate[] {
+  courses = courses.filter(course => course.currentTerm !== false);
   const result: PreparationCandidate[] = [];
   const periods = Math.max(5, ...courses.flatMap(course => course.slots.map(slot => slot.period)));
   const cursor = new Date(`${now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })}T00:00:00Z`);

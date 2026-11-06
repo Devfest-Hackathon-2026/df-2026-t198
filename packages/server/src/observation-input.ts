@@ -88,9 +88,14 @@ export function parseObservation(value: unknown): Observation {
   id(input['definitionId']);
   requireValid(Number.isSafeInteger(input['definitionVersion']) && Number(input['definitionVersion']) > 0);
   timestamp(input['fetchedAt']);
+  const pastCourses = new Set<string>();
   const courseIds = list(input['catalogCourses'], 100).map(value => {
-    const course = record(value, ['courseId', 'name', 'slots'], ['url']);
+    const course = record(value, ['courseId', 'name', 'slots'], ['url', 'currentTerm']);
     id(course['courseId']); text(course['name']);
+    if (Object.hasOwn(course, 'currentTerm')) {
+      requireValid(typeof course['currentTerm'] === 'boolean');
+      if (course['currentTerm'] === false) pastCourses.add(course['courseId']);
+    }
     if (Object.hasOwn(course, 'url')) referenceUrl(course['url']);
     for (const value of list(course['slots'], 50)) {
       const slot = record(value, ['weekday', 'period']);
@@ -101,12 +106,20 @@ export function parseObservation(value: unknown): Observation {
   });
   unique(courseIds);
   const seen = new Map<string, string>();
+  const ended = new Set<string>();
   const results = list(input['courseResults'], 100).map(value => {
-    const result = record(value, ['courseId', 'listComplete', 'seenSourceIds']);
+    const result = record(value, ['courseId', 'listComplete', 'seenSourceIds'], ['endedSourceIds']);
     id(result['courseId']);
-    requireValid(courseIds.includes(result['courseId']) && typeof result['listComplete'] === 'boolean');
+    requireValid(courseIds.includes(result['courseId']) && !pastCourses.has(result['courseId']) && typeof result['listComplete'] === 'boolean');
     for (const source of list(result['seenSourceIds'], 1000)) {
       id(source); requireValid(!seen.has(source)); seen.set(source, result['courseId']);
+    }
+    if (Object.hasOwn(result, 'endedSourceIds')) {
+      for (const source of list(result['endedSourceIds'], 1000)) {
+        id(source);
+        requireValid(seen.get(source) === result['courseId'] && !ended.has(source));
+        ended.add(source);
+      }
     }
     return result['courseId'];
   });
@@ -114,7 +127,7 @@ export function parseObservation(value: unknown): Observation {
   const sources = list(input['assignments']).map(value => {
     const assignment = record(value, ['sourceId', 'courseId', 'title', 'url', 'deadline', 'submission'], ['submittedAt']);
     id(assignment['sourceId']); id(assignment['courseId']); text(assignment['title']);
-    requireValid(seen.get(assignment['sourceId']) === assignment['courseId']);
+    requireValid(seen.get(assignment['sourceId']) === assignment['courseId'] && !ended.has(assignment['sourceId']));
     referenceUrl(assignment['url']);
     deadline(assignment['deadline']);
     oneOf(assignment['submission'], ['submitted', 'not-submitted', 'unknown']);

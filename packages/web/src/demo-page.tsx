@@ -25,10 +25,11 @@ export function DemoPage() {
   useEffect(() => {
     const returnTo = new URLSearchParams(window.location.search).get('returnTo');
     if (!user || !returnTo) return;
-    const url = new URL(returnTo, window.location.origin);
+    let url: URL;
+    try { url = new URL(returnTo, window.location.origin); } catch { return; }
     if (url.origin === window.location.origin && url.pathname === '/student/plan' &&
       /^[a-f0-9-]{36}$/.test(url.searchParams.get('id') ?? '') && ['done', 'later'].includes(url.searchParams.get('do') ?? '')) {
-      window.location.assign(url.pathname + url.search);
+      window.location.assign(`/student/plan?id=${encodeURIComponent(url.searchParams.get('id')!)}&do=${url.searchParams.get('do')}`);
     }
   }, [user]);
   if (!firebase) return <p>体験画面の準備中です。担当者に確認してください。</p>;

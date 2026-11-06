@@ -30,9 +30,10 @@ describe('today digest content contract', () => {
   it('includes both 48h boundaries, excludes past, submitted, cancelled and finished preparation', () => {
     const submitted = { ...row('submitted'), submission: 'submitted' as const };
     const cancelled = { ...row('cancelled'), presenceState: 'cancelled' as const };
+    const ended = { ...row('ended'), presenceState: 'ended' as const };
     const finished = { ...plan('done'), status: 'done' as const, assignment: row('finished').key };
     const rows = [row('now', now.toISOString()), row('edge'), row('too-late', '2030-11-13T00:30:01+09:00'),
-      row('past', '2030-11-11T00:29:59+09:00'), submitted, cancelled, row('finished')];
+      row('past', '2030-11-11T00:29:59+09:00'), submitted, cancelled, ended, row('finished')];
     rows.forEach(row => { row.latest.title = row.key.sourceId; });
     const data = digest([finished], rows);
     expect(data.assignments.map(task => task.title).sort()).toEqual(['edge', 'now']); expect(data.plans).toHaveLength(0);

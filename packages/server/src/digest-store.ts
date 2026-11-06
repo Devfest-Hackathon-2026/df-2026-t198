@@ -31,9 +31,9 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         const old = (await tx.get(ref)).data() as PreparationPlan | undefined;
         if (old) return old;
         const assignments = (await tx.get(student.collection('assignments'))).docs.map(doc => doc.data() as LedgerAssignment);
-        const task = assignments.find(row => row.key.system === 'demo-lms' && row.submission !== 'submitted' && row.presenceState !== 'cancelled');
+        const task = assignments.find(row => row.key.system === 'demo-lms' && row.submission !== 'submitted' && row.presenceState !== 'cancelled' && row.presenceState !== 'ended');
         if (!task) throw new PlanConflict();
-        const courses = (await tx.get(student.collection('courses'))).docs.map(doc => doc.data() as Course);
+        const courses = (await tx.get(student.collection('courses'))).docs.map(doc => doc.data() as Course).filter(course => course.currentTerm !== false);
         const now = clock(); const date = japanDay(now); const weekday = new Date(`${date}T00:00:00Z`).getUTCDay() || 7;
         const period = [1, 2, 3, 4, 5].find(p => !courses.some(course => course.slots.some(slot => slot.weekday === weekday && slot.period === p)));
         if (!period) throw new PlanConflict();
@@ -79,7 +79,7 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         if (action === 'later' && old.laterResult) return { outcome: old.laterResult, plan: old };
         if (old.status !== 'active') throw new PlanConflict();
         const assignment = (await tx.get(student.collection('assignments').doc(documentKey(old.assignment.system, old.assignment.sourceId)))).data() as LedgerAssignment | undefined;
-        if (!assignment || assignment.submission === 'submitted' || assignment.presenceState === 'cancelled') throw new PlanConflict();
+        if (!assignment || assignment.submission === 'submitted' || assignment.presenceState === 'cancelled' || assignment.presenceState === 'ended') throw new PlanConflict();
         const itemRef = student.collection('calendarItems').doc(old.calendarItemKey);
         const previous = (await tx.get(itemRef)).data() as CalendarItem | undefined;
         const integration = (await tx.get(student.collection('integrations').doc('calendar'))).data() as CalendarIntegration | undefined;
@@ -88,7 +88,7 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         let outcome: PlanActionResult['outcome'] = 'done';
         if (action === 'done') next.status = 'done';
         else {
-          const courses = (await tx.get(student.collection('courses'))).docs.map(doc => doc.data() as Course);
+          const courses = (await tx.get(student.collection('courses'))).docs.map(doc => doc.data() as Course).filter(course => course.currentTerm !== false);
           const plans = (await tx.get(student.collection('plans'))).docs.map(doc => doc.data() as PreparationPlan);
           const deadline = assignment.officialDeadline?.deadline;
           const dueDate = deadline?.kind === 'date' ? deadline.date : deadline?.kind === 'datetime' ? japanDay(new Date(deadline.dueAt)) : '';

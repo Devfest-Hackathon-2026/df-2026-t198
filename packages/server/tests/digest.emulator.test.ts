@@ -75,6 +75,12 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect((await request(`/api/v1/plans/${id}/done`, owner, 'GET')).status).toBe(404);
     expect((await plans().doc(id).get()).data()!['status']).toBe('active');
   });
+  it('excludes ended assignments from the digest and rejects new actions without changing the plan', async () => {
+    await assignmentRef().update({ presenceState: 'ended' });
+    expect(await (await request('/api/v1/digest', owner, 'GET')).json()).toMatchObject({ empty: true, plans: [], assignments: [] });
+    for (const action of ['done', 'later']) expect((await act(action)).status).toBe(409);
+    expect((await plans().doc(id).get()).data()).toMatchObject({ status: 'active', revision: 1 });
+  });
   it('done is concurrent/replay safe, records actor/time, and never marks the LMS task submitted', async () => {
     const responses = await Promise.all([act('done'), act('done')]);
     expect(responses.map(r => r.status)).toEqual([200, 200]);

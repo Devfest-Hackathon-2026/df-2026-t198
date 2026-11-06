@@ -34,8 +34,9 @@ it('reads every catalog course and creates exactly one API-compatible observatio
   expect(observation.catalogCourses).toHaveLength(22);
   expect(observation.courseResults).toHaveLength(22);
   expect(f.calls.filter(c => c.url.includes('linkKougi'))).toHaveLength(22);
-  expect(observation.courseResults.every(c => c.seenSourceIds.length === 9 && !c.listComplete)).toBe(true);
-  // Three closed materials in each unchanged sample have no detail link.
+  expect(observation.courseResults.every(c => c.seenSourceIds.length === 9 && c.listComplete && c.endedSourceIds.length === 3)).toBe(true);
+  expect(observation.failures).toEqual([]);
+  // Three closed materials are recorded as ended; their detail is not requested.
   expect(observation.assignments).toHaveLength(22 * 6);
   expect(new Set(observation.assignments.map(a => a.sourceId)).size).toBe(22 * 6);
   expect(parseObservation(observation)).toEqual(observation);

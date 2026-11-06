@@ -1,10 +1,11 @@
 import navigation from '../../../lms-definitions/coursepower/navigation.json' with { type: 'json' };
+import { LmsReadError, loggedOut, pageDiagnostic, safeDiagnostic } from './collection-diagnostics.js';
 import { sessionFromUrl } from './session.js';
 import { readPage } from '../../core/src/html-reader.js';
 import definition from '../../../lms-definitions/coursepower/definition.json' with { type: 'json' };
 
 export type LmsOperation = { kind: 'home' } | { kind: 'course' | 'detail'; fields: Record<string, string> };
-export interface LmsPage { html: string; url: string }
+export interface LmsPage { html: string; url: string; status?: number }
 export { navigation };
 
 export function validOperation(input: unknown): input is LmsOperation {
@@ -29,6 +30,7 @@ export async function executeLmsRequest(input: unknown, pageUrl: string, sid: st
   const path = input.kind === 'home' ? navigation.home : navigation[input.kind].path;
   const url = new URL(`${path};SID=${sid}`, new URL(pageUrl).origin);
   await pause();
+  let diagnostic = safeDiagnostic({ path });
   try {
     const response = await fetcher(url.href, {
       method: input.kind === 'home' ? 'GET' : 'POST',
@@ -36,20 +38,21 @@ export async function executeLmsRequest(input: unknown, pageUrl: string, sid: st
       credentials: 'include', cache: 'no-store', referrerPolicy: 'no-referrer', redirect: 'follow',
       signal: AbortSignal.timeout(15_000),
     });
+    diagnostic = safeDiagnostic({ httpStatus: response.status, path: response.url });
     const final = new URL(response.url);
     if (final.origin !== url.origin || !final.pathname.startsWith('/lms/')) throw new Error();
     const html = await response.text();
     if (html.length > 5_000_000) throw new Error();
     if (!response.ok) {
+      diagnostic = pageDiagnostic({ html, url: response.url, status: response.status });
       try { readPage(definition, html, { utcOffset: '+09:00' }); }
       catch (error) { if (error instanceof Error && error.message === 'not-logged-in') throw error; }
       throw new Error('http-error');
     }
     // Do not retain any query, fragment, or matrix parameter in reference URLs.
     final.pathname = final.pathname.replace(/;[^/]*/g, ''); final.search = ''; final.hash = '';
-    return { html, url: final.href };
+    return { html, url: final.href, status: response.status };
   } catch (error) {
-    // eslint-disable-next-line preserve-caught-error
-    throw new Error(error instanceof Error && error.message === 'not-logged-in' ? 'not-logged-in' : 'http-error');
+    throw new LmsReadError(loggedOut(error) ? 'not-logged-in' : 'http-error', diagnostic);
   }
 }

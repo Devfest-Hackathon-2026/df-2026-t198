@@ -56,7 +56,7 @@ function nearDeadline(row: LedgerAssignment, now: Date) {
 export function buildDigest(to: string, plans: PreparationPlan[], assignments: LedgerAssignment[],
   courses: (Course & { system: LmsSystem })[], origin: string, now = new Date()): Digest {
   const date = japanDay(now);
-  const pending = assignments.filter(row => row.submission !== 'submitted' && row.presenceState !== 'cancelled');
+  const pending = assignments.filter(row => row.submission !== 'submitted' && row.presenceState !== 'cancelled' && row.presenceState !== 'ended');
   const summary = (row: LedgerAssignment): DigestAssignment => ({ title: safeText(row.latest.title),
     courseName: safeText(courses.find(course => course.system === row.key.system && course.courseId === row.latest.courseId)?.name ?? '授業'),
     deadline: cleanDeadline(row.officialDeadline?.deadline), url: safeUrl(row.latest.url) });

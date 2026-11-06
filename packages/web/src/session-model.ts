@@ -20,7 +20,7 @@ export function buildSessionView(data: Pick<SessionData, 'assignments' | 'change
   const { lastSessionAt, nextSessionAt } = data.context;
   const next = nextSessionAt ? new Date(nextSessionAt) : null;
   const deadlines = data.assignments.filter(row => {
-    if (!next || row.submission === 'submitted' || row.presenceState === 'cancelled') return false;
+    if (!next || row.submission === 'submitted' || row.presenceState === 'cancelled' || row.presenceState === 'ended') return false;
     const deadline = row.officialDeadline?.deadline;
     if (deadline?.kind === 'datetime') {
       const due = Date.parse(deadline.dueAt);
@@ -35,7 +35,7 @@ export function buildSessionView(data: Pick<SessionData, 'assignments' | 'change
   const changes = lastSessionAt ? data.changes.filter(change =>
     Date.parse(change.recordedAt) > Date.parse(lastSessionAt) && Date.parse(change.recordedAt) <= now.getTime())
     .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt)) : [];
-  const review = data.assignments.filter(row => row.presenceState !== 'cancelled' && row.reviewReasons.length > 0);
+  const review = data.assignments.filter(row => row.presenceState !== 'cancelled' && row.presenceState !== 'ended' && row.reviewReasons.length > 0);
   return { deadlines, changes, review };
 }
 function deadlineSortKey(deadline: Deadline) {
@@ -57,7 +57,7 @@ export function formatDeadline(deadline: Deadline) {
 }
 const changeLabels: Record<AssignmentChange['kind'], string> = { new: '課題が出ました', 'title-changed': '題名が変わりました',
   'deadline-changed': '締切が変わりました', submitted: '提出しました', 'cancellation-candidate': '一覧に見当たりません',
-  cancelled: '課題が取り消されました', restored: '一覧に戻りました' };
+  cancelled: '課題が取り消されました', restored: '一覧に戻りました', ended: '課題が終了しました' };
 export function changeDescription(change: AssignmentChange) {
   const value = (v: AssignmentChange['before']) => typeof v === 'string' ? v : v ? formatDeadline(v) : '—';
   if (change.kind === 'deadline-changed') return `締切が ${value(change.before)} から ${value(change.after)} に変わりました`;
