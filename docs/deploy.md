@@ -45,7 +45,9 @@ pnpm exec firebase deploy --only hosting \
   --non-interactive
 ```
 
-[firebase.json](../firebase.json) の `/api/**` はCloud Runへ転送する。パスはそのまま届くため、サーバーも `/api/healthz` を受ける。SPA用の `**` は後に置く。Firestoreの規則やデータはこのコマンドでは変更しない。
+[firebase.json](../firebase.json) の `/api/**` はCloud Runへ転送する。パスはそのまま届くため、サーバーも `/api/health` を受ける。SPA用の `**` は後に置く。Firestoreの規則やデータはこのコマンドでは変更しない。
+
+WebのFirebase接続設定は [README](../README.md#画面) の3つの `VITE_FIREBASE_*` をビルド時に指定する。未指定でビルドした場合も公開できるが、学生・面談画面は準備中の案内になり、ログインや台帳の表示はできない。今回の初回デプロイの合格条件は、画面と静的ファイルへの到達およびAPIへの転送まで。
 
 ## 動作確認
 
@@ -53,10 +55,12 @@ pnpm exec firebase deploy --only hosting \
 gcloud run services describe kadai-hisho-api \
   --project project-00439085-4e2d-44c3-9a8 \
   --region asia-northeast1 --format='value(status.url)'
-# 表示されたURLの後ろに /healthz を付けて、認証なしでGETする。
-curl --fail-with-body https://project-00439085-4e2d-44c3-9a8.web.app/api/healthz
+# 表示されたURLの後ろに /api/health を付けて、認証なしでGETする。
+curl --fail-with-body https://project-00439085-4e2d-44c3-9a8.web.app/api/health
 ```
 
 どちらもHTTP 200で `{"status":"ok"}` が返ることを確認する。Hostingの `/student` と `/session` はWebのHTMLを返し、そのHTMLが参照するJS・CSSも取得できること、`/api/missing` はHTMLではなく404になることも確かめる。Cloud RunとHostingの両方で、認証なしの `POST /api/v1/observations` が401になることを確かめる。ビルドID・結果・公開URL・確認日時はPRに残す。C14は台帳のFirestore保存までが条件なので、初回デプロイだけでは完了にしない。
+
+確認のパスはIssue #18の再開判断に従って `/api/health` に統一する。旧 `/healthz` と `/api/healthz` は提供しない。Cloud Runの予約パスとの衝突を避けるため、末尾にzを付ける案は採らない。
 
 公式資料：[Node.js buildpacks](https://docs.cloud.google.com/docs/buildpacks/nodejs)、[Procfile](https://docs.cloud.google.com/docs/buildpacks/about-procfile)、[ソースからのCloud Runデプロイ](https://docs.cloud.google.com/run/docs/deploying-source-code)、[HostingからCloud Runへの転送](https://firebase.google.com/docs/hosting/cloud-run)。

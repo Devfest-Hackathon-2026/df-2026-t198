@@ -22,7 +22,7 @@ describe('HTTP server', () => {
     });
     expect(response.status).toBe(401);
   });
-  it.each(['/healthz', '/api/healthz', '/api/healthz?probe=hosting'])('serves its health endpoint at %s', async (path) => {
+  it.each(['/api/health', '/api/health?probe=hosting'])('serves its health endpoint at %s', async (path) => {
     const response = await fetch(`${baseUrl}${path}`);
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('application/json');
@@ -31,11 +31,11 @@ describe('HTTP server', () => {
 
   it.each([
     ['GET', '/missing'],
-    ['GET', '/healthz/extra'],
-    ['POST', '/healthz'],
+    ['GET', '/healthz'],
+    ['GET', '/api/healthz'],
     ['GET', '/api/missing'],
-    ['GET', '/api/healthz/extra'],
-    ['POST', '/api/healthz'],
+    ['GET', '/api/health/extra'],
+    ['POST', '/api/health'],
   ])('does not expose another endpoint: %s %s', async (method, path) => {
     const response = await fetch(`${baseUrl}${path}`, { method });
     expect(response.status).toBe(404);

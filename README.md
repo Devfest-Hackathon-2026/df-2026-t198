@@ -61,7 +61,7 @@ pnpm --filter server build
 pnpm --filter server start
 ```
 
-既定では `http://localhost:8080/healthz` が `{"status":"ok"}` を返す。`PORT` でポートを変更でき、待ち受け先は `0.0.0.0`。
+既定では `http://localhost:8080/api/health` が `{"status":"ok"}` を返す。`PORT` でポートを変更でき、待ち受け先は `0.0.0.0`。
 
 Cloud RunとFirebase Hostingへのデプロイは [デプロイ手順](docs/deploy.md) を参照。
 
