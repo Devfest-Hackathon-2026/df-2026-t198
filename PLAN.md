@@ -55,7 +55,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 ### カレンダー
 
 - [ ] C15 〈未定〉 拡張機能から `chrome.identity` でGoogleカレンダーに締切の予定を作る。確かめ方：実際のカレンダー
-- [x] C16 〈未定〉 締切が変わったら予定を動かし、取消なら予定を消す。同じ課題の予定を二重に作らない。確かめ方：試験と実際のカレンダー → Issue #40の指定に従い偽APIで判定：`packages/extension/tests/calendar-sync.test.ts`（作成・移動・取消・応答喪失時の再試行）、`packages/server/tests/calendar.emulator.test.ts`（版・世代・本人の分離）。実物は `docs/records/2026-11-06-issue-40-manual-check.md` の手順で未確認、C15に残す
+- [x] C16 〈未定〉 締切が変わったら予定を動かし、取消なら予定を消す。同じ課題の予定を二重に作らない。確かめ方：試験と実際のカレンダー → Issue #40の指定に従い偽APIで判定：`packages/extension/tests/calendar-sync.test.ts`（作成・移動・取消・応答喪失時の再試行）、`packages/server/tests/calendar.emulator.test.ts`（版・世代・本人の分離）。実物は `docs/records/2026-11-06-issue-40-manual-check.md` の手順で未確認、C15に残す。Issue #69：`packages/extension/tests/collection-flow.test.mjs`（LMSを開く→取得→台帳→偽Googleへの作成・同じ予定の移動、裏・ページ側の両経路）。実機の通しは `docs/records/2026-11-06-issue-69-real-flow.md` でSoraの確認待ち
 - [x] C17 〈未定〉 確かめが要る課題は、予定名の頭に「【要確認】」を付け、両方の日付を説明欄に1行で書く。確かめ方：試験 → `packages/core/tests/calendar.test.ts`（公式締切の維持・要確認の題名・食い違う日付を1行・本文を転記しない）
 
 ### 学生の画面
