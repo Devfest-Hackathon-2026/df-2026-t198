@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "definitionId": "coursepower",
-  "version": 4,
+  "version": 5,
   "readerVersion": 2,
   "pageChecks": {
     "loggedIn": {

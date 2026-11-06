@@ -73,13 +73,14 @@ it('keeps seen IDs and an incomplete list after a detail HTTP failure', async ()
   expect(parseObservation(observation)).toEqual(observation);
 });
 
-it('sends the literal missing-period display as unreadable, without declaring no deadline', async () => {
+it('records the literal missing-period display as ended under D28', async () => {
   const f = await fixture();
   const html = (await sample('assignment-detail-open')).replace(/<span class="red3">[\s\S]*?<\/span>/, '-');
   const observation = await collectObservation({ ...f.options, request: async operation => operation.kind === 'detail'
     ? { html, url: 'https://lms.ynu.ac.jp/lms/corsColl/doLinkKyozaiTitle' } : f.request(operation) });
-  expect(observation.assignments).toHaveLength(22 * 6);
-  expect(observation.assignments.every(a => a.deadline.kind === 'unreadable' && a.deadline.dueText === '-')).toBe(true);
+  expect(observation.assignments).toEqual([]);
+  expect(observation.courseResults.every(c => c.listComplete && c.endedSourceIds.length === 9)).toBe(true);
+  expect(observation.failures).toEqual([]);
   expect(parseObservation(observation)).toEqual(observation);
 });
 
