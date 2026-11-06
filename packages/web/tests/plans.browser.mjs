@@ -37,6 +37,22 @@ async function login(page, role) {
 async function assertNoPreparationEvents() {
   assert.equal(Object.values((await target()).data().mockEvents).filter(value => value.event.summary.startsWith('準備：')).length, 0);
 }
+async function assertSingleRow(page) {
+  const rows = await page.locator('.preparation-list li').evaluateAll(items => items.map(item => {
+    const centers = Array.from(item.children, child => {
+      const box = child.getBoundingClientRect(); return box.y + box.height / 2;
+    });
+    return Math.max(...centers) - Math.min(...centers);
+  }));
+  assert.ok(rows.length > 0);
+  assert.ok(rows.every(spread => spread < 2), 'date, period, title, author and removal stay on one row');
+}
+async function assertCompactCell(page, fromSupporter) {
+  const cell = page.locator('.preparation-cell');
+  assert.equal((await cell.innerText()).trim(), `準備 架空の観察ノート${fromSupporter ? '\n支援担当が入れた' : ''}`);
+  assert.equal(await cell.evaluate(element => Array.from(element.children).every(child =>
+    child.getBoundingClientRect().height <= parseFloat(globalThis.getComputedStyle(child).lineHeight) + 1)), true);
+}
 try {
   await mkdir(evidence, { recursive: true });
   // Candidate dates depend on today. Keep the fictional assignment beyond the next weekdays.
@@ -59,7 +75,22 @@ try {
   await ownList.getByText('支援担当が入れました', { exact: true }).waitFor();
   const [saved] = await active(); assert.ok(saved); const plan = saved.data();
   assert.equal(plan.confirmedBy, 'trial-supporter'); assert.equal(plan.createdByRole, 'supporter');
-  await student.locator('.timetable .preparation-cell').getByText('支援担当が入れました', { exact: true }).waitFor();
+  const cell = student.locator('.timetable .preparation-cell');
+  await cell.getByText('支援担当が入れた', { exact: true }).waitFor();
+  await assertCompactCell(student, true); await assertCompactCell(supporter, true);
+  await cell.focus(); await student.keyboard.press('Enter');
+  const details = student.getByRole('complementary', { name: '準備の予定の詳細' });
+  await details.getByText('09:00〜10:00', { exact: true }).waitFor();
+  await details.getByText(plan.date.replaceAll('-', '/'), { exact: true }).waitFor();
+  await student.screenshot({ path: `${evidence}/preparation-details-wide.png`, fullPage: true });
+  await details.getByRole('button', { name: '閉じる', exact: true }).click();
+  await supporter.locator('.preparation-cell').focus(); await supporter.keyboard.press('Enter');
+  const supporterDetails = supporter.getByRole('complementary', { name: '準備の予定の詳細' });
+  await supporterDetails.getByText('09:00〜10:00', { exact: true }).waitFor();
+  await supporter.screenshot({ path: `${evidence}/supporter-details-wide.png`, fullPage: true });
+  await supporterDetails.getByRole('button', { name: '閉じる', exact: true }).click();
+  await assertSingleRow(student); await assertSingleRow(supporter);
+  pass('compact supporter cell opens date and time with Enter; plan lists keep one row per plan');
   const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
   const preparationEvent = calendar.locator('.calendar-event').filter({ hasText: '準備' }).getByText('架空の観察ノート', { exact: true });
   await calendar.getByText('体験用の予定です。Googleカレンダーには入りません。', { exact: true }).waitFor();
@@ -75,7 +106,22 @@ try {
   assert.equal((await active()).length, 1); pass('reload retains one saved plan');
   await student.setViewportSize({ width: 390, height: 844 });
   assert.equal(await student.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+  await assertSingleRow(student);
+  await assertCompactCell(student, true);
   await student.screenshot({ path: `${evidence}/student-narrow.png`, fullPage: true });
+  await cell.click(); await details.getByText('09:00〜10:00', { exact: true }).waitFor();
+  await student.screenshot({ path: `${evidence}/preparation-details-narrow.png`, fullPage: true });
+  await details.getByRole('button', { name: '閉じる', exact: true }).click();
+  await supporter.setViewportSize({ width: 390, height: 844 });
+  await assertSingleRow(supporter);
+  await assertCompactCell(supporter, true);
+  assert.equal(await supporter.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+  await supporter.screenshot({ path: `${evidence}/supporter-narrow.png`, fullPage: true });
+  await supporter.locator('.preparation-cell').click();
+  await supporterDetails.getByText('09:00〜10:00', { exact: true }).waitFor();
+  await supporter.screenshot({ path: `${evidence}/supporter-details-narrow.png`, fullPage: true });
+  await supporterDetails.getByRole('button', { name: '閉じる', exact: true }).click();
+  await supporter.setViewportSize({ width: 1280, height: 960 });
   pass('390px student timetable and removal control remain reachable');
   await ownList.getByRole('button', { name: /準備を外す/ }).click();
   await student.locator('.timetable .preparation-cell').waitFor({ state: 'detached' });
@@ -103,6 +149,12 @@ try {
   await ownList.getByText('学生が入れました', { exact: true }).waitFor();
   assert.equal((await active()).length, 1);
   await preparationEvent.waitFor();
+  await assertCompactCell(student, false); await assertCompactCell(supporter, false);
+  await cell.click(); await details.getByText('13:00〜14:30', { exact: true }).waitFor();
+  await details.getByRole('button', { name: '閉じる', exact: true }).click();
+  await ownList.getByText(/13:00〜14:30/).waitFor();
+  await student.screenshot({ path: `${evidence}/student-own-plan-narrow.png`, fullPage: true });
+  pass('student cell omits author label; its time remains available in details and the list');
   pass('student adds a plan; lost response retry keeps one plan and one calendar event');
   await supporter.getByRole('region', { name: '入れた準備の予定' }).getByText('学生が入れました', { exact: true }).waitFor();
   assert.equal(await supporter.getByRole('region', { name: '入れた準備の予定' }).getByRole('button').count(), 0);
@@ -128,5 +180,5 @@ try {
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/operations.json`, JSON.stringify({ status: 'pass', operations, browserErrors: errors.length }, null, 2));
   log(JSON.stringify({ observations: [{ requirement_id: 'plans-browser', status: 'pass', observed: {
-    operations: operations.length, browserErrors: errors.length }, evidence_files: ['operations.json', 'supporter-wide.png', 'student-wide.png', 'student-narrow.png'] }] }));
+    operations: operations.length, browserErrors: errors.length }, evidence_files: ['operations.json', 'supporter-wide.png', 'supporter-narrow.png', 'student-wide.png', 'student-narrow.png', 'preparation-details-wide.png', 'preparation-details-narrow.png', 'student-own-plan-narrow.png', 'supporter-details-wide.png', 'supporter-details-narrow.png'] }] }));
 } finally { await browser.close(); await db.terminate(); await deleteApp(app); }

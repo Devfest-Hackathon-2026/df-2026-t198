@@ -67,6 +67,12 @@ export function PlanSummary({ plan }: { plan: PreparationPlan }) {
   return <><strong>準備：{plan.title}</strong><time dateTime={plan.startsAt}>{plan.date.replaceAll('-', '/')}</time><span>{plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</span>
     <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span></>;
 }
+export function PlanCell({ plan, selected, onSelect }: { plan: PreparationPlan; selected: boolean; onSelect: () => void }) {
+  return <button className="preparation-cell" aria-pressed={selected} aria-controls="preparation-details" onClick={onSelect}>
+    <strong>準備 {plan.title}</strong>
+    {plan.createdByRole === 'supporter' && <small>支援担当が入れた</small>}
+  </button>;
+}
 export function PlanList({ plans, actions, viewerUid, own }: { plans: PreparationPlan[]; actions?: PlanActions | undefined; viewerUid?: string | undefined; own: boolean }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -81,9 +87,13 @@ export function PlanList({ plans, actions, viewerUid, own }: { plans: Preparatio
   }
   return <section className="preparation-list" aria-label="入れた準備の予定"><h2>入れた準備の予定</h2>
     <p>日本時間です。学生はどの準備の予定も外せます。</p>
-    <ul>{active.map(plan => <li key={plan.planId}><PlanSummary plan={plan} /><span>{plan.period}限</span>
+    <div className="preparation-list-scroll" tabIndex={0} role="region" aria-label="準備予定の一覧">
+    <ul>{active.map(plan => <li key={plan.planId}>
+      <time dateTime={plan.startsAt}>{Number(plan.date.slice(5, 7))}/{Number(plan.date.slice(8))} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time>
+      <span>{plan.period}限</span><strong>{plan.title}</strong>
+      <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
       {actions && (own || plan.confirmedBy === viewerUid) && <button disabled={busy !== null}
         aria-label={`${plan.title} ${plan.date} ${plan.period}限の準備を外す`} onClick={() => { void remove(plan); }}>外す</button>}
-    </li>)}</ul>{message && <p role="status">{message}</p>}
+    </li>)}</ul></div>{message && <p role="status">{message}</p>}
   </section>;
 }
