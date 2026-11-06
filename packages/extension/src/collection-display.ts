@@ -3,16 +3,16 @@ const key = 'ynuCollectionDisplay';
 export function collectionDisplay(value: unknown): { badge: string; title: string } {
   if (!value || typeof value !== 'object') return { badge: '', title: '' };
   const { status, finishedAt } = value as { status?: unknown; finishedAt?: unknown };
-  if (status === 'running') return { badge: '…', title: 'LMSの課題を確かめています' };
+  if (status === 'running') return { badge: '…', title: 'LMSの課題を更新しています' };
   if (typeof finishedAt !== 'number' || !Number.isFinite(finishedAt)) return { badge: '', title: '' };
   const date = new Date(finishedAt);
   if (Number.isNaN(date.getTime())) return { badge: '', title: '' };
   const time = `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} に`;
-  if (status === 'success') return { badge: '', title: `${time}LMSの課題を確かめました` };
-  if (status === 'sign-in-required') return { badge: '!', title: `${time}課題を確かめられませんでした。拡張機能の設定からGoogleにログインしてください` };
-  if (status === 'api-not-configured') return { badge: '!', title: `${time}課題を確かめられませんでした。拡張機能の接続先の設定が必要です` };
+  if (status === 'success') return { badge: '', title: `${time}LMSの課題を更新しました` };
+  if (status === 'sign-in-required') return { badge: '!', title: `${time}課題を更新できませんでした。拡張機能の設定からGoogleにログインしてください` };
+  if (status === 'api-not-configured') return { badge: '!', title: `${time}課題を更新できませんでした。拡張機能の接続先の設定が必要です` };
   if (typeof status !== 'string') return { badge: '', title: '' };
-  return { badge: '!', title: `${time}一部の課題を確かめられませんでした。LMSを開き直してください` };
+  return { badge: '!', title: `${time}一部の課題を更新できませんでした。LMSを開き直してください` };
 }
 
 // Presentation failures must not change collection, delivery, or diagnostic counts.
