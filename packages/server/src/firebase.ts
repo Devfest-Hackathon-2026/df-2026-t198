@@ -1,6 +1,7 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { createDemoCalendarSync } from './demo-calendar.js';
 import { createCalendarStore } from './calendar-store.js';
 import { createObservationStore } from './observation-store.js';
 import { createSessionStore } from './session-store.js';
@@ -13,9 +14,15 @@ import type { ObservationDependencies } from './http.js';
 export function firebaseDependencies() {
   const app = getApps()[0] ?? initializeApp();
   const db = getFirestore(app);
+  const saveObservation = createObservationStore(db);
+  const syncDemoCalendar = createDemoCalendarSync(db);
   const dependencies: ObservationDependencies = {
     verifyToken: async (token: string) => (await getAuth(app).verifyIdToken(token, true)).uid,
-    saveObservation: createObservationStore(db),
+    saveObservation: async (uid, observation) => {
+      const result = await saveObservation(uid, observation);
+      await syncDemoCalendar(uid);
+      return result;
+    },
     calendar: createCalendarStore(db),
     session: createSessionStore(db),
     demo: createDemoStore(db),

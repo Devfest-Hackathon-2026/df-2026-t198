@@ -14,6 +14,15 @@ export function firebaseAuth(): Auth {
   return auth;
 }
 
+/** Restore the existing login without opening an authorization dialog. */
+export async function observationIdentity(): Promise<{ uid: string; token: string } | null> {
+  if (missingConfig(probeConfig).length) return null;
+  const current = firebaseAuth();
+  await current.authStateReady();
+  const user = current.currentUser;
+  return user ? { uid: user.uid, token: await user.getIdToken() } : null;
+}
+
 export async function readProbeState(): Promise<ProbeState | undefined> {
   return (await chrome.storage.local.get(stateKey))[stateKey] as ProbeState | undefined;
 }

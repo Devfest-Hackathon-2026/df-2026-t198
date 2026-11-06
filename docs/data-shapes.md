@@ -156,7 +156,7 @@ APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の�
 
 - `students/{uid}/calendarItems/{assignmentDocumentKey}` に、`kind: 'deadline'`、`sourceKey`、`calendarId`（未接続はnull）、`eventId`、`generation`、`desiredRevision`、`desired`、`appliedRevision`、`appliedAt`、`lastAttemptedAt`、`lastErrorCode` を保存する。`desired` は `{ state: 'present', event }` または `{ state: 'deleted' }`。版と世代は1から、反映済みの版は0から。予定IDは作成前に決めたUUIDのハイフンを除いた文字列。
 - 観測から作る同期対象は台帳と同じトランザクションで更新する。予定の中身が同じなら版を進めない。観測の再送では同期対象も書き換えない。Googleへの通信はトランザクションの外で行う。
-- `students/{uid}/integrations/calendar` は `mode: 'google' | 'mock'`、`executor: 'extension' | 'demo'`、`calendarId`、`connectionState: 'connected' | 'reauthorization-required' | 'recovery-required'`。未接続は文書の不在で表す。今回のAPIで登録できるのは既存のGoogle専用カレンダーのみ。模擬側は後続Issueで実装する。
+- `students/{uid}/integrations/calendar` は `mode: 'google' | 'mock'`、`executor: 'extension' | 'demo'`、`calendarId`、`connectionState: 'connected' | 'reauthorization-required' | 'recovery-required'`。未接続は文書の不在で表す。今回のAPIで登録できるのは既存のGoogle専用カレンダーのみ。模擬側は下記のサーバー内処理が管理する。
 - `GET /api/v1/calendar-sync` は `{ integration: CalendarIntegration | null, items: CalendarItem[] }`。本人のうち、接続先があり、望ましい版と反映済みの版が異なる対象を返す。削除確認後の再出現と、他の台帳更新経路からの変更も、現在の台帳と照合してから返す。
 - `POST /api/v1/calendar-sync` の接続時の本文は `{ calendarId }`。拡張機能の接続テストで作成・保存した専用カレンダーを登録する。`primary` は拒否し、既存の接続先と異なるID・模擬モードへの上書きは409で停止する。接続先を切り替える復旧操作は未実装。
 - 同じPOSTの結果報告は `{ itemKey, generation, eventId, revision, errorCode }`。成功の `errorCode` はnull、失敗は `authorization-required`・`calendar-unavailable`・`event-conflict`・`network-error` のいずれか。保存中のキー・世代・予定ID・望ましい版がすべて一致したときだけ記録する。古い版と、既に反映済みの版への報告は何もしない。成功時刻はサーバーで付ける。
@@ -169,3 +169,16 @@ APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の�
 拡張機能の `config.local.json` に `apiOrigin`（HTTPSのoriginだけ）を設定すると、その接続先だけをビルド時のhost permissionとCSPへ追加する。空なら接続テストだけが動く。worker起動時・Chrome起動時・接続テスト成功後・`sendObservation` の送信成功後に同期する。同じworker内の同期は直列に実行する。Googleの認可は `interactive: false`、Firebaseと同じuidかも確認してから予定を書く。1学生1Chromeプロファイルが前提。定期確認、実LMSの取得部品への接続、接続状態を表示する製品UIは後続の作業。
 
 設定画面からの内部メッセージ `calendar-sync` と `observation-send` でも同期を試せる。他の拡張機能・LMSのページ・子フレームからの要求は拒否する。`observation-send` の応答は観測の受領結果であり、カレンダー同期の成功とは区別する。同期に失敗しても受領済みの観測を失敗に戻さず、サーバーの同期待ちを次回に処理する。
+
+
+## 体験用カレンダー（Issue #47）
+
+Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。既存のHTTP入力・応答とFirestore規則は変えない。`GET/POST /api/v1/calendar-sync`は引き続き体験UIDを拒否する。
+
+- 体験学生の観測を受領した後、サーバーが`demoAccounts/{uid}`の学生本人をトランザクションで確認し、`integrations/calendar`を`mode: 'mock', executor: 'demo', calendarId: 'demo-calendar'`で用意する。既存の実物の接続は上書きしない。通常の利用者はこの処理の対象外。
+- 同文書の任意項目`mockEvents`が模擬の書き込み先。キーは予定ID、値は`{ itemKey, generation, revision, event: DeadlineEvent }`。`calendarItems.desired`とは別の保存済み予定であり、画面が望ましい状態から予定を合成することはない。学生本人だけが既存の規則で読める。
+- 共通の`reconcileCalendarItem`で望ましい予定を計算し、`acknowledgeCalendarItem`で版・世代・予定IDを確認する。模擬予定の作成・移動・削除と成功の記録は同じトランザクションで確定する。取消後の再出現は古い削除を確認してから新しい世代にするため、最大2巡する。Googleへの通信は発生しない。
+- 同期失敗では成功の版を進めず、HTTPは既存の固定エラーを返す。台帳と観測の受領記録は既に保存されている場合がある。同じ観測を再送すると台帳を重複更新せず模擬同期を再試行する。サーバー停止後も、次の「LMSを開く」で再試行できる。定期の再試行はない。
+- 学生画面は保存済み`mockEvents`と版の差を読み、「体験用カレンダー」と更新待ちを表示する。ログアウト・本人変更・購読失敗で前の表示を消す。支援担当はこの文書を読めず、従来の共有された台帳を面談画面で読む。
+
+少量の架空の体験データ用であり、模擬予定は1文書に収まる範囲。実物のカレンダー同期、準備の予定、大量データ、デプロイ先での成功はこの試験結果に含めない。

@@ -1,5 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "lib": ["ES2023", "DOM"], "types": ["chrome"] },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "../core/src/linkedom-worker.d.ts"]
 }

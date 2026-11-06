@@ -7,7 +7,7 @@ const config = await loadConfig();
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await build({
-  entryPoints: ['src/service-worker.ts', 'src/content.ts', 'src/options.ts'],
+  entryPoints: ['src/service-worker.ts', 'src/content.ts', 'src/options.ts', 'src/popup.ts'],
   bundle: true,
   outdir: 'dist',
   platform: 'browser',
@@ -18,4 +18,4 @@ await build({
 }).then((result) => auditBundle(result.metafile));
 const manifest = configureManifest(JSON.parse(await readFile('manifest.json', 'utf8')), config);
 await writeFile('dist/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
-for (const asset of ['options.html', 'options.css']) await copyFile(asset, `dist/${asset}`);
+for (const asset of ['options.html', 'options.css', 'popup.html', 'popup.css']) await copyFile(asset, `dist/${asset}`);
