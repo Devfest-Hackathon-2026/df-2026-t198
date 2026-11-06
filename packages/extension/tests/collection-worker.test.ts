@@ -52,7 +52,7 @@ it('sends one observation with only the Firebase ID token and retains counts wit
   expect(fetcher.mock.invocationCallOrder.at(-1)).toBeLessThan(sync.mock.invocationCallOrder[0]!);
   const safeState = { ...session }; delete safeState['ynuSessionId'];
   expect(safeState).toMatchObject({ ynuFetchStats: { attempted: 1, backgroundSucceeded: 1, pageSucceeded: 0 } });
-  expect(safeState['ynuFetchSummary']).toEqual({ courses: 0, coursesComplete: 0, listed: 0, read: 0, unreadableDeadlines: 0, failures: {}, firstFailure: null, recovered: 0 });
+  expect(safeState['ynuFetchSummary']).toEqual({ courses: 0, coursesComplete: 0, listed: 0, read: 0, unreadableDeadlines: 0, failures: {}, courseFailures: [], firstFailure: null, recovered: 0 });
   expect(JSON.stringify(safeState)).not.toMatch(/synthetic-session|synthetic-id-token|page-html|worker-html/);
 });
 
@@ -212,7 +212,7 @@ it('only opens the page circuit after three consecutive failed courses, resettin
   collect.mockImplementation(async ({ request, onCourseResult }) => {
     for (const complete of [false, false, true, false, false, false, false]) {
       try { await request({ kind: 'course', fields: { kougiId: 'KOG2098000000001' } }); } catch { /* Failed course. */ }
-      onCourseResult(complete);
+      onCourseResult(complete, complete ? undefined : 'http');
     }
     return { ...observation, failures: [{ courseId: null, kind: 'http', detail: 'http-error' }] };
   });
@@ -243,4 +243,23 @@ it('starts the interval at receipt completion, including a partially successful 
   now.mockReturnValue(2_499_999);
   expect((await run(pageUrl, 7)).code).toBe('cooldown');
   expect(session['ynuFetchStats']).toMatchObject({ attempted: 1, failed: 1 });
+});
+
+it('breaks the consecutive communication failure count on a parse failure', async () => {
+  fetcher.mockImplementation(async (url: string) => {
+    if (url.startsWith('https://lms.ynu.ac.jp/')) throw new Error('synthetic-blocked');
+    return { ok: true, json: async () => ({ status: 'applied', changed: false, changeCount: 0 }) };
+  });
+  send.mockRejectedValue(new Error('synthetic-page-failure'));
+  send.mockResolvedValueOnce({ ok: false }).mockResolvedValueOnce({ ok: false })
+    .mockResolvedValueOnce({ ok: true, page: { html: 'unknown', url: 'https://lms.ynu.ac.jp/lms/corsColl/doIndex' } });
+  collect.mockImplementation(async ({ request, onCourseResult }) => {
+    for (const kind of ['http', 'http', 'parse', 'http', 'http', 'http']) {
+      try { await request({ kind: 'course', fields: { kougiId: 'KOG2098000000001' } }); } catch { /* Transport failed. */ }
+      onCourseResult(false, kind);
+    }
+    return { ...observation, failures: [{ courseId: null, kind: 'http', detail: 'http-error' }] };
+  });
+  expect((await run(pageUrl, 7)).ok).toBe(true);
+  expect(send).toHaveBeenCalledTimes(6);
 });

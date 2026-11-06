@@ -1,5 +1,5 @@
 import { preparationSlots } from '@kadai-hisho/core';
-import { reviewReasonText } from './review-reason';
+import { missingDeadlineText, reviewReasonText } from './review-reason';
 import type { AssignmentChange, Course, Deadline, FetchState, LedgerAssignment, LmsSystem,
   PreparationCandidate, PreparationPlan, SessionContext } from '../../core/src/types';
 
@@ -52,7 +52,7 @@ export function formatDeadline(deadline: Deadline) {
     case 'datetime': return new Intl.DateTimeFormat('ja-JP', { timeZone: deadline.timeZone,
       month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(deadline.dueAt));
     case 'none': return '締切なし';
-    case 'unreadable': return '締切を確認できませんでした';
+    case 'unreadable': return missingDeadlineText(deadline) ?? '締切を確認できませんでした';
   }
 }
 const changeLabels: Record<AssignmentChange['kind'], string> = { new: '課題が出ました', 'title-changed': '題名が変わりました',
@@ -67,7 +67,7 @@ export function changeDescription(change: AssignmentChange) {
 export function reviewDescription(row: LedgerAssignment) {
   const reason = row.reviewReasons[0];
   if (!reason) return row.presenceState === 'cancellation-candidate' ? 'LMSの一覧で見つかりませんでした。' : '';
-  return reviewReasonText(reason);
+  return reviewReasonText(reason, row.latest.deadline);
 }
 
 // Period times are not configured yet. Use only whole future days before the due date.
