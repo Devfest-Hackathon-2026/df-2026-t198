@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 31/43（72%）、必須 29/39（74%）
+完成条件：全体 33/43（76%）、必須 31/39（79%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -34,8 +34,8 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C01 〈Sora〉 拡張機能がLMSのページからSIDを受け取り、`chrome.storage.session` にだけ置く。→ PR #1、`packages/extension/tests/service-worker.test.ts`
 - [x] C02 〈Sora〉 ホームの画面から、授業の一覧と曜日・時限を読み取る。確かめ方：保存したページの見本で試験 → ホームの見本の授業・曜日・時限が正解と一致（`packages/core/tests/html-reader.test.mjs`、service worker相当の試験 `packages/extension/tests/html-reader-worker.test.mjs`）
 - [x] C03 〈Sora〉 授業ごとの教材一覧（課題もここに並ぶ。全授業をまとめた課題の一覧はLMSに無い）と課題の詳細から、題名・締切・提出の状態を読み取る。確かめ方：見本で試験 → `packages/core/tests/html-reader.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`、M1 30/30（100%）。保存見本で確認
-- [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作 → Issue #105：今学期・終了課題の扱いを架空HTML、台帳、偽Google、Auth・Firestore、学生のブラウザ操作で確認（[記録](docs/records/2026-11-07-issue-105.md)）。実機のsuccessはmerge・更新後にSoraが確認するため未完了。 Issue #109：操作中にフォーム値が古くなる偽LMSでの再試行・失敗の分離・10分間隔・診断を試験済み（[記録](docs/records/2026-11-07-issue-109.md)）。実機確認待ちは継続。 Issue #118：#99の空一覧を統合し、200の読取失敗を局所化・通信失敗のみの経路切替を偽LMSで確認（[記録](docs/records/2026-11-07-issue-118.md)）。実機の合格確認はmerge後。
-- [ ] C05 〈Sora〉 裏で取れないときは、開いているページの側で取りに行く。確かめ方：裏の取得を止めた状態で操作 → Issue #118：裏の通信を止めた偽LMSで、空一覧・読取失敗の局所化・操作中の再試行を確認（[記録](docs/records/2026-11-07-issue-118.md)）。実機のsuccess・pageSucceededはmerge後に確認
+- [x] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで静置・取得中に操作 → PR #119を含む統合main c6bf48cで、静置と取得中の講義・成績参照の操作を実施。両方success、23/23授業の一覧完了、一覧35件、未終了12課題、失敗0件。通常版へ復帰後の新規取得もsuccess（[実機記録](docs/records/2026-11-07-integrated-live-verification.md)）。終了・今学期・再試行の実装と試験はIssue #105・#109・#118の記録を参照。
+- [x] C05 〈Sora〉 裏で取れないときは、開いているページの側で取りに行く。確かめ方：裏の取得を止めた状態で操作 → 統合main c6bf48cの実機でworkerのLMS通信だけを停止し、ページから授業POST 23回・詳細POST 17回を観測。pageSucceededが0→1、success、23/23授業の一覧完了、失敗0件。故障注入と計測を外した通常版への復帰も確認（[実機記録](docs/records/2026-11-07-integrated-live-verification.md)）。
 - [x] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験 → `packages/core/tests/login-state.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`（固定の失敗コード。ログイン前・認証エラーの保存見本で確認）
 - [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）。Issue #10で製品固有のパターンを引数付きに移行し、別製品の読み取り・不正な引数の拒否を `packages/core/tests/parameterized-patterns.test.mjs` で確認
 
