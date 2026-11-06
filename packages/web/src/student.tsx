@@ -1,3 +1,4 @@
+import { fetchStatus } from './fetch-status';
 import { reviewReasonText } from './review-reason';
 import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
@@ -74,10 +75,10 @@ export function StudentView({ data, now = Date.now(), calendar = false }: { data
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
-      const stale = last && now - Date.parse(last) >= 3 * 86400000;
+      const { stale, failed } = fetchStatus(state, now);
       const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
-      return stale || state.lastResult !== 'success' ? <p className="notice" key={state.system}>
-        {label}：{stale ? `最後にLMSから取ったのは${new Date(last).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。LMSを開くと新しくなります。` :
+      return stale || failed ? <p className="notice" key={state.system}>
+        {label}：{stale ? `最後にLMSから取ったのは${new Date(last!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。LMSを開くと新しくなります。` :
           '一部の課題を確認できていません。LMSを開いて確かめてください。'}</p> : null;
     })}
     {!data.assignments.length && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
