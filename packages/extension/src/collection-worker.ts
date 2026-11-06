@@ -1,5 +1,6 @@
 import { observationIdentity } from './auth-probe-browser.js';
 import { observationApiOrigin } from './probe-config.js';
+import { syncCalendarInBackground } from './calendar-browser.js';
 import { collectObservation } from './collection.js';
 import { executeLmsRequest, type LmsOperation, type LmsPage } from './lms-request.js';
 import { readPage } from '../../core/src/html-reader.js';
@@ -83,6 +84,7 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       || receipt.changeCount < 0 || receipt.changed !== (receipt.changeCount > 0)) {
       return fail('send-failed');
     }
+    void syncCalendarInBackground();
     success = observation.failures.length === 0;
     outcome = success ? 'success' : 'partial';
     return { ok: true, changed: receipt.changed, changeCount: receipt.changeCount };
