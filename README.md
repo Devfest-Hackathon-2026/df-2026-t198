@@ -1,117 +1,121 @@
 # 課題の秘書（仮称）
 
-大学の授業支援システムから課題を集め、学生の画面・カレンダー・面談画面につなぐ、DevFest GDGoC Japan Hackathon 2026の作品。
+大学の授業支援システム（LMS）から課題を集め、学生の時間割・締切のカレンダー・支援担当の面談画面にまとめるアプリです。
 
-開発用repoは `shieikan/kadai-hisho`。何が済んで何が残っているかは [PLAN.md](PLAN.md) を参照（`pnpm progress` で数える）。
+架空の授業で、先生が締切を延ばしてから学生と支援担当の画面に反映されるまでを、Chrome拡張なしで試せます。
 
-拡張機能なしで架空の課題と先生役の操作を試す手順は [模擬LMSを手元で試す](docs/demo.md)。
+## ブラウザで試す
 
-## 開発を始める
+[体験用LMSを開く](https://project-00439085-4e2d-44c3-9a8.web.app/demo-lms)。体験用の学生・支援担当のアカウントは提出の説明資料に記載します。公開先のアカウントは準備中です。手元では、下の手順で試せます。
 
-Node 26とpnpm 11を使う。pnpmの固定版は [package.json](package.json) の `packageManager` を参照。`pnpm test` はFirestoreのエミュレーターも起動するため、[JDK 21以上](#firebaseエミュレーター) が必要。
+1. 学生用のブラウザで体験用LMSにログインし、「LMSを開く」を押します。
+2. 「学生の画面を開く」から時間割を開き、「架空の観察入門」のマスを押します。「架空の観察ノート」の締切と、下の「体験用カレンダー」の予定を確かめます。この画面を開いたままにします。
+3. 別のブラウザか別のプロファイルで、支援担当として体験用LMSにログインします。「面談を開く」から学生を選び、「次の面談までの締切」を確かめます。この画面も開いたままにします。同じブラウザの別タブではログインが共有されるため、役割を分けられません。
+4. 学生用の体験用LMSに戻り、先生役の「『架空の観察ノート』の締切を1日延ばす」ボタンを押します。LMSの締切だけが変わり、学生の画面と面談画面はまだ変わりません。
+5. もう一度「LMSを開く」を押します。開いたままの学生の課題欄・体験用カレンダー・面談画面の締切が1日延び、面談画面の「前回の面談からの変化」に締切の変更が出ます。
+6. さらに「LMSを開く」を押しても、同じ予定や変更の記録は増えません。終わったら両方のブラウザでログアウトします。
+
+体験用カレンダーは保存された模擬の予定です。実際のGoogleカレンダーには書き込みません。操作に失敗したら、同じ「LMSを開く」で再試行できます。実際のLMSからの取得とGoogleカレンダーへの反映は、通しての動作確認が残っています。面談で準備の候補は見られますが、予定の保存はまだできません。
+
+## 手元で動かす
+
+Node.js 26、pnpm 11、JDK 21以上が必要です。pnpmの固定版は [package.json](package.json) の `packageManager` を参照してください。`node --version`・`pnpm --version`・`java -version` で確認できます。初回は依存とエミュレーターのダウンロードにネットワーク接続が必要です。Googleのアカウントやクラウドの設定は不要です。
+
+repoのルートで準備します。
 
 ```sh
-pnpm install
-pnpm typecheck
-pnpm lint
-pnpm test
+pnpm install --frozen-lockfile
 pnpm build
 ```
 
-全パッケージをルートから確認する。CIも同じ順で実行する。
+8080・5177・8085・9099番ポートが空いている状態で、3つのターミナルをrepoのルートに開きます。使用中なら、その作業が終わるのを待つか自分で起動したものだけを終了してください。
 
-構成と作業の規則は [AGENTS.md](AGENTS.md)、データの意味は [docs/data-shapes.md](docs/data-shapes.md)、設計の判断は [docs/decisions.md](docs/decisions.md)（ライブラリの選定理由はD14）、画面の言葉は [docs/ui-words.md](docs/ui-words.md) を参照。
-
-## 画面
+**ターミナル1：認証とデータ保存を起動**
 
 ```sh
-pnpm --filter web dev
+pnpm exec firebase emulators:start --project demo-kadai-hisho --only auth,firestore
 ```
 
-表示されたローカルURLの `/student` に学生の画面、`/session` に面談画面がある。ビルドした画面は `pnpm --filter web preview` で確認できる。面談のログイン・架空データ・API接続・試験は [面談画面のローカル確認](docs/session-development.md) を参照。
+JavaがPATHにないmacOSでHomebrewのJDK 21を使う場合は、先に `export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"` を実行します。
 
-学生の画面は、拡張機能と同じGoogleアカウントでログインし、本人の授業・課題・更新の状態だけをFirestoreから読み取る。時間割と締切順の一覧から授業を選ぶと課題が開き、画面を開いたまま変更を受け取る。画面からFirestoreへの書き込みは行わない。
-
-Firebaseの接続には、ビルド環境で `VITE_FIREBASE_PROJECT_ID`・`VITE_FIREBASE_API_KEY`・`VITE_FIREBASE_AUTH_DOMAIN` を指定する。FirebaseのWeb用設定を使い、管理用の秘密鍵やトークンは指定しない。未設定なら準備中の案内を出す。Googleでのログインを有効にし、画面のドメインが許可された既存のFirebaseプロジェクトを使う。プロジェクトの作成や設定変更はこの手順には含まない。
-
-ローカルの架空データで確認する場合は、AuthとFirestoreのエミュレーターを起動し、別ターミナルで `VITE_USE_FIREBASE_EMULATORS=true pnpm --filter web dev --port 5176 --strictPort` を実行する。この設定は開発サーバーだけで有効。本物のFirebaseには接続しない。
-
-ブラウザの確認は、手元のPlaywrightを使い、上の開発サーバーを起動した状態で次を実行する（エミュレーターが既に起動している場合は先に終了する）。`PLAYWRIGHT_MODULE` は既存のPlaywrightのES moduleへの絶対パス。試験用依存はworkspaceへ追加していない。
+**ターミナル2：架空のアカウントを用意してAPIを起動**
 
 ```sh
-PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm exec firebase emulators:exec --project demo-kadai-hisho --only auth,firestore "node packages/web/tests/student.browser.mjs"
+export GCLOUD_PROJECT=demo-kadai-hisho
+export FIRESTORE_EMULATOR_HOST=127.0.0.1:8085
+export FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+read -s KADAI_DEMO_PASSWORD
+export KADAI_DEMO_PASSWORD
+node packages/server/scripts/seed-demo.mjs
+unset KADAI_DEMO_PASSWORD
+node packages/server/dist/index.js
 ```
 
-空の状態から授業を開き、締切の変更、提出、接続断、狭幅、ログアウトまでを試す。架空の本人の文書は試験後に消す。スクリーンショットは `/tmp/kadai-i20-evidence/` に置く。通常の `pnpm test` は、このブラウザ確認を含まない。
+`read -s` の行で止まったら、8文字以上の手元用パスワードを入力しEnterを押します。入力は画面に出ません。ログインで使うので覚えておき、文書やログには残さないでください。初期設定の成功メッセージを確認してからAPIを起動します。既存のアカウントのパスワードや変更済みの締切は、初期設定をやり直しても戻りません。
 
-色と書体は [tokens.css](packages/web/src/tokens.css) にまとめてある。フォントは端末に入っているものを順に使う。外部配信のフォントは読み込まない。
-
-## Chrome拡張
+**ターミナル3：画面を起動**
 
 ```sh
-pnpm --filter extension build
+VITE_USE_FIREBASE_EMULATORS=true pnpm --filter web exec vite --host 127.0.0.1 --port 5177 --strictPort
 ```
 
-Chromeの `chrome://extensions` でデベロッパーモードを有効にし、「パッケージ化されていない拡張機能を読み込む」から `packages/extension/dist` を選ぶ。更新後は拡張機能とLMSページを再読み込みする。
+[手元の体験用LMS](http://127.0.0.1:5177/demo-lms) を開きます。学生は `trial-student@example.invalid`、支援担当は `trial-supporter@example.invalid` と、先ほど入力した共通の手元用パスワードでログインします。「ブラウザで試す」の1〜6を実行してください。学生の画面は `/student`、面談画面は `/session` です。
 
-YNU LMSのURLのpathにSIDがあると、content scriptがSIDだけをservice workerへ渡す。workerは送信元とSIDの一致を確かめ、`chrome.storage.session` に保存する。LMSへのアクセスやサーバーへの送信はまだ行わない。SIDやSID付きURLをコンソールへ出さない。
+終わったら各ターミナルでCtrl+Cを押して終了します。この手順ではエミュレーターのデータをファイルへ保存しないため、停止すると試した内容は失われます。
 
-## サーバー
+## 構成とGoogleのサービス
+
+```mermaid
+flowchart LR
+  LMS[大学のLMS] --> EXT[Chrome拡張：読み取り]
+  DEMO[体験用LMS：架空の授業] --> READER[共通の読み取り部品]
+  EXT --> READER
+  READER --> API[Cloud Run：観測を受け取るAPI]
+  API --> DB[(Cloud Firestore：課題の台帳)]
+  DB --> WEB[Firebase Hosting：学生・面談画面]
+  AUTH[Firebase Authentication：本人の確認] -.-> API
+  AUTH -.-> WEB
+  API --> MOCK[体験用カレンダー：模擬の予定を保存]
+  MOCK --> WEB
+  API --> EXT
+  EXT --> CAL[Google Calendar API：締切の予定]
+  GEMINI[Vertex AI の Gemini：お知らせの締切変更を抽出] --> API
+```
+
+図の実LMS・実カレンダーへの経路は、一連の動作の確認が残っています。体験ではブラウザの読み取り部品からAPIへ送り、模擬の予定を保存します。
+
+| Googleのサービス | 使う場所 |
+|---|---|
+| Firebase Hosting | 学生・面談画面と体験用LMSの配信、APIへの転送 |
+| Cloud Run | 観測を受け取り、課題の変更を台帳に記録するAPI |
+| Cloud Firestore | 授業・課題・変更履歴・共有許可・模擬予定の保存と画面への即時反映 |
+| Firebase Authentication | 学生と支援担当のログイン、APIでの本人確認 |
+| Google Calendar API | Chrome拡張から実際の締切の予定を作成・変更・削除。体験用アカウントでは使わない |
+| Vertex AI の Gemini | お知らせから締切変更の候補を拾い、公式の締切を変えずに「要確認」にする。別のLMSの読み取り定義の下書きにも使用 |
+| Cloud Build / Artifact Registry | APIのビルドとコンテナの保管 |
+
+## 開発と確認
 
 ```sh
-pnpm --filter server build
-pnpm --filter server start
+pnpm typecheck && pnpm lint && pnpm test && pnpm build
+pnpm progress --check && pnpm check:samples
+pnpm test:demo:emulator
 ```
 
-既定では `http://localhost:8080/api/health` が `{"status":"ok"}` を返す。`PORT` でポートを変更でき、待ち受け先は `0.0.0.0`。
-
-Cloud RunとFirebase Hostingへのデプロイは [デプロイ手順](docs/deploy.md) を参照。
-
-## Firebaseエミュレーター
-
-本物のFirebaseプロジェクトやログインは不要。コマンドは `demo-kadai-hisho` を指定し、各エミュレーターはローカルだけで待ち受ける。
-
-Firestoreを含めて起動するには **JDK 21以上** が必要。`java -version` で確認し、Javaがない環境では先にJDKを用意する。この雛形のセットアップではJavaをインストールしない。
+ブラウザ操作の自動確認には、手元にPlaywrightとChromiumも必要です。既存のPlaywrightの `index.mjs` への絶対パスを指定します。用意がない場合は、上の手動手順で試せます。
 
 ```sh
-pnpm --filter web build
-pnpm emulators
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm metrics:m6
 ```
 
-JavaなしでAuthenticationとHostingだけを確認する場合：
+自動確認は認証・Firestoreのエミュレーターと画面・APIを起動し、学生と支援担当のログイン、締切変更、両画面と模擬予定への反映、応答を失った後の再送を確かめます。試験用パスワードは実行時に生成し、表示しません。結果は `/tmp/kadai-i19-evidence/m6.json`、画面の画像は同じフォルダに保存します。終了時に起動したプロセスを停止します。ほかのエミュレーターは先に終了しておいてください。
 
-```sh
-pnpm --filter web build
-pnpm emulators:web
-```
+### 画面
 
-Hostingは `http://127.0.0.1:5002/student` と `/session`、管理画面は `http://127.0.0.1:4000`。全体起動時のFirestoreは8085、Authenticationは9099で動く。設定は [firebase.json](firebase.json)。初回はエミュレーターのダウンロードが発生する。
+公開用のビルドには `VITE_FIREBASE_PROJECT_ID`・`VITE_FIREBASE_API_KEY`・`VITE_FIREBASE_AUTH_DOMAIN` にFirebaseのWeb用設定を指定します。管理用の秘密鍵やトークンは使いません。設定がなければ準備中の案内が出ます。既存のFirebaseプロジェクトでGoogleログインと画面のドメインが許可されていることが前提です。反映の手順は [デプロイ手順](docs/deploy.md) にあります。手元で試す場合は、上のエミュレーターの手順を使ってください。
 
-学生の画面の接続方法は [画面](#画面) を参照。Firestoreの規則は [設計案の共有範囲](docs/design.md#2-firestoreのデータの置き方と共有の範囲) に限って読み取りを許可し、画面からの書き込みはすべて拒否する。
+Chrome拡張は `pnpm --filter extension build` の後、Chromeの `chrome://extensions` でデベロッパーモードを有効にし、`packages/extension/dist` を「パッケージ化されていない拡張機能を読み込む」で選びます。Google接続には別途OAuthとFirebaseの設定が必要です。体験用LMSには拡張機能の設定は不要です。
 
-規則だけの試験は `pnpm test:firestore-rules`。架空のプロジェクト `demo-kadai-hisho-rules` でFirestoreだけを起動し、試験後に停止する。手動で起動したエミュレーターと8085番ポートを共用するため、手動の方を先に終了しておく。macOSでは `/opt/homebrew/opt/openjdk@21/bin`、GitHub Actionsでは `JAVA_HOME_21_X64` のJavaを試験コマンドがPATHに足す。それ以外はJDK 21以上をPATHに置く。初回はダウンロードにネットワーク接続が必要。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
+開発用repoは `shieikan/kadai-hisho` です。構成と作業の規則は [AGENTS.md](AGENTS.md)、実装済みと未確認の範囲は [PLAN.md](PLAN.md)、データの意味は [docs/data-shapes.md](docs/data-shapes.md)、選定理由は [docs/decisions.md](docs/decisions.md) にあります。詳しい確認・運用は [体験用LMS](docs/demo.md)、[面談画面](docs/session-development.md)、[デプロイ手順](docs/deploy.md) を参照してください。
 
-観測APIはAuth・Firestoreのエミュレーターで試験できる（下記）。Firestoreの規則は上のとおり。[Firebaseの接続手順とJavaの要件](https://firebase.google.com/docs/emulator-suite/connect_firestore) も参照。
-
-### 観測APIの試験
-
-```sh
-pnpm test:observations:emulator
-```
-
-AuthとFirestoreを `demo-kadai-hisho` で起動し、架空の利用者・観測を使ってAPIへの送信、保存、再送、取消、本人以外の保存先の拒否を試す。通常の `pnpm test` ではエミュレーターの4試験をskipするため、このコマンドも別途実行する。JDKがPATHにない場合は、インストール済みJDKのbinをPATHに加えて実行する。
-
-APIを手動で動かす場合は、`pnpm emulators` の起動後、別のターミナルで次を実行する。
-
-```sh
-pnpm --filter server... build
-GCLOUD_PROJECT=demo-kadai-hisho FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 pnpm --filter server start
-```
-
-送信形とAPIの応答は [データの形](docs/data-shapes.md)。エミュレーター用の環境変数はクラウドでは設定しない。
-
-## 提出とライセンス
-
-公開の提出先は `Devfest-Hackathon-2026/df-2026-t198`（remote名 `submission`）。提出時は確認したmainの履歴をそろえる。提出先ではGitHub ActionsとPagesを使えない。提出方法と締切は運営の案内に従う。
-
-[MIT License](LICENSE)。外部の依存とライセンスは [docs/third-party.md](docs/third-party.md) に記録する。
+[MIT License](LICENSE)。外部の依存とライセンスは [docs/third-party.md](docs/third-party.md) に記録しています。

@@ -15,13 +15,7 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm metrics:m6
 
 ## 手で試す
 
-3つのターミナルを使う。
-
-1. `pnpm build` の後、`PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" pnpm exec firebase emulators:start --project demo-kadai-hisho --only auth,firestore`。
-2. 同じターミナル内で `GCLOUD_PROJECT=demo-kadai-hisho`、`FIRESTORE_EMULATOR_HOST=127.0.0.1:8085`、`FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` をexportする。`read -s KADAI_DEMO_PASSWORD` で8文字以上の試験用パスワードを入力してexportし、`node packages/server/scripts/seed-demo.mjs`。その後 `node packages/server/dist/index.js`。
-3. `VITE_USE_FIREBASE_EMULATORS=true pnpm --filter web exec vite --host 127.0.0.1 --port 5177 --strictPort`。
-
-学生は `http://127.0.0.1:5177/demo-lms` に `trial-student@example.invalid` でログインし、上で入力した試験用パスワードを使う。支援担当は別のブラウザで同じURLに `trial-supporter@example.invalid` と同じパスワードでログインし、「面談を開く」から学生を選ぶ。学生の「LMSを開く」で最初の課題が並ぶ。先生役で締切を延ばし、もう一度「LMSを開く」で時間割・開いた課題・体験用カレンダー・面談が変わる。操作に失敗したら同じ「LMSを開く」で再試行する。
+[READMEの「手元で動かす」](../README.md#手元で動かす) に環境の準備・起動・ログインをまとめている。起動後は [「ブラウザで試す」](../README.md#ブラウザで試す) の1〜6を行う。
 
 seedは台帳を直接作らない。既存の体験データは上書きせず、再実行で締切を戻さない。体験プロフィールと共有許可は設定する。実プロジェクトへの誤接続を拒否するため、この手順はエミュレーターでだけ動く。
 
