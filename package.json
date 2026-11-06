@@ -25,7 +25,7 @@
     "check:samples": "node scripts/check-samples.mjs",
     "metrics:m1": "pnpm --filter @kadai-hisho/core build && node scripts/metrics-m1.mjs",
     "metrics:m3": "pnpm --filter server build && node scripts/metrics-m3.mjs",
-    "test:m3-score": "node --test scripts/m3-score.test.mjs",
+    "test:m3-score": "pnpm --filter server... build && node --test scripts/m3-score.test.mjs scripts/metrics-m3.test.mjs",
     "definition:draft": "pnpm --filter server... build && node packages/server/dist/definition-drafts/cli.js",
     "definition:check": "node scripts/check-definition-draft.mjs"
   },
