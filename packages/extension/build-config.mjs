@@ -1,5 +1,5 @@
-import { URL } from 'node:url';
 import { readFile } from 'node:fs/promises';
+import { URL } from 'node:url';
 
 export const oauthScopes = ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created'];
 
@@ -33,11 +33,12 @@ function apiOrigin(value) {
 
 export function configureManifest(manifest, config) {
   const result = { ...manifest };
-  if (config.apiOrigin) {
-    const origin = apiOrigin(config.apiOrigin);
-    result.host_permissions = [...manifest.host_permissions, `${origin}/*`];
-    result.content_security_policy = { extension_pages: `${manifest.content_security_policy.extension_pages} ${origin}` };
-  }
+  const origins = ['https://lms.ynu.ac.jp'];
+  if (config.apiOrigin) origins.push(apiOrigin(config.apiOrigin));
+  const uniqueOrigins = [...new Set(origins)];
+  result.host_permissions = [...new Set([...manifest.host_permissions, ...uniqueOrigins.map(origin => `${origin}/*`)])];
+  result.content_security_policy = { ...manifest.content_security_policy,
+    extension_pages: `${manifest.content_security_policy.extension_pages} ${uniqueOrigins.join(' ')}` };
   if (/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(config.oauthClientId) && !config.invalidJson) {
     result.oauth2 = { client_id: config.oauthClientId, scopes: oauthScopes };
   }

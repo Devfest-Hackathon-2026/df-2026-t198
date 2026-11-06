@@ -20,3 +20,8 @@ export function missingConfig(config: ProbeConfig): string[] {
 export const probeConfig: ProbeConfig = typeof __AUTH_PROBE_CONFIG__ === 'undefined'
   ? { oauthClientId: '', firebase: { apiKey: '', authDomain: '', projectId: '', appId: '' } }
   : __AUTH_PROBE_CONFIG__;
+
+export function observationApiOrigin(): string | null {
+  // loadConfig validates and normalizes the origin before embedding this config.
+  return probeConfig.apiOrigin || null;
+}
