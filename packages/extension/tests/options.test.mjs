@@ -27,7 +27,8 @@ it('renders missing settings, success and duplicate results, and hides transport
     .mockResolvedValueOnce(response)
     .mockResolvedValueOnce({ ...response, steps: [{ stage: 'テストの予定', status: 'ok', message: '同じ予定IDが既にあります（HTTP 409、内容も一致）。' }] })
     .mockRejectedValueOnce(new Error(token));
-  const context = createContext({ document, chrome: { runtime: { sendMessage } } }, { codeGeneration: { strings: false, wasm: false } });
+  const context = createContext({ document, chrome: { runtime: { sendMessage: message => message.type.startsWith('digest-')
+    ? Promise.resolve({ ok: true, enabled: false }) : sendMessage(message) } } }, { codeGeneration: { strings: false, wasm: false } });
   runInContext(outputFiles[0].text, context);
   const run = document.querySelector('#run');
   const restore = document.querySelector('#restore');

@@ -2,8 +2,11 @@ import { startCalendarSync, handleCalendarMessage } from './calendar-browser.js'
 import { isSessionFound, sessionFromUrl } from './session.js';
 import { handleAuthProbeMessage } from './auth-probe-worker.js';
 import { runCollection } from './collection-worker.js';
+import { startDigest, handleDigestMessage } from './digest-browser.js';
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
+  const digestHandled = handleDigestMessage(message, sender, respond);
+  if (digestHandled !== undefined) return digestHandled;
   const calendarHandled = handleCalendarMessage(message, sender, respond);
   if (calendarHandled !== undefined) return calendarHandled;
   const handled = handleAuthProbeMessage(message, sender, respond);
@@ -30,3 +33,4 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
 });
 
 startCalendarSync();
+startDigest();

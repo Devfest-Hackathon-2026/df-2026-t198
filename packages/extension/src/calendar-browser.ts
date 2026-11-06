@@ -2,6 +2,7 @@ import type { CalendarIntegration, CalendarItem, Observation, ObservationResult 
 import { firebaseAuth, readProbeState, confirmGoogleIdentity } from './auth-probe-browser.js';
 import { probeConfig, missingConfig } from './probe-config.js';
 import { CalendarFailure, createCalendarSync, googleCalendarTarget, sendObservationAndSync } from './calendar-sync.js';
+import { calendarScopes } from './oauth-scopes.js';
 
 async function connection() {
   if (missingConfig(probeConfig).length || !probeConfig.apiOrigin) throw new CalendarFailure('authorization-required');
@@ -42,7 +43,7 @@ const sync = createCalendarSync({
   const collection = `/calendars/${encodeURIComponent(calendarId)}/events`;
   if (path !== collection && !path.startsWith(`${collection}/`)) throw new CalendarFailure('event-conflict');
   let token: string | undefined;
-  try { token = (await chrome.identity.getAuthToken({ interactive: false })).token; }
+  try { token = (await chrome.identity.getAuthToken({ interactive: false, scopes: calendarScopes })).token; }
   catch { throw new CalendarFailure('authorization-required'); }
   if (!token) throw new CalendarFailure('authorization-required');
   if (verifiedGoogleToken?.uid !== user.uid || verifiedGoogleToken.token !== token) {

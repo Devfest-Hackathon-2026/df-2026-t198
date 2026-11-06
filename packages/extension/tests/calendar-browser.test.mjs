@@ -35,7 +35,8 @@ function fixture({ savedUid = 'owner', googleUid = 'owner' } = {}) {
   const chrome = { runtime: { id: sender.id, getURL: path => `chrome-extension://${sender.id}/${path}`,
     onMessage: { addListener: fn => { onMessage = fn; } }, onStartup: { addListener: fn => { onStartup = fn; } } },
     storage: { local: { get: async () => ({ authProbeState: state }), setAccessLevel: async () => {} }, session: { set: vi.fn() } },
-    identity: { getAuthToken: vi.fn(async options => { expect(options.interactive).toBe(false); return { token: googleToken }; }), removeCachedAuthToken: vi.fn() } };
+    identity: { getAuthToken: vi.fn(async options => { expect(options).toEqual({ interactive: false,
+      scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created'] }); return { token: googleToken }; }), removeCachedAuthToken: vi.fn() } };
   const response = (status, data) => ({ status, ok: status >= 200 && status < 300, json: async () => data });
   const fetch = vi.fn(async (url, options) => {
     calls.push([url, options.method]);
