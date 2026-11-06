@@ -1,3 +1,4 @@
+import { readCalendarState, writeCalendarItem } from './calendar-store.js';
 import { createHash } from 'node:crypto';
 import { applyObservation, type FetchState, type LedgerAssignment, type Observation,
   type ObservationReceipt, type ObservationResult } from '@kadai-hisho/core/ledger';
@@ -22,8 +23,15 @@ export function createObservationStore(db: Firestore) {
       const rows = await tx.get(student.collection('assignments').where('key.system', '==', observation.system));
       const previous = rows.docs.map(doc => doc.data() as LedgerAssignment);
       const applied = applyObservation(previous, observation, recordedAt);
+      const calendar = await readCalendarState(tx, student);
+      const storedCourses = await tx.get(student.collection('courses').where('system', '==', observation.system));
+      const courseNames = new Map(storedCourses.docs.map(doc => [doc.data()['courseId'] as string, doc.data()['name'] as string]));
+      for (const course of observation.catalogCourses) courseNames.set(course.courseId, course.name);
       const priorById = new Map(previous.map(item => [item.key.sourceId, item]));
       for (const item of applied.assignments) {
+        const key = documentKey(item.key.system, item.key.sourceId);
+        const name = courseNames.get(item.latest.courseId) ?? item.latest.courseId;
+        writeCalendarItem(tx, student, calendar.items.get(key), key, item, name, calendar.integration?.calendarId ?? null);
         if (JSON.stringify(priorById.get(item.key.sourceId)) !== JSON.stringify(item)) {
           tx.set(student.collection('assignments').doc(documentKey(item.key.system, item.key.sourceId)), item);
         }

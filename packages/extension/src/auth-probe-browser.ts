@@ -8,8 +8,8 @@ import { missingConfig, probeConfig } from './probe-config.js';
 const stateKey = 'authProbeState';
 let auth: Auth | undefined;
 
-function firebaseAuth(): Auth {
-  // Initialized only after a trusted options-page request and complete config.
+export function firebaseAuth(): Auth {
+  // Callers check configuration before initializing the shared extension auth.
   auth ??= initializeAuth(initializeApp(probeConfig.firebase), { persistence: indexedDBLocalPersistence });
   return auth;
 }
@@ -21,6 +21,15 @@ export async function observationIdentity(): Promise<{ uid: string; token: strin
   await current.authStateReady();
   const user = current.currentUser;
   return user ? { uid: user.uid, token: await user.getIdToken() } : null;
+}
+
+export async function readProbeState(): Promise<ProbeState | undefined> {
+  return (await chrome.storage.local.get(stateKey))[stateKey] as ProbeState | undefined;
+}
+
+export async function confirmGoogleIdentity(token: string, expectedUid: string): Promise<boolean> {
+  const credential = GoogleAuthProvider.credential(null, token);
+  return (await signInWithCredential(firebaseAuth(), credential)).user.uid === expectedUid;
 }
 
 export function browserProbe() {
@@ -43,10 +52,7 @@ export function browserProbe() {
         return (await signInWithCredential(firebaseAuth(), credential as AuthCredential)).user.uid;
       },
     },
-    async read() {
-      const saved = (await chrome.storage.local.get(stateKey))[stateKey] as ProbeState | undefined;
-      return saved;
-    },
+    read: readProbeState,
     async write(state) { await chrome.storage.local.set({ [stateKey]: state }); },
     newEventId: () => crypto.randomUUID().replaceAll('-', ''),
     now: () => new Date(),

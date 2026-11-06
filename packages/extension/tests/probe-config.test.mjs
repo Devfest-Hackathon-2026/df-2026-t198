@@ -41,17 +41,37 @@ describe('local probe build config', () => {
     } finally { await rm(dir, { recursive: true }); }
   });
 
-  it('grants LMS access and only a configured HTTPS API origin', async () => {
+  it('grants LMS access without API config and does not mutate the source manifest', async () => {
     const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
-    for (const apiOrigin of ['', 'https://api.example.test/path', 'http://api.example.test', 'https://user:secret@api.example.test', 'https://api.example.test?token=synthetic']) {
-      const result = configureManifest(manifest, { apiOrigin });
-      expect(result.host_permissions).toContain('https://lms.ynu.ac.jp/*');
-      expect(result.host_permissions.some(host => host.includes('example.test'))).toBe(false);
-      expect(result.content_security_policy.extension_pages).not.toContain('example.test');
-    }
-    const result = configureManifest(manifest, { apiOrigin: 'https://api.example.test' });
-    expect(result.host_permissions).toContain('https://api.example.test/*');
-    expect(result.content_security_policy.extension_pages).toContain('https://api.example.test');
-    expect(manifest.host_permissions).not.toContain('https://api.example.test/*');
+    const original = globalThis.structuredClone(manifest);
+    const result = configureManifest(manifest, { apiOrigin: '' });
+    expect(result.host_permissions).toEqual([...manifest.host_permissions, 'https://lms.ynu.ac.jp/*']);
+    expect(result.content_security_policy.extension_pages).toBe(`${manifest.content_security_policy.extension_pages} https://lms.ynu.ac.jp`);
+    expect(manifest).toEqual(original);
   });
+
+  it('normalizes API config before embedding it and rejects invalid origins while loading', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'api-origin-config-'));
+    const file = join(dir, 'config.local.json');
+    try {
+      await writeFile(file, JSON.stringify({ apiOrigin: ' https://API.example.invalid:443/ ' }));
+      expect((await loadConfig(file)).apiOrigin).toBe('https://api.example.invalid');
+      await writeFile(file, JSON.stringify({ apiOrigin: 'https://api.example.invalid/path' }));
+      await expect(loadConfig(file)).rejects.toThrow('apiOrigin must be an HTTPS origin');
+    } finally { await rm(dir, { recursive: true }); }
+  });
+});
+
+it('limits the API host permission and CSP to the configured HTTPS origin', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+  const configured = configureManifest(manifest, { apiOrigin: 'https://api.example.invalid', oauthClientId: '' });
+  expect(configured.host_permissions).toEqual([...manifest.host_permissions, 'https://lms.ynu.ac.jp/*', 'https://api.example.invalid/*']);
+  expect(configured.content_security_policy.extension_pages).toBe(`${manifest.content_security_policy.extension_pages} https://lms.ynu.ac.jp https://api.example.invalid`);
+  const sameOrigin = configureManifest(manifest, { apiOrigin: 'https://lms.ynu.ac.jp' });
+  expect(sameOrigin.host_permissions).toEqual([...manifest.host_permissions, 'https://lms.ynu.ac.jp/*']);
+  expect(sameOrigin.content_security_policy.extension_pages).toBe(`${manifest.content_security_policy.extension_pages} https://lms.ynu.ac.jp`);
+  for (const apiOrigin of ['invalid-synthetic-marker', 'http://api.example.invalid', 'https://name:password@api.example.invalid',
+    'https://api.example.invalid/api', 'https://api.example.invalid/?x=1', 'https://api.example.invalid/#fragment']) {
+    expect(() => configureManifest(manifest, { apiOrigin, oauthClientId: '' })).toThrow('apiOrigin must be an HTTPS origin');
+  }
 });

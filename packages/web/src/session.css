@@ -13,10 +13,10 @@
 .session-sidebar .quiet { margin-top: 16px; background: transparent; font-size: 12px; }
 .session-content { min-width: 0; }
 .session-heading { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-.session-heading h2 { margin: 0; font: 600 28px var(--serif); color: var(--ink); }
+.session-heading h1 { margin: 0; font: 600 28px var(--serif); color: var(--ink); }
 .session-page .eyebrow { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
 .session-dates p { margin: 0; }
-.session-dates strong { display: block; font-size: 17px; color: var(--ink); }
+.session-dates strong { display: inline; font-size: 17px; color: var(--ink); }
 .session-editor { margin-bottom: 20px; color: var(--green); }
 .session-editor form { padding: 16px 0; display: grid; gap: 12px; }
 .session-updates { border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); margin-bottom: 24px; }
@@ -37,3 +37,51 @@
 .session-login h2 { margin: 0; font-size: 20px; }
 @media (max-width: 900px) { .session-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) { .session-shell { grid-template-columns: minmax(0, 1fr); gap: 24px; } .session-account { align-items: start; gap: 12px; } .session-heading { display: block; } .session-dates { margin-top: 16px; } }
+.session-account { justify-content: flex-end; margin: 0 0 4px; }
+.session-back { display: inline-block; margin-bottom: 24px; font-size: 13px; }
+.session-students { max-width: 600px; }
+.session-students nav { display: grid; gap: 12px; margin: 24px 0; }
+.session-students nav a { background: var(--white); border: 1px solid var(--line); padding: 16px; border-radius: 8px; overflow-wrap: anywhere; }
+.session-students > a { margin-left: 16px; }
+.session-heading h1 { overflow-wrap: anywhere; }
+.session-steps { display: flex; gap: 16px; align-items: center; border-block: 1px solid var(--line); padding: 16px 0; margin: 20px 0; }
+.session-steps a { text-decoration: none; padding: 8px; border-radius: 6px; }
+.session-steps [aria-current='step'] { background: var(--soft); font-weight: 700; }
+.session-check section { margin-bottom: 28px; }
+.session-check h2, .session-planning h2 { font-size: 17px; color: var(--ink); }
+.session-brief li { padding: 12px 0; }
+.session-other-review { margin-top: 16px; }
+.session-task summary { cursor: pointer; }
+.session-task summary .eyebrow, .session-review { display: block; }
+.session-task h3 { display: inline; margin-right: 12px; }
+.session-review { margin-top: 8px; font-size: 13px; color: var(--gold-ink); }
+.session-task-detail { padding: 18px 0 0 16px; }
+.session-task-detail h4 { font-size: 13px; margin: 16px 0 4px; }
+.session-task-detail ul { padding-left: 18px; }
+.session-task-detail li { padding: 8px 0; }
+.session-next { display: inline-block; padding: 12px 18px; background: var(--green); color: var(--white); border-radius: 6px; text-decoration: none; }
+.session-topic { display: flex; gap: 12px; align-items: center; margin: 24px 0; }
+.session-topic select { min-width: 0; max-width: 100%; font: inherit; color: var(--ink); padding: 8px; background: var(--white); border: 1px solid var(--line); border-radius: 6px; }
+.session-decisions { font-size: 13px; margin-bottom: 24px; }
+.session-decisions ul { list-style: none; padding: 0; }
+.session-decisions li { margin-bottom: 8px; }
+.session-timetable-scroll { max-width: 100%; overflow-x: auto; }
+.session-timetable { border-collapse: collapse; width: 100%; min-width: 640px; table-layout: fixed; background: var(--white); }
+.session-timetable caption { text-align: left; font-weight: 600; padding-bottom: 12px; }
+.session-timetable th, .session-timetable td { border: 1px solid var(--line); padding: 8px; vertical-align: top; font-size: 13px; }
+.session-timetable th:first-child { width: 48px; }
+.session-timetable td { height: 72px; }
+.session-course, .session-candidate { display: block; padding: 8px; border-radius: 4px; overflow-wrap: anywhere; }
+.session-course { background: var(--side); }
+.session-candidate { border: 2px dashed var(--green); color: var(--green); }
+.session-candidate strong { display: block; font-size: 11px; }
+.session-confirm { margin-top: 24px; }
+.session-confirm p { margin-top: 8px; font-size: 13px; }
+.session-page button:disabled { cursor: default; }
+@media (max-width: 640px) { .session-topic { align-items: start; flex-direction: column; } .session-steps { gap: 4px; font-size: 14px; } }
+
+.session-heading { align-items: center; }
+.session-dates { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; }
+.session-dates strong { font-size: inherit; }
+.session-dates .muted { flex-basis: 100%; }
+.session-other-review { margin-bottom: 24px; }

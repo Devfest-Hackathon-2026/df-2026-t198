@@ -24,7 +24,7 @@ const schema = {
   }, required: ['announcementId', 'assignmentKey', 'proposedDueAt', 'quote', 'reason'],
 };
 export type Generate = (request: GenerateContentParameters) => Promise<GenerateContentResponse>;
-export function createGeminiModel(project: string, budget: EvaluationBudget, generate?: Generate): AnnouncementModel {
+export function createGeminiModel(project: string, budget: Pick<EvaluationBudget, 'reserve' | 'settle'>, generate?: Generate): AnnouncementModel {
   const client = generate ? null : new GoogleGenAI({ vertexai: true, project, location: 'global',
     httpOptions: { timeout: 120_000, retryOptions: { attempts: 1 } } });
   const call = generate ?? ((request) => client!.models.generateContent(request));

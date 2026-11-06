@@ -1,8 +1,11 @@
+import { startCalendarSync, handleCalendarMessage } from './calendar-browser.js';
 import { isSessionFound, sessionFromUrl } from './session.js';
 import { handleAuthProbeMessage } from './auth-probe-worker.js';
 import { runCollection } from './collection-worker.js';
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
+  const calendarHandled = handleCalendarMessage(message, sender, respond);
+  if (calendarHandled !== undefined) return calendarHandled;
   const handled = handleAuthProbeMessage(message, sender, respond);
   if (handled !== undefined) return handled;
   if (!isSessionFound(message)
@@ -25,3 +28,5 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
   // Keep the message channel open until storage has finished.
   return true;
 });
+
+startCalendarSync();

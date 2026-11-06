@@ -5,7 +5,8 @@ import { fileURLToPath, URL, URLSearchParams } from 'node:url';
 import { expect, it, vi } from 'vitest';
 import { parseObservation } from '../../server/src/observation-input.js';
 
-const config = { apiOrigin: 'https://api.example.test' };
+const config = { apiOrigin: 'https://api.example.test', oauthClientId: '123-synthetic.apps.googleusercontent.com',
+  firebase: { apiKey: 'synthetic-key', authDomain: 'synthetic.firebaseapp.com', projectId: 'synthetic', appId: 'synthetic-app' } };
 const worker = await build({
   entryPoints: [fileURLToPath(new URL('../src/service-worker.ts', import.meta.url))],
   bundle: true, write: false, platform: 'browser', format: 'iife', target: 'chrome105',
@@ -14,6 +15,9 @@ const worker = await build({
     builder.onResolve({ filter: /auth-probe-browser\.js$/ }, () => ({ path: 'identity', namespace: 'fake' }));
     builder.onLoad({ filter: /.*/, namespace: 'fake' }, () => ({ contents: `
       export const observationIdentity = async () => ({ uid: 'synthetic-user', token: 'synthetic-id-token' });
+      export const firebaseAuth = () => ({ authStateReady: async () => {}, currentUser: null });
+      export const readProbeState = async () => undefined;
+      export const confirmGoogleIdentity = () => { throw new Error('interactive-auth-forbidden'); };
       export const browserProbe = () => { throw new Error('interactive-auth-forbidden'); };` }));
   } }],
 });
@@ -58,7 +62,7 @@ for (const backgroundBlocked of [false, true]) it(`opening an LMS page reads all
     setTimeout: (fn) => { globalThis.queueMicrotask(fn); return 0; }, console: { warn: vi.fn() } };
   const call = (listener, message, sender) => new Promise(resolve => listener(message, sender, resolve));
   const workerContext = createContext({ ...common, fetch: fetcher, chrome: {
-    runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { workerListener = fn; } } },
+    runtime: { id: 'synthetic-extension', onStartup: { addListener: vi.fn() }, onMessage: { addListener: fn => { workerListener = fn; } } },
     storage: { session: { set: async values => Object.assign(state, globalThis.structuredClone(values)), get: async () => globalThis.structuredClone(state) } },
     tabs: { sendMessage: async (tabId, message, target) => {
       expect(tabId).toBe(7); expect(target).toEqual({ frameId: 0, documentId: 'synthetic-document' });

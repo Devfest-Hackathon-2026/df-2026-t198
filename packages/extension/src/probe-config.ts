@@ -22,8 +22,6 @@ export const probeConfig: ProbeConfig = typeof __AUTH_PROBE_CONFIG__ === 'undefi
   : __AUTH_PROBE_CONFIG__;
 
 export function observationApiOrigin(): string | null {
-  try {
-    const url = new URL(probeConfig.apiOrigin ?? '');
-    return url.protocol === 'https:' && url.origin === probeConfig.apiOrigin ? url.origin : null;
-  } catch { return null; }
+  // loadConfig validates and normalizes the origin before embedding this config.
+  return probeConfig.apiOrigin || null;
 }

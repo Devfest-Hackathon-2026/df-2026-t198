@@ -23,6 +23,7 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     await symlink(fileURLToPath(new URL('../node_modules', import.meta.url)), join(extensionDir, 'node_modules'), 'dir');
     const config = {
       oauthClientId: '123-synthetic.apps.googleusercontent.com',
+      apiOrigin: 'https://api.example.invalid',
       firebase: { apiKey: 'synthetic-api-key', authDomain: 'synthetic.firebaseapp.com', projectId: 'synthetic', appId: 'synthetic-app' },
     };
     await writeFile(join(extensionDir, 'config.local.json'), JSON.stringify(config));
@@ -31,6 +32,10 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     const manifest = JSON.parse(await readFile(join(extensionDir, 'dist/manifest.json'), 'utf8'));
     const original = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
     expect(manifest.key).toBe(original.key);
+    for (const origin of ['https://lms.ynu.ac.jp', config.apiOrigin]) {
+      expect(manifest.host_permissions.filter(host => host === `${origin}/*`)).toHaveLength(1);
+      expect(manifest.content_security_policy.extension_pages.split(' ').filter(value => value === origin)).toHaveLength(1);
+    }
     expect(manifest.oauth2).toEqual({ client_id: config.oauthClientId, scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created'] });
     const source = await readFile(join(extensionDir, 'dist/service-worker.js'), 'utf8');
     expect(source).toContain(config.firebase.apiKey);

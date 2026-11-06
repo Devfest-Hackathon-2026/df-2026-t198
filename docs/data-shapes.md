@@ -1,6 +1,6 @@
 # データの形
 
-Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observation-input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。未実装のカレンダーや共有は設計案を参照する。
+Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observation-input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。カレンダー同期は本書の末尾、未実装の共有の操作は設計案を参照する。
 
 ## 観測（取得部品 → サーバー）
 
@@ -90,7 +90,7 @@ Issue #16の指定に従い、今回は `sequence` と `payloadHash` を持た�
 
 取得状態は `studentId`、`system`、`lastAttemptedAt`、`lastSucceededAt`、`lastFailureKind`、`lastResult`（`success`・`partial`・`failed`）、`lastAppliedObservationId`。全授業の一覧・存在した課題の詳細を取得でき、失敗がない回だけ成功時刻を更新する。一部成功や失敗で以前の成功時刻を消さない。
 
-APIは受領記録、授業、台帳、履歴、取得状態を1つのFirestoreトランザクションで保存する。再送では文書の更新時刻も変えない。カレンダーやGeminiの呼び出しは含めない。coreの `applyObservation` はI/Oなしで更新を計算し、既存の受領記録が渡されたときは適用を行わない。
+APIは受領記録、授業、台帳、履歴、取得状態を1つのFirestoreトランザクションで保存する。再送では文書の更新時刻も変えない。カレンダーの同期対象も同じトランザクションで保存する（Issue #40）。GoogleカレンダーやGeminiの呼び出しは含めない。coreの `applyObservation` はI/Oなしで更新を計算し、既存の受領記録が渡されたときは適用を行わない。
 
 ## 準備の予定と既存の読み取り部品
 
@@ -108,4 +108,52 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 
 画面は許可文書をサーバーから確認してから、授業・課題・変更・更新状態・面談日時を購読する。許可の取消・削除、購読失敗で内容を消し、購読を止める。学生切替・ログアウトでも前の学生の表示と購読を破棄し、遅れて届いた通知で復活させない。台帳の永続キャッシュは作らない。通信が切れている間の取消を即座に検知したり、すでに渡した情報を回収したりするものではない。
 
-締切の表示期間は現在から次の面談日時まで（両端を含む）。日付だけの締切は、その締切の `timeZone` での今日から面談日までを含め、時刻を補わない。提出済み・取消済みはこの一覧から外す。前回からの変化は、前回の面談日時より後、現在までの変更を新しい順に出す。要確認は締切の表示期間と独立して「今日決めること」にまとめる。3日以上更新がない接続先と、一部しか確認できなかった接続先には更新状況を添える。
+締切の表示期間は現在から次の面談日時まで（両端を含む）。日付だけの締切は、その締切の `timeZone` での今日から面談日までを含め、時刻を補わない。提出済み・取消済みはこの一覧から外す。前回からの変化は、前回の面談日時より後、現在までの変更を新しい順に出す。要確認は締切の表示期間と独立して扱う。確認画面では該当する課題の行に印と理由を添え、相談画面の「今日決めること」にも出す。3日以上更新がない接続先と、一部しか確認できなかった接続先には更新状況を添える。
+
+
+## 面談の画面と準備の候補（Issue #39）
+
+- `/session` は学生の選択、`/session/{uid}` は「確かめる」、`/session/{uid}/plan` は「相談する」。共有の案内は選択画面だけに出す。名前の読み取り契約はまだないため、学生は従来どおりIDで表示する。
+- 2つの画面は同じ許可確認と購読を使う。既存の `plans` も読み、`decidedOn` が前回の面談日（日本時間）と一致する準備の予定だけを「前回の約束」に出す。空なら欄自体を出さない。今回の日時はその学生の画面を開いた時刻で、保存しない。
+- `PreparationCandidate` は `assignment`・`date`・`period` だけ。確定した予定のID、カレンダーのID、承認状態は持たず、Firestoreにもブラウザの永続領域にも保存しない。
+- 対象は、現在から次回の面談までに締切がある、提出済み・取消済み以外の課題。各課題につき2つまで、平日で授業がないコマを日付・時限順に挙げる。同じ空きコマを別の課題にも示すことがある。選ぶ対象の課題だけを時間割に重ねる。
+- 時間割は日本時間。時限数は学生画面と同じく最低5限と授業の最大時限。時限の開始時刻がまだないため、過ぎたコマを勧めないよう翌日以降・締切の前日までに限定する。日付だけの締切にも時刻は補わない。授業以外の個人の予定が空いているとは判断しない。
+- `PreparationConfirmationRequest` は確認依頼の本文の型（`{ candidates: PreparationCandidate[] }`）だけを用意した。送信先・送信処理・学生への配信・学生による確定は未実装。「学生に確認を頼む」は無効にし、その近くに準備中と本人が確定する旨を表示する。送信済み・保存済みとは表示しない。C25の聞き取り後に接続する。
+
+保存済みの `PreparationPlan` は変更しない。候補を予定として保存する機能がないため、C24全体とC25の完成を意味しない。分け方の比較は [記録](records/2026-11-06-session-split.md)。
+
+## お知らせの受信と要確認（Issue #45）
+
+`POST /api/v1/announcements` は観測と別のAPI。Firebase ID tokenで本人を決め、本文は `{ system, courseId, announcement: { announcementId, version, publishedAt, body } }`。`publishedAt` は秒までのタイムゾーン付き日時。本文64 KiB、お知らせ12,000文字、ID200文字、版100文字まで。未知の項目とSID・Cookie等の認証情報を含む文字列を拒否する。任意の文章に埋まる未知の秘密を完全に識別するものではない。
+
+実物の側は無効のまま。既定では503で、`ENABLE_DEMO_ANNOUNCEMENTS=true` とプロジェクトIDの設定がある場合だけ模擬側を有効にする。さらにサーバーの `demoAccounts/{uid}` が `role: 'student', studentId: uid` であることと、`system: 'demo-lms'` を確認する。実際のLMS・未登録の利用者・体験用の支援担当は403。体験アカウントの初期設定と画面からの送信はIssue #19の続きで行う。
+
+候補は本人の同じ接続先・授業の、取消済みでない課題だけ。候補キー・引用・日時を検査した提案だけを反映する。反映直前の台帳をトランザクションで読み直し、`reviewReasons` に `conflicting-deadline` を追加する。`detail` はお知らせID・版・提案日時だけで、引用・お知らせ本文・生のモデル応答は保存しない。公式締切・根拠・提出状態・課題の観測・変更履歴は変えない。提案が現在の公式日時と同じ瞬間なら追加しない。後続の観測でも要確認は残す（解消の操作は対象外）。
+
+同じ本人・接続先・授業・お知らせID・版の組をSHA-256にして、サーバー専用の `students/{uid}/announcementReceipts/{hash}` に処理権を先に保存する。Geminiはトランザクションの外で呼ぶ。同時再送・サーバー再起動後も同じ版を二度処理せず、失敗後や途中停止後も自動で再試行しない。途中停止は `status: 'processing'` のまま残り、管理上の回復は後続の課題。完了時は固定の `status` と `changed` だけを保存する。
+
+200の応答も `{ status, changed }` だけ。statusは `proposal`・`abstained`・`invalid-output`・`invalid-input`・`model-error`・`duplicate`・`budget-limit`。候補なし・50件超など解析の上限外は `invalid-input` でGeminiを呼ばない。未認証401、受信書式不正400、サイズ超過413、JSON以外415、保存失敗500。すべて `Cache-Control: no-store`、エラーは固定コードのみ。モデル失敗・待機は別リクエストの観測処理を止めない。
+
+APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の日付}` で全インスタンス共通に予約・精算する。初回M3測定19,410トークンの3倍以内、呼び出し1回・再試行なし。既存の入力16,000バイト相当と出力4,096トークンの上限も適用する。1日推定3,000円を超える予約を拒否し、失敗・usage不明では予約を残す。単価と換算は `announcements/budget.ts`。ローカルM3評価の別予算や他のAPI利用を合算した実請求額ではないため、それらを並行して回す運用にはしない。
+
+検証は `pnpm test:announcements:emulator`（Auth・Firestore、架空データと代替モデルだけ）。実物のGeminiへの新たな送信・保持条件の確認・デプロイ・模擬LMS画面の描画はこの検証に含まない。
+
+## 締切のカレンダー同期（Issue #40）
+
+型は `CalendarItem`・`CalendarIntegration`・`CalendarReport`（`types.ts`）、予定の組み立てと版の判定は [`calendar.ts`](../packages/core/src/calendar.ts)。締切だけを扱い、準備予定と模擬カレンダー本体は含めない。
+
+- `students/{uid}/calendarItems/{assignmentDocumentKey}` に、`kind: 'deadline'`、`sourceKey`、`calendarId`（未接続はnull）、`eventId`、`generation`、`desiredRevision`、`desired`、`appliedRevision`、`appliedAt`、`lastAttemptedAt`、`lastErrorCode` を保存する。`desired` は `{ state: 'present', event }` または `{ state: 'deleted' }`。版と世代は1から、反映済みの版は0から。予定IDは作成前に決めたUUIDのハイフンを除いた文字列。
+- 観測から作る同期対象は台帳と同じトランザクションで更新する。予定の中身が同じなら版を進めない。観測の再送では同期対象も書き換えない。Googleへの通信はトランザクションの外で行う。
+- `students/{uid}/integrations/calendar` は `mode: 'google' | 'mock'`、`executor: 'extension' | 'demo'`、`calendarId`、`connectionState: 'connected' | 'reauthorization-required' | 'recovery-required'`。未接続は文書の不在で表す。今回のAPIで登録できるのは既存のGoogle専用カレンダーのみ。模擬側は後続Issueで実装する。
+- `GET /api/v1/calendar-sync` は `{ integration: CalendarIntegration | null, items: CalendarItem[] }`。本人のうち、接続先があり、望ましい版と反映済みの版が異なる対象を返す。削除確認後の再出現と、他の台帳更新経路からの変更も、現在の台帳と照合してから返す。
+- `POST /api/v1/calendar-sync` の接続時の本文は `{ calendarId }`。拡張機能の接続テストで作成・保存した専用カレンダーを登録する。`primary` は拒否し、既存の接続先と異なるID・模擬モードへの上書きは409で停止する。接続先を切り替える復旧操作は未実装。
+- 同じPOSTの結果報告は `{ itemKey, generation, eventId, revision, errorCode }`。成功の `errorCode` はnull、失敗は `authorization-required`・`calendar-unavailable`・`event-conflict`・`network-error` のいずれか。保存中のキー・世代・予定ID・望ましい版がすべて一致したときだけ記録する。古い版と、既に反映済みの版への報告は何もしない。成功時刻はサーバーで付ける。
+- 削除の予定は成功報告まで残す。削除確認より先に課題が戻っても、まず古い予定を削除し、次の取得で世代と予定IDを変えて作り直す。作成・更新・削除の応答が失われたら、同じ予定IDの取得から再試行する。所有の印が違う予定は書き換えない。
+
+両APIともFirebase ID tokenの本人だけを扱い、支援担当の権限では他の学生の同期文書を操作できない。POSTは4 KiB以下、未知の項目と不正なキーを拒否する。エラーは401・400・413・415・409・500の固定コードのみ。応答は `Cache-Control: no-store`。Googleのaccess tokenはAPIに送らない。
+
+予定名は授業名と課題名、要確認なら先頭に「【要確認】」。説明は締切の原文、LMSのリンク、食い違う日付だけ（`conflicting-deadline.detail` の既存のお知らせ抽出形式から日付を拾い、引用本文は転記しない）。HTMLとして解釈される文字は表示を保つためにescapeする。時刻ありは5分の目印とその説明、日付だけは終日、提出済みは通知を外し、取消は削除する。締切が読めなければ以前の公式の締切を残す。
+
+拡張機能の `config.local.json` に `apiOrigin`（HTTPSのoriginだけ）を設定すると、その接続先だけをビルド時のhost permissionとCSPへ追加する。空なら接続テストだけが動く。worker起動時・Chrome起動時・接続テスト成功後・`sendObservation` の送信成功後に同期する。同じworker内の同期は直列に実行する。Googleの認可は `interactive: false`、Firebaseと同じuidかも確認してから予定を書く。1学生1Chromeプロファイルが前提。定期確認、実LMSの取得部品への接続、接続状態を表示する製品UIは後続の作業。
+
+設定画面からの内部メッセージ `calendar-sync` と `observation-send` でも同期を試せる。他の拡張機能・LMSのページ・子フレームからの要求は拒否する。`observation-send` の応答は観測の受領結果であり、カレンダー同期の成功とは区別する。同期に失敗しても受領済みの観測を失敗に戻さず、サーバーの同期待ちを次回に処理する。
