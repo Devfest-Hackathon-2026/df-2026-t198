@@ -143,7 +143,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
     }));
     if (results.some(result => result.status === 'rejected' ||
       !['proposal', 'duplicate', 'abstained'].includes(result.value))) {
-      return '課題を確認しました。お知らせの確認は終わりませんでした。LMSのお知らせと課題の欄を見比べてください。';
+      return '課題を確認しました。お知らせの確認は終わりませんでした。LMSのお知らせと課題ページの締切を見比べてください。';
     }
     return '課題を確認しました。学生の画面と面談画面で今の締切を見られます。';
   });

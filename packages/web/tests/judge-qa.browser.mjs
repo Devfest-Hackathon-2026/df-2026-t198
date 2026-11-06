@@ -32,7 +32,14 @@ async function login(page, role) {
   await page.goto(`${base}/demo-lms`);
   await page.getByLabel('メールアドレス').fill(`trial-${role}@example.invalid`);
   await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
+  await page.route('**/accounts:signInWithPassword*', async route => {
+    await new Promise(resolve => globalThis.setTimeout(resolve, 300)); await route.continue();
+  }, { times: 1 });
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
+  await check(`${page.viewportSize().width}: ${role} sees login in progress`, async () => {
+    const button = page.getByRole('button', { name: 'ログイン中…', exact: true });
+    await button.waitFor(); assert.equal(await button.isDisabled(), true);
+  });
   await page.getByRole('link', { name: role === 'student' ? '学生の画面を開く' : '面談を開く', exact: true }).waitFor();
 }
 const list = page => page.getByRole('region', { name: '入れた準備の予定', exact: true });
@@ -92,7 +99,9 @@ try {
     for (const [index, offset, start, end, period] of [[1, 5, '13:00', '14:30', 3], [2, 3, '13:00', '14:30', 3], [3, 3, '08:50', '10:20', 1]]) {
       const date = new Date(Date.now() + offset * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
       const planId = `13000000-0000-4000-8000-${String(index).padStart(12, '0')}`;
-      await ref.collection('plans').doc(planId).set({ ...saved, planId, date, period, startsAt: `${date}T${start}:00+09:00`, endsAt: `${date}T${end}:00+09:00` });
+      await ref.collection('plans').doc(planId).set({ ...saved, planId, date, period,
+        status: index === 1 ? 'done' : 'active', ...(index === 2 ? { laterResult: 'moved' } : {}),
+        startsAt: `${date}T${start}:00+09:00`, endsAt: `${date}T${end}:00+09:00` });
     }
     for (const [role, page] of [['student', student], ['supporter', supporter]]) {
       await page.waitForFunction(() => globalThis.document.querySelectorAll('.preparation-list li').length === 4);
@@ -102,7 +111,9 @@ try {
         assert.equal(await page.locator('.preparation-mobile-progress').count(), 0);
         const row = list(page).locator('li').first(); await row.scrollIntoViewIfNeeded();
         for (const button of await row.getByRole('button').all()) await inViewport(button);
-        assert.match(await row.innerText(), /限/); assert.match(await row.innerText(), /まだ/);
+        assert.match(await row.innerText(), /限/);
+        assert.equal(await list(page).locator('li').filter({ hasText: '終わった（LMSへの提出は別）' }).count(), 1);
+        assert.equal(await list(page).locator('li').filter({ hasText: '後回しにした' }).count(), 1);
         assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
       });
       await list(page).scrollIntoViewIfNeeded();
@@ -129,10 +140,10 @@ try {
       assert.equal(await student.getByText('授業以外の予定は、学生と確かめてください。', { exact: true }).count(), 0);
     });
     await student.goto(`${base}/demo-lms`); await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
-    const preview = student.getByRole('region', { name: '今朝のメール', exact: true });
+    const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
     await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
     await preview.getByRole('link', { name: /終わった/, exact: false }).click();
-    await preview.getByRole('status').filter({ hasText: '準備を「終わった」にしました' }).waitFor();
+    await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
     await student.getByRole('button', { name: /の締切を1日延ばす/ }).first().click();
     await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
     await check(`${width}: next LMS operation clears the email action notice`, async () => {
