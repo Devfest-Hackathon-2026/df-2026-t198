@@ -91,7 +91,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
           '一部の課題を確認できていません。LMSを開いて確かめてください。'}</p> : null;
     })}
     {!data.assignments.length && !hasManual && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
-    {calendar ? <>{hasManual && upcomingList}<DemoCalendar fallback={hasManual ? undefined : upcomingList} now={now} /></> : upcomingList}
+    {calendar ? <>{hasManual && upcomingList}<DemoCalendar courses={data.courses} fallback={hasManual ? undefined : upcomingList} now={now} /></> : upcomingList}
     <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
       <div><div className="timetable-scroll"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
         <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d}>{'月火水木金土日'[d]}</th>)}</tr></thead>

@@ -25,10 +25,34 @@ describe('体験用カレンダーの保存済み予定', () => {
   it('日時を日本時間の日付の列へ置き、授業名と課題名を分ける', () => {
     const event: DeadlineEvent = { ...integration.mockEvents!.abcde!.event, summary: '架空の授業：架空の課題',
       start: { dateTime: '2026-11-09T15:30:00Z', timeZone: 'UTC' }, end: { dateTime: '2026-11-09T15:35:00Z', timeZone: 'UTC' } };
-    const html = render({ ...integration, mockEvents: { timed: { itemKey: 'timed', generation: 1, revision: 1, event } } });
+    const html = renderToStaticMarkup(<DemoCalendarView integration={{ ...integration,
+      mockEvents: { timed: { itemKey: 'timed', generation: 1, revision: 1, event } } }}
+      pending={false} now={now} courses={[{ name: '架空の授業' }]} />);
     expect(cell(html, '2026-11-10')).toContain('<time>00:30</time> <strong>架空の課題</strong>');
     expect(cell(html, '2026-11-10')).toContain('<span class="muted">架空の授業</span>');
     expect(cell(html, '2026-11-09')).not.toContain('架空の課題');
+  });
+  it('UTCと日本時間の予定を同日の実時刻順に並べ、日付のみを日本時間の先頭に置く', () => {
+    const base = integration.mockEvents!.abcde!;
+    const event = base.event;
+    const html = render({ ...integration, mockEvents: {
+      lms: { ...base, event: { ...event, summary: '夕方の課題', start: { dateTime: '2026-11-09T08:00:00Z', timeZone: 'UTC' } } },
+      manual: { ...base, event: { ...event, summary: '昼の課題', start: { dateTime: '2026-11-09T13:45:00+09:00', timeZone: 'Asia/Tokyo' } } },
+      allDay: { ...base, event: { ...event, summary: '日付だけの課題', start: { date: '2026-11-09' } } },
+      early: { ...base, event: { ...event, summary: '早朝の課題', start: { dateTime: '2026-11-08T16:00:00Z', timeZone: 'UTC' } } },
+    } });
+    const day = cell(html, '2026-11-09')!;
+    expect(day.indexOf('日付だけの課題')).toBeLessThan(day.indexOf('早朝の課題'));
+    expect(day.indexOf('早朝の課題')).toBeLessThan(day.indexOf('昼の課題'));
+    expect(day.indexOf('昼の課題')).toBeLessThan(day.indexOf('夕方の課題'));
+  });
+  it('授業のない課題名に含まれる全角コロンを分割しない', () => {
+    const base = integration.mockEvents!.abcde!;
+    const html = render({ ...integration, mockEvents: {
+      manual: { ...base, event: { ...base.event, summary: 'レポート：第3回' } },
+    } });
+    expect(cell(html, '2026-11-12')).toContain('<strong>レポート：第3回</strong>');
+    expect(cell(html, '2026-11-12')).not.toContain('<span class="muted">レポート</span>');
   });
   it('7日の外の予定を畳み、予定が無ければ空の案内を出さない', () => {
     const html = renderToStaticMarkup(<DemoCalendarView integration={integration} pending={false} now={Date.parse('2026-11-13T00:00:00Z')} />);
