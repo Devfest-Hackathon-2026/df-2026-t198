@@ -2,6 +2,8 @@ import { observationIdentity } from './auth-probe-browser.js';
 import { observationApiOrigin } from './probe-config.js';
 import { syncCalendarInBackground } from './calendar-browser.js';
 import { collectObservation } from './collection.js';
+import { showCollectionStatus } from './collection-display.js';
+import { observationSummary } from './collection-summary.js';
 import { executeLmsRequest, type LmsOperation, type LmsPage } from './lms-request.js';
 import { readPage } from '../../core/src/html-reader.js';
 import definition from '../../../lms-definitions/coursepower/definition.json' with { type: 'json' };
@@ -31,6 +33,7 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
   let outcome = 'incomplete';
   const fail = (code: string) => { outcome = code; return { ok: false, code }; };
   try {
+    await showCollectionStatus('running');
     const api = observationApiOrigin();
     if (!api) return fail('api-not-configured');
     const identity = await observationIdentity();
@@ -69,6 +72,8 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       }
     };
     const observation = await collectObservation({ request, observationId: crypto.randomUUID(), fetchedAt: new Date().toISOString() });
+    // Diagnostics only: a failed write must not change sending, syncing, or the counts.
+    await chrome.storage.session.set({ ynuFetchSummary: observationSummary(observation) }).catch(() => {});
     const body = JSON.stringify(observation);
     if (!credentialFree(body, sid)) return fail('unsafe-observation');
     const current = await observationIdentity();
@@ -95,6 +100,7 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       else stats.failed++;
     }
     await chrome.storage.session.set({ ...(stats ? { ynuFetchStats: stats } : {}), ynuFetchStatus: outcome }).catch(() => {});
+    await showCollectionStatus(outcome);
     running = false;
   }
 }

@@ -6,6 +6,7 @@ import { createContext, runInContext } from 'node:vm';
 import { expect, it, vi } from 'vitest';
 
 const { parseHTML } = createRequire(new URL('../../core/package.json', import.meta.url))('linkedom');
+const popupStorage = () => ({ session: { get: async () => ({}) }, onChanged: { addListener: vi.fn() } });
 const studentUrl = 'https://synthetic-project.web.app/student';
 async function bundle(entry, projectId = 'synthetic-project') {
   const { outputFiles } = await build({
@@ -61,7 +62,7 @@ it.each([
 it('has exactly one popup button and opens the same student URL', async () => {
   const { document, Event } = parseHTML(popupHtml);
   const create = vi.fn().mockResolvedValue({});
-  runInContext(popup, createContext({ document, chrome: { tabs: { create } } }));
+  runInContext(popup, createContext({ document, chrome: { tabs: { create }, storage: popupStorage() } }));
   expect(document.querySelectorAll('button')).toHaveLength(1);
   expect(document.querySelectorAll('a, input, select, textarea')).toHaveLength(0);
   const button = document.querySelector('button');
@@ -77,8 +78,46 @@ it.each(['', '../other-host', 'project.example/;SID=synthetic-session'])('does n
   expect(notice).toBeUndefined();
   const { document, Event } = parseHTML(popupHtml);
   const create = vi.fn();
-  runInContext(await bundle('popup', projectId), createContext({ document, chrome: { tabs: { create } } }));
+  runInContext(await bundle('popup', projectId), createContext({ document, chrome: { tabs: { create }, storage: popupStorage() } }));
   expect(document.querySelector('button').disabled).toBe(true);
   document.querySelector('button').dispatchEvent(new Event('click'));
   expect(create).not.toHaveBeenCalled();
+});
+
+it('keeps an open popup in step with session status and ignores other storage areas', async () => {
+  const { document } = parseHTML(popupHtml);
+  let saved = {};
+  let change;
+  const storage = { session: { get: async () => saved }, onChanged: { addListener: fn => { change = fn; } } };
+  runInContext(popup, createContext({ document, chrome: { storage, tabs: { create: vi.fn() } } }));
+  await vi.waitFor(() => expect(document.querySelector('#collection-status').hidden).toBe(true));
+  const finishedAt = new Date(2098, 10, 7, 4, 12).getTime();
+  for (const [status, text] of [
+    ['running', 'LMSの課題を確かめています'],
+    ['success', '11/7 04:12 にLMSの課題を確かめました'],
+    ['partial', '11/7 04:12 に一部の課題を確かめられませんでした。LMSを開き直してください'],
+    ['collection-unavailable', '11/7 04:12 に一部の課題を確かめられませんでした。LMSを開き直してください'],
+    ['sign-in-required', '11/7 04:12 に課題を確かめられませんでした。拡張機能の設定からGoogleにログインしてください'],
+    ['api-not-configured', '11/7 04:12 に課題を確かめられませんでした。拡張機能の接続先の設定が必要です'],
+  ]) {
+    saved = { ynuCollectionDisplay: { status, finishedAt } };
+    change({ ynuCollectionDisplay: {} }, 'session');
+    await vi.waitFor(() => expect(document.querySelector('#collection-status').textContent).toBe(text));
+    expect(document.querySelector('#collection-status').hidden).toBe(false);
+    expect(document.querySelectorAll('button')).toHaveLength(1);
+  }
+  saved = {};
+  change({ ynuCollectionDisplay: {} }, 'local');
+  await Promise.resolve();
+  expect(document.querySelector('#collection-status').textContent).toContain('接続先の設定');
+  change({ ynuCollectionDisplay: {} }, 'session');
+  await vi.waitFor(() => expect(document.querySelector('#collection-status').hidden).toBe(true));
+});
+
+it('shows the last completed status when reopening the popup', async () => {
+  const { document } = parseHTML(popupHtml);
+  const storage = popupStorage();
+  storage.session.get = async () => ({ ynuCollectionDisplay: { status: 'success', finishedAt: new Date(2098, 10, 7, 4, 12).getTime() } });
+  runInContext(popup, createContext({ document, chrome: { storage, tabs: { create: vi.fn() } } }));
+  await vi.waitFor(() => expect(document.querySelector('#collection-status').textContent).toBe('11/7 04:12 にLMSの課題を確かめました'));
 });
