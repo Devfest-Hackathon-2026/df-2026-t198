@@ -17,7 +17,7 @@ export function manualAssignmentActions(user: User, student: string): ManualAssi
         Authorization: `Bearer ${await user.getIdToken()}`, ...(input ? { 'Content-Type': 'application/json' } : {}),
       }, ...(input ? { body: JSON.stringify(input) } : {}),
     });
-    if (!response.ok) throw new Error(response.status === 409 ? 'conflict' : 'request-failed');
+    if (!response.ok) throw new Error(response.status === 400 ? 'invalid-input' : response.status === 409 ? 'conflict' : 'request-failed');
   };
   return { add: request, remove: id => request(id) };
 }
@@ -37,6 +37,7 @@ export function ManualAssignmentForm({ courses, actions, course }: {
     const input: ManualAssignmentInput = { title: String(form.get('title')).trim(), date: String(form.get('date')),
       time: form.get('time') ? String(form.get('time')) : null, memo: String(form.get('memo') ?? '').trim(),
       course: selected ? { system: selected.system, courseId: selected.courseId } : null };
+    if (!input.title) { setMessage('課題の名前を入力してください。'); return; }
     const signature = JSON.stringify(input);
     if (pending.current?.signature !== signature) pending.current = { signature, id: crypto.randomUUID() };
     setBusy(true); setMessage('');
@@ -45,6 +46,10 @@ export function ManualAssignmentForm({ courses, actions, course }: {
       element.reset(); pending.current = null; setMessage('課題を入れました。');
     } catch (error) {
       if (error instanceof Error && error.message === 'conflict') pending.current = null;
+      if (error instanceof Error && error.message === 'invalid-input') {
+        setMessage('入力内容を確かめて、入れ直してください。');
+        return;
+      }
       setMessage(error instanceof Error && error.message === 'conflict'
         ? 'この課題は入れられませんでした。授業を選び直すか、もう一度お試しください。'
         : '保存を確認できませんでした。接続と共有の許可を確かめて、同じ内容でもう一度お試しください。');

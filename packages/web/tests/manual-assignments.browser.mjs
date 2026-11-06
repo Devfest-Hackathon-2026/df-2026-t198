@@ -58,6 +58,23 @@ try {
   await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
   await login(supporter, 'supporter'); await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
   await supporter.getByRole('link', { name: '学生 trial-student', exact: true }).click();
+  const validationForm = await form(student, '  　 ', dueDate, null);
+  let validationRequests = 0;
+  await student.route('**/api/v1/students/trial-student/manual-assignments/*', async route => {
+    validationRequests++;
+    await route.fulfill({ status: 400, contentType: 'application/json', body: '{"error":"invalid-input"}' });
+  });
+  await validationForm.getByRole('button', { name: '課題を入れる', exact: true }).click();
+  await validationForm.getByRole('status').filter({ hasText: '課題の名前を入力してください。' }).waitFor();
+  assert.equal(validationRequests, 0);
+  await validationForm.getByLabel('課題の名前', { exact: true }).fill('架空の入力エラー');
+  await validationForm.getByRole('button', { name: '課題を入れる', exact: true }).click();
+  await validationForm.getByRole('status').filter({ hasText: '入力内容を確かめて、入れ直してください。' }).waitFor();
+  assert.equal(validationRequests, 1);
+  assert.equal(await validationForm.getByLabel('課題の名前', { exact: true }).inputValue(), '架空の入力エラー');
+  await student.unroute('**/api/v1/students/trial-student/manual-assignments/*');
+  await manualList(student).getByText('課題を手で入れる', { exact: true }).click();
+  pass('blank title stops before API; HTTP 400 asks for corrected input and retains form values');
   const paper = '架空の紙のレポート';
   const course = JSON.stringify(['demo-lms', 'DEMO101']);
   const editor = await form(supporter, paper, dueDate, null, course);
@@ -94,7 +111,7 @@ try {
   assert.equal((await rows()).docs[0].data().status, 'cancelled');
   assert.equal((await target()).data().mockEvents[item.eventId], undefined);
   pass('reload retains task; student removes supporter task from both screens and persisted calendar');
-  const ownTitle = '架空の手渡しプリント';
+  const ownTitle = '架空の手渡しプリント：第3回';
   const ownForm = await form(student, ownTitle, dueDate, '14:35');
   let lost = false;
   await student.route('**/api/v1/students/trial-student/manual-assignments/*', async route => {

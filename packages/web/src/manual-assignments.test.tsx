@@ -1,7 +1,8 @@
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
+import type { User } from 'firebase/auth';
 import type { ManualAssignment } from '../../core/src/types';
-import { ManualAssignments, ManualAssignmentRow } from './manual-assignments';
+import { ManualAssignments, ManualAssignmentRow, manualAssignmentActions } from './manual-assignments';
 import { StudentView } from './student';
 import { studentFixture } from './student-fixture';
 import { emptySession, sessionDeadlineEntries } from './session-model';
@@ -41,4 +42,15 @@ it('includes date-only deadlines through the next session, but excludes deleted,
     context: { lastSessionAt: null, nextSessionAt: '2026-11-10T10:00:00+09:00' } };
   expect(sessionDeadlineEntries(data, new Date('2026-11-08T10:00:00+09:00')).map(entryTitle)).toEqual([row.title]);
   expect(sessionDeadlineEntries({ ...data, context: { lastSessionAt: null, nextSessionAt: null } }, new Date())).toEqual([]);
+});
+
+afterEach(() => vi.unstubAllGlobals());
+it('distinguishes invalid input from retryable request failures', async () => {
+  const fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 400 }).mockResolvedValueOnce({ ok: false, status: 500 });
+  vi.stubGlobal('fetch', fetch);
+  const user = { getIdToken: async () => 'fictional-test-token' } as User;
+  const api = manualAssignmentActions(user, 'fictional-student');
+  const input = { title: row.title, date: row.date, time: row.time, course: row.course, memo: row.memo };
+  await expect(api.add('fictional-id', input)).rejects.toThrow('invalid-input');
+  await expect(api.add('fictional-id', input)).rejects.toThrow('request-failed');
 });
