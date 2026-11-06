@@ -35,7 +35,10 @@ describe('today digest content contract', () => {
     expect(data.plans[0]!.doneUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=done&rev=1');
     expect(data.plans[0]!.laterUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=later&rev=1');
     expect(data.html).toContain('&lt;課題&amp;ノート&gt;'); expect(data.html).not.toContain('<課題');
-    expect(data.plans[0]!.text).toContain('LMSへの提出は別');
+    for (const content of [data.text, data.html, data.plans[0]!.text, data.plans[0]!.html]) {
+      expect(content).toContain('「終わった」は準備が終わったときに押してください。LMSへの提出は別に行ってください。');
+      expect(content).not.toContain('準備の記録');
+    }
     expect(JSON.stringify(data)).not.toMatch(/DO NOT COPY|PRIVATE ANNOUNCEMENT|private-id|confirmedBy|dueText/);
   });
   it('includes both 48h boundaries, excludes past, submitted and cancelled but retains unsubmitted work after preparation', () => {

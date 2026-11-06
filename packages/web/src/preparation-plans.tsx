@@ -62,7 +62,7 @@ export function PlanForm({ assignments, candidate, actions, onSaved }: {
       setMessage('準備の予定を入れました。'); onSaved?.();
     } catch (error) {
       setMessage(error instanceof Error && error.message === 'plan-conflict'
-        ? 'この予定は入れられませんでした。授業のあるコマや過ぎた時刻でないか、予定を外していないか確かめてください。'
+        ? 'この準備の予定は入れられませんでした。授業のあるコマや過ぎた時刻でないか、予定を外していないか確かめてください。'
         : '保存を確認できませんでした。接続と共有の許可を確かめて、同じ内容でもう一度お試しください。');
     } finally { setBusy(false); }
   }
@@ -109,12 +109,12 @@ export function PlanList({ plans, actions, viewerUid, own }: { plans: Preparatio
     if (!actions || busy) return;
     setBusy(plan.planId); setMessage('');
     try { await actions.remove(plan.planId); setMessage('準備の予定を外しました。'); }
-    catch { setMessage('取消を確認できませんでした。接続と共有の許可を確かめて、もう一度お試しください。'); }
+    catch { setMessage('準備の予定を外せたか確認できませんでした。接続と共有の許可を確かめて、もう一度お試しください。'); }
     finally { setBusy(null); }
   }
   return <section className="preparation-list" aria-label="入れた準備の予定"><h2>入れた準備の予定</h2>
     <p>日本時間です。{own ? 'どの準備の予定も外せます。' : '学生はどの準備の予定も外せます。'}</p>
-    <div className="preparation-list-scroll" tabIndex={0} role="region" aria-label="準備予定の一覧">
+    <div className="preparation-list-scroll" tabIndex={0} role="region" aria-label="準備の予定の一覧">
     <ul>{visible.map(plan => <li key={plan.planId}>
       <time dateTime={plan.startsAt}>{Number(plan.date.slice(5, 7))}/{Number(plan.date.slice(8))} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time>
       <span>{plan.period}限</span><strong>{plan.title}</strong>

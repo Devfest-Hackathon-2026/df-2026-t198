@@ -50,7 +50,7 @@ function nearDeadline(row: LedgerAssignment, now: Date) {
 // Button and note styles follow Sora's own mail design (ynu-lms-agent, 2026-11-07), so the two read alike.
 const mailButtonStyle = 'display:inline-block;padding:15px 22px;margin:5px 8px 5px 0;border-radius:10px;text-decoration:none;font-weight:700;';
 const mailNoteStyle = 'font-size:13px;color:#536171;line-height:1.7';
-const mailNote = '返信の入力は不要です。リンク先で1回押すと記録されます。「終わった」は準備の記録で、LMSへの提出は別に行ってください。';
+const mailNote = '返信の入力は不要です。リンク先で1回押すと記録されます。「終わった」は準備が終わったときに押してください。LMSへの提出は別に行ってください。';
 function mailButton(url: string, action: 'done' | 'later'): string {
   const look = action === 'done' ? 'background:#17694e;color:white' : 'background:#edf1f6;color:#263746';
   return `<a href="${escape(url)}" style="${mailButtonStyle}${look}">${action === 'done' ? '✅ 終わった' : '🕒 後回し'}</a>`;

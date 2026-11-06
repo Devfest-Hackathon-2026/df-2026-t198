@@ -47,8 +47,8 @@ export function DigestPreview({ user }: { user: User }) {
     catch (error) { setMessage(planActionErrorMessage(error, '予定の変更を確認できませんでした。もう一度お試しください。')); }
     finally { setBusy(false); }
   }
-  return <section className="digest-preview" aria-label="今朝のメール"><h2>今朝のメール</h2>
-    <p>本人に届くメールの見本です。ここからメールは送りません。</p>
+  return <section className="digest-preview" aria-label="今日やることのメール"><h2>今日やることのメール</h2>
+    <p>今日の準備と締切の近い課題を知らせるメールの見本です。ここからメールは送りません。</p>
     <button disabled={busy} onClick={() => { void prepare(); }}>今日の準備の見本を用意する</button>
     {digest && !digest.empty && <><h3>{digest.subject}</h3>
       <div aria-busy={busy} onClick={event => { void click(event); }} dangerouslySetInnerHTML={{ __html: digest.html }} /></>}

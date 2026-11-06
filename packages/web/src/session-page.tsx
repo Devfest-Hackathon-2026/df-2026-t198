@@ -138,8 +138,8 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
           const { stale, failed } = fetchStatus(state, now.getTime());
           const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
           if (stale || failed) return <p className="notice" key={state.system}>
-            {label}：{stale ? `最後にLMSから取ったのは${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。学生がLMSを開くと新しくなります。` :
-              '今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。'}</p>;
+            {label}：{stale ? `${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。学生がLMSを開くと新しくなります。` :
+              '課題をすべて確認できていません。LMSを一緒に開いて確かめてください。'}</p>;
           return <p key={state.system}>
             <strong>{state.system === 'ynu-lms' ? 'YNU' : label}</strong>{' '}
             {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
