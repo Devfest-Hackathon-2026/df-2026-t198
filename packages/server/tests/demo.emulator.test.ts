@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { observation } from './observation-fixture.js';
+import { createDemoStore } from '../src/demo-store.js';
 
 describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with real Auth and Firestore emulators', () => {
   let fixture: Awaited<ReturnType<typeof sessionEmulatorFixture>>;
@@ -146,7 +147,8 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
     expect(await snapshotOther()).toEqual(beforeOther);
     const initial = (await source(owner.uid).get()).data()!;
     expect(initial['courses'][0].assignments.map((item: { submission: string }) => item.submission)).toEqual(['not-submitted', 'submitted']);
-    const due = new Date(start + 3 * 86400_000); due.setUTCHours(8, 0, 0, 0);
+    const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(start));
+    const due = new Date(Date.parse(`${today}T17:00:00+09:00`) + 3 * 86400_000);
     expect(initial['courses'][0].assignments[0].dueAt).toBe(due.toISOString());
     const contextRef = studentRef.collection('sessionContext').doc('current');
     const context = (await contextRef.get()).data()!;
@@ -170,6 +172,34 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
     expect((await reset(false)).status).toBe(403);
     expect((await source(owner.uid).get()).data()).toEqual(before);
     expect((await calendar.get()).data()).toEqual({ mode: 'google', executor: 'extension' });
+  });
+  it.each([
+    '2026-11-07T02:34:00+09:00',
+    '2026-11-07T08:59:59.999+09:00',
+    '2026-11-07T09:00:00+09:00',
+    '2026-11-07T17:00:00+09:00',
+  ])('persists reset deadlines matching the M6 Japanese-date expectation at %s', async at => {
+    const owner = await account();
+    await fixture.db.doc(`demoAccounts/${owner.uid}`).set({ role: 'student', studentId: owner.uid });
+    await source(owner.uid).set(data);
+    const now = Date.parse(at);
+    const store = createDemoStore(fixture.db, () => now);
+    for (const onlyIfStale of [false, true]) {
+      const result = await store.reset(owner.uid, onlyIfStale);
+      expect(result.reset).toBe(true);
+      expect((await source(owner.uid).get()).data()).toEqual(result.data);
+      const dueAt = result.data.courses[0]!.assignments[0]!.dueAt;
+      expect(result.data.courses[0]!.assignments.map(task => task.dueAt))
+        .toEqual(['2026-11-10T08:00:00.000Z', '2026-11-10T08:00:00.000Z']);
+      // Use the browser M6 oracle: compare Japanese calendar dates, not UTC dates.
+      const jstDay = (value: number) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(value));
+      expect(Date.parse(`${jstDay(Date.parse(dueAt))}T00:00:00Z`) - Date.parse(`${jstDay(now)}T00:00:00Z`))
+        .toBe(3 * 86400_000);
+      expect(await store.extend(owner.uid, 'DEMO101_TASK1', dueAt))
+        .toEqual({ sourceId: 'DEMO101_TASK1', dueAt: '2026-11-11T08:00:00.000Z' });
+      // Make the next iteration exercise stale-login reset too.
+      await fixture.db.doc(`students/${owner.uid}/sessionContext/current`).update({ nextSessionAt: '2000-01-01T08:00:00.000Z' });
+    }
   });
   it('preserves observation handling for ordinary users and verifies disabled accounts', async () => {
     expect((await post('observations', { ...observation(), system: 'ynu-lms' }, regular.token)).status).toBe(200);
