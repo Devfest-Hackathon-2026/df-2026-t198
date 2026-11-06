@@ -9,6 +9,7 @@ export function collectionDisplay(value: unknown): { badge: string; title: strin
   if (Number.isNaN(date.getTime())) return { badge: '', title: '' };
   const time = `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} に`;
   if (status === 'success') return { badge: '', title: `${time}LMSの課題を確かめました` };
+  if (status === 'yielded') return { badge: '', title: `${time}LMSの操作を優先して確認を中断しました` };
   if (status === 'sign-in-required') return { badge: '!', title: `${time}課題を確かめられませんでした。拡張機能の設定からGoogleにログインしてください` };
   if (status === 'api-not-configured') return { badge: '!', title: `${time}課題を確かめられませんでした。拡張機能の接続先の設定が必要です` };
   if (typeof status !== 'string') return { badge: '', title: '' };
