@@ -66,7 +66,7 @@ try {
   assert.match(await panel.innerText(), /取り消されました/);
   await panel.getByText('書いてあったこと', { exact: true }).first().click();
   assert.equal(await panel.getByRole('link', { name: 'LMSで見る ›' }).first().getAttribute('href'), 'https://example.invalid/task');
-  await page.getByText('から更新がありません。', { exact: false }).waitFor();
+  await page.getByText('最後にLMSから取ったのは', { exact: false }).waitFor();
   await mkdir(evidenceDir, { recursive: true });
   await page.screenshot({ path: `${evidenceDir}/student-wide.png`, fullPage: true });
   await student.collection('assignments').doc('a0').update({ 'officialDeadline.deadline': dated('2026-11-08') });

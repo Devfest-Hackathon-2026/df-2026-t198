@@ -133,7 +133,7 @@ try {
   await timetable.goto(`${origin}/student`);
   await timetable.locator('.timetable').getByRole('button', { name: /架空の観察入門/ }).click();
   await timetable.getByRole('heading', { name: '架空の観察ノート', exact: true }).waitFor();
-  const calendar = timetable.getByRole('region', { name: '体験用カレンダー', exact: true });
+  const calendar = timetable.getByRole('region', { name: '締切のカレンダー', exact: true });
   await calendar.getByText(/架空の観察ノート/).waitFor();
   const beforeCalendar = await calendar.innerText();
   const initialTarget = await calendarTarget();
@@ -202,7 +202,10 @@ try {
   pass(4);
 
   phase = 'persisted-calendar-and-revisions';
-  await calendar.getByText(expectedDate, { exact: true }).waitFor();
+  const eventDay = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(afterDue));
+  const eventTime = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(afterDue));
+  const eventCard = calendar.locator(`td[data-date="${eventDay}"] .calendar-event`).filter({ hasText: '架空の観察ノート' });
+  await eventCard.getByText(eventTime, { exact: true }).waitFor();
   const savedTarget = await calendarTarget();
   const savedItems = await calendarItems();
   assert.equal(Object.keys(savedTarget.mockEvents).length, 2);
