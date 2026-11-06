@@ -1,3 +1,4 @@
+import { actionMessage, performPlanAction, planProgress } from './plan-progress';
 import { useRef, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { LedgerAssignment, PreparationCandidate, PreparationPlan, PreparationPlanInput } from '../../core/src/types';
@@ -6,6 +7,7 @@ import './preparation-plans.css';
 export interface PlanActions {
   add: (id: string, input: PreparationPlanInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  act?: (id: string, action: 'done' | 'later') => Promise<{ outcome: string }>;
 }
 export function planActions(user: User, student: string): PlanActions {
   const request = async (id: string, input?: PreparationPlanInput) => {
@@ -16,7 +18,7 @@ export function planActions(user: User, student: string): PlanActions {
     });
     if (!response.ok) throw new Error(response.status === 409 ? 'plan-conflict' : 'request-failed');
   };
-  return { add: request, remove: id => request(id) };
+  return { add: request, remove: id => request(id), act: (id, action) => performPlanAction(user, id, action) };
 }
 export function PlanForm({ assignments, candidate, actions, onSaved }: {
   assignments: LedgerAssignment[]; candidate?: PreparationCandidate; actions: PlanActions; onSaved?: () => void;
@@ -65,7 +67,7 @@ export function PlanForm({ assignments, candidate, actions, onSaved }: {
 }
 export function PlanSummary({ plan }: { plan: PreparationPlan }) {
   return <><strong>準備：{plan.title}</strong><time dateTime={plan.startsAt}>{plan.date.replaceAll('-', '/')}</time><span>{plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</span>
-    <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span></>;
+    <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span><span>{planProgress(plan)}</span></>;
 }
 export function PlanCell({ plan, selected, onSelect }: { plan: PreparationPlan; selected: boolean; onSelect: () => void }) {
   return <button className="preparation-cell" aria-pressed={selected} aria-controls="preparation-details" onClick={onSelect}>
@@ -76,8 +78,15 @@ export function PlanCell({ plan, selected, onSelect }: { plan: PreparationPlan; 
 export function PlanList({ plans, actions, viewerUid, own }: { plans: PreparationPlan[]; actions?: PlanActions | undefined; viewerUid?: string | undefined; own: boolean }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState('');
-  const active = plans.filter(plan => plan.status === 'active');
-  if (!active.length) return null;
+  const visible = plans.filter(plan => plan.status !== 'cancelled');
+  if (!visible.length) return null;
+  async function act(plan: PreparationPlan, action: 'done' | 'later') {
+    if (!actions?.act || busy) return;
+    setBusy(plan.planId); setMessage('');
+    try { setMessage(actionMessage((await actions.act(plan.planId, action)).outcome)); }
+    catch { setMessage('変更を確認できませんでした。接続と予定を確かめて、もう一度お試しください。'); }
+    finally { setBusy(null); }
+  }
   async function remove(plan: PreparationPlan) {
     if (!actions || busy) return;
     setBusy(plan.planId); setMessage('');
@@ -87,11 +96,15 @@ export function PlanList({ plans, actions, viewerUid, own }: { plans: Preparatio
   }
   return <section className="preparation-list" aria-label="入れた準備の予定"><h2>入れた準備の予定</h2>
     <p>日本時間です。学生はどの準備の予定も外せます。</p>
+    {visible.map(plan => <p className="preparation-mobile-progress" key={plan.planId}>{plan.title}：{planProgress(plan)}</p>)}
     <div className="preparation-list-scroll" tabIndex={0} role="region" aria-label="準備予定の一覧">
-    <ul>{active.map(plan => <li key={plan.planId}>
+    <ul>{visible.map(plan => <li key={plan.planId}>
       <time dateTime={plan.startsAt}>{Number(plan.date.slice(5, 7))}/{Number(plan.date.slice(8))} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time>
       <span>{plan.period}限</span><strong>{plan.title}</strong>
       <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
+      <span>{planProgress(plan)}</span>
+      {own && actions?.act && plan.status === 'active' && <><button disabled={busy !== null} onClick={() => { void act(plan, 'done'); }}>終わった</button>
+        {!plan.laterResult && <button disabled={busy !== null} onClick={() => { void act(plan, 'later'); }}>後回し</button>}</>}
       {actions && (own || plan.confirmedBy === viewerUid) && <button disabled={busy !== null}
         aria-label={`${plan.title} ${plan.date} ${plan.period}限の準備を外す`} onClick={() => { void remove(plan); }}>外す</button>}
     </li>)}</ul></div>{message && <p role="status">{message}</p>}
