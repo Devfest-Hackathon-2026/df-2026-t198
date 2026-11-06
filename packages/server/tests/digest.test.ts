@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LedgerAssignment, PreparationPlan } from '@kadai-hisho/core';
 import { buildDigest } from '../src/digest.js';
+import { mailIsSafe, parseDigest } from '../../extension/src/digest.js';
 const now = new Date('2030-11-10T15:30:00Z'); // Monday 00:30 JST
 const row = (id: string, dueAt = '2030-11-13T00:30:00+09:00'): LedgerAssignment => ({
   key: { system: 'ynu-lms', sourceId: id }, latest: { sourceId: id, courseId: 'c1', title: '<課題&ノート>', url: 'https://lms.example.invalid/task?id=1',
@@ -76,4 +77,13 @@ it('collapses whitespace in task and course names and distinguishes the per-plan
   expect(data.subject).toBe('今日やること（2030/11/11）');
   expect(data.text).toContain('架空 レポート A'); expect(data.html).toContain('架空 の授業');
   expect(data.html).not.toContain('架空\r');
+});
+
+it('produces digest and per-plan mail accepted by the merged extension consumer', () => {
+  const unsafe = row('unsafe'); unsafe.latest.title = 'Cookie: fictional';
+  const task = row('task'); task.latest.title = '架空の\n課題';
+  const data = digest([plan()], [unsafe, task]);
+  expect(parseDigest(data, data.date)).toEqual(data);
+  expect(mailIsSafe(data, [])).toBe(true);
+  expect(mailIsSafe({ ...data.plans[0]!, to: data.to }, [])).toBe(true);
 });

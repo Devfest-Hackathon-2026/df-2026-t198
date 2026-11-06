@@ -5,11 +5,12 @@ import { createDigestStore } from '../src/digest-store.js';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createHttpServer } from '../src/http.js';
 afterEach(async () => { vi.unstubAllEnvs(); await Promise.all(getApps().map(deleteApp)); });
-it('starts the API without PUBLIC_WEB_ORIGIN and returns 503 only for the digest subsystem', async () => {
+it('starts the API without PUBLIC_WEB_ORIGIN and returns 503 only for digest generation', async () => {
   vi.stubEnv('PUBLIC_WEB_ORIGIN', undefined);
   initializeApp({ projectId: 'demo-kadai-hisho' });
   const dependencies = firebaseDependencies();
-  expect(dependencies.digest).toBeUndefined();
+  expect(dependencies.digest?.act).toBeDefined();
+  dependencies.verifyDigestToken = async () => ({ uid: 'student', email: 'student@example.invalid' });
   expect(dependencies.plans).toBeDefined(); expect(dependencies.saveObservation).toBeDefined();
   const server = createHttpServer(dependencies);
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -18,6 +19,7 @@ it('starts the API without PUBLIC_WEB_ORIGIN and returns 503 only for the digest
     const base = `http://127.0.0.1:${address.port}`;
     expect((await fetch(`${base}/api/health`)).status).toBe(200);
     expect((await fetch(`${base}/api/v1/digest`, { headers: { Authorization: 'Bearer fictional' } })).status).toBe(503);
+    expect((await fetch(`${base}/api/v1/plans/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/later`, { method: 'POST', headers: { Authorization: 'Bearer fictional' } })).status).toBe(400);
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 });
 it('accepts trailing slashes on the configured web origin', () => {

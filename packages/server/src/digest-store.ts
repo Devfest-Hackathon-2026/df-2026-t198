@@ -9,16 +9,19 @@ import { PlanConflict } from './plan-store.js';
 import { SessionForbidden } from './session-store.js';
 
 export interface PlanActionResult { outcome: 'done' | 'moved' | 'no-slot'; plan: PreparationPlan }
+export class DigestUnavailable extends Error {}
 export interface DigestStore {
   read(uid: string, email: string): Promise<Digest>;
   prepareDemo(uid: string): Promise<PreparationPlan>;
   act(uid: string, planId: string, action: 'done' | 'later', revision: number): Promise<PlanActionResult>;
 }
-export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Promise<void>, origin: string,
+export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Promise<void>, origin: string | undefined,
   clock: () => Date = () => new Date()): DigestStore {
-  origin = origin.replace(/\/+$/, '');
-  const trusted = new URL(origin);
-  if (trusted.origin !== origin || (trusted.protocol !== 'https:' && !(trusted.protocol === 'http:' && trusted.hostname === '127.0.0.1' && process.env['FIRESTORE_EMULATOR_HOST']))) throw new Error('invalid-web-origin');
+  origin = origin?.replace(/\/+$/, '');
+  if (origin) {
+    const trusted = new URL(origin);
+    if (trusted.origin !== origin || (trusted.protocol !== 'https:' && !(trusted.protocol === 'http:' && trusted.hostname === '127.0.0.1' && process.env['FIRESTORE_EMULATOR_HOST']))) throw new Error('invalid-web-origin');
+  }
   return {
     async prepareDemo(uid) {
       const plan = await db.runTransaction(async tx => {
@@ -55,6 +58,8 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
       await syncDemo(uid); return plan;
     },
     async read(uid, email) {
+      if (!origin) throw new DigestUnavailable();
+      const webOrigin = origin;
       return db.runTransaction(async tx => {
         const profile = (await tx.get(db.doc(`demoAccounts/${uid}`))).data();
         if (profile && !isDemoStudent(profile, uid)) throw new SessionForbidden();
@@ -64,7 +69,7 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         const courses = await tx.get(student.collection('courses'));
         return buildDigest(email, plans.docs.map(doc => doc.data() as PreparationPlan),
           assignments.docs.map(doc => doc.data() as LedgerAssignment),
-          courses.docs.map(doc => doc.data() as Course & { system: LmsSystem }), origin, clock());
+          courses.docs.map(doc => doc.data() as Course & { system: LmsSystem }), webOrigin, clock());
       });
     },
     async act(uid, planId, action, revision) {

@@ -193,4 +193,10 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect(await (await act('later', real)).json()).toMatchObject({ outcome: 'no-slot', plan: { revision: 1 } });
   });
 
+  it('keeps plan actions available without a public web origin', async () => {
+    const withoutOrigin = createDigestStore(fixture.db, createDemoCalendarSync(fixture.db), undefined, () => now);
+    await expect(withoutOrigin.read(owner, 'student@example.invalid')).rejects.toThrow();
+    expect(await withoutOrigin.act(owner, id, 'done', 1)).toMatchObject({ outcome: 'done', plan: { status: 'done', revision: 2 } });
+  });
+
 });

@@ -3,6 +3,7 @@ import type { ObservationDependencies } from './http.js';
 import { validPlanId } from './plan-input.js';
 import { SessionForbidden } from './session-store.js';
 import { PlanConflict } from './plan-store.js';
+import { DigestUnavailable } from './digest-store.js';
 export async function receiveDigestRequest(request: IncomingMessage, response: ServerResponse, deps?: ObservationDependencies) {
   const json = (status: number, value: unknown) => { response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); response.end(JSON.stringify(value)); };
   const token = request.headers.authorization;
@@ -35,7 +36,8 @@ export async function receiveDigestRequest(request: IncomingMessage, response: S
       json(200, await deps.digest.act(identity.uid, id, action as 'done' | 'later', revision));
     }
   } catch (error) {
-    if (error instanceof SessionForbidden) json(403, { error: 'forbidden' });
+    if (error instanceof DigestUnavailable) json(503, { error: 'unavailable' });
+    else if (error instanceof SessionForbidden) json(403, { error: 'forbidden' });
     else if (error instanceof PlanConflict) json(409, { error: 'plan-conflict' });
     else json(500, { error: 'internal-error' });
   }

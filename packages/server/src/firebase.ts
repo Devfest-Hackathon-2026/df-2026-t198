@@ -24,7 +24,7 @@ export function firebaseDependencies() {
       const identity = await getAuth(app).verifyIdToken(token, true);
       return { uid: identity.uid, email: identity.email };
     },
-    ...(process.env['PUBLIC_WEB_ORIGIN'] ? { digest: createDigestStore(db, syncDemoCalendar, process.env['PUBLIC_WEB_ORIGIN']) } : {}),
+    digest: createDigestStore(db, syncDemoCalendar, process.env['PUBLIC_WEB_ORIGIN']),
     verifyToken: async (token: string) => (await getAuth(app).verifyIdToken(token, true)).uid,
     saveObservation: async (uid, observation) => {
       const result = await saveObservation(uid, observation);
