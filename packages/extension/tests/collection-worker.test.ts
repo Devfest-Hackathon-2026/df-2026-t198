@@ -48,7 +48,21 @@ it('sends one observation with only the Firebase ID token and retains counts wit
   expect(fetcher.mock.invocationCallOrder.at(-1)).toBeLessThan(sync.mock.invocationCallOrder[0]!);
   const safeState = { ...session }; delete safeState['ynuSessionId'];
   expect(safeState).toMatchObject({ ynuFetchStats: { attempted: 1, backgroundSucceeded: 1, pageSucceeded: 0 } });
+  expect(safeState['ynuFetchSummary']).toEqual({ courses: 0, coursesComplete: 0, listed: 0, read: 0, unreadableDeadlines: 0, failures: {} });
   expect(JSON.stringify(safeState)).not.toMatch(/synthetic-session|synthetic-id-token|page-html|worker-html/);
+});
+
+it('still sends, syncs, and counts a success when saving the fetch summary fails', async () => {
+  const set = vi.mocked(chrome.storage.session.set);
+  set.mockImplementation(async values => {
+    if ('ynuFetchSummary' in values) throw new Error('synthetic-quota');
+    Object.assign(session, values);
+  });
+  expect(await run(pageUrl, 7)).toEqual({ ok: true, changed: true, changeCount: 1 });
+  expect(fetcher.mock.calls.filter(([url]) => url === 'https://api.example.test/api/v1/observations')).toHaveLength(1);
+  expect(sync).toHaveBeenCalledTimes(1);
+  expect(session).toMatchObject({ ynuFetchStatus: 'success', ynuFetchStats: { attempted: 1, backgroundSucceeded: 1, failed: 0 } });
+  expect(session['ynuFetchSummary']).toBeUndefined();
 });
 
 it('uses the initiating tab for all reads when the background route fails, then sends once', async () => {
