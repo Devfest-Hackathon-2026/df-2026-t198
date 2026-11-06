@@ -17,6 +17,15 @@ export function DemoPages({ data }: { data: DemoData }) {
         <a id={course.courseId} href={`#materials-${course.courseId}`}>課題一覧へ</a>
       </section>)}
     </section>
+    <section aria-label="授業のお知らせ"><h2>お知らせ</h2>
+      {(data.announcements ?? []).map(({ courseId, announcement }) =>
+        <article key={announcement.announcementId} data-demo-announcement data-course-id={courseId}
+          data-announcement-id={announcement.announcementId} data-version={announcement.version} data-published-at={announcement.publishedAt}>
+          <h3>{data.courses.find(course => course.courseId === courseId)?.name}</h3>
+          <time dateTime={announcement.publishedAt}>{demoDueText(announcement.publishedAt).replace(' まで', '')}</time>
+          <p className="demo-announcement-body">{announcement.body}</p>
+        </article>)}
+    </section>
     {data.courses.map(course => <div key={course.courseId}>
       <section id={`materials-${course.courseId}`} data-demo-page="materials" data-course-id={course.courseId}
         aria-label={`${course.name}の教材一覧`}>

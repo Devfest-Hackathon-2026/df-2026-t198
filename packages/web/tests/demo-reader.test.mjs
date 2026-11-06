@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
 import { DemoPages } from '../src/demo-pages';
-import { readDemoObservation } from '../src/demo-reader';
+import { readDemoAnnouncements, readDemoObservation } from '../src/demo-reader';
 import { parseObservation } from '../../server/src/observation-input';
 
 const requireCore = createRequire(new URL('../../core/package.json', import.meta.url));
@@ -58,4 +58,18 @@ it('fails on a missing materials page and preserves an unreadable deadline as un
   expect(read(element).assignments[0].deadline.kind).toBe('unreadable');
   element.querySelector('[data-demo-page="materials"]').remove();
   expect(() => read(element)).toThrow('incomplete-demo-page');
+});
+
+it('reads a fictional announcement from rendered DOM without altering assignment deadlines', () => {
+  const value = data();
+  value.announcements = [{ courseId: 'TEST_A', announcement: { announcementId: 'notice-1', version: '1',
+    publishedAt: '2026-11-06T01:00:00Z', body: '架空の課題の締切を延ばします。 <script>bad()</script>' } }];
+  const element = root(value);
+  expect(element.querySelector('script')).toBeNull();
+  element.querySelector('.demo-announcement-body').textContent = '画面に書かれたお知らせ';
+  expect(readDemoAnnouncements(element)).toEqual([{ system: 'demo-lms', courseId: 'TEST_A', announcement: {
+    ...value.announcements[0].announcement, body: '画面に書かれたお知らせ',
+  } }]);
+  expect(read(element).assignments[0].deadline.dueAt).toBe('2026-11-12T17:00:00+09:00');
+  expect(readDemoAnnouncements(root())).toEqual([]);
 });

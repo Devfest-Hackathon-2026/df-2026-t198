@@ -59,7 +59,7 @@ async function receiveObservation(request: IncomingMessage, response: ServerResp
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
-    if (request.method === 'POST' && (path === '/api/v1/demo/extend' || path === '/api/v1/demo/reset')) {
+    if (request.method === 'POST' && (path === '/api/v1/demo/extend' || path === '/api/v1/demo/reset' || path === '/api/v1/demo/announce')) {
       void receiveDemoRequest(request, response, dependencies); return;
     }
     if (path === '/api/v1/calendar-sync' && (request.method === 'GET' || request.method === 'POST')) {

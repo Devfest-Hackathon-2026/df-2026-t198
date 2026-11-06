@@ -66,3 +66,12 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node packages/web/tests/demo-m6-
 結果は`docs/records/2026-11-06-issue-47-live/`に保存する。再実行する前に既存の記録を退避し、過去の結果を上書きしない。判定は既存のローカル試験と同じ8手順で、失敗・未到達も分母に残す。認証済み観測の受領記録と台帳を本人の権限で読み、C14の保存も照合する。認証情報・通信本文・trace・HARは記録しない。
 
 公開先の実測と残る確認は [Issue #47の公開先記録](records/2026-11-06-issue-47-live.md)。初回のローカル実測は [以前の記録](records/2026-11-06-issue-47-verification.md) を参照する。
+
+
+## 先生役のお知らせをローカルで試す（Issue #84）
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm test:demo-announcements:emulator
+```
+
+Auth・Firestoreエミュレーター、架空のアカウント、試験専用の偽Geminiだけを使う。先生役の「お知らせを出す」→「LMSを開く」で、学生・面談画面に要確認と日付の違いが出る。課題の欄の締切は変えない。再送・やり直し・再投稿も試験する。写真と結果は `/tmp/kadai-i84-evidence/`。公開先での有効化・実物のGeminiは含まない。

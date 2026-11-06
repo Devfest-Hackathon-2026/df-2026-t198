@@ -1,3 +1,4 @@
+import { reviewReasonText } from './review-reason';
 import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
 import { DemoCalendar } from './demo-calendar';
@@ -28,7 +29,7 @@ function Review({ item }: { item: LedgerAssignment }) {
   return <>{item.reviewReasons.map((reason, index) => <p className="review" key={index}>
     <span className="badge">要確認</span> {reason.kind === 'unreadable-deadline'
       ? '今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。'
-      : reason.detail}</p>)}{item.presenceState === 'cancellation-candidate' &&
+      : reviewReasonText(reason)}</p>)}{item.presenceState === 'cancellation-candidate' &&
       <p className="review"><span className="badge">要確認</span> LMSの一覧で見つかりませんでした。LMSで確かめてください。</p>}</>;
 }
 function AssignmentRow({ item }: { item: LedgerAssignment }) {
@@ -92,7 +93,7 @@ export function StudentView({ data, now = Date.now(), calendar = false }: { data
               aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
               <strong>{c.name}</strong>{next && <><span>{deadlineText(deadlineOf(next))}</span><span>{next.latest.title}</span>
                 {(next.reviewReasons.length > 0 || next.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.reviewReasons[0]?.kind === 'unreadable-deadline'
-                  ? '締切を確認できていません。' : next.reviewReasons[0]?.detail ?? 'LMSの一覧で見つかりませんでした。'}</span>}</>}
+                  ? '締切を確認できていません。' : next.reviewReasons[0] ? reviewReasonText(next.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
           })}</td>)}</tr>)}</tbody>
       </table></div>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
