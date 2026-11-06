@@ -121,6 +121,64 @@ describe.skipIf(!enabled)('observation API with Auth and Firestore emulators', (
     expect((await ref.get()).data()).not.toHaveProperty('url');
   });
 
+  it('completes ended-only and out-of-term courses without cancellations and removes their deadline targets', async () => {
+    const accountOwner = await account();
+    const student = db.collection('students').doc(accountOwner.uid);
+    const send = async (body: Observation) => expect((await post(body, accountOwner.token)).status).toBe(200);
+    const taskRef = student.collection('assignments').doc(documentKey('demo-lms', 'fictional/task'));
+    const calendarRef = student.collection('calendarItems').doc(documentKey('demo-lms', 'fictional/task'));
+    await send(observation(50));
+    expect((await calendarRef.get()).data()!['desired']['state']).toBe('present');
+    const ended: Observation = { ...observation(51), assignments: [], courseResults: [{ courseId: 'fictional/course',
+      listComplete: true, seenSourceIds: ['fictional/task', 'never-imported'], endedSourceIds: ['fictional/task', 'never-imported'] }] };
+    await send(ended);
+    expect((await taskRef.get()).data()).toMatchObject({ presenceState: 'ended', consecutiveMissingCount: 0 });
+    expect((await student.collection('assignments').get()).size).toBe(1);
+    expect((await calendarRef.get()).data()!['desired']).toEqual({ state: 'deleted' });
+    expect((await student.collection('fetchStates').doc('demo-lms').get()).data()).toMatchObject({
+      lastResult: 'success', lastSucceededAt: ended.fetchedAt,
+    });
+    const changes = await student.collection('changes').get();
+    expect(changes.docs.map(doc => doc.data()['kind']).sort()).toEqual(['ended', 'new']);
+    const before = (await taskRef.get()).updateTime;
+    await send(ended);
+    expect((await taskRef.get()).updateTime).toEqual(before);
+    await send(observation(52));
+    const past: Observation = { ...observation(53), fetchedAt: '2026-11-13T00:00:00+09:00', assignments: [], courseResults: [],
+      catalogCourses: [{ ...observation(53).catalogCourses[0]!, currentTerm: false }] };
+    await send(past);
+    expect((await taskRef.get()).data()).toMatchObject({ presenceState: 'ended', consecutiveMissingCount: 0 });
+    expect((await student.collection('fetchStates').doc('demo-lms').get()).data()!['lastResult']).toBe('success');
+    expect((await student.collection('courses').get()).docs[0]!.data()['currentTerm']).toBe(false);
+  });
+
+  it('keeps a cross-term deadline and its calendar target until a later observation passes it', async () => {
+    const accountOwner = await account();
+    const student = db.collection('students').doc(accountOwner.uid);
+    const send = async (body: Observation) => expect((await post(body, accountOwner.token)).status).toBe(200);
+    const taskRef = student.collection('assignments').doc(documentKey('demo-lms', 'fictional/task'));
+    const calendarRef = student.collection('calendarItems').doc(documentKey('demo-lms', 'fictional/task'));
+    const initial = observation(60);
+    initial.fetchedAt = '2026-09-30T23:59:00+09:00';
+    initial.assignments[0]!.deadline = { kind: 'datetime', dueAt: '2026-10-05T23:59:00+09:00',
+      dueText: '10月5日23:59', timeZone: 'Asia/Tokyo' };
+    await send(initial);
+    const before = (await taskRef.get()).data();
+    const target = (await calendarRef.get()).data();
+    const past: Observation = { ...observation(61), fetchedAt: '2026-10-01T00:00:00+09:00',
+      catalogCourses: [{ ...initial.catalogCourses[0]!, currentTerm: false }], assignments: [], courseResults: [] };
+    await send(past);
+    expect((await taskRef.get()).data()).toEqual(before);
+    expect((await calendarRef.get()).data()).toEqual(target);
+    await send({ ...past, observationId: observation(62).observationId, fetchedAt: '2026-10-05T23:59:00+09:00' });
+    expect((await taskRef.get()).data()!['presenceState']).toBe('active');
+    await send({ ...past, observationId: observation(63).observationId, fetchedAt: '2026-10-05T23:59:01+09:00' });
+    expect((await taskRef.get()).data()).toMatchObject({ presenceState: 'ended', consecutiveMissingCount: 0,
+      officialDeadline: before!['officialDeadline'], lastSeenAt: initial.fetchedAt });
+    expect((await calendarRef.get()).data()!['desired']).toEqual({ state: 'deleted' });
+    expect((await student.collection('changes').get()).docs.map(doc => doc.data()['kind']).sort()).toEqual(['ended', 'new']);
+  });
+
   it('serializes concurrent retries and keeps different users separate', async () => {
     const body = observation(20);
     const results = await Promise.all([post(body, other.token), post(body, other.token)]);

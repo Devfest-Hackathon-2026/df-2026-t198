@@ -35,6 +35,7 @@ export interface ReadingDefinition {
     teacher: ValueRule;
     day: ValueRule;
     period: ValueRule;
+    term?: ValueRule;
     materialsLink: null;
   };
   materials: {
@@ -100,7 +101,7 @@ const definition = shape({
   schemaVersion: oneOf(1), definitionId: (v) => typeof v === 'string' && /^[a-z][a-z0-9-]{0,63}$/.test(v),
   version: positive, readerVersion: oneOf(READER_VERSION),
   pageChecks: shape({ loggedIn: nullable(marker), loggedOut: nullable(marker), home: page, materials: page, assignmentDetail: page }),
-  courses: shape({ rows: text, courseId: rule, name: rule, teacher: rule, day: rule, period: rule, materialsLink: oneOf(null) }),
+  courses: shape({ rows: text, courseId: rule, name: rule, teacher: rule, day: rule, period: rule, materialsLink: oneOf(null) }, { term: rule }),
   materials: shape({ rows: text, sourceId: rule, title: rule, status: rule, availability: rule, detailLink: oneOf(null), nextPage: oneOf(null), listEnd: nullable(marker) }),
   assignmentDetail: shape({ title: rule, due: rule, status: rule }),
   transforms: shape({ weekdays: dictionary(oneOf(null, 1, 2, 3, 4, 5, 6, 7)),

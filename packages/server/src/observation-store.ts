@@ -47,9 +47,10 @@ export function createObservationStore(db: Firestore) {
           { ...course, system: observation.system });
       }
       const complete = observation.failures.length === 0 &&
-        observation.catalogCourses.length === observation.courseResults.length &&
+        observation.catalogCourses.filter(course => course.currentTerm !== false).length === observation.courseResults.length &&
         observation.courseResults.every(result => result.listComplete) &&
-        observation.courseResults.flatMap(result => result.seenSourceIds).length === observation.assignments.length;
+        observation.courseResults.flatMap(result => result.seenSourceIds).length === observation.assignments.length +
+          observation.courseResults.reduce((count, result) => count + (result.endedSourceIds?.length ?? 0), 0);
       const state: FetchState = {
         studentId: uid, system: observation.system, lastAttemptedAt: observation.fetchedAt,
         lastSucceededAt: complete ? observation.fetchedAt : priorState?.lastSucceededAt ?? null,

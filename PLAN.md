@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 30/41（73%）、必須 28/37（75%）
+完成条件：全体 31/43（72%）、必須 29/39（74%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -11,8 +11,8 @@
 - 完成条件は下の一覧の `C` 番号。1つの条件は、試験か実際の操作で「満たした・満たしていない」を決められる形で書く。
 - 満たしたら `[x]` にし、行末に証拠を書く（PRの番号、試験の名前、測った記録の場所）。一部だけできたものは `[ ]` のまま。
 - `〔削れる〕` の付いた条件は、遅れたときに削る候補（[decisions.md](docs/decisions.md) D11の順）。必須の数には入れない。
-- 条件を足す・分ける・消すときは2人で合意し、下の「条件の変更」に日付と理由を書く。分母が変わったことが後から分かるようにする。
-- 担当は〈Sora〉〈orange〉。〈未定〉は着手する前に2人で決める。
+- 条件を足す・分ける・消すときは、Soraかorangeのどちらか1人の明示の合意で決め（[D29](docs/decisions.md)）、もう1人にDiscordで知らせて、下の「条件の変更」に日付と理由を書く。分母が変わったことが後から分かるようにする。
+- 担当は〈Sora〉〈orange〉。〈未定〉は着手する前にどちらか1人が決め、もう1人に知らせる。
 
 ## 報告の形
 
@@ -34,7 +34,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C01 〈Sora〉 拡張機能がLMSのページからSIDを受け取り、`chrome.storage.session` にだけ置く。→ PR #1、`packages/extension/tests/service-worker.test.ts`
 - [x] C02 〈Sora〉 ホームの画面から、授業の一覧と曜日・時限を読み取る。確かめ方：保存したページの見本で試験 → ホームの見本の授業・曜日・時限が正解と一致（`packages/core/tests/html-reader.test.mjs`、service worker相当の試験 `packages/extension/tests/html-reader-worker.test.mjs`）
 - [x] C03 〈Sora〉 授業ごとの教材一覧（課題もここに並ぶ。全授業をまとめた課題の一覧はLMSに無い）と課題の詳細から、題名・締切・提出の状態を読み取る。確かめ方：見本で試験 → `packages/core/tests/html-reader.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`、M1 30/30（100%）。保存見本で確認
-- [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作
+- [ ] C04 〈Sora〉 LMSを開いたとき、裏（service worker）で全授業の課題を取りに行き、観測を1つ作る。開いている画面の操作を止めない。確かめ方：実際のLMSで操作 → Issue #105：今学期・終了課題の扱いを架空HTML、台帳、偽Google、Auth・Firestore、学生のブラウザ操作で確認（[記録](docs/records/2026-11-07-issue-105.md)）。実機のsuccessはmerge・更新後にSoraが確認するため未完了。 Issue #109：操作中にフォーム値が古くなる偽LMSでの再試行・失敗の分離・10分間隔・診断を試験済み（[記録](docs/records/2026-11-07-issue-109.md)）。実機確認待ちは継続。
 - [ ] C05 〈Sora〉 裏で取れないときは、開いているページの側で取りに行く。確かめ方：裏の取得を止めた状態で操作
 - [x] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験 → `packages/core/tests/login-state.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`（固定の失敗コード。ログイン前・認証エラーの保存見本で確認）
 - [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）。Issue #10で製品固有のパターンを引数付きに移行し、別製品の読み取り・不正な引数の拒否を `packages/core/tests/parameterized-patterns.test.mjs` で確認
@@ -85,7 +85,8 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C31 〈未定〉 架空の授業と課題を載せた模擬LMS（CoursePowerとは違う作り）をFirebase Hostingに置く。確かめ方：公開したURL → Issue #59、[公開先の確認記録](docs/records/2026-11-06-issue-59-resumed.md)（Hostingの `/demo-lms` で学生ログイン・架空の授業と課題・先生役の締切延長を確認）
 - [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-calendar-integration.md`。Issue #68：定義と詳細の見出し・位置を維持した手順表示とリセット後の読み取りを `packages/web/tests/demo-reset.browser.mjs`・既存M6で確認（[記録](docs/records/2026-11-06-issue-68-verification.md)）
 - [x] C33 〈未定〉 試す人のための学生と支援担当のアカウントがあり、拡張機能を入れなくても一連の操作をブラウザで試せる。確かめ方：入れていないブラウザで操作 → Issue #59、`packages/web/tests/demo-live.browser.mjs`（公開先・3組6文脈・学生と面談の即時更新・他組不変・別組の読み取り24通りを拒否）。[操作結果と画像](docs/records/2026-11-06-issue-59-resumed.md)。Issue #89：`packages/web/tests/demo.browser.mjs`（Auth・FirestoreエミュレーターとChromiumで、体験用でないアカウントへの案内・ログアウト・体験用ログイン欄への復帰を確認）。`pnpm metrics:m6` 8/8（2026-11-06、PR #90取り込み後）
-- [ ] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6 → Issue #47、ローカル・公開先とも8/8（体験用カレンダー。保存済み予定・版と再送時の不変も照合）。[公開先の操作結果と画像](docs/records/2026-11-06-issue-47-live.md)。体験用カレンダーで通った分をC34の合格とするか（design.md 7節の分け方の提案）は2人の合意待ち
+- [x] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6 → Issue #47、ローカル・公開先とも8/8（体験用カレンダー。保存済み予定・版と再送時の不変も照合）。[公開先の操作結果と画像](docs/records/2026-11-06-issue-47-live.md)。体験用カレンダーで通った分を合格とする（D23「C34の合格の条件」、D29。2026-11-07にSoraが確定）。実物の経路はC43で別に確かめる
+- [ ] C43 〈Sora〉 実物の経路「YNUのLMSを開く → 裏の取得 → 台帳 → 実物のGoogleカレンダー → 学生の画面と面談画面」が、本人の実物で最後まで通り、実演と動画で見せられる。確かめ方：[実機の手順](docs/records/2026-11-06-issue-69-real-flow.md)（C04・C05・C15・C16・C21を同じ回で確かめる）
 
 ### 提出
 
@@ -96,6 +97,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [ ] C39 〈Sora〉 著作物利用シートを作る。確かめ方：`docs/third-party.md` の全行がシートにある
 - [ ] C40 〈Sora〉 会場のGoogleフォームに、GitHubのURLとフォルダのURLを出す。確かめ方：送信の控え
 - [ ] C41 〈Sora〉 デプロイ先を 2026-11-14 まで動かす。確かめ方：11/14に、試す人のアカウントで筋書きが通る
+- [ ] C42 〈Sora〉 ピッチのスライドを作り、同じフォルダに置く（文章と構成の下書きはClaude）。確かめ方：提出の締切までにフォルダにあり、ログインしていないブラウザで開ける
 
 ## 指標
 
@@ -129,5 +131,6 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 | 2026-11-06 | C30を必須にした。C03に、全授業の課題の一覧がLMSに無いことを書いた | C30は、別の大学へ広げるときの入口になるため（Sora）。36個すべてを終える前提で進める |
 | 2026-11-06 | C37〜C41（提出物）を足した | 完成条件をすべて満たしても、提出一式がそろわないため（FableとAstraの見直し、D23。Soraが合意、orangeは後でレビュー） |
 | 2026-11-06 | C28 の〔削れる〕を外し、必須にした | 延長や前倒しがお知らせの文にだけ書かれることがあり、利用者が見落とす変化を拾う役目があるため（D23。Soraが合意、orangeは後でレビュー）。D11の削る順の③はC29だけにした |
-
 | 2026-11-06 | C25の未決の承認フローをIssue #49の案Aに更新。試験は実物または体験用カレンダー | Issue #49の最新コメントと作業依頼に従う。学生と支援担当が保存でき、登録者表示と学生による取消でD13を守る。orangeの合意はmerge前 |
+| 2026-11-07 | C42（ピッチのスライド）を足した | 東京の現地会場に申し込んだチームは提出が要る（`docs/submission.md`）のに、完成条件とIssue #22から漏れていたため（Soraが合意、D29。PR #50を置き換え） |
+| 2026-11-07 | C34を体験用カレンダーで合格とし、実物の経路をC43として足した | 審査員が触る体験版と、本人の実物の経路を分けて確かめるため（D23、Sora。D29によりSoraの合意で確定） |

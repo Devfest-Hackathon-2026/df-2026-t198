@@ -18,6 +18,19 @@ function deadlineValue(deadline: Deadline | undefined): string {
   }
 }
 
+function pastCourseDeadlineEnded(deadline: Deadline | undefined, fetchedAt: string): boolean {
+  switch (deadline?.kind) {
+    case 'datetime': return Date.parse(deadline.dueAt) < Date.parse(fetchedAt);
+    case 'date': {
+      // A date-only deadline remains open throughout that date in its own timezone.
+      const date = new Intl.DateTimeFormat('sv-SE', { timeZone: deadline.timeZone,
+        year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(fetchedAt));
+      return deadline.date < date;
+    }
+    default: return true;
+  }
+}
+
 /** Apply one validated observation. Receipt and returned writes must be committed together. */
 export function applyObservation(
   current: readonly LedgerAssignment[], observation: Observation, recordedAt: string,
@@ -76,16 +89,30 @@ export function applyObservation(
   }
 
   const results = new Map(observation.courseResults.map(r => [r.courseId,
-    { complete: r.listComplete, seen: new Set(r.seenSourceIds) }]));
+    { complete: r.listComplete, seen: new Set(r.seenSourceIds), ended: new Set(r.endedSourceIds ?? []) }]));
+  const pastCourses = new Set(observation.catalogCourses.filter(c => c.currentTerm === false).map(c => c.courseId));
+  const detailed = new Set(observation.assignments.map(a => a.sourceId));
   for (const item of byId.values()) {
     const result = results.get(item.latest.courseId);
-    if (result?.seen.has(item.key.sourceId)) {
-      if (item.presenceState !== 'active') change(item, 'restored', item.presenceState, 'active');
-      item.presenceState = 'active';
+    if ((pastCourses.has(item.latest.courseId) &&
+      pastCourseDeadlineEnded(item.officialDeadline?.deadline, observation.fetchedAt)) || result?.ended.has(item.key.sourceId)) {
+      if (item.presenceState !== 'ended') change(item, 'ended', item.presenceState, 'ended');
+      item.presenceState = 'ended';
+      item.consecutiveMissingCount = 0;
+      if (result?.seen.has(item.key.sourceId)) {
+        item.lastSeenObservationId = observation.observationId;
+        item.lastSeenAt = observation.fetchedAt;
+      }
+    } else if (result?.seen.has(item.key.sourceId)) {
+      // A failed detail read cannot prove that an ended task has reopened.
+      if (item.presenceState !== 'ended' || detailed.has(item.key.sourceId)) {
+        if (item.presenceState !== 'active') change(item, 'restored', item.presenceState, 'active');
+        item.presenceState = 'active';
+      }
       item.consecutiveMissingCount = 0;
       item.lastSeenObservationId = observation.observationId;
       item.lastSeenAt = observation.fetchedAt;
-    } else if (result?.complete) {
+    } else if (result?.complete && item.presenceState !== 'ended') {
       item.consecutiveMissingCount = Math.min(2, item.consecutiveMissingCount + 1);
       const next = item.consecutiveMissingCount === 1 ? 'cancellation-candidate' : 'cancelled';
       if (next !== item.presenceState) change(item, next, item.presenceState, next);
