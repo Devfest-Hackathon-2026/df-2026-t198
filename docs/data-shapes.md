@@ -13,7 +13,7 @@ Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](
 | `system` | 接続先：`ynu-lms`、`panda`、`demo-lms` |
 | `definitionId`、`definitionVersion` | 読み取りに使った定義のIDと正の整数の版 |
 | `fetchedAt` | タイムゾーン付きISO 8601日時。表示と根拠に使い、順序の判定には使わない |
-| `catalogCourses` | ホームで見つけた授業。`courseId`、`name`、`slots`（`weekday`: 月1〜日7、`period`: 1以上） |
+| `catalogCourses` | ホームで見つけた授業。`courseId`、`name`、`slots`（`weekday`: 月1〜日7、`period`: 1以上）、任意の `url`（授業の参照URL） |
 | `courseResults` | 授業ごとの `courseId`、`listComplete`、`seenSourceIds`（一覧に存在した課題のID） |
 | `assignments` | 詳細を読めた課題。下表 |
 | `failures` | `courseId`（全体ならnull）、`kind`（`not-logged-in`・`http`・`parse`）、`detail`（固定コード） |
@@ -37,6 +37,8 @@ Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](
 | `date` | `date`（YYYY-MM-DD） | 日付だけ。23:59などを補わない |
 | `none` | なし | 締切なしと明記されている |
 | `unreadable` | なし | 読めなかった。前に確認した締切を消さない |
+
+授業の `url` は課題と同じく認証情報を含まないHTTP(S) URLのみ。SIDなどを除いてから送信する。未取得なら項目を省略し、学生の授業欄にリンクを出さない。`courses/{courseKey}` にそのまま保存し、次の観測で省略された場合は以前のURLを残さない（Issue #41）。
 
 ### 受信時の検査
 

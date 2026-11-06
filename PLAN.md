@@ -61,7 +61,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 ### 学生の画面
 
 - [x] C18 〈未定〉 時間割（曜日×時限）の各授業のマスに、その授業の次の締切を出す（D13の案A）。確かめ方：画面 → `packages/web/src/student.test.tsx`、`packages/web/tests/student.browser.mjs`（Auth・FirestoreエミュレーターとChromiumで授業の2コマ・締切順・週末・6限を確認）
-- [x] C19 〈未定〉 マスを押すと、その授業の課題が横に開く。確かめ方：画面 → `packages/web/tests/student.browser.mjs`（授業欄の開閉・LMSリンク・要確認・提出・取消・390px幅を確認）
+- [x] C19 〈未定〉 マスを押すと、その授業の課題が横に開く。確かめ方：画面 → `packages/web/tests/student.browser.mjs`（授業欄の開閉・LMSリンク・要確認・提出・取消・390px幅を確認）。Issue #41：授業名・全曜日時限・SIDを含まない授業リンク、URLなしの非表示を `packages/web/tests/student.browser.mjs` で確認
 - [x] C20 〈未定〉 裏の取得が終わると、開いたままの画面の内容が変わる（Firestoreのリアルタイムの更新）。確かめ方：画面を開いたまま取得 → `packages/web/tests/student.browser.mjs`（エミュレーターの架空台帳の締切・提出を変更し、マス・締切順・開いた課題欄の更新を確認。実LMSからの取得との通しは未確認）、`packages/web/src/student-data.test.ts`（本人変更・購読失敗時の表示消去）
 - [ ] C21 〈未定〉 変化があったときだけ、LMSのページの隅に1行で知らせる。押すと学生の画面が開く。変化がなければ何も出さない。確かめ方：実際のLMS
 - [ ] C22 〈未定〉 拡張機能のポップアップは、学生の画面を開くボタンだけにする。確かめ方：画面
