@@ -27,7 +27,9 @@
     "metrics:m3": "pnpm --filter server build && node scripts/metrics-m3.mjs",
     "test:m3-score": "pnpm --filter server... build && node --test scripts/m3-score.test.mjs scripts/metrics-m3.test.mjs",
     "definition:draft": "pnpm --filter server... build && node packages/server/dist/definition-drafts/cli.js",
-    "definition:check": "node scripts/check-definition-draft.mjs"
+    "definition:check": "node scripts/check-definition-draft.mjs",
+    "test:demo:emulator": "PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --project demo-kadai-hisho --only auth,firestore \"pnpm --filter @kadai-hisho/core build && RUN_DEMO_EMULATOR_TESTS=1 pnpm --filter server exec vitest run --testTimeout=20000 tests/demo.emulator.test.ts tests/demo-calendar.emulator.test.ts\"",
+    "metrics:m6": "pnpm build && PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --project demo-kadai-hisho --only auth,firestore \"node packages/web/tests/run-demo-browser.mjs\""
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

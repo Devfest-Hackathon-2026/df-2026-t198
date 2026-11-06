@@ -32,6 +32,16 @@ for (const page of [student, supporter]) {
 }
 const base = 'http://127.0.0.1:5177';
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i19-evidence';
+// Fixed C34 steps: failures and unreached steps remain in the denominator.
+const steps = [
+  '学生と支援担当が別のブラウザでログインする', 'LMSを開いて最初の課題を受け取る',
+  '先生役で締切を延ばし、LMSだけが変わる', '学生がLMSを開き、新しい締切が台帳に入る',
+  '開いたままの学生画面が変わる', '保存済みの体験用カレンダーの予定が動く',
+  '開いたままの面談画面が変わる', '応答を失った再送でも履歴と予定が増えない',
+].map(name => ({ name, status: 'not-run' }));
+const pass = index => { steps[index].status = 'pass'; };
+const calendarTarget = () => db.doc('students/trial-student/integrations/calendar').get();
+const calendarItems = () => db.collection('students/trial-student/calendarItems').get();
 const source = db.doc('students/trial-student/demo/current');
 const ledger = () => db.collection('students/trial-student/assignments').get();
 const changes = () => db.collection('students/trial-student/changes').get();
@@ -47,6 +57,7 @@ try {
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
   await supporter.getByRole('link', { name: '学生 trial-student', exact: true }).click();
+  pass(0);
   const deadlines = supporter.getByRole('region', { name: '次の面談までの締切' });
   assert.equal((await ledger()).size, 0);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
@@ -54,6 +65,7 @@ try {
   await deadlines.getByText('架空の観察ノート', { exact: true }).waitFor();
   assert.equal((await ledger()).size, 2);
   assert.equal(await deadlines.getByText('架空の振り返り', { exact: true }).count(), 0);
+  pass(1);
   const timetable = await studentContext.newPage();
   timetable.setDefaultTimeout(15000);
   timetable.on('pageerror', () => errors.push('browser-error'));
@@ -61,6 +73,14 @@ try {
   await timetable.locator('.timetable').getByRole('button', { name: /架空の観察入門/ }).click();
   await timetable.getByRole('heading', { name: '架空の観察ノート', exact: true }).waitFor();
   const oldDeadline = (await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt;
+  const calendar = timetable.getByRole('region', { name: '体験用カレンダー', exact: true });
+  await calendar.getByText(/架空の観察ノート/).waitFor();
+  const beforeCalendar = await calendar.innerText();
+  const initialTarget = (await calendarTarget()).data();
+  assert.equal(initialTarget.mode, 'mock');
+  assert.equal(initialTarget.executor, 'demo');
+  const oldEventId = Object.keys(initialTarget.mockEvents).find(id => initialTarget.mockEvents[id].event.summary.includes('架空の観察ノート'));
+  assert.ok(oldEventId);
   const beforeChanges = (await changes()).size;
   const sessionBefore = await deadlines.innerText();
   const beforeTimetable = await timetable.locator('.course-panel').innerText();
@@ -74,6 +94,9 @@ try {
   assert.equal(await timetable.locator('.course-panel').innerText(), beforeTimetable);
   const newDue = (await source.get()).data().courses[0].assignments[0].dueAt;
   assert.equal(Date.parse(newDue) - Date.parse(oldDeadline), 86400_000);
+  assert.deepEqual((await calendarTarget()).data(), initialTarget);
+  assert.equal(await calendar.innerText(), beforeCalendar);
+  pass(2);
 
   // Let the real server apply the observation, then drop the response to exercise a retry.
   let sentId;
@@ -94,15 +117,45 @@ try {
   await supporter.waitForFunction(previous => globalThis.document.querySelector('[aria-labelledby="session-deadlines"]').innerText !== previous, sessionBefore);
   await timetable.waitForFunction(previous => globalThis.document.querySelector('.course-panel').innerText !== previous, beforeTimetable);
   assert.equal(Date.parse((await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt), Date.parse(newDue));
+  pass(3);
+  const expectedDate = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(newDue));
+  assert.ok((await timetable.locator('.course-panel').innerText()).includes(expectedDate));
+  pass(4);
+  await calendar.getByText(expectedDate, { exact: true }).waitFor();
+  const savedTarget = (await calendarTarget()).data();
+  assert.equal(Object.keys(savedTarget.mockEvents).length, 2);
+  assert.equal(Date.parse(savedTarget.mockEvents[oldEventId].event.start.dateTime), Date.parse(newDue));
+  for (const item of (await calendarItems()).docs.map(doc => doc.data())) {
+    assert.equal(item.appliedRevision, item.desiredRevision);
+    assert.deepEqual(savedTarget.mockEvents[item.eventId], {
+      itemKey: item.itemKey, generation: item.generation, revision: item.appliedRevision, event: item.desired.event,
+    });
+  }
+  assert.equal(await calendar.locator('li').filter({ hasText: '架空の観察ノート' }).count(), 1);
+  pass(5);
+  await timetable.screenshot({ path: `${evidence}/calendar-updated.png`, fullPage: true });
   await supporter.getByRole('region', { name: '前回の面談からの変化' }).getByText('締切が変わりました', { exact: false }).waitFor();
+  assert.ok((await deadlines.innerText()).includes(expectedDate));
+  pass(6);
+  // A further open uses a new observation ID but must not duplicate the same event.
+  await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
+  await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
+  assert.equal((await changes()).size, afterApplied);
+  assert.deepEqual((await calendarTarget()).data(), savedTarget);
+  pass(7);
   await supporter.screenshot({ path: `${evidence}/session-updated.png`, fullPage: true });
   await student.setViewportSize({ width: 390, height: 844 });
   assert.equal(await student.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
   await student.screenshot({ path: `${evidence}/demo-narrow.png`, fullPage: true });
+  await timetable.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await timetable.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+  await timetable.screenshot({ path: `${evidence}/calendar-narrow.png`, fullPage: true });
   assert.doesNotMatch(await student.locator('main').innerText(), /Googleでログイン|カレンダーに接続|YNUに接続/);
   await student.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await student.getByLabel('メールアドレス').waitFor();
   assert.doesNotMatch(await student.locator('main').innerText(), /架空の観察ノート|架空の観察入門/);
+  await timetable.getByRole('button', { name: 'Googleでログイン', exact: true }).waitFor();
+  assert.equal(await timetable.getByRole('region', { name: '体験用カレンダー', exact: true }).count(), 0);
   await supporter.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await supporter.getByRole('heading', { name: '面談にログイン', exact: true }).waitFor();
   assert.doesNotMatch(await supporter.locator('main').innerText(), /架空の観察ノート|学生 trial-student/);
@@ -115,8 +168,17 @@ try {
   ], browserErrors: errors }, null, 2));
   log('PASS C32/C33: rendered HTML, teacher source change, observation replay, live student/session screens, separate logins and logout');
 } catch (error) {
+  const failed = steps.find(step => step.status === 'not-run');
+  if (failed) failed.status = 'fail';
   await mkdir(evidence, { recursive: true });
   await student.screenshot({ path: `${evidence}/failure-student.png`, fullPage: true });
   log({ requests, errors, alerts: await student.getByRole('alert').allTextContents() });
   throw error;
-} finally { await browser.close(); await db.terminate(); await deleteApp(app); }
+} finally {
+  const passed = steps.filter(step => step.status === 'pass').length;
+  await mkdir(evidence, { recursive: true });
+  await writeFile(`${evidence}/m6.json`, JSON.stringify({ environment: 'local Auth/Firestore emulators + Chromium',
+    calendar: 'mock', measuredAt: new Date().toISOString(), passed, total: steps.length, percent: 100 * passed / steps.length, steps }, null, 2));
+  log(`M6: ${passed}/${steps.length} (${100 * passed / steps.length}%), emulator/mock only`);
+  await browser.close(); await db.terminate(); await deleteApp(app);
+}
