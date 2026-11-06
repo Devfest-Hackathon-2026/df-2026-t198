@@ -78,7 +78,7 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '学生 trial-student', exact: true }).click();
+  await supporter.getByRole('link', { name: '架空の学生A', exact: true }).click();
   pass(0);
   const deadlines = supporter.getByRole('region', { name: '次の面談までの締切' });
   assert.equal((await ledger()).size, 0);

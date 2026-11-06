@@ -52,12 +52,17 @@ try {
   const demoRef = ref.collection('demo').doc('current'); const demo = (await demoRef.get()).data();
   for (const course of demo.courses) for (const task of course.assignments) task.dueAt = new Date(Date.now() + 9 * 86400000).toISOString();
   await demoRef.set(demo);
+  const contextRef = ref.collection('sessionContext').doc('current');
+  const context = (await contextRef.get()).data();
+  await contextRef.update({ nextSessionAt: new Date(Date.parse(context.nextSessionAt) + 7 * 86400000).toISOString() });
   await login(student, 'student'); await openLms();
   await studentScreen.goto(`${base}/student`); await studentScreen.locator('.timetable').waitFor();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '学生 trial-student', exact: true }).click();
+  await supporter.getByRole('link', { name: '架空の学生A', exact: true }).click();
   await supporter.locator('.session-heading').waitFor();
+  assert.equal(await supporter.locator('.session-heading h1').innerText(), '架空の学生A');
+  assert.equal(await supporter.locator('.session-student-id').count(), 0);
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
   await preview.getByRole('link', { name: '🕒 後回し', exact: true }).waitFor();
   for (const page of [studentScreen, supporter]) {
@@ -88,6 +93,8 @@ try {
 
   await preview.getByRole('link', { name: '🕒 後回し', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
+  assert.match(await preview.getByRole('status').innerText(), /体験用の予定を更新しました/);
+  assert.doesNotMatch(await preview.getByRole('status').innerText(), /拡張機能/);
   await preparationList(studentScreen).getByText('後回しにした', { exact: true }).waitFor();
   await preparationList(supporter).getByText('後回しにした', { exact: true }).waitFor();
   const moved = (await planRef.get()).data(); assert.notEqual(moved.date, before.date);
@@ -97,14 +104,15 @@ try {
   assert.equal(event.event.start.dateTime, moved.startsAt);
   pass('preview later action moves durable event with the same id; both open screens update without reload');
   await linkPage.goto(laterUrl);
-  await linkPage.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
+  await linkPage.getByRole('status').filter({ hasText: '変更していません' }).waitFor();
   await screenshot(linkPage, 'plan-link-moved');
   assert.deepEqual((await planRef.get()).data(), moved);
-  await linkPage.reload(); await linkPage.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
+  await linkPage.reload(); await linkPage.getByRole('status').filter({ hasText: '変更していません' }).waitFor();
   assert.deepEqual((await planRef.get()).data(), moved);
   pass('same email link including reload cannot postpone the plan twice');
   await linkPage.goto(doneUrl);
-  await linkPage.getByRole('status').filter({ hasText: '予定が変わりました。学生の画面で確かめてください' }).waitFor();
+  await linkPage.getByRole('status').filter({ hasText: '後回しにした' }).waitFor();
+  assert.match(await linkPage.getByRole('status').innerText(), /変更していません/);
   assert.equal(await linkPage.getByRole('button', { name: 'もう一度試す', exact: true }).count(), 0);
   assert.deepEqual((await planRef.get()).data(), moved);
   await screenshot(linkPage, 'stale-action-conflict');
@@ -113,12 +121,32 @@ try {
   await preparationList(studentScreen).getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
   const movedAgain = (await planRef.get()).data();
   assert.equal(movedAgain.revision, moved.revision + 1); assert.notEqual(movedAgain.startsAt, moved.startsAt);
-  await linkPage.goto(laterUrl); await linkPage.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
+  await linkPage.goto(laterUrl); await linkPage.getByRole('status').filter({ hasText: '変更していません' }).waitFor();
+  assert.ok((await linkPage.getByRole('status').innerText()).includes(movedAgain.startsAt.slice(11, 16)));
   assert.deepEqual((await planRef.get()).data(), movedAgain);
   pass('student can postpone again using the current revision while the earlier email remains replay safe');
   await supporter.getByRole('link', { name: '② 相談する', exact: true }).click();
+  await supporter.locator('.session-timetable').waitFor();
   await preparationList(supporter).getByText('後回しにした', { exact: true }).waitFor();
+  if (await supporter.getByRole('button', { name: '締切の週を見る', exact: true }).count()) {
+    await supporter.getByRole('button', { name: '締切の週を見る', exact: true }).click();
+  }
+  await supporter.locator('.session-deadline').waitFor();
   await screenshot(supporter, 'session-plan-later');
+  // B4 then B1: preparing again must preserve the move; finish that same plan, then open the first mail.
+  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
+  assert.match(await preview.getByRole('status').innerText(), /後回しにした/);
+  assert.deepEqual((await planRef.get()).data(), movedAgain);
+  await preparationList(studentScreen).getByRole('button', { name: '終わった', exact: true }).click();
+  await preparationList(studentScreen).getByText('終わった（LMSへの提出は別）', { exact: true }).waitFor();
+  const finishedMoved = (await planRef.get()).data();
+  await linkPage.goto(laterUrl);
+  await linkPage.getByRole('status').filter({ hasText: 'もう「終わった」' }).waitFor();
+  assert.doesNotMatch(await linkPage.getByRole('status').innerText(), /動かしました/);
+  assert.deepEqual((await planRef.get()).data(), finishedMoved);
+  await screenshot(linkPage, 'old-mail-after-done');
+  pass('B1/B4: recreate after later preserves the moved plan, and the first email after done reports current state without a success claim');
   // Reset, prepare again, then exercise the other button inside the exact same preview.
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
@@ -134,7 +162,7 @@ try {
   const assignments = (await ref.collection('assignments').get()).docs.map(doc => doc.data());
   assert.equal(assignments.find(row => row.key.sourceId === 'DEMO101_TASK1').submission, 'not-submitted');
   const finished = (await planRef.get()).data();
-  await linkPage.goto(doneUrl); await linkPage.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
+  await linkPage.goto(doneUrl); await linkPage.getByRole('status').filter({ hasText: 'もう「終わった」' }).waitFor();
   assert.deepEqual((await planRef.get()).data(), finished);
   await screenshot(studentScreen, 'student-done'); await screenshot(supporter, 'session-plan-done');
   await supporter.getByRole('link', { name: '① 確かめる', exact: true }).click();
@@ -155,18 +183,50 @@ try {
   await signedOut.getByLabel('メールアドレス').fill('trial-student@example.invalid');
   await signedOut.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await signedOut.getByRole('button', { name: 'ログイン', exact: true }).click();
-  await signedOut.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
+  await signedOut.getByRole('status').filter({ hasText: 'もう「終わった」' }).waitFor();
   assert.ok(signedOut.url().includes('/student/plan?id='));
   assert.equal(new URL(signedOut.url()).searchParams.get('rev'), '1');
   assert.deepEqual((await planRef.get()).data(), finished);
   await signedOutContext.close();
   pass('signed-out email link asks for login and resumes only after the owner authenticates');
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
-  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
+  await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
+  assert.match(await preview.getByRole('status').innerText(), /終わった.*体験を最初からやり直す/);
   const renewed = (await planRef.get()).data();
-  assert.equal(renewed.status, 'active'); assert.equal(renewed.revision, finished.revision + 1);
-  assert.equal(new URL(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href')).searchParams.get('rev'), String(renewed.revision));
-  pass('preparing the demo again after completion renews the same plan and publishes current revision links');
+  assert.deepEqual(renewed, finished);
+  assert.equal(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).count(), 0);
+  await screenshot(student, 'sample-preserves-done');
+  pass('B4: prepare after completion preserves the record, reports current state and explains the explicit reset');
+
+  const form = studentScreen.locator('.preparation-form');
+  await studentScreen.getByText('準備の予定を入れる', { exact: true }).click();
+  const japanDate = offset => new Date(Date.now() + 9 * 3600000 + offset * 86400000).toISOString().slice(0, 10);
+  const fillPlan = async date => {
+    await form.getByLabel('準備する日').fill(date); await form.getByLabel('時間割の時限').fill('3');
+    await form.getByLabel('開始時刻').fill('13:00'); await form.getByLabel('終了時刻').fill('14:00');
+  };
+  const count = (await ref.collection('plans').get()).size;
+  await fillPlan(japanDate(7)); await form.getByRole('button', { name: '入れる', exact: true }).click();
+  await form.getByRole('status').filter({ hasText: '締切より後の予定は入れられません' }).waitFor();
+  assert.equal((await ref.collection('plans').get()).size, count);
+  await screenshot(studentScreen, 'after-deadline-rejected');
+  pass('B2: student input after the deadline is rejected with a specific explanation and creates no plan');
+  await fillPlan(japanDate(1)); await form.getByRole('button', { name: '入れる', exact: true }).click();
+  await form.getByRole('status').filter({ hasText: '準備の予定を入れました' }).waitFor();
+  const activePlan = (await ref.collection('plans').get()).docs.find(doc => doc.data().status === 'active');
+  const scheduled = activePlan.data();
+  const taskRef = (await ref.collection('assignments').get()).docs.find(doc => doc.data().key.sourceId === scheduled.assignment.sourceId).ref;
+  await taskRef.update({ 'officialDeadline.deadline': { kind: 'datetime', dueAt: `${japanDate(1)}T12:00:00+09:00`, dueText: '架空の前倒し', timeZone: 'Asia/Tokyo' } });
+  await preparationList(studentScreen).getByText('締切より後の予定です', { exact: true }).waitFor();
+  await supporter.goto(`${base}/session/trial-student/plan`);
+  await preparationList(supporter).getByText('締切より後の予定です', { exact: true }).waitFor();
+  const marker = supporter.locator('.session-deadline');
+  await marker.waitFor(); assert.match(await marker.innerText(), /締切.*12:00/);
+  await preparationList(studentScreen).getByRole('button', { name: '後回し', exact: true }).click();
+  await preparationList(studentScreen).getByRole('status').filter({ hasText: '予定を動かしませんでした' }).waitFor();
+  assert.deepEqual((await activePlan.ref.get()).data(), scheduled);
+  await screenshot(studentScreen, 'deadline-moved-before-plan'); await screenshot(supporter, 'session-deadline-marker');
+  pass('B2: earlier deadline preserves and warns on the existing plan in both screens, marks the timetable and refuses postponement beyond it');
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/operations.json`, JSON.stringify({ status: 'pass', operations, browserErrors: 0 }, null, 2));
   log(JSON.stringify({ status: 'pass', operations: operations.length, browserErrors: 0, evidence }));

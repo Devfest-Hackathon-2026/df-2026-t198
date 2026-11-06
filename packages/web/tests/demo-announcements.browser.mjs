@@ -43,7 +43,7 @@ try {
   await open.waitFor();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '学生 trial-student', exact: true }).click();
+  await supporter.getByRole('link', { name: '架空の学生A', exact: true }).click();
   const original = (await source.get()).data();
   await publish.click();
   await status('お知らせを出しました');
