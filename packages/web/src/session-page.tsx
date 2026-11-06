@@ -1,3 +1,4 @@
+import { fetchStatus } from './fetch-status';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { AssignmentChange, LedgerAssignment, SessionContext } from '../../core/src/types';
@@ -130,12 +131,17 @@ export function SessionDetails({ data, now, own, save, uid, planning }: {
     {!own && <ContextEditor key={`${data.context.lastSessionAt}/${data.context.nextSessionAt}`} context={data.context} save={save} />}
     {planning ? <SessionPlanning data={data} now={now} /> : <>
       <div className="session-updates">
-        {data.fetchStates.map(state => <p key={state.system}>
-          <strong>{({ 'ynu-lms': 'YNU', panda: 'PandA', 'demo-lms': '体験用LMS' })[state.system]}</strong>{' '}
-          {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
-          {state.lastResult !== 'success' && '。今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。'}
-          {state.lastSucceededAt && now.getTime() - Date.parse(state.lastSucceededAt) >= 3 * 86400_000 && '。しばらく更新がありません。'}
-        </p>)}
+        {data.fetchStates.map(state => {
+          const { stale, failed } = fetchStatus(state, now.getTime());
+          const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
+          if (stale || failed) return <p className="notice" key={state.system}>
+            {label}：{stale ? `最後にLMSから取ったのは${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。学生がLMSを開くと新しくなります。` :
+              '今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。'}</p>;
+          return <p key={state.system}>
+            <strong>{state.system === 'ynu-lms' ? 'YNU' : label}</strong>{' '}
+            {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
+          </p>;
+        })}
       </div>
       <div className="session-check">
         {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>

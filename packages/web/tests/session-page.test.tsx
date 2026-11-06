@@ -204,3 +204,33 @@ it('does not treat a pending or failed student list as an empty list', async () 
   expect(host.textContent).toContain('担当する学生を開けませんでした');
   expect(host.textContent).not.toContain('自分の面談を見る');
 });
+
+it.each([
+  ['2026-11-06T15:29:59.999Z', false],
+  ['2026-11-06T15:30:00Z', true],
+])('shows a stale notice at 72 hours: %s', async (now, stale) => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date(now));
+  try {
+    data['student-a']!.fetchStates = [{ studentId: 'student-a', system: 'ynu-lms',
+      lastAttemptedAt: '2026-11-03T15:30:00Z', lastSucceededAt: '2026-11-03T15:30:00Z',
+      lastResult: 'success', lastFailureKind: null, lastAppliedObservationId: 'fictional' }];
+    await open(); await click('学生 student-a');
+    const notice = host.querySelector('.session-updates .notice');
+    if (stale) expect(notice?.textContent).toBe('YNU LMS：最後にLMSから取ったのは11/4です。学生がLMSを開くと新しくなります。');
+    else {
+      expect(notice).toBeNull();
+      expect(host.querySelector('.session-updates')?.textContent).toContain('11/4(水) 00:30 時点の情報');
+    }
+    await click('② 相談する');
+    expect(host.querySelector('.session-updates')).toBeNull();
+  } finally { vi.useRealTimers(); }
+});
+
+it.each(['partial', 'failed'] as const)('shows incomplete fetching in a notice: %s', async lastResult => {
+  data['student-a']!.fetchStates = [{ studentId: 'student-a', system: 'ynu-lms',
+    lastAttemptedAt: new Date().toISOString(), lastSucceededAt: null,
+    lastResult, lastFailureKind: 'http', lastAppliedObservationId: 'fictional' }];
+  await open(); await click('学生 student-a');
+  expect(host.querySelector('.session-updates .notice')?.textContent).toBe(
+    'YNU LMS：今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。');
+});

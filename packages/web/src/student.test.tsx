@@ -68,3 +68,11 @@ describe('学生が締切を確かめる画面', () => {
   });
 
 });
+
+it.each(['partial', 'failed'] as const)('学生の失敗の案内を維持する: %s', lastResult => {
+  const data = studentFixture();
+  data.fetchStates = [{ ...data.fetchStates[0]!, system: 'ynu-lms', lastSucceededAt: null, lastResult }];
+  const html = renderToStaticMarkup(<StudentView data={data} now={Date.parse('2026-11-06T15:30:00Z')} />);
+  expect(html).toContain('class="notice"');
+  expect(html).toContain('YNU LMS：一部の課題を確認できていません。LMSを開いて確かめてください。');
+});
