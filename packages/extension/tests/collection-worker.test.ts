@@ -1,12 +1,13 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import type { Observation } from '../../core/src/types.js';
 
+const apiOrigin = vi.hoisted(() => vi.fn());
 const identity = vi.hoisted(() => vi.fn());
 const collect = vi.hoisted(() => vi.fn());
 const syncCalendar = vi.hoisted(() => vi.fn());
 const sync = syncCalendar;
 vi.mock('../src/auth-probe-browser.js', () => ({ observationIdentity: identity }));
-vi.mock('../src/probe-config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
+vi.mock('../src/probe-config.js', () => ({ observationApiOrigin: apiOrigin }));
 vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: syncCalendar }));
 vi.mock('../src/collection.js', () => ({ collectObservation: collect }));
 vi.mock('../../core/src/html-reader.js', () => ({ readPage: () => ({ pageType: 'home' }) }));
@@ -16,10 +17,13 @@ const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-sessio
 const session: Record<string, unknown> = {};
 const send = vi.fn();
 const fetcher = vi.fn();
+const badge = vi.fn().mockResolvedValue(undefined);
+const title = vi.fn().mockResolvedValue(undefined);
 let run: typeof import('../src/collection-worker.js')['runCollection'];
 
 beforeEach(async () => {
   vi.resetModules(); vi.clearAllMocks();
+  apiOrigin.mockReturnValue('https://api.example.test');
   sync.mockResolvedValue(undefined);
   for (const key of Object.keys(session)) delete session[key];
   session['ynuSessionId'] = 'synthetic-session';
@@ -30,7 +34,7 @@ beforeEach(async () => {
   fetcher.mockImplementation(async (url: string) => ({ ok: true, url, status: 200, text: async () => 'worker-html',
     json: async () => ({ status: 'applied', changed: true, changeCount: 1 }) }));
   vi.stubGlobal('fetch', fetcher);
-  vi.stubGlobal('chrome', { runtime: { id: 'synthetic-extension' }, tabs: { sendMessage: send }, storage: { session: {
+  vi.stubGlobal('chrome', { action: { setBadgeText: badge, setTitle: title, setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined) }, runtime: { id: 'synthetic-extension' }, tabs: { sendMessage: send }, storage: { session: {
     get: vi.fn(async () => session), set: vi.fn(async (values) => Object.assign(session, values)),
   } } });
   run = (await import('../src/collection-worker.js')).runCollection;
@@ -82,6 +86,7 @@ it('serializes simultaneous triggers and does not authenticate interactively or 
   identity.mockReturnValue(new Promise(resolve => { release = resolve; }));
   const pending = run(pageUrl, 7);
   expect(await run(pageUrl, 8)).toEqual({ ok: false, code: 'busy' });
+  await vi.waitFor(() => expect(identity).toHaveBeenCalled());
   release(null);
   expect(await pending).toEqual({ ok: false, code: 'sign-in-required' });
   expect(fetcher).not.toHaveBeenCalled();
@@ -132,4 +137,41 @@ it('keeps an accepted observation and change notice when calendar sync fails', a
   expect(await run(pageUrl, 7)).toEqual({ ok: true, changed: true, changeCount: 1 });
   expect(sync).toHaveBeenCalledTimes(1);
   expect(session['ynuFetchStatus']).toBe('success');
+});
+
+it.each([
+  ['api-not-configured', '!', '課題を確かめられませんでした。拡張機能の接続先の設定が必要です'],
+  ['success', '', 'LMSの課題を確かめました'],
+  ['partial', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
+  ['collection-unavailable', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
+  ['send-failed', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
+  ['sign-in-required', '!', '課題を確かめられませんでした。拡張機能の設定からGoogleにログインしてください'],
+  ['not-logged-in', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
+])('shows running then %s on the badge, title, and popup data', async (outcome, expectedBadge, message) => {
+  if (outcome === 'api-not-configured') apiOrigin.mockReturnValue(null);
+  else if (outcome === 'sign-in-required') identity.mockResolvedValue(null);
+  else if (outcome === 'collection-unavailable') collect.mockRejectedValue(new Error('synthetic-private-error'));
+  else if (outcome === 'send-failed') fetcher.mockResolvedValue({ ok: false });
+  else if (outcome === 'partial' || outcome === 'not-logged-in') {
+    collect.mockResolvedValue({ ...observation, failures: [{ courseId: null, kind: outcome === 'partial' ? 'http' : 'not-logged-in', detail: outcome === 'partial' ? 'http-error' : 'not-logged-in' }] });
+  }
+  await run(pageUrl, 7);
+  expect(badge.mock.calls[0]).toEqual([{ text: '…' }]);
+  expect(title.mock.calls[0]).toEqual([{ title: 'LMSの課題を確かめています' }]);
+  expect(badge).toHaveBeenLastCalledWith({ text: expectedBadge });
+  expect(title).toHaveBeenLastCalledWith({ title: expect.stringMatching(new RegExp('^\\d{1,2}/\\d{1,2} \\d{2}:\\d{2} に' + message + '$')) });
+  const { collectionDisplay } = await import('../src/collection-display.js');
+  expect(collectionDisplay(session['ynuCollectionDisplay']).title).toBe(title.mock.calls.at(-1)![0].title);
+});
+
+it('preserves accepted observations and diagnostic counts when presentation APIs fail', async () => {
+  badge.mockRejectedValueOnce(new Error('synthetic-action-error'));
+  const set = vi.mocked(chrome.storage.session.set);
+  set.mockImplementation(async values => {
+    if ('ynuCollectionDisplay' in values) throw new Error('synthetic-display-storage-error');
+    Object.assign(session, values);
+  });
+  expect(await run(pageUrl, 7)).toEqual({ ok: true, changed: true, changeCount: 1 });
+  expect(session).toMatchObject({ ynuFetchStatus: 'success', ynuFetchStats: { attempted: 1, backgroundSucceeded: 1, failed: 0 } });
+  expect(sync).toHaveBeenCalledTimes(1);
 });
