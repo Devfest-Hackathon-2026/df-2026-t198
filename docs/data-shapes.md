@@ -195,7 +195,7 @@ APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の�
 
 予定名は授業名と課題名、要確認なら先頭に「【要確認】」。説明は締切の原文、LMSのリンク、食い違う日付だけ（`conflicting-deadline.detail` の既存のお知らせ抽出形式から日付を拾い、引用本文は転記しない）。HTMLとして解釈される文字は表示を保つためにescapeする。時刻ありは5分の目印とその説明、日付だけは終日、提出済みは通知を外し、取消・終了は削除する（実物・体験用とも同じ）。締切が読めなければ以前の公式の締切を残す。
 
-拡張機能の `config.local.json` に `apiOrigin`（HTTPSのoriginだけ）を設定すると、その接続先だけをビルド時のhost permissionとCSPへ追加する。空なら接続テストだけが動く。worker起動時・Chrome起動時・接続テスト成功後・`sendObservation` の送信成功後に同期する。同じworker内の同期は直列に実行する。Googleの認可は `interactive: false`、Firebaseと同じuidかも確認してから予定を書く。1学生1Chromeプロファイルが前提。実LMSの取得後も `sendObservation` を通じて同期する。カレンダー専用の定期同期はない。接続状態は拡張の設定画面で確認する。
+拡張機能の `config.local.json` に `apiOrigin`（HTTPSのoriginだけ）を設定すると、その接続先だけをビルド時のhost permissionとCSPへ追加する。空なら接続テストだけが動く。worker起動時・Chrome起動時・接続テスト成功後・`sendObservation` の送信成功後に同期する。同じworker内の同期は直列に実行する。Googleの認可は `interactive: false`、Firebaseと同じuidかも確認してから予定を書く。1学生1Chromeプロファイルが前提。実LMSの取得では `collection-worker.ts` が観測を送り、受領成功後に `syncCalendarInBackground()` を直接呼ぶ。カレンダー専用の定期同期はない。接続状態は拡張の設定画面で確認する。
 
 設定画面からの内部メッセージ `calendar-sync` と `observation-send` でも同期を試せる。他の拡張機能・LMSのページ・子フレームからの要求は拒否する。`observation-send` の応答は観測の受領結果であり、カレンダー同期の成功とは区別する。同期に失敗しても受領済みの観測を失敗に戻さず、サーバーの同期待ちを次回に処理する。
 
