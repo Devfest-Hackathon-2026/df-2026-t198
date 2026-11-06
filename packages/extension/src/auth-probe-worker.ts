@@ -1,3 +1,4 @@
+import { syncCalendarInBackground } from './calendar-browser.js';
 import { browserProbe } from './auth-probe-browser.js';
 import type { ProbeResult } from './auth-probe.js';
 
@@ -24,7 +25,9 @@ export function handleAuthProbeMessage(
     try {
       await chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
       const probe = browserProbe();
-      respond(await (message.type === 'auth-probe-run' ? probe.run() : probe.status()));
+      const result = await (message.type === 'auth-probe-run' ? probe.run() : probe.status());
+      respond(result);
+      if (message.type === 'auth-probe-run' && result.steps.every(step => step.status === 'ok')) void syncCalendarInBackground();
     } catch {
       respond(failure('probe-unavailable', '接続テストを始められませんでした。拡張機能を再読み込みしてください。'));
     } finally {

@@ -41,3 +41,14 @@ describe('local probe build config', () => {
     } finally { await rm(dir, { recursive: true }); }
   });
 });
+
+it('limits the API host permission and CSP to the configured HTTPS origin', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+  const configured = configureManifest(manifest, { apiOrigin: 'https://api.example.invalid', oauthClientId: '' });
+  expect(configured.host_permissions).toEqual([...manifest.host_permissions, 'https://api.example.invalid/*']);
+  expect(configured.content_security_policy.extension_pages).toBe(`${manifest.content_security_policy.extension_pages} https://api.example.invalid`);
+  for (const apiOrigin of ['invalid-synthetic-marker', 'http://api.example.invalid', 'https://name:password@api.example.invalid',
+    'https://api.example.invalid/api', 'https://api.example.invalid/?x=1', 'https://api.example.invalid/#fragment']) {
+    expect(() => configureManifest(manifest, { apiOrigin, oauthClientId: '' })).toThrow('apiOrigin must be an HTTPS origin');
+  }
+});

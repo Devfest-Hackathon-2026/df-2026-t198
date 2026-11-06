@@ -327,3 +327,11 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 - 体験側の判定は#19で承認済みの `demoAccounts` を使う。実物は無効、模擬側も既定で無効。本文の `system` だけで処理を許可しない。アカウントやクラウド設定は作成していない。
 - メモリ上の重複判定だけでは再起動後に再処理するため、Firestoreで版の処理権を先に確保する。停止後の自動回復やキューは作らず、二重の呼び出しを避ける。台帳は反映時に読み直して要確認だけを足し、別リクエストの観測更新を保持する。
 - 短いお知らせでは引用が全文になるため、保存する理由から引用を除いた。費用の予約もFirestoreで共有し、複数インスタンスで日次上限を超えないようにする。実際のGemini評価は再実行せず、指示文・見本の正解・M3の測り方は変更していない。
+
+## 締切の同期の実装（2026-11-06、Issue #40）
+
+- 根拠：Issue #40とD23の事前承認、design.md 5節。Codexがこの範囲で実装を具体化した。依存の追加はない。
+- 台帳と予定の望ましい状態を同じFirestoreトランザクションに保存する。拡張機能が既存の接続テストで作った専用カレンダーを登録し、GETで未反映を取り、版付きPOSTで結果を報告する。接続先の変更は古い予定を置き去りにするため自動では行わない。
+- 予定IDは世代ごとに先に確定する。削除が未確認のまま課題が戻った場合は、その削除を終えてから新世代を作る。すぐ新IDを作る案は、応答が失われた古い予定を残すため採らない。
+- GoogleへのREST要求は既存のfetchを使う。新しいSDKは足さない。公式仕様の[insert](https://developers.google.com/workspace/calendar/api/v3/reference/events/insert)・[update](https://developers.google.com/workspace/calendar/api/v3/reference/events/update)・[delete](https://developers.google.com/workspace/calendar/api/v3/reference/events/delete)を確認し、固定ID・全体更新・削除を使う。例のコードは転用していない。Google以外の書き込み先は `CalendarTarget` で差し替える。
+- 実物の確認はSoraのChromeで行う手順をPRに残し、今回は実施しない。Issueの指定どおりC16・C17を偽APIで判定し、C15は未完了に残す。

@@ -1,6 +1,6 @@
 # データの形
 
-Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observation-input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。未実装のカレンダーや共有は設計案を参照する。
+Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observation-input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。カレンダー同期は本書の末尾、未実装の共有の操作は設計案を参照する。
 
 ## 観測（取得部品 → サーバー）
 
@@ -90,7 +90,7 @@ Issue #16の指定に従い、今回は `sequence` と `payloadHash` を持た�
 
 取得状態は `studentId`、`system`、`lastAttemptedAt`、`lastSucceededAt`、`lastFailureKind`、`lastResult`（`success`・`partial`・`failed`）、`lastAppliedObservationId`。全授業の一覧・存在した課題の詳細を取得でき、失敗がない回だけ成功時刻を更新する。一部成功や失敗で以前の成功時刻を消さない。
 
-APIは受領記録、授業、台帳、履歴、取得状態を1つのFirestoreトランザクションで保存する。再送では文書の更新時刻も変えない。カレンダーやGeminiの呼び出しは含めない。coreの `applyObservation` はI/Oなしで更新を計算し、既存の受領記録が渡されたときは適用を行わない。
+APIは受領記録、授業、台帳、履歴、取得状態を1つのFirestoreトランザクションで保存する。再送では文書の更新時刻も変えない。カレンダーの同期対象も同じトランザクションで保存する（Issue #40）。GoogleカレンダーやGeminiの呼び出しは含めない。coreの `applyObservation` はI/Oなしで更新を計算し、既存の受領記録が渡されたときは適用を行わない。
 
 ## 準備の予定と既存の読み取り部品
 
@@ -137,3 +137,23 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の日付}` で全インスタンス共通に予約・精算する。初回M3測定19,410トークンの3倍以内、呼び出し1回・再試行なし。既存の入力16,000バイト相当と出力4,096トークンの上限も適用する。1日推定3,000円を超える予約を拒否し、失敗・usage不明では予約を残す。単価と換算は `announcements/budget.ts`。ローカルM3評価の別予算や他のAPI利用を合算した実請求額ではないため、それらを並行して回す運用にはしない。
 
 検証は `pnpm test:announcements:emulator`（Auth・Firestore、架空データと代替モデルだけ）。実物のGeminiへの新たな送信・保持条件の確認・デプロイ・模擬LMS画面の描画はこの検証に含まない。
+
+## 締切のカレンダー同期（Issue #40）
+
+型は `CalendarItem`・`CalendarIntegration`・`CalendarReport`（`types.ts`）、予定の組み立てと版の判定は [`calendar.ts`](../packages/core/src/calendar.ts)。締切だけを扱い、準備予定と模擬カレンダー本体は含めない。
+
+- `students/{uid}/calendarItems/{assignmentDocumentKey}` に、`kind: 'deadline'`、`sourceKey`、`calendarId`（未接続はnull）、`eventId`、`generation`、`desiredRevision`、`desired`、`appliedRevision`、`appliedAt`、`lastAttemptedAt`、`lastErrorCode` を保存する。`desired` は `{ state: 'present', event }` または `{ state: 'deleted' }`。版と世代は1から、反映済みの版は0から。予定IDは作成前に決めたUUIDのハイフンを除いた文字列。
+- 観測から作る同期対象は台帳と同じトランザクションで更新する。予定の中身が同じなら版を進めない。観測の再送では同期対象も書き換えない。Googleへの通信はトランザクションの外で行う。
+- `students/{uid}/integrations/calendar` は `mode: 'google' | 'mock'`、`executor: 'extension' | 'demo'`、`calendarId`、`connectionState: 'connected' | 'reauthorization-required' | 'recovery-required'`。未接続は文書の不在で表す。今回のAPIで登録できるのは既存のGoogle専用カレンダーのみ。模擬側は後続Issueで実装する。
+- `GET /api/v1/calendar-sync` は `{ integration: CalendarIntegration | null, items: CalendarItem[] }`。本人のうち、接続先があり、望ましい版と反映済みの版が異なる対象を返す。削除確認後の再出現と、他の台帳更新経路からの変更も、現在の台帳と照合してから返す。
+- `POST /api/v1/calendar-sync` の接続時の本文は `{ calendarId }`。拡張機能の接続テストで作成・保存した専用カレンダーを登録する。`primary` は拒否し、既存の接続先と異なるID・模擬モードへの上書きは409で停止する。接続先を切り替える復旧操作は未実装。
+- 同じPOSTの結果報告は `{ itemKey, generation, eventId, revision, errorCode }`。成功の `errorCode` はnull、失敗は `authorization-required`・`calendar-unavailable`・`event-conflict`・`network-error` のいずれか。保存中のキー・世代・予定ID・望ましい版がすべて一致したときだけ記録する。古い版と、既に反映済みの版への報告は何もしない。成功時刻はサーバーで付ける。
+- 削除の予定は成功報告まで残す。削除確認より先に課題が戻っても、まず古い予定を削除し、次の取得で世代と予定IDを変えて作り直す。作成・更新・削除の応答が失われたら、同じ予定IDの取得から再試行する。所有の印が違う予定は書き換えない。
+
+両APIともFirebase ID tokenの本人だけを扱い、支援担当の権限では他の学生の同期文書を操作できない。POSTは4 KiB以下、未知の項目と不正なキーを拒否する。エラーは401・400・413・415・409・500の固定コードのみ。応答は `Cache-Control: no-store`。Googleのaccess tokenはAPIに送らない。
+
+予定名は授業名と課題名、要確認なら先頭に「【要確認】」。説明は締切の原文、LMSのリンク、食い違う日付だけ（`conflicting-deadline.detail` の既存のお知らせ抽出形式から日付を拾い、引用本文は転記しない）。HTMLとして解釈される文字は表示を保つためにescapeする。時刻ありは5分の目印とその説明、日付だけは終日、提出済みは通知を外し、取消は削除する。締切が読めなければ以前の公式の締切を残す。
+
+拡張機能の `config.local.json` に `apiOrigin`（HTTPSのoriginだけ）を設定すると、その接続先だけをビルド時のhost permissionとCSPへ追加する。空なら接続テストだけが動く。worker起動時・Chrome起動時・接続テスト成功後・`sendObservation` の送信成功後に同期する。同じworker内の同期は直列に実行する。Googleの認可は `interactive: false`、Firebaseと同じuidかも確認してから予定を書く。1学生1Chromeプロファイルが前提。定期確認、実LMSの取得部品への接続、接続状態を表示する製品UIは後続の作業。
+
+設定画面からの内部メッセージ `calendar-sync` と `observation-send` でも同期を試せる。他の拡張機能・LMSのページ・子フレームからの要求は拒否する。`observation-send` の応答は観測の受領結果であり、カレンダー同期の成功とは区別する。同期に失敗しても受領済みの観測を失敗に戻さず、サーバーの同期待ちを次回に処理する。

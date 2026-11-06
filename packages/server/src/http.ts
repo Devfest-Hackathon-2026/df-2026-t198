@@ -1,6 +1,8 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { Observation, ObservationResult } from '@kadai-hisho/core/ledger';
 import { InvalidObservation, parseObservation } from './observation-input.js';
+import { receiveCalendarRequest } from './calendar-http.js';
+import type { CalendarStore } from './calendar-store.js';
 import { receiveSessionRequest } from './session-http.js';
 import type { SessionStore } from './session-store.js';
 import { receiveAnnouncement } from './announcements/http.js';
@@ -10,6 +12,7 @@ export interface ObservationDependencies {
   verifyToken: (token: string) => Promise<string>;
   saveObservation: (uid: string, observation: Observation) => Promise<ObservationResult>;
   session?: SessionStore;
+  calendar?: CalendarStore;
   announcements?: ReturnType<typeof createAnnouncementStore>;
 }
 const MAX_BODY = 512 * 1024;
@@ -52,6 +55,9 @@ async function receiveObservation(request: IncomingMessage, response: ServerResp
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
+    if (path === '/api/v1/calendar-sync' && (request.method === 'GET' || request.method === 'POST')) {
+      void receiveCalendarRequest(request, response, dependencies); return;
+    }
     if (request.method === 'POST' && path === '/api/v1/announcements') {
       void receiveAnnouncement(request, response, dependencies);
       return;
