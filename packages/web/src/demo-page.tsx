@@ -45,20 +45,22 @@ export function DemoPage() {
 function DemoWorkspace({ user }: { user: User }) {
   const [account, setAccount] = useState<DemoAccount | null>(null);
   const [data, setData] = useState<DemoData | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<'not-demo' | 'load' | null>(null);
+  const [logoutFailed, setLogoutFailed] = useState(false);
   useEffect(() => {
     let active = true;
     let stopData = () => {};
     let profileVersion = 0;
-    const fail = () => { if (active) { setAccount(null); setData(null); setFailed(true); stopData(); } };
+    const fail = () => { if (active) { setAccount(null); setData(null); setFailure('load'); stopData(); } };
     const stop = onSnapshot(doc(firebase!.db, 'demoAccounts', user.uid), { includeMetadataChanges: true }, snapshot => {
       if (!active || snapshot.metadata.fromCache) return;
       const version = ++profileVersion;
       stopData(); setData(null);
+      if (!snapshot.exists()) { setAccount(null); setFailure('not-demo'); return; }
       const profile = snapshot.data() as DemoAccount | undefined;
       if (!profile || !['student', 'supporter'].includes(profile.role) ||
         (profile.role === 'student' && profile.studentId !== user.uid)) { fail(); return; }
-      setAccount(profile); setFailed(false);
+      setAccount(profile); setFailure(null);
       if (profile.role === 'student') void post(user, '/api/v1/demo/reset', { onlyIfStale: true }).then(() => {
         if (!active || version !== profileVersion) return;
         stopData = onSnapshot(doc(firebase!.db, 'students', user.uid, 'demo', 'current'),
@@ -71,7 +73,12 @@ function DemoWorkspace({ user }: { user: User }) {
     }, fail);
     return () => { active = false; stop(); stopData(); };
   }, [user.uid]);
-  if (failed) return <p role="alert">体験用のデータを開けませんでした。体験用アカウントと接続を確かめてください。</p>;
+  if (failure === 'not-demo') return <div>
+    <p role="alert">このアカウントは体験用ではありません。ログアウトして、体験用のアカウントでログインしてください。</p>
+    <button onClick={() => { void firebase!.logout().catch(() => setLogoutFailed(true)); }}>ログアウト</button>
+    {logoutFailed && <p role="alert">ログアウトできませんでした。もう一度お試しください。</p>}
+  </div>;
+  if (failure) return <p role="alert">体験用のデータを開けませんでした。体験用アカウントと接続を確かめてください。</p>;
   if (!account) return <p role="status">体験用のデータを開いています…</p>;
   if (account.role === 'supporter') return <><p>面談画面で、担当する学生を選んでください。</p><a href="/session">面談を開く</a></>;
   return data ? <DemoStudent key={user.uid} user={user} data={data} /> : <p role="status">授業を開いています…</p>;

@@ -13,6 +13,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright')
 const requireServer = createRequire(new URL('../../server/package.json', import.meta.url));
 const { initializeApp, deleteApp } = requireServer('firebase-admin/app');
 const { getFirestore } = requireServer('firebase-admin/firestore');
+const { getAuth } = requireServer('firebase-admin/auth');
 const app = initializeApp({ projectId: 'demo-kadai-hisho' }, 'demo-browser');
 const db = getFirestore(app);
 const browser = await chromium.launch({ headless: true });
@@ -61,6 +62,18 @@ try {
     await student.getByLabel('メールアドレス').waitFor();
   }
   assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
+  // A signed-in account without a demo profile can return to the demo login.
+  await getAuth(app).createUser({ uid: 'non-demo-student', email: 'trial-ordinary@example.invalid',
+    password: process.env.KADAI_DEMO_PASSWORD });
+  await login(student, 'ordinary');
+  const nonDemoNotice = student.getByRole('alert').filter({ hasText:
+    'このアカウントは体験用ではありません。ログアウトして、体験用のアカウントでログインしてください。' });
+  await nonDemoNotice.waitFor();
+  assert.equal(await student.getByRole('button', { name: 'LMSを開く', exact: true }).count(), 0);
+  await nonDemoNotice.locator('..').getByRole('button', { name: 'ログアウト', exact: true }).click();
+  await student.getByLabel('メールアドレス').waitFor();
+  await student.getByLabel('パスワード').waitFor();
+  assert.equal(await nonDemoNotice.count(), 0);
   await login(student, 'student');
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   await login(supporter, 'supporter');
