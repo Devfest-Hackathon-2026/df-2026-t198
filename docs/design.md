@@ -49,7 +49,7 @@ Firebase Hostingの設定では、`/api/**` への通信をCloud Runへ転送し
 
 | 読める人 | 文書 |
 |---|---|
-| 本人と、許可した支援担当 | `courses/{courseKey}`（授業名、曜日・時限）、`assignments/{key}`（題名、締切、提出の状態、取消の状態、要確認）、`changes/{changeId}`（変更の履歴）、`fetchStates/{system}`（取得の状態）、`plans/{planId}`（確定した準備の予定）、`sessionContext/current`（前回・次回の面談の日時） |
+| 本人と、許可した支援担当 | `courses/{courseKey}`（授業名、曜日・時限）、`assignments/{key}`（題名、締切、提出の状態、取消の状態、要確認）、`changes/{changeId}`（変更の履歴）、`fetchStates/{system}`（取得の状態）、`plans/{planId}`（確定した準備の予定）、`manualAssignments/{id}`（手で入れた課題、Issue #98）、`sessionContext/current`（前回・次回の面談の日時） |
 | 本人だけ | `calendarItems/{itemKey}`（カレンダーの同期対象）、`integrations/calendar`（専用カレンダーと接続の状態）、`observationReceipts/{observationId}`（観測の受領記録） |
 | 本人と、その支援担当だけ | `supporters/{supporterUid}`（共有の許可）。他の支援担当には見せない |
 | サーバーだけ（取りやめ） | `invites/{codeHash}` はD23で取りやめ。招待コードは作らず、体験用の共有許可は初期設定で作る |
@@ -135,6 +135,7 @@ Cloud Runで用意するAPIの一覧は次のとおりです。
 | `GET /api/v1/calendar-sync` | まだ反映していない同期対象を返す |
 | `POST /api/v1/calendar-sync` | 版を添えて、反映の結果を報告する |
 | `PUT/DELETE /api/v1/students/{uid}/plans/{planId}` | 本人・共有中の支援担当が準備の予定を保存し、本人はすべて、支援担当は自分の予定を外す |
+| `PUT/DELETE /api/v1/students/{uid}/manual-assignments/{id}` | 手で入れた課題の追加・削除。契約は [data-shapes.md](data-shapes.md#手で入れた課題issue-98) |
 | 招待と共有のAPI（取りやめ） | 招待コードはD23で取りやめ。今は体験用の共有許可を初期設定で作る。許可・取消の操作APIは未実装 |
 | `GET /api/v1/definitions/...`（未実装） | API配信は設計案。今は定義JSONを同梱する（6節） |
 
