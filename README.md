@@ -85,7 +85,7 @@ flowchart LR
   MOCK --> WEB
   API --> EXT
   EXT --> CAL[Google Calendar API：締切の予定]
-  GEMINI[Vertex AI の Gemini：お知らせの締切変更を抽出] --> API
+  API --> GEMINI[Vertex AI の Gemini：お知らせの締切変更を抽出]
 ```
 
 図の実LMS・実カレンダーへの経路は、一連の動作の確認が残っています。体験ではブラウザの読み取り部品からAPIへ送り、模擬の予定を保存します。
