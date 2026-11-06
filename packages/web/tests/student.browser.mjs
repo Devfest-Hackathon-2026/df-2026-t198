@@ -88,6 +88,30 @@ try {
   assert.equal(await courseLink.isVisible(), true);
   await page.screenshot({ path: `${evidenceDir}/student-narrow.png`, fullPage: true });
   await panel.getByRole('button', { name: '閉じる' }).click();
+  // Issue #105: an ended task remains reachable in the finished section only.
+  await page.evaluate(async () => {
+    const { firebase } = await import('/src/firebase.ts');
+    const source = await (await globalThis.fetch('/src/firebase.ts')).text();
+    await (await import(source.match(/from "([^"]*firebase_firestore[^"]*)"/)[1])).enableNetwork(firebase.db);
+  });
+  await student.collection('assignments').doc('a1').update({ presenceState: 'ended', consecutiveMissingCount: 0 });
+  await cells.first().getByText('レポートA', { exact: true }).waitFor({ state: 'hidden' });
+  assert.doesNotMatch(await page.locator('.upcoming').allTextContents().then(text => text.join('')), /レポートA/);
+  await cells.first().click();
+  const finished = panel.locator('.finished-assignments');
+  if (await finished.getAttribute('open') === null) await finished.getByText('終了した課題', { exact: true }).click();
+  await finished.getByRole('heading', { name: 'レポートA', exact: true }).waitFor();
+  await finished.getByText('この課題は終了しました。', { exact: true }).waitFor();
+  assert.equal(await finished.locator('.assignment').filter({ hasText: 'レポートA' }).locator('.review').count(), 0);
+  assert.equal(await panel.locator(':scope > ul').getByText('レポートA', { exact: true }).count(), 0);
+  await page.screenshot({ path: `${evidenceDir}/student-ended-narrow.png`, fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 960 });
+  await page.screenshot({ path: `${evidenceDir}/student-ended-wide.png`, fullPage: true });
+  await student.collection('courses').doc('c0').update({ currentTerm: false });
+  await cells.first().waitFor({ state: 'hidden' });
+  await panel.waitFor({ state: 'hidden' });
+  assert.equal(await cells.count(), 0);
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: '架空の集中講義' }).click();
   await page.getByText('この授業の課題はまだありません。').waitFor();
   const unscheduledPanel = page.getByRole('complementary', { name: '架空の集中講義の課題' });
@@ -97,7 +121,7 @@ try {
   await page.getByRole('button', { name: 'Googleでログイン' }).waitFor();
   assert.doesNotMatch(await page.locator('body').innerText(), /レポート|架空の線形代数/);
   assert.deepEqual(errors, []);
-  console.log('PASS C18/C19/C20: empty, timetable, course panel, live deadline/submission, review, stale, offline, narrow, logout');
+  console.log('PASS C18/C19/C20 and #105: existing student operations, ended section, no pending ended tasks, hidden out-of-term course, wide/narrow, logout');
 } finally {
   await browser.close();
   if (student) await db.recursiveDelete(student);

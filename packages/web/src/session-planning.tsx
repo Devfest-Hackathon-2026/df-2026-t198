@@ -8,7 +8,8 @@ export function SessionPlanning({ data, now }: { data: SessionData; now: Date })
   const task = tasks.find(row => JSON.stringify(row.key) === selected) ?? tasks[0];
   const candidates = preparationCandidates(data, now).filter(candidate =>
     candidate.assignment.system === task?.key.system && candidate.assignment.sourceId === task.key.sourceId);
-  const periods = Math.max(5, ...data.courses.flatMap(course => course.slots.map(slot => slot.period)));
+  const courses = data.courses.filter(course => course.currentTerm !== false);
+  const periods = Math.max(5, ...courses.flatMap(course => course.slots.map(slot => slot.period)));
   const weekOf = (date: string) => {
     const monday = new Date(`${date}T00:00:00Z`);
     monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
@@ -43,7 +44,7 @@ export function SessionPlanning({ data, now }: { data: SessionData; now: Date })
         {Number(date.slice(5, 7))}/{Number(date.slice(8))}（{'月火水木金'[i]}）</th>)}</tr></thead>
       <tbody>{Array.from({ length: periods }, (_, i) => <tr key={i}><th scope="row">{i + 1}限</th>
         {dates.map((date, d) => <td key={date}>
-          {data.courses.filter(course => course.slots.some(slot => slot.weekday === d + 1 && slot.period === i + 1))
+          {courses.filter(course => course.slots.some(slot => slot.weekday === d + 1 && slot.period === i + 1))
             .map(course => <span className="session-course" key={JSON.stringify([course.system, course.courseId])}>{course.name}</span>)}
           {candidates.filter(candidate => candidate.date === date && candidate.period === i + 1).map(candidate =>
             <span className="session-candidate" key={JSON.stringify(candidate)}><strong>候補</strong>{task?.latest.title}</span>)}
