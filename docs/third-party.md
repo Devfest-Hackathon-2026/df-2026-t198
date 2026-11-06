@@ -47,3 +47,11 @@ CoursePower（富士通）の画面の構造を抽出・架空化した試験用
 `design/mocks/2026-11-06/` の画像8枚は [Nano Banana 2.1](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1)（Vertex AI）の生成物。利用条件は [Google Cloud のサービス規約](https://cloud.google.com/terms/service-terms)を参照。参照画像2枚はrepo内の架空の試作を撮影したもの。外部の写真・ロゴ・フォントファイルは追加していない。
 
 `design/mocks/2026-11-07/` の画像4枚も同じNano Banana 2.1（Vertex AI）による生成物で、上記のGoogle Cloudのサービス規約に従う。入力は架空のデータを含む依頼文だけ。外部の写真・参照画像・フォントは追加していない。
+
+## LMS 仕様調査の出典とライセンス（KULMS / Sakai）
+
+[`docs/kulms-api-comparison.md`](kulms-api-comparison.md) における KULMS（Sakai）関連の仕様調査は、以下の一次情報および上流リポジトリの参照に基づいています。
+
+- **非転載・非同梱**: 本リポジトリには、KULMS の `/direct/describe` 等が出力する API 定義原文、Sakai のソースコード、および実環境の API 応答データや HTML を転載・同梱していません。文書には公開仕様上のエンドポイント構造とフィールド名のみを記録しています。
+- **参照した Sakai 上流ソースファイルのライセンス**: 権限制御や小テスト項目の補助根拠として参照した [Sakai Project (`sakaiproject/sakai`)](https://github.com/sakaiproject/sakai) の [`GradebookNgEntityProvider.java`](https://github.com/sakaiproject/sakai/blob/5dc84ab5588662e202509cea3a6f5d3360a9da2d/gradebookng/tool/src/java/org/sakaiproject/gradebookng/rest/GradebookNgEntityProvider.java) および [`PublishedAssessmentEntityProviderImpl.java`](https://github.com/sakaiproject/sakai/blob/5dc84ab5588662e202509cea3a6f5d3360a9da2d/samigo/samigo-services/src/java/org/sakaiproject/tool/assessment/entity/impl/PublishedAssessmentEntityProviderImpl.java) は、各ファイルヘッダーにおいて **Educational Community License, Version 2.0 (ECL-2.0)** と明記されています（Sakai リポジトリ内の全ファイルについて一律に断定するものではありません）。
+- **KULMS 自動生成 API 定義のライセンス表記**: KULMS 実環境の `/direct/describe` および `/direct/{prefix}/describe` が返す自己記述ページの個別ライセンス表記は未確認です（そのため原文の複製・同梱は行っていません）。
