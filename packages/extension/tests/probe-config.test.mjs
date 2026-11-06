@@ -18,7 +18,7 @@ describe('local probe build config', () => {
       const config = await loadConfig(file);
       expect(JSON.stringify(config)).not.toContain('synthetic-secret');
       expect(configureManifest(manifest, config).oauth2).toEqual({ client_id: config.oauthClientId, scopes: oauthScopes });
-      expect(oauthScopes).toEqual(['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created']);
+      expect(oauthScopes).toEqual(['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/gmail.send']);
       await writeFile(file, '{"synthetic-secret":');
       const invalid = await loadConfig(file);
       expect(invalid.invalidJson).toBe(true);

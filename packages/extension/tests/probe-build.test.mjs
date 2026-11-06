@@ -36,11 +36,12 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     expect(await readFile(join(extensionDir, 'dist/popup.js'), 'utf8')).toContain('chrome.tabs.create');
     expect(await readFile(join(extensionDir, 'dist/popup.css'), 'utf8')).toContain('button');
     expect(manifest.key).toBe(original.key);
-    for (const origin of ['https://lms.ynu.ac.jp', config.apiOrigin]) {
+    expect(manifest.permissions).toContain('alarms');
+    for (const origin of ['https://lms.ynu.ac.jp', 'https://gmail.googleapis.com', config.apiOrigin]) {
       expect(manifest.host_permissions.filter(host => host === `${origin}/*`)).toHaveLength(1);
       expect(manifest.content_security_policy.extension_pages.split(' ').filter(value => value === origin)).toHaveLength(1);
     }
-    expect(manifest.oauth2).toEqual({ client_id: config.oauthClientId, scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created'] });
+    expect(manifest.oauth2).toEqual({ client_id: config.oauthClientId, scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/gmail.send'] });
     const source = await readFile(join(extensionDir, 'dist/service-worker.js'), 'utf8');
     expect(source).toContain(config.firebase.apiKey);
     const html = await readFile(join(extensionDir, 'dist/options.html'), 'utf8');

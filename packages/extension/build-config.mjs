@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { URL } from 'node:url';
+import { calendarScopes, gmailScope } from './src/oauth-scopes.ts';
 
-export const oauthScopes = ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created'];
+export const oauthScopes = [...calendarScopes, gmailScope];
 
 export async function loadConfig(path = 'config.local.json') {
   let raw = {};
