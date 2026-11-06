@@ -3,11 +3,12 @@ import type { Observation } from '../../core/src/types.js';
 
 const identity = vi.hoisted(() => vi.fn());
 const collect = vi.hoisted(() => vi.fn());
-const sync = vi.hoisted(() => vi.fn());
+const syncCalendar = vi.hoisted(() => vi.fn());
+const sync = syncCalendar;
 vi.mock('../src/auth-probe-browser.js', () => ({ observationIdentity: identity }));
 vi.mock('../src/probe-config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
+vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: syncCalendar }));
 vi.mock('../src/collection.js', () => ({ collectObservation: collect }));
-vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: sync }));
 vi.mock('../../core/src/html-reader.js', () => ({ readPage: () => ({ pageType: 'home' }) }));
 const observation: Observation = { schemaVersion: 1, observationId: '00000000-0000-4000-8000-000000000001', system: 'ynu-lms',
   definitionId: 'coursepower', definitionVersion: 3, fetchedAt: '2098-11-01T00:00:00Z', catalogCourses: [], courseResults: [], assignments: [], failures: [] };
@@ -23,6 +24,7 @@ beforeEach(async () => {
   for (const key of Object.keys(session)) delete session[key];
   session['ynuSessionId'] = 'synthetic-session';
   identity.mockResolvedValue({ uid: 'synthetic-user', token: 'synthetic-id-token' });
+  syncCalendar.mockResolvedValue(undefined);
   collect.mockImplementation(async ({ request }) => { await request({ kind: 'home' }); return structuredClone(observation); });
   send.mockResolvedValue({ ok: true, page: { html: 'page-html', url: 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex' } });
   fetcher.mockImplementation(async (url: string) => ({ ok: true, url, status: 200, text: async () => 'worker-html',

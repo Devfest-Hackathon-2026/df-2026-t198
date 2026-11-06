@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 24/41（58%）、必須 23/37（62%）
+完成条件：全体 25/41（60%）、必須 23/37（62%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -60,19 +60,19 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 
 ### 学生の画面
 
-- [x] C18 〈未定〉 時間割（曜日×時限）の各授業のマスに、その授業の次の締切を出す（D13の案A）。確かめ方：画面 → `packages/web/src/student.test.tsx`、`packages/web/tests/student.browser.mjs`（Auth・FirestoreエミュレーターとChromiumで授業の2コマ・締切順・週末・6限を確認）
+- [x] C18 〈未定〉 時間割（曜日×時限）の各授業のマスに、その授業の次の締切を出す（D13の案A）。確かめ方：画面 → `packages/web/src/student.test.tsx`、`packages/web/tests/student.browser.mjs`（Auth・FirestoreエミュレーターとChromiumで授業の2コマ・締切順・週末・6限を確認）。Issue #66：7日カレンダーの位置・札の翌日への移動・390pxを `packages/web/tests/demo.browser.mjs` で確認（[画面と記録](docs/records/2026-11-06-issue-66-verification.md)）
 - [x] C19 〈未定〉 マスを押すと、その授業の課題が横に開く。確かめ方：画面 → `packages/web/tests/student.browser.mjs`（授業欄の開閉・LMSリンク・要確認・提出・取消・390px幅を確認）。Issue #41：授業名・全曜日時限・SIDを含まない授業リンク、URLなしの非表示を `packages/web/tests/student.browser.mjs` で確認
-- [x] C20 〈未定〉 裏の取得が終わると、開いたままの画面の内容が変わる（Firestoreのリアルタイムの更新）。確かめ方：画面を開いたまま取得 → `packages/web/tests/student.browser.mjs`（エミュレーターの架空台帳の締切・提出を変更し、マス・締切順・開いた課題欄の更新を確認。実LMSからの取得との通しは未確認）、`packages/web/src/student-data.test.ts`（本人変更・購読失敗時の表示消去）
+- [x] C20 〈未定〉 裏の取得が終わると、開いたままの画面の内容が変わる（Firestoreのリアルタイムの更新）。確かめ方：画面を開いたまま取得 → `packages/web/tests/student.browser.mjs`（エミュレーターの架空台帳の締切・提出を変更し、マス・締切順・開いた課題欄の更新を確認。実LMSからの取得との通しは未確認）、`packages/web/src/student-data.test.ts`（本人変更・購読失敗時の表示消去）。Issue #66：開いたままの授業マス・課題欄・帯の札・面談の締切を2秒以内に強調し10秒後に解除する操作、3日以上前の情報の案内を同ブラウザ試験で確認（[記録](docs/records/2026-11-06-issue-66-verification.md)）
 - [ ] C21 〈未定〉 変化があったときだけ、LMSのページの隅に1行で知らせる。押すと学生の画面が開く。変化がなければ何も出さない。確かめ方：実際のLMS
 - [x] C22 〈未定〉 拡張機能のポップアップは、学生の画面を開くボタンだけにする。確かめ方：画面 → Issue #44、`packages/extension/tests/change-notice.test.mjs`・`packages/extension/tests/probe-build.test.mjs`・`packages/extension/tests/change-notice.browser.mjs`（ボタン1つ・学生画面への遷移・同梱を確認）。[確認記録](docs/records/2026-11-06-issue-44-verification.md)
 
 ### 面談画面
 
-- [x] C23 〈未定〉 次の面談までの締切、前回の面談からの変化、要確認のものを出す。確かめ方：画面 → PR #36、`packages/web/tests/session.browser.mjs`（実ブラウザで学生選択・3欄・日時変更・即時更新・共有取消・学生画面とのログイン共有・ログアウト、390px幅）、`pnpm test:sessions:emulator`。記録と画面：`docs/records/2026-11-06-issue-21-verification.md`
+- [x] C23 〈未定〉 次の面談までの締切、前回の面談からの変化、要確認のものを出す。確かめ方：画面 → PR #36、`packages/web/tests/session.browser.mjs`（実ブラウザで学生選択・3欄・日時変更・即時更新・共有取消・学生画面とのログイン共有・ログアウト、390px幅）、`pnpm test:sessions:emulator`。記録と画面：`docs/records/2026-11-06-issue-21-verification.md`。Issue #67：上部の表示・学生IDの補助表示・締切変更の文章・開閉印とキーボード操作を `packages/web/tests/session.browser.mjs` と単体試験で確認。前後の画面：[確認記録](docs/records/2026-11-06-issue-67-verification.md)
 - [ ] C24 〈未定〉 時間割の空いたコマに準備の候補を出し、決めたものだけを準備の予定として保存する。確かめ方：試験と画面 → Issue #39で2画面への分割と候補の表示まで。保存は未実装。`packages/web/tests/session-model.test.ts`、`packages/web/tests/session.browser.mjs`、[比較と確認の記録](docs/records/2026-11-06-session-split.md)
 - [ ] C25 〈未定〉 決めた準備の予定が、学生の時間割とGoogleカレンダーに入る（学生の承認の流れは未決）。確かめ方：画面と実際のカレンダー
 - [x] C26 〈未定〉 支援担当は、自分が受け持つ学生のデータだけを読める。確かめ方：Firestoreの規則の試験（エミュレーター）→ `scripts/firestore-rules.test.mjs`、`pnpm test:firestore-rules` 32件成功（本人・許可済み・未許可・取消済み・他人・未ログイン、本人だけの文書と直接書き込み拒否を含む）
-- [ ] C27 〈未定〉 面談の前のまとめを出す。〔削れる〕
+- [x] C27 〈未定〉 面談の前のまとめを出す。〔削れる〕 → 面談画面の「① 確かめる」（前回の約束・前回の面談からの変化・次の面談までの締切）を、面談の前のまとめとする（2026-11-06、Soraが確認）。PR #51、`packages/web/tests/session.browser.mjs`、画面：`docs/records/2026-11-06-session-split/check-wide.png`
 
 ### お知らせの文章（Gemini）
 

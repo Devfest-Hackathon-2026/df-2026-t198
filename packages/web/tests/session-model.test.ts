@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import type { AssignmentChange, LedgerAssignment } from '../../core/src/types';
-import { buildSessionView } from '../src/session-model';
+import { buildSessionView, changeDescription, formatDeadline } from '../src/session-model';
 
 const now = new Date('2026-11-06T06:00:00Z');
 const context = { lastSessionAt: '2026-11-01T10:00:00+09:00', nextSessionAt: '2026-11-13T11:00:00+09:00' };
@@ -72,4 +72,19 @@ it('does not suggest a date-only due day or any period in a fully occupied timet
   const full = { courseId: 'full', name: '授業', system: 'demo-lms' as const,
     slots: ([1, 2, 3, 4, 5] as const).flatMap(weekday => Array.from({ length: 5 }, (_, p) => ({ weekday, period: p + 1 }))) };
   expect(preparationCandidates({ ...data, courses: [full], assignments: [row('later', date('2026-11-13'))] }, now)).toEqual([]);
+});
+
+it('formats deadlines without timezone identifiers and describes extensions in a sentence', () => {
+  const before = instant('2026-11-09T17:00:00+09:00');
+  const after = instant('2026-11-10T17:00:00+09:00');
+  expect(formatDeadline(before)).toBe('11/9 17:00');
+  expect(formatDeadline(date('2026-11-12'))).toBe('2026/11/12（日付のみ）');
+  expect(formatDeadline({ kind: 'none', dueText: 'なし', timeZone: 'Asia/Tokyo' })).toBe('締切なし');
+  expect(formatDeadline({ kind: 'unreadable', dueText: '', timeZone: 'Asia/Tokyo' })).toBe('締切を確認できませんでした');
+  const change: AssignmentChange = { changeId: 'extension', recordedAt: now.toISOString(),
+    assignmentKey: { system: 'demo-lms', sourceId: 'task' }, kind: 'deadline-changed',
+    before, after, observationId: 'fictional' };
+  expect(changeDescription(change)).toBe('締切が 11/9 17:00 から 11/10 17:00 に変わりました');
+  expect(changeDescription({ ...change, before: date('2026-11-09'), after: date('2026-11-10') }))
+    .toBe('締切が 2026/11/09（日付のみ） から 2026/11/10（日付のみ） に変わりました');
 });

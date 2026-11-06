@@ -160,6 +160,8 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
     expect(fetcher.mock.calls.some(([url]) => url.endsWith('/calendar-sync'))).toBe(false);
     return;
   }
+  // Calendar sync starts after the accepted observation without delaying the LMS result (PR #74).
+  await vi.waitFor(() => expect(reports).toHaveLength(198), { timeout: 10_000 });
   expect(events.size).toBe(198);
   expect(googleCalls.filter(([, method]) => method === 'POST')).toHaveLength(198);
   expect(reports).toHaveLength(198);
@@ -172,6 +174,8 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
   expect(apiBodies).toHaveLength(2);
   expect(apiBodies[1].observationId).not.toBe(apiBodies[0].observationId);
+  await vi.waitFor(() => expect(googleCalls.filter(([, method]) => method === 'PUT')).toHaveLength(198), { timeout: 10_000 });
+  await vi.waitFor(() => expect(reports).toHaveLength(396), { timeout: 10_000 });
   expect([...events.keys()]).toEqual(originalIds);
   expect(googleCalls.filter(([, method]) => method === 'POST')).toHaveLength(198);
   expect(googleCalls.filter(([, method]) => method === 'PUT')).toHaveLength(198);

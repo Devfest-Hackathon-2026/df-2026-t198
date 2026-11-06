@@ -120,6 +120,7 @@ it('removes all displayed student data on revocation and on logout', async () =>
   expect(host.textContent).not.toContain('学生 student-a');
 });
 it('lets students read their own session without displaying the supporter date editor', async () => {
+  holder.services!.students = async () => [];
   await open(); await click('自分の面談を見る');
   expect(host.textContent).toContain('次の面談日時を決めると');
   expect(host.textContent).not.toContain('面談日時を変える');
@@ -147,4 +148,40 @@ it('loads the planning URL directly and shows saved promises without creating pl
   await click('① 確かめる');
   expect(host.querySelector('#session-promises')?.parentElement?.textContent).toContain('3限に準備');
   expect(save).not.toHaveBeenCalled();
+});
+
+it('keeps student IDs secondary and removes redundant selector actions', async () => {
+  await open();
+  expect(host.querySelector('.session-students button')).toBeNull();
+  expect(host.textContent).not.toContain('自分の面談を見る');
+  const card = host.querySelector('.session-students nav a')!;
+  expect(card.querySelector('strong')?.textContent).toBe('学生');
+  expect(card.querySelector('.session-student-id')?.textContent).toBe('student-a');
+  await click('学生 student-a');
+  expect(host.querySelector('h1')?.textContent).toBe('学生');
+  expect(host.querySelector('.session-heading .session-student-id')?.textContent).toBe('student-a');
+  expect(host.querySelector('.session-dates')?.textContent).not.toMatch(/今回|日本時間|Asia\/Tokyo/);
+  expect(host.querySelector('.session-account button')?.classList.contains('logout')).toBe(true);
+});
+
+it('calls the demo source the trial LMS and hides timezone identifiers', async () => {
+  const at = new Date().toISOString();
+  data['student-a']!.fetchStates = [{ studentId: 'student-a', system: 'demo-lms', lastAttemptedAt: at,
+    lastSucceededAt: at, lastFailureKind: null, lastResult: 'success', lastAppliedObservationId: 'fictional' }];
+  const deadline = { kind: 'datetime' as const, dueAt: new Date(Date.now() + 86400_000).toISOString(),
+    dueText: '架空の日時', timeZone: 'Asia/Tokyo' };
+  data['student-a']!.assignments[0]!.officialDeadline!.deadline = deadline;
+  await open(); await click('学生 student-a');
+  expect(host.querySelector('.session-updates')?.textContent).toContain('体験用LMS');
+  expect(host.textContent).not.toMatch(/模擬LMS|Asia\/Tokyo|面談日時は日本時間/);
+});
+
+it('does not treat a pending or failed student list as an empty list', async () => {
+  let failList!: (reason: Error) => void;
+  holder.services!.students = () => new Promise((_resolve, reject) => { failList = reject; });
+  await open();
+  expect(host.textContent).not.toContain('自分の面談を見る');
+  await act(async () => { failList(new Error('fictional-offline')); });
+  expect(host.textContent).toContain('担当する学生を開けませんでした');
+  expect(host.textContent).not.toContain('自分の面談を見る');
 });

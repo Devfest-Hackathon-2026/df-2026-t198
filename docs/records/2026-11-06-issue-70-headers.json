@@ -1,0 +1,69 @@
+{
+  "checkedAt": "2026-11-06T03:21:18.945Z",
+  "origin": "https://project-00439085-4e2d-44c3-9a8.web.app",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "beforeCacheControl": "max-age=3600",
+      "cacheControl": "no-cache",
+      "sha256": "48c48be9b34b8f2a1eea2b57b571def350ded87090363641c134194ffe723c20",
+      "bytesUnchanged": true
+    },
+    {
+      "path": "/index.html",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "beforeCacheControl": "max-age=3600",
+      "cacheControl": "no-cache",
+      "sha256": "48c48be9b34b8f2a1eea2b57b571def350ded87090363641c134194ffe723c20",
+      "bytesUnchanged": true
+    },
+    {
+      "path": "/student",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "beforeCacheControl": "max-age=3600",
+      "cacheControl": "no-cache",
+      "sha256": "48c48be9b34b8f2a1eea2b57b571def350ded87090363641c134194ffe723c20",
+      "bytesUnchanged": true
+    },
+    {
+      "path": "/session",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "beforeCacheControl": "max-age=3600",
+      "cacheControl": "no-cache",
+      "sha256": "48c48be9b34b8f2a1eea2b57b571def350ded87090363641c134194ffe723c20",
+      "bytesUnchanged": true
+    },
+    {
+      "path": "/demo-lms",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "beforeCacheControl": "max-age=3600",
+      "cacheControl": "no-cache",
+      "sha256": "48c48be9b34b8f2a1eea2b57b571def350ded87090363641c134194ffe723c20",
+      "bytesUnchanged": true
+    },
+    {
+      "path": "/assets/index-hOuqrQF_.css",
+      "status": 200,
+      "contentType": "text/css; charset=utf-8",
+      "beforeCacheControl": "max-age=3600",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "sha256": "d0d18d7bfea2cbe6672f3c7c0a34856403129f466364b93d9598c2f7962a0f11",
+      "bytesUnchanged": true
+    },
+    {
+      "path": "/assets/index-im4P_Kx0.js",
+      "status": 200,
+      "contentType": "text/javascript; charset=utf-8",
+      "beforeCacheControl": "max-age=3600",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "sha256": "03ebf5a32a0a16378f20e0b13af8f44284b4e88e0ce05d0b6a6555873859cf97",
+      "bytesUnchanged": true
+    }
+  ]
+}

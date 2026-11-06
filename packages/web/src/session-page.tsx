@@ -8,6 +8,8 @@ import { watchSession, type SessionState } from './session-watch';
 import { SessionLink, sessionRoute } from './session-route';
 import { SessionPlanning } from './session-planning';
 import './session.css';
+import { ChangedDeadline } from './deadline-change';
+import { DemoLogin } from './demo-login';
 
 export function SessionPage({ path = '/session' }: { path?: string }) {
   const [services] = useState(() => { try { return getSessionServices(); } catch { return null; } });
@@ -19,7 +21,7 @@ export function SessionPage({ path = '/session' }: { path?: string }) {
   if (!ready) return <p role="status">ログインを確かめています…</p>;
   return <>
     <div className="session-account">
-      {user && <button onClick={() => { void services.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')); }}>ログアウト</button>}
+      {user && <button className="logout" onClick={() => { void services.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')); }}>ログアウト</button>}
     </div>
     {error && <p role="alert">{error}</p>}
     {user ? <SessionWorkspace key={user.uid} user={user} services={services} path={path} /> : <Login services={services} />}
@@ -37,6 +39,7 @@ function Login({ services }: { services: SessionServices }) {
   }
   return <form className="session-login panel" onSubmit={event => { void login(event); }}>
     <h2>面談にログイン</h2>
+    <DemoLogin />
     {services.local && <>
       <label>メールアドレス<input type="email" name="email" autoComplete="username" required /></label>
       <label>パスワード<input type="password" name="password" autoComplete="current-password" required /></label>
@@ -46,10 +49,9 @@ function Login({ services }: { services: SessionServices }) {
   </form>;
 }
 function SessionWorkspace({ user, services, path }: { user: User; services: SessionServices; path: string }) {
-  const [students, setStudents] = useState<{ uid: string }[]>([]);
+  const [students, setStudents] = useState<{ uid: string }[] | null>(null);
   const { uid: selected, planning } = sessionRoute(path);
   const [error, setError] = useState('');
-  const [revision, setRevision] = useState(0);
   useEffect(() => {
     let active = true;
     const load = async () => {
@@ -59,14 +61,14 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
         setStudents(rows); setError('');
       } catch {
         if (!active) return;
-        setStudents([]);
+        setStudents(null);
         setError('担当する学生を開けませんでした。接続とログインを確かめてください。');
       }
     };
     void load();
     const interval = window.setInterval(() => { void load(); }, 30_000);
     return () => { active = false; window.clearInterval(interval); };
-  }, [user, services, revision]);
+  }, [user, services]);
   if (selected) return <div className="session-content">
     <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>
     <StudentSession key={selected} uid={selected} user={user} services={services} planning={planning} />
@@ -75,18 +77,16 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
     <h2>担当する学生</h2>
     <p>学生が見せることにした授業と課題だけを出しています。</p>
     <nav aria-label="担当する学生">
-      {students.map(student => <SessionLink key={student.uid} href={`/session/${encodeURIComponent(student.uid)}`}>
-        学生 {student.uid}</SessionLink>)}
+      {students?.map(student => <SessionLink key={student.uid} href={`/session/${encodeURIComponent(student.uid)}`}>
+        <strong>学生</strong>{' '}<span className="session-student-id">{student.uid}</span></SessionLink>)}
     </nav>
-    <button className="quiet" onClick={() => setRevision(value => value + 1)}>一覧を更新</button>
-    <SessionLink href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談を見る</SessionLink>
+    {students?.length === 0 && <SessionLink href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談を見る</SessionLink>}
     {error && <p role="alert">{error}</p>}
   </section>;
 }
 function StudentSession({ uid, user, services, planning }: { uid: string; user: User; services: SessionServices; planning: boolean }) {
   const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
   const [now, setNow] = useState(() => new Date());
-  const [sessionAt] = useState(() => new Date().toISOString());
   useEffect(() => watchSession(services.source, uid, user.uid, state => {
     setState(state);
     setNow(new Date());
@@ -98,11 +98,11 @@ function StudentSession({ uid, user, services, planning }: { uid: string; user: 
   if (state.status === 'loading') return <p role="status">面談の内容を開いています…</p>;
   if (state.status === 'denied') return <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>;
   if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。学生を選び直してください。</p>;
-  return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning} sessionAt={sessionAt}
+  return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning}
     save={context => services.saveContext(user, uid, context)} />;
 }
-export function SessionDetails({ data, now, own, save, uid, planning, sessionAt }: {
-  data: SessionData; now: Date; own: boolean; uid: string; planning: boolean; sessionAt: string;
+export function SessionDetails({ data, now, own, save, uid, planning }: {
+  data: SessionData; now: Date; own: boolean; uid: string; planning: boolean;
   save: (context: SessionContext) => Promise<void> }) {
   const view = buildSessionView(data, now);
   const promises = data.plans.filter(plan => data.context.lastSessionAt &&
@@ -114,12 +114,11 @@ export function SessionDetails({ data, now, own, save, uid, planning, sessionAt 
   const base = `/session/${encodeURIComponent(uid)}`;
   return <>
     <header className="session-heading">
-      <h1>{own ? '自分の面談' : `学生 ${uid}`}</h1>
+      <div><h1>{own ? '自分の面談' : '学生'}</h1>
+        {!own && <p className="session-student-id">{uid}</p>}</div>
       <div className="session-dates">
         <p>前回 {data.context.lastSessionAt ? formatMoment(data.context.lastSessionAt) : '日時がまだありません'}</p>
-        <p>今回 {formatMoment(sessionAt)}</p>
         <p>次回 <strong>{data.context.nextSessionAt ? formatMoment(data.context.nextSessionAt) : '日時を決めてください'}</strong></p>
-        <span className="muted">面談日時は日本時間</span>
       </div>
     </header>
     <nav className="session-steps" aria-label="面談の段階">
@@ -131,7 +130,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, sessionAt 
     {planning ? <SessionPlanning data={data} now={now} /> : <>
       <div className="session-updates">
         {data.fetchStates.map(state => <p key={state.system}>
-          <strong>{({ 'ynu-lms': 'YNU', panda: 'PandA', 'demo-lms': '模擬LMS' })[state.system]}</strong>{' '}
+          <strong>{({ 'ynu-lms': 'YNU', panda: 'PandA', 'demo-lms': '体験用LMS' })[state.system]}</strong>{' '}
           {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
           {state.lastResult !== 'success' && '。今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。'}
           {state.lastSucceededAt && now.getTime() - Date.parse(state.lastSucceededAt) >= 3 * 86400_000 && '。しばらく更新がありません。'}
@@ -175,12 +174,12 @@ function SessionAssignment({ row, data }: { row: LedgerAssignment; data: Session
   const changes = data.changes.filter(change => sameAssignment(row, change.assignmentKey))
     .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
   const reason = reviewDescription(row);
-  return <li><details className="session-task"><summary>
+  return <li><details className="session-task"><summary><div>
     <span className="eyebrow">{course?.name ?? '授業'}</span>
     <h3>{row.latest.title}</h3>
-    <span className="deadline">{row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確認できていません'}</span>
+    <ChangedDeadline value={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確認できていません'} />
     {reason && <span className="session-review"><span className="review-tag">要確認</span> {reason}</span>}
-  </summary><div className="session-task-detail">
+  </div></summary><div className="session-task-detail">
     <SourceLink url={row.latest.url} />
     <h4>書いてあったこと</h4><p>{row.latest.deadline.dueText}</p>
     {row.officialDeadline && row.latest.deadline.kind === 'unreadable' && <p>
