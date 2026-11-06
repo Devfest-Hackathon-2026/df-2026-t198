@@ -97,11 +97,11 @@ try {
   await popupPage.screenshot({ path: `${evidenceDir}/popup.png` });
   await popupPage.setViewportSize({ width: 300, height: 220 });
   for (const [status, expected] of [
-    ['running', 'LMSの課題を確かめています'],
-    ['yielded', 'LMSの操作を優先して確認を中断しました'],
-    ['success', 'LMSの課題を確かめました'],
-    ['partial', '一部の課題を確かめられませんでした。LMSを開き直してください'],
-    ['collection-unavailable', '一部の課題を確かめられませんでした。LMSを開き直してください'],
+    ['running', 'LMSの課題を更新しています'],
+    ['yielded', 'LMSの操作を優先して更新を中断しました'],
+    ['success', 'LMSの課題を更新しました'],
+    ['partial', '一部の課題を更新できませんでした。LMSを開き直してください'],
+    ['collection-unavailable', '一部の課題を更新できませんでした。LMSを開き直してください'],
     ['sign-in-required', '拡張機能の設定からGoogleにログインしてください'],
     ['api-not-configured', '拡張機能の接続先の設定が必要です'],
   ]) {
@@ -111,6 +111,14 @@ try {
     assert.equal(await popupPage.getByRole('button').count(), 1);
     assert.equal(await popupPage.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
     await popupPage.screenshot({ path: `${evidenceDir}/popup-${status}.png` });
+    if (status === 'success' || status === 'partial') {
+      for (const width of [1280, 390]) {
+        await popupPage.setViewportSize({ width, height: 844 });
+        assert.equal(await popupPage.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+        await popupPage.screenshot({ path: `${evidenceDir}/popup-${status}-${width}.png` });
+      }
+      await popupPage.setViewportSize({ width: 300, height: 220 });
+    }
   }
   const openedFromPopup = context.waitForEvent('page');
   await popupPage.getByRole('button', { name: '学生の画面を開く' }).click();

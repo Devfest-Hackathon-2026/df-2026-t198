@@ -89,8 +89,8 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions 
       const { stale, failed } = fetchStatus(state, now);
       const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
       return stale || failed ? <p className="notice" key={state.system}>
-        {label}：{stale ? `最後にLMSから取ったのは${new Date(last!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。LMSを開くと新しくなります。` :
-          '一部の課題を確認できていません。LMSを開いて確かめてください。'}</p> : null;
+        {label}：{stale ? `${new Date(last!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。LMSを開くと新しくなります。` :
+          '課題をすべて確認できていません。LMSを開いて確かめてください。'}</p> : null;
     })}
     {!data.assignments.length && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
     {calendar ? <DemoCalendar fallback={upcomingList} now={now} /> : upcomingList}

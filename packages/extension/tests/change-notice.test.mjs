@@ -97,13 +97,13 @@ it('keeps an open popup in step with session status and ignores other storage ar
   await vi.waitFor(() => expect(document.querySelector('#collection-status').hidden).toBe(true));
   const finishedAt = new Date(2098, 10, 7, 4, 12).getTime();
   for (const [status, text] of [
-    ['running', 'LMSの課題を確かめています'],
-    ['yielded', '11/7 04:12 にLMSの操作を優先して確認を中断しました'],
-    ['success', '11/7 04:12 にLMSの課題を確かめました'],
-    ['partial', '11/7 04:12 に一部の課題を確かめられませんでした。LMSを開き直してください'],
-    ['collection-unavailable', '11/7 04:12 に一部の課題を確かめられませんでした。LMSを開き直してください'],
-    ['sign-in-required', '11/7 04:12 に課題を確かめられませんでした。拡張機能の設定からGoogleにログインしてください'],
-    ['api-not-configured', '11/7 04:12 に課題を確かめられませんでした。拡張機能の接続先の設定が必要です'],
+    ['running', 'LMSの課題を更新しています'],
+    ['yielded', '11/7 04:12 にLMSの操作を優先して更新を中断しました'],
+    ['success', '11/7 04:12 にLMSの課題を更新しました'],
+    ['partial', '11/7 04:12 に一部の課題を更新できませんでした。LMSを開き直してください'],
+    ['collection-unavailable', '11/7 04:12 に一部の課題を更新できませんでした。LMSを開き直してください'],
+    ['sign-in-required', '11/7 04:12 に課題を更新できませんでした。拡張機能の設定からGoogleにログインしてください'],
+    ['api-not-configured', '11/7 04:12 に課題を更新できませんでした。拡張機能の接続先の設定が必要です'],
   ]) {
     saved = { ynuCollectionDisplay: { status, finishedAt } };
     change({ ynuCollectionDisplay: {} }, 'session');
@@ -124,5 +124,5 @@ it('shows the last completed status when reopening the popup', async () => {
   const storage = popupStorage();
   storage.session.get = async () => ({ ynuCollectionDisplay: { status: 'success', finishedAt: new Date(2098, 10, 7, 4, 12).getTime() } });
   runInContext(popup, createContext({ document, chrome: { storage, tabs: { create: vi.fn() } } }));
-  await vi.waitFor(() => expect(document.querySelector('#collection-status').textContent).toBe('11/7 04:12 にLMSの課題を確かめました'));
+  await vi.waitFor(() => expect(document.querySelector('#collection-status').textContent).toBe('11/7 04:12 にLMSの課題を更新しました'));
 });

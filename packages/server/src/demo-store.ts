@@ -17,7 +17,7 @@ export interface DemoStore {
 export function isDemoStudent(data: Partial<DemoAccount> | undefined, uid: string) {
   return data?.role === 'student' && data.studentId === uid;
 }
-export function createDemoStore(db: Firestore): DemoStore {
+export function createDemoStore(db: Firestore, resetClock = Date.now): DemoStore {
   return {
     async reset(uid, onlyIfStale) {
       return db.runTransaction(async tx => {
@@ -29,7 +29,7 @@ export function createDemoStore(db: Firestore): DemoStore {
         if (!current) throw new DemoForbidden();
         const contextRef = student.collection('sessionContext').doc('current');
         const context = (await tx.get(contextRef)).data();
-        const now = Date.now();
+        const now = resetClock();
         const dates = [context?.['nextSessionAt'], ...current.courses.flatMap(course => course.assignments.map(task => task.dueAt))];
         if (onlyIfStale && dates.every(date => typeof date === 'string' && Date.parse(date) > now)) return { reset: false, data: current };
         const calendar = student.collection('integrations').doc('calendar');
