@@ -1,0 +1,30 @@
+{
+  "status": "pass",
+  "operations": [
+    "student selector only sharing notice",
+    "checking without timetable or decisions",
+    "row-only source details",
+    "previous promises",
+    "planning without full deadline/change list",
+    "two free weekday suggestions",
+    "disabled unsent confirmation and zero candidate writes",
+    "both step links",
+    "browser back",
+    "direct URL reload",
+    "390px checking and planning",
+    "student switch",
+    "session time edit and unset",
+    "live assignment update",
+    "revocation clears planning and promises",
+    "revoked student removed",
+    "shared login across routes",
+    "logout clears data"
+  ],
+  "browserErrors": [],
+  "viewport": [
+    1280,
+    960,
+    390,
+    844
+  ]
+}
