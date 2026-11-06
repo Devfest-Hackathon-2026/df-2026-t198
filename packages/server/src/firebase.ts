@@ -3,6 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createObservationStore } from './observation-store.js';
 import { createSessionStore } from './session-store.js';
+import { createDemoStore } from './demo-store.js';
 
 export function firebaseDependencies() {
   const app = getApps()[0] ?? initializeApp();
@@ -10,5 +11,6 @@ export function firebaseDependencies() {
     verifyToken: async (token: string) => (await getAuth(app).verifyIdToken(token, true)).uid,
     saveObservation: createObservationStore(getFirestore(app)),
     session: createSessionStore(getFirestore(app)),
+    demo: createDemoStore(getFirestore(app)),
   };
 }

@@ -18,6 +18,9 @@ service cloud.firestore {
     }
 
     match /students/{uid} {
+      match /demo/current {
+        allow read: if isOwner(uid);
+      }
       // Only these collections are shared; new or nested data stays private by default.
       match /courses/{courseKey} {
         allow read: if canReadShared(uid);
@@ -51,6 +54,10 @@ service cloud.firestore {
         allow read: if isOwner(uid)
           || (request.auth != null && request.auth.uid == supporterUid);
       }
+    }
+
+    match /demoAccounts/{uid} {
+      allow read: if isOwner(uid);
     }
 
     // Invites, unlisted paths and every client write are denied. Admin SDK bypasses rules.

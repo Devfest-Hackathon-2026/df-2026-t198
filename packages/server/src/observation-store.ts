@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { applyObservation, type FetchState, type LedgerAssignment, type Observation,
   type ObservationReceipt, type ObservationResult } from '@kadai-hisho/core/ledger';
 import type { Firestore } from 'firebase-admin/firestore';
+import { DemoForbidden, isDemoStudent } from './demo-store.js';
 
 /** Encode the tuple, not a delimiter-joined string; IDs cannot escape the collection. */
 export function documentKey(system: string, sourceId: string): string {
@@ -15,6 +16,10 @@ export function createObservationStore(db: Firestore) {
     const stateRef = student.collection('fetchStates').doc(observation.system);
     const recordedAt = new Date().toISOString();
     return db.runTransaction(async tx => {
+      // Read alongside the receipt so changing the profile cannot race a write.
+      const profile = await tx.get(db.doc(`demoAccounts/${uid}`));
+      if (profile.exists && (!isDemoStudent(profile.data(), uid) || observation.system !== 'demo-lms' ||
+        observation.definitionId !== 'demo-lms')) throw new DemoForbidden();
       const receipt = await tx.get(receiptRef);
       if (receipt.exists) return (receipt.data() as ObservationReceipt).result;
       // Reading the shared state document serializes observations even for an empty ledger.
