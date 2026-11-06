@@ -29,4 +29,4 @@ seedは台帳を直接作らない。既存の体験データは上書きせず�
 
 Cloud Run・Hosting・Firestore規則の反映はIssue #18側の手順で行う。このIssueではデプロイと実環境のアカウント作成を行っていない。メール／パスワード認証が利用可能であることと、試す人ごとの学生・支援担当アカウントの用意を、実環境の作成権限を持つ人が確認する必要がある。
 
-アカウントとデータの対応は [data-shapes.mdの体験用データ](data-shapes.md#体験用データissue-19)。実環境では `demoAccounts/{uid}`、学生の `demo/current`、共有許可、面談日時を同じ組のUIDで用意する。パスワードをrepo・Issue・PRに書かない。ログイン後の支援担当は `/demo-lms` から `/session` に進めば同じ認証状態を使う。体験UIDへの実カレンダー接続は将来の接続APIでも拒否する必要がある。
+アカウントとデータの対応は [data-shapes.mdの体験用データ](data-shapes.md#体験用データissue-19)。実環境では `demoAccounts/{uid}`、学生の `demo/current`、共有許可、面談日時を同じ組のUIDで用意する。パスワードをrepo・Issue・PRに書かない。ログイン後の支援担当は `/demo-lms` から `/session` に進めば同じ認証状態を使う。体験UIDから実カレンダーAPIへの接続・同期の操作はサーバー側でも拒否する。

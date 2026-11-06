@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 18/41（43%）、必須 17/37（45%）
+完成条件：全体 20/41（48%）、必須 19/37（51%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -55,8 +55,8 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 ### カレンダー
 
 - [ ] C15 〈未定〉 拡張機能から `chrome.identity` でGoogleカレンダーに締切の予定を作る。確かめ方：実際のカレンダー
-- [ ] C16 〈未定〉 締切が変わったら予定を動かし、取消なら予定を消す。同じ課題の予定を二重に作らない。確かめ方：試験と実際のカレンダー
-- [ ] C17 〈未定〉 確かめが要る課題は、予定名の頭に「【要確認】」を付け、両方の日付を説明欄に1行で書く。確かめ方：試験
+- [x] C16 〈未定〉 締切が変わったら予定を動かし、取消なら予定を消す。同じ課題の予定を二重に作らない。確かめ方：試験と実際のカレンダー → Issue #40の指定に従い偽APIで判定：`packages/extension/tests/calendar-sync.test.ts`（作成・移動・取消・応答喪失時の再試行）、`packages/server/tests/calendar.emulator.test.ts`（版・世代・本人の分離）。実物は `docs/records/2026-11-06-issue-40-manual-check.md` の手順で未確認、C15に残す
+- [x] C17 〈未定〉 確かめが要る課題は、予定名の頭に「【要確認】」を付け、両方の日付を説明欄に1行で書く。確かめ方：試験 → `packages/core/tests/calendar.test.ts`（公式締切の維持・要確認の題名・食い違う日付を1行・本文を転記しない）
 
 ### 学生の画面
 
@@ -83,7 +83,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 ### 模擬LMSと試し方
 
 - [ ] C31 〈未定〉 架空の授業と課題を載せた模擬LMS（CoursePowerとは違う作り）をFirebase Hostingに置く。確かめ方：公開したURL
-- [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-main-integration.md`
+- [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-calendar-integration.md`
 - [ ] C33 〈未定〉 試す人のための学生と支援担当のアカウントがあり、拡張機能を入れなくても一連の操作をブラウザで試せる。確かめ方：入れていないブラウザで操作
 - [ ] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6
 

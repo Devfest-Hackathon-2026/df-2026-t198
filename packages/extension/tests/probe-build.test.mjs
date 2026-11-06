@@ -17,6 +17,7 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     await symlink(fileURLToPath(new URL('../node_modules', import.meta.url)), join(dir, 'node_modules'), 'dir');
     const config = {
       oauthClientId: '123-synthetic.apps.googleusercontent.com',
+      apiOrigin: 'https://api.example.invalid',
       firebase: { apiKey: 'synthetic-api-key', authDomain: 'synthetic.firebaseapp.com', projectId: 'synthetic', appId: 'synthetic-app' },
     };
     await writeFile(join(dir, 'config.local.json'), JSON.stringify(config));
@@ -25,6 +26,8 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     const manifest = JSON.parse(await readFile(join(dir, 'dist/manifest.json'), 'utf8'));
     const original = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
     expect(manifest.key).toBe(original.key);
+    expect(manifest.host_permissions).toContain('https://api.example.invalid/*');
+    expect(manifest.content_security_policy.extension_pages).toContain('https://api.example.invalid');
     expect(manifest.oauth2).toEqual({ client_id: config.oauthClientId, scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created'] });
     const source = await readFile(join(dir, 'dist/service-worker.js'), 'utf8');
     expect(source).toContain(config.firebase.apiKey);

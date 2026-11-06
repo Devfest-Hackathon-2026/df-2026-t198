@@ -1,5 +1,6 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('../src/calendar-browser.js', () => ({ startCalendarSync: () => {}, handleCalendarMessage: () => undefined }));
 vi.mock('../src/auth-probe-worker.js', () => ({ handleAuthProbeMessage: () => undefined }));
 
 type Listener = (

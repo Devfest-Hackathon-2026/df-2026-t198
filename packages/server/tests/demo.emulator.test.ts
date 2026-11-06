@@ -79,6 +79,15 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
     expect(await ledger(other.uid)).toEqual([]);
     expect(await ledger(supporter.uid)).toEqual([]);
   });
+  it('denies demo accounts at all real-calendar endpoints without creating a connection', async () => {
+    for (const owner of [student, other, supporter]) {
+      const pending = await fetch(`${fixture.base}/api/v1/calendar-sync`, { headers: { Authorization: `Bearer ${owner.token}` } });
+      expect(pending.status).toBe(403);
+      expect((await post('calendar-sync', { calendarId: 'fictional@group.calendar.google.com' }, owner.token)).status).toBe(403);
+      expect((await post('calendar-sync', { itemKey: 'a'.repeat(64), generation: 1, revision: 1, eventId: 'abcde', errorCode: null }, owner.token)).status).toBe(403);
+      expect((await fixture.db.doc(`students/${owner.uid}/integrations/calendar`).get()).exists).toBe(false);
+    }
+  });
   it('preserves observation handling for ordinary users and verifies disabled accounts', async () => {
     expect((await post('observations', { ...observation(), system: 'ynu-lms' }, regular.token)).status).toBe(200);
     await fixture.auth.updateUser(student.uid, { disabled: true });
