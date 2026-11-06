@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
+import { DemoCalendar } from './demo-calendar';
 import { firebase } from './firebase';
 import { watchAccount, type StudentCourse, type StudentData, type StudentState } from './student-data';
 
@@ -116,7 +117,7 @@ export function StudentPage() {
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><p>拡張機能と同じGoogleアカウントでログインしてください。</p>
       <button className="plain-button" onClick={() => accountAction(client.login)}>Googleでログイン</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
-        {state.status === 'ready' ? <StudentView data={state} now={now} /> : <p role="status">{state.status === 'error'
+        {state.status === 'ready' ? <><StudentView data={state} now={now} /><DemoCalendar /></> : <p role="status">{state.status === 'error'
           ? '課題を開けませんでした。接続を確かめて、画面を開き直してください。' : '課題を開いています…'}</p>}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;
