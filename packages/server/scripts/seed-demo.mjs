@@ -30,8 +30,8 @@ try {
   const ref = student.collection('demo').doc('current');
   // Re-running the setup preserves changes made by the person trying the app.
   if (!(await ref.get()).exists) {
-    const due = new Date(Date.now() + 3 * 86400_000);
-    due.setUTCHours(8, 0, 0, 0);
+    const dueDay = new Date(Date.now() + 3 * 86400_000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+    const due = new Date(`${dueDay}T17:00:00+09:00`);
     await ref.set({ courses: [
       { courseId: 'DEMO101', name: '架空の観察入門', teacher: '架空の先生A', weekday: 1, period: 2, assignments: [
         { sourceId: 'DEMO101_TASK1', title: '架空の観察ノート', dueAt: due.toISOString(), submission: 'not-submitted' },
