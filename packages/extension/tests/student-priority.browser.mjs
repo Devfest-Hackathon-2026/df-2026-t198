@@ -45,11 +45,13 @@ const worker = await bundle('service-worker', [{ name: 'no-external-accounts', s
 const browser = await chromium.launch({ headless: true });
 const results = [];
 try {
-  for (const pageRoute of [false, true]) for (const scenario of ['complete', 'yield', 'state-error']) {
+  for (const pageRoute of [false, true]) for (const scenario of ['complete', 'yield', 'state-error', 'slow-link', 'slow-submit', 'slow-enter']) {
     const context = await browser.newContext();
     const page = await context.newPage();
     const state = {}, actions = [];
+    const slow = scenario.startsWith('slow-'), yielding = scenario === 'yield' || slow;
     let screen = 'home', release, held = false, listener, studentErrors = 0, uploads = 0;
+    let studentPending = false, releaseStudent, sessionNotifications = 0;
     const lms = async (url, init = {}, student = false) => {
       const path = new URL(url).pathname.replace(/;[^/]*/g, '');
       const kind = path.includes('studentCourse') ? 'student' : path.includes('linkKyozaiTitle') ? 'detail'
@@ -67,13 +69,17 @@ try {
       else if (kind === 'course') { screen = 'course'; html = list; }
       else {
         screen = 'detail'; html = detail;
-        if (scenario === 'yield' && !held) { held = true; await new Promise(resolve => { release = resolve; }); }
+        if (yielding && !held) { held = true; await new Promise(resolve => { release = resolve; }); }
       }
       return { ok: true, status: 200, url: html === errorHtml ? 'https://lms.ynu.ac.jp/lms/error/' : url, text: async () => html };
     };
     await context.route('https://lms.ynu.ac.jp/**', async route => {
       const request = route.request();
       const reply = await lms(request.url(), { method: request.method(), body: request.postData() }, request.isNavigationRequest());
+      if (slow && request.isNavigationRequest() && new URL(request.url()).pathname.startsWith('/lms/studentCourse')) {
+        studentPending = true;
+        await new Promise(resolve => { releaseStudent = resolve; });
+      }
       await route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: await reply.text() });
     });
     const chrome = { runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { listener = fn; } } }, action: {},
@@ -91,8 +97,11 @@ try {
     runInContext(worker, createContext({ chrome, fetch: fetcher, URL, URLSearchParams,
       AbortSignal: globalThis.AbortSignal, AbortController: globalThis.AbortController, crypto: { randomUUID }, clearTimeout,
       setTimeout: (fn, ms) => { if (ms === 250) { globalThis.queueMicrotask(fn); return 0; } return setTimeout(fn, ms); } }));
-    await page.exposeFunction('sendToWorker', message => new Promise(resolve => listener(message,
-      { id: 'synthetic-extension', frameId: 0, url: page.url(), tab: { id: 7 }, documentId: 'synthetic-document' }, resolve)));
+    await page.exposeFunction('sendToWorker', message => {
+      if (message.type === 'ynu-session-found') sessionNotifications++;
+      return new Promise(resolve => listener(message,
+        { id: 'synthetic-extension', frameId: 0, url: page.url(), tab: { id: 7 }, documentId: 'synthetic-document' }, resolve));
+    });
     await page.addInitScript(() => {
       const originalTimeout = globalThis.setTimeout;
       globalThis.setTimeout = (fn, ms, ...args) => {
@@ -103,12 +112,26 @@ try {
         onMessage: { addListener: fn => { globalThis.contentListener = fn; } }, sendMessage: message => globalThis.sendToWorker(message) } };
     });
     await page.goto(pageUrl); await page.addScriptTag({ content });
-    if (scenario === 'yield') {
+    if (yielding) {
       await assertEventually(() => held, () => ({ pageRoute, scenario, status: state.ynuFetchStatus, reads: actions.length }));
       const navigation = page.waitForURL('**/lms/studentCourse*');
-      await page.locator('#student-link').click();
+      if (scenario === 'slow-submit') await page.evaluate(() => globalThis.document.querySelector('#student-form')
+        .requestSubmit(globalThis.document.querySelector('#student-submit')));
+      else if (scenario === 'slow-enter') {
+        await page.locator('#student-input').focus(); await page.keyboard.press('Enter');
+      } else await page.locator('#student-link').click();
       assert.equal(screen, 'detail');
-      release(); await navigation;
+      release();
+      if (slow) {
+        await assertEventually(() => studentPending && state.ynuFetchStatus === 'yielded');
+        const requests = actions.length, notifications = sessionNotifications;
+        // Keep the old home document alive beyond the collection idle timeout.
+        await new Promise(resolve => setTimeout(resolve, 2500));
+        assert.equal(sessionNotifications, notifications, 'must not request collection during student navigation');
+        assert.equal(actions.length, requests, 'must not read home over the student navigation');
+        releaseStudent();
+      }
+      await navigation;
       await page.getByRole('heading', { name: '学生の授業' }).waitFor();
       await assertEventually(() => state.ynuFetchStatus === 'yielded');
       assert.equal(uploads, 0);

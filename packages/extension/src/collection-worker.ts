@@ -12,7 +12,7 @@ import definition from '../../../lms-definitions/coursepower/definition.json' wi
 import { readPage } from '../../core/src/html-reader.js';
 
 let running = false;
-let active: { sid: string; lease: CollectionLease } | undefined;
+let active: { sid: string; tabId: number; lease: CollectionLease } | undefined;
 interface Stats { attempted: number; backgroundSucceeded: number; pageSucceeded: number; failed: number }
 
 export async function yieldCollection(sid: string, departed: boolean): Promise<{ ok: true }> {
@@ -33,7 +33,10 @@ function credentialFree(body: string, sid: string): boolean {
 }
 
 export async function runCollection(pageUrl: string, tabId: number, documentId?: string): Promise<{ ok: boolean; code?: string; changed?: boolean; changeCount?: number }> {
-  if (running) return { ok: false, code: 'busy' };
+  if (running) {
+    if (active?.sid === sessionFromUrl(pageUrl) && active.tabId !== tabId) await yieldCollection(active.sid, false);
+    return { ok: false, code: 'busy' };
+  }
   running = true;
   let started = false;
   let stats: Stats | undefined;
@@ -76,7 +79,7 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       // A second visible LMS tab cannot share a single server-side screen safely.
       const tabs = await chrome.tabs.query({ url: `${new URL(pageUrl).origin}/*` });
       if (tabs.length !== 1 || tabs[0]?.id !== tabId) return { ok: false, code: 'not-idle' };
-      active = { sid, lease };
+      active = { sid, tabId, lease };
       const claim = await chrome.tabs.sendMessage(tabId, { type: 'ynu-collection-claim', sid }, target) as { ok?: boolean };
       claimed = claim?.ok === true;
       if (claim?.ok !== true || lease.stopped) return { ok: false, code: 'not-idle' };

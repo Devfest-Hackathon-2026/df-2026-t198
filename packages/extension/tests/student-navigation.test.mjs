@@ -21,7 +21,7 @@ function fixture({ href = home, yieldSession = vi.fn(async () => ({ ok: true }))
   const clickTarget = { closest() { return this; }, matches: () => false, dispatchEvent: vi.fn(() => true) };
   const click = (target = clickTarget, extra = {}) => {
     const event = { type: 'click', target, button: 0, cancelable: true, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), ...extra };
-    handlers.click(event);
+    handlers[event.type](event);
     return event;
   };
   return { handlers, windowEvents, collect, guard, click, clickTarget, yieldSession };
@@ -94,14 +94,59 @@ it('releases the next held action even when a replay throws', async () => {
   expect(f.clickTarget.dispatchEvent).toHaveBeenCalledTimes(2);
 });
 
-it('retries from home after yielding and another two idle seconds', async () => {
+it('waits for pageshow before retrying after a slow student navigation', async () => {
   const f = fixture();
+  let resolveCollection;
+  f.collect.mockImplementationOnce(() => new Promise(resolve => { resolveCollection = resolve; }));
   await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
   f.click(); await vi.advanceTimersByTimeAsync(0);
+  expect(f.clickTarget.dispatchEvent).toHaveBeenCalledTimes(1);
+  resolveCollection({ ok: false, code: 'yielded' });
+  // The old home remains visible while the server takes more than two seconds.
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(false);
+  f.windowEvents.pageshow({ persisted: false });
   await vi.advanceTimersByTimeAsync(1999);
   expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(false);
   await vi.advanceTimersByTimeAsync(1);
   expect(f.collect).toHaveBeenCalledTimes(2);
+  expect(f.guard.claim()).toBe(true);
+});
+
+it('can retry after the next student activity when an action stays on home', async () => {
+  const f = fixture();
+  await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+  f.click(); await vi.advanceTimersByTimeAsync(60_000);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(false);
+  f.handlers.pointerdown();
+  await vi.advanceTimersByTimeAsync(1999);
+  expect(f.guard.claim()).toBe(false);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(f.collect).toHaveBeenCalledTimes(2);
+  expect(f.guard.claim()).toBe(true);
+});
+
+for (const action of ['submit', 'enter']) it(`does not restart while replaying nested ${action} events`, async () => {
+  const f = fixture();
+  await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+  const event = { cancelable: true, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn() };
+  if (action === 'submit') {
+    const form = { submit: vi.fn(() => f.handlers.submit({ ...event, target: form })) };
+    f.handlers.submit({ ...event, target: form });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(form.submit).toHaveBeenCalledTimes(1);
+  } else {
+    const target = { matches: selector => selector.startsWith('a, button'), dispatchEvent: vi.fn(() => true), click: vi.fn(() => f.click()) };
+    f.handlers.keydown({ ...event, type: 'keydown', key: 'Enter', target });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(target.click).toHaveBeenCalledTimes(1);
+  }
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(false);
 });
 
 it('preserves a form submitter and invokes the student submission once', async () => {
@@ -127,15 +172,20 @@ for (const kind of ['button', 'input']) it(`replays Enter once with a missing wo
   expect(button.click).toHaveBeenCalledTimes(1);
 });
 
-it('aborts page reads and informs the worker on pagehide', async () => {
+for (const name of ['beforeunload', 'pagehide']) it(`aborts page reads and informs the worker on ${name}`, async () => {
   const f = fixture();
   await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
-  f.windowEvents.pagehide();
+  expect(f.windowEvents[name]).toBeTypeOf('function');
+  f.windowEvents[name]();
   expect(f.guard.signal.aborted).toBe(true);
   expect(f.guard.canRead(true)).toBe(false);
   expect(f.yieldSession).toHaveBeenCalledWith(true);
   await vi.advanceTimersByTimeAsync(60_000);
   expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(false);
+  f.windowEvents.pageshow({ persisted: true });
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(f.guard.claim()).toBe(true);
 });
 
 it('aborts an unanswered page read when the worker releases its lease', async () => {
@@ -157,14 +207,65 @@ it('passes modified clicks immediately while abandoning acquisition', async () =
   expect(f.guard.canRead(false)).toBe(false);
 });
 
-it('preserves native Enter in an editor or select and abandons collection', async () => {
+for (const kind of ['textarea', 'select', 'contentEditable']) it(`preserves Enter in ${kind} without abandoning or blocking`, async () => {
   const f = fixture();
   await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
-  const event = { key: 'Enter', cancelable: true, target: { isContentEditable: true }, preventDefault: vi.fn() };
+  const event = { key: 'Enter', cancelable: true,
+    target: { isContentEditable: kind === 'contentEditable', matches: () => kind !== 'contentEditable' }, preventDefault: vi.fn() };
   f.handlers.keydown(event);
   expect(event.preventDefault).not.toHaveBeenCalled();
-  expect(f.yieldSession).toHaveBeenCalledWith(true);
+  expect(f.yieldSession).not.toHaveBeenCalled();
+  expect(f.guard.canRead(false)).toBe(true);
+  expect(f.guard.signal.aborted).toBe(false);
+  f.guard.release(); f.handlers.input();
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(f.guard.claim()).toBe(true);
+});
+
+it('ignores right-button auxclick without abandoning collection', async () => {
+  const f = fixture();
+  await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+  const event = f.click(undefined, { type: 'auxclick', button: 2 });
+  expect(event.preventDefault).not.toHaveBeenCalled();
+  expect(f.yieldSession).not.toHaveBeenCalled();
+  expect(f.guard.canRead(false)).toBe(true);
+});
+
+it('passes middle-button auxclick immediately like a modified click', async () => {
+  const f = fixture();
+  await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+  const event = f.click(undefined, { type: 'auxclick', button: 1 });
+  expect(event.preventDefault).not.toHaveBeenCalled();
+  expect(f.yieldSession).toHaveBeenCalledExactlyOnceWith(true);
   expect(f.guard.canRead(false)).toBe(false);
+});
+
+for (const modifier of ['ctrlKey', 'shiftKey', 'metaKey', 'altKey']) {
+  for (const type of ['keydown', 'keypress', 'keyup']) it(`passes ${modifier}+Enter ${type} without replay`, async () => {
+    const f = fixture();
+    await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+    const target = { matches: () => false, dispatchEvent: vi.fn(), click: vi.fn() };
+    const event = { type, key: 'Enter', target, cancelable: true, [modifier]: true,
+      preventDefault: vi.fn(), stopImmediatePropagation: vi.fn() };
+    f.handlers[type](event);
+    expect(event.preventDefault).not.toHaveBeenCalled();
+    expect(event.stopImmediatePropagation).not.toHaveBeenCalled();
+    expect(f.yieldSession).toHaveBeenCalledExactlyOnceWith(true);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(target.dispatchEvent).not.toHaveBeenCalled();
+    expect(target.click).not.toHaveBeenCalled();
+    expect(f.collect).toHaveBeenCalledTimes(1);
+  });
+}
+
+it('ignores composing Enter without interrupting collection', async () => {
+  const f = fixture();
+  await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+  const event = { key: 'Enter', isComposing: true, cancelable: true, preventDefault: vi.fn() };
+  f.handlers.keydown(event);
+  expect(event.preventDefault).not.toHaveBeenCalled();
+  expect(f.yieldSession).not.toHaveBeenCalled();
+  expect(f.guard.canRead(false)).toBe(true);
 });
 
 it('does not intercept or restore a stateless LMS', async () => {

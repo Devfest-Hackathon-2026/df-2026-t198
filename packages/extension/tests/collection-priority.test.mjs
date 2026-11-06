@@ -56,6 +56,22 @@ async function fixture({ pageRoute = false, hold = false, restoreLoggedOut = fal
 }
 
 for (const pageRoute of [false, true]) {
+  it(`yields and restores when another tab opens home with the same session (page: ${pageRoute})`, async () => {
+    const f = await fixture({ pageRoute, hold: true });
+    const pending = f.worker.runCollection(url, 7);
+    await vi.waitFor(() => expect(f.held()).toBe(true));
+    const otherTab = f.worker.runCollection(url, 8);
+    f.release();
+    expect(await otherTab).toEqual({ ok: false, code: 'busy' });
+    expect(await pending).toEqual({ ok: false, code: 'yielded' });
+    expect(f.uploads).toEqual([]);
+    expect(f.state.ynuFetchSummary).toMatchObject({ yielded: 1, restoreSucceeded: 1, restoreFailed: 0 });
+    expect(f.studentNavigate()).toBe(true);
+    expect(f.pageReads.mock.calls.filter(([, m]) => m.type === 'ynu-read-page' && m.operation.kind === 'detail'))
+      .toHaveLength(pageRoute ? 1 : 0);
+    expect(f.fetcher.mock.calls.filter(([url]) => url.includes('linkKyozaiTitle'))).toHaveLength(pageRoute ? 0 : 1);
+  });
+
   it(`restores before yielding to a student and permits an immediate fresh run (page: ${pageRoute})`, async () => {
     const f = await fixture({ pageRoute, hold: true });
     const pending = f.worker.runCollection(url, 7);
@@ -102,6 +118,19 @@ for (const pageRoute of [false, true]) {
     expect(await f.worker.runCollection(url, 7)).toEqual({ ok: false, code: 'not-logged-in' });
     expect(f.state.ynuFetchSummary).toMatchObject({ restoreSucceeded: 0, restoreFailed: 1, lmsStateErrors: stateError ? 1 : 0 });
     expect(f.uploads).toEqual([]);
+  });
+}
+
+for (const [otherUrl, tabId] of [[url, 7], [url.replace('synthetic-session', 'other-synthetic-session'), 8]]) {
+  it(`keeps the existing collection for ${tabId === 7 ? 'the same tab' : 'another session'}`, async () => {
+    const f = await fixture({ hold: true });
+    const pending = f.worker.runCollection(url, 7);
+    await vi.waitFor(() => expect(f.held()).toBe(true));
+    expect(await f.worker.runCollection(otherUrl, tabId)).toEqual({ ok: false, code: 'busy' });
+    f.release();
+    expect((await pending).ok).toBe(true);
+    expect(f.uploads).toHaveLength(1);
+    expect(f.state.ynuFetchSummary.yielded).toBe(0);
   });
 }
 

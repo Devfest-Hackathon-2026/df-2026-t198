@@ -10,6 +10,7 @@ export function protectStudentNavigation(doc: Document, view: Window,
   let lastActivity = Date.now(), borrowed = false, departed = false, abandoned = false;
   let idle: ReturnType<typeof setTimeout> | undefined;
   let waiting = false;
+  let navigating = false, replaying = false;
   let releaseHeld: ((lostWorker?: boolean) => void) | undefined;
   let controller = new AbortController();
   const pending: (() => void)[] = [];
@@ -17,16 +18,19 @@ export function protectStudentNavigation(doc: Document, view: Window,
   const home = () => policy.homePaths.includes(new URL(view.location.href).pathname.replace(/;[^/]*/g, ''));
   const schedule = () => {
     clearTimeout(idle);
-    if (departed || abandoned || borrowed || waiting || !home()) return;
+    if (departed || abandoned || navigating || borrowed || waiting || !home()) return;
     idle = setTimeout(() => {
-      if (!departed && !abandoned && !borrowed && !waiting && home() && Date.now() - lastActivity >= STUDENT_IDLE_MS) {
+      if (!departed && !abandoned && !navigating && !borrowed && !waiting && home() && Date.now() - lastActivity >= STUDENT_IDLE_MS) {
         void collect().then(result => {
           if ((result as { code?: string } | null)?.code === 'yielded') schedule();
         }).catch(() => { /* The next student action remains available. */ });
       }
     }, STUDENT_IDLE_MS);
   };
-  const activity = () => { lastActivity = Date.now(); schedule(); };
+  const activity = () => {
+    if (replaying) return;
+    navigating = false; lastActivity = Date.now(); schedule();
+  };
   const notifyYield = (gone: boolean) => {
     try { return Promise.resolve(yieldSession(gone)); }
     catch { return Promise.reject(new Error('worker-unavailable')); }
@@ -50,11 +54,15 @@ export function protectStudentNavigation(doc: Document, view: Window,
       clearTimeout(deadline);
       borrowed = false; waiting = false;
       if (lostWorker) { abandoned = true; controller.abort(); }
+      // The old home can remain visible while the student's request is in flight.
+      // Nested click/submit events from replay must not count as new activity.
+      navigating = true; replaying = true;
       const actions = pending.splice(0);
-      for (const action of actions) {
-        try { action(); } catch { /* One page handler must not suppress the next held action. */ }
-      }
-      activity();
+      try {
+        for (const action of actions) {
+          try { action(); } catch { /* One page handler must not suppress the next held action. */ }
+        }
+      } finally { replaying = false; }
     };
     // Install the escape timer before calling any extension API (which can throw).
     const deadline = setTimeout(() => finish(true), STUDENT_WAIT_MS);
@@ -65,6 +73,7 @@ export function protectStudentNavigation(doc: Document, view: Window,
   const click = (event: MouseEvent) => {
     if (replayed.has(event)) return;
     activity();
+    if (event.type === 'auxclick' && event.button !== 1) return;
     const selector = 'a, button, input[type="button"], input[type="submit"], input[type="image"], [onclick]';
     const target = ((event.composedPath?.() ?? []).find(node => {
       const element = node as HTMLElement;
@@ -100,7 +109,8 @@ export function protectStudentNavigation(doc: Document, view: Window,
     activity();
     if (!borrowed || event.key !== 'Enter' || event.isComposing || !event.cancelable) return;
     const target = event.target as HTMLElement;
-    if (target.isContentEditable || target.matches('textarea, select')) { abandon(); return; }
+    if (target.isContentEditable || target.matches('textarea, select')) return;
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) { abandon(); return; }
     hold(event, () => {
       const replay = new KeyboardEvent(event.type, { key: 'Enter', code: event.code, bubbles: true, cancelable: true,
         keyCode: event.keyCode, charCode: event.charCode, location: event.location, repeat: event.repeat,
@@ -123,20 +133,22 @@ export function protectStudentNavigation(doc: Document, view: Window,
     doc.addEventListener('submit', submit, true);
     for (const event of ['keydown', 'keypress', 'keyup']) doc.addEventListener(event, enter as EventListener, true);
     for (const event of ['pointerdown', 'pointermove', 'input', 'scroll']) doc.addEventListener(event, activity, { capture: true, passive: true });
-    view.addEventListener('pagehide', () => {
+    const depart = () => {
       departed = true; borrowed = false; controller.abort(); clearTimeout(idle);
       releaseHeld?.(true);
       void notifyYield(true).catch(() => {});
-    });
-    view.addEventListener('pageshow', event => {
-      if (event.persisted) { departed = false; abandoned = false; activity(); }
+    };
+    view.addEventListener('beforeunload', depart);
+    view.addEventListener('pagehide', depart);
+    view.addEventListener('pageshow', () => {
+      departed = false; abandoned = false; activity();
     });
     schedule();
   } else void collect().catch(() => {});
   return {
     claim: () => {
       if (!policy.statefulSession) return true;
-      if (borrowed || departed || abandoned || waiting || !home() || Date.now() - lastActivity < STUDENT_IDLE_MS) return false;
+      if (borrowed || departed || abandoned || navigating || waiting || !home() || Date.now() - lastActivity < STUDENT_IDLE_MS) return false;
       borrowed = true; controller = new AbortController(); clearTimeout(idle);
       return true;
     },
