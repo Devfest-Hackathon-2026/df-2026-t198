@@ -11,6 +11,7 @@ import { planActions, type PlanActions } from './preparation-plans';
 import { SessionPlanning } from './session-planning';
 import './session.css';
 import { ChangedDeadline } from './deadline-change';
+import { missingDeadlineText } from './review-reason';
 import { DemoLogin } from './demo-login';
 
 export function SessionPage({ path = '/session' }: { path?: string }) {
@@ -184,7 +185,8 @@ function SessionAssignment({ row, data }: { row: LedgerAssignment; data: Session
   return <li><details className="session-task"><summary><div>
     <span className="eyebrow">{course?.name ?? '授業'}</span>
     <h3>{row.latest.title}</h3>
-    <ChangedDeadline value={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確認できていません'} />
+    <ChangedDeadline value={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) :
+      missingDeadlineText(row.latest.deadline) ?? '締切を確認できていません'} />
     {reason && <span className="session-review"><span className="review-tag">要確認</span> {reason}</span>}
   </div></summary><div className="session-task-detail">
     <SourceLink url={row.latest.url} />

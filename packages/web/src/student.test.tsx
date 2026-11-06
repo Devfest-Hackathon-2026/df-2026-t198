@@ -56,6 +56,21 @@ describe('学生が締切を確かめる画面', () => {
     expect(html).toContain('6限');
     expect(html).toContain('架空の集中講義');
   });
+  it.each([false, true])('LMS原文が「-」なら日時の記載がないと示し、既知締切を保持する: %s', known => {
+    const item = assignment('架空のレポート', dated('2026-11-10'), {
+      reviewReasons: [{ kind: 'unreadable-deadline', detail: 'unreadable' }],
+    });
+    item.latest.deadline = { kind: 'unreadable', dueText: ' - ', timeZone: 'Asia/Tokyo' };
+    if (!known) item.officialDeadline = null;
+    const before = JSON.stringify(item);
+    const html = renderToStaticMarkup(<StudentView data={{ ...studentFixture(), assignments: [item] }} />);
+    expect(html).toContain('LMSに締切日時の記載がありません（表示「-」）');
+    expect(html).toContain('要確認');
+    expect(html).not.toContain('締切を確認できていません');
+    expect(html).not.toContain('締切なし');
+    if (known) expect(html).toContain('11/10（日付のみ）');
+    expect(JSON.stringify(item)).toBe(before);
+  });
   it('初回の案内と、締切なし・不明・タイムゾーン付き日時を区別する', () => {
     const html = renderToStaticMarkup(<StudentView data={{ plans: [], courses: [], assignments: [], fetchStates: [], online: true }} />);
     expect(html).toContain('まだ課題がありません');
