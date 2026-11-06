@@ -74,7 +74,7 @@ try {
   // Six days leave at least two free weekday periods; Monday period 2 contains a class.
   await task.ref.update({ 'officialDeadline.deadline.date': dayInJapan(new Date(now.getTime() + 6 * 86400_000)) });
   await student.collection('plans').doc('fictional-promise').set({ assignment: originalTask.key,
-    date: '2026-11-10', period: 3, decidedOn: dayInJapan(new Date(originalContext.lastSessionAt)), calendarEventId: 'fictional' });
+    date: '2026-11-10', period: 3, decidedOn: dayInJapan(new Date(originalContext.lastSessionAt)), planId: 'fictional-promise', title: '架空の数学レポート', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'demo-supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' });
   const plansBefore = (await student.collection('plans').get()).size;
   const writes = [];
   page.on('request', request => {
@@ -154,8 +154,8 @@ try {
   // Monday period 2 contains a class and must never contain a suggestion.
   assert.equal(await page.locator('tbody tr').nth(1).locator('td').first().locator('.session-candidate').count(), 0);
   await page.getByRole('region', { name: '今日決めること' }).getByText('要確認', { exact: true }).waitFor();
-  assert.equal(await page.getByRole('button', { name: '学生に確認を頼む', exact: true }).isDisabled(), true);
-  await page.getByText('確定は学生の画面で行います。確認の依頼は準備中です。').waitFor();
+  assert.equal(await page.getByRole('button', { name: '学生に確認を頼む', exact: true }).count(), 0);
+  assert.equal(await page.locator('.session-candidate button').first().isEnabled(), true);
   assert.equal((await student.collection('plans').get()).size, plansBefore);
   assert.deepEqual(writes, []);
   assert.doesNotMatch(await page.locator('main').innerText(), removedCopy);
@@ -244,7 +244,7 @@ try {
     'no internal timezone labels and trial LMS wording', 'link-style logout', 'deadline extension sentence after live update',
     'aligned disclosure and Enter/Space at 1280px and 390px', 'student selector only sharing notice', 'checking without timetable or decisions', 'row-only source details',
     'previous promises', 'planning without full deadline/change list', 'two free weekday suggestions',
-    'disabled unsent confirmation and zero candidate writes', 'both step links', 'browser back', 'direct URL reload',
+    'available add buttons and no writes before choosing', 'both step links', 'browser back', 'direct URL reload',
     '390px checking and planning', 'student switch', 'session time edit and unset', 'live assignment update',
     'revocation clears planning and promises', 'revoked student removed', 'shared login across routes', 'logout clears data',
   ];

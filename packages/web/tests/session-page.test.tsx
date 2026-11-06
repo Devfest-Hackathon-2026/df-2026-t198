@@ -87,8 +87,8 @@ it('separates checking from planning and opens source details only inside the as
   expect(host.querySelector('#session-deadlines')).toBeNull();
   expect(host.querySelector('#session-changes')).toBeNull();
   expect(host.querySelectorAll('#session-decisions')).toHaveLength(1);
-  expect(host.querySelector('button[aria-describedby="session-confirm-help"]')?.hasAttribute('disabled')).toBe(true);
-  expect(host.textContent).toContain('確認の依頼は準備中');
+  expect(host.textContent).not.toContain('学生に確認を頼む');
+  expect(host.textContent).not.toContain('確認の依頼は準備中');
   expect(save).not.toHaveBeenCalled();
   await click('① 確かめる');
   await click('学生を選び直す'); await click('学生 student-b');
@@ -119,11 +119,11 @@ it('removes all displayed student data on revocation and on logout', async () =>
   expect(host.textContent).not.toContain('物理の演習');
   expect(host.textContent).not.toContain('学生 student-a');
 });
-it('lets students read their own session without displaying the supporter date editor', async () => {
+it('lets students read their own session and edit their session dates', async () => {
   holder.services!.students = async () => [];
   await open(); await click('自分の面談を見る');
   expect(host.textContent).toContain('次の面談日時を決めると');
-  expect(host.textContent).not.toContain('面談日時を変える');
+  expect(host.textContent).toContain('面談日時を変える');
 });
 
 it('saves entered session times with an explicit timezone and allows unset dates', async () => {
@@ -142,7 +142,7 @@ it('saves entered session times with an explicit timezone and allows unset dates
 it('loads the planning URL directly and shows saved promises without creating plans', async () => {
   window.location.pathname = '/session/student-a/plan';
   data['student-a']!.plans = [{ assignment: data['student-a']!.assignments[0]!.key,
-    date: '2026-11-10', period: 3, decidedOn: dayInZone(new Date(data['student-a']!.context.lastSessionAt!), 'Asia/Tokyo'), calendarEventId: 'fictional' }];
+    date: '2026-11-10', period: 3, decidedOn: dayInZone(new Date(data['student-a']!.context.lastSessionAt!), 'Asia/Tokyo'), planId: 'fictional', title: '数学のレポート', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' }];
   await open();
   expect(host.querySelector('table')).not.toBeNull();
   await click('① 確かめる');

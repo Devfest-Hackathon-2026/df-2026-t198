@@ -1,0 +1,42 @@
+{
+  "environment": "local Auth/Firestore emulators + Chromium",
+  "calendar": "mock",
+  "measuredAt": "2026-11-06T04:03:51.577Z",
+  "passed": 6,
+  "total": 8,
+  "percent": 75,
+  "steps": [
+    {
+      "name": "学生と支援担当が別のブラウザでログインする",
+      "status": "pass"
+    },
+    {
+      "name": "LMSを開いて最初の課題を受け取る",
+      "status": "pass"
+    },
+    {
+      "name": "先生役で締切を延ばし、LMSだけが変わる",
+      "status": "pass"
+    },
+    {
+      "name": "学生がLMSを開き、新しい締切が台帳に入る",
+      "status": "pass"
+    },
+    {
+      "name": "開いたままの学生画面が変わる",
+      "status": "pass"
+    },
+    {
+      "name": "保存済みの体験用カレンダーの予定が動く",
+      "status": "pass"
+    },
+    {
+      "name": "開いたままの面談画面が変わる",
+      "status": "fail"
+    },
+    {
+      "name": "応答を失った再送でも履歴と予定が増えない",
+      "status": "not-run"
+    }
+  ]
+}

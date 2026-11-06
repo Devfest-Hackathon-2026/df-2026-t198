@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { createDemoCalendarSync } from './demo-calendar.js';
 import { createCalendarStore } from './calendar-store.js';
 import { createObservationStore } from './observation-store.js';
+import { createPlanStore } from './plan-store.js';
 import { createSessionStore } from './session-store.js';
 import { createDemoStore } from './demo-store.js';
 import { createAnnouncementStore } from './announcements/store.js';
@@ -25,6 +26,7 @@ export function firebaseDependencies() {
     },
     calendar: createCalendarStore(db),
     session: createSessionStore(db),
+    plans: createPlanStore(db, syncDemoCalendar),
     demo: createDemoStore(db),
   };
   const project = app.options.projectId ?? process.env['GOOGLE_CLOUD_PROJECT'] ?? process.env['GCLOUD_PROJECT'];

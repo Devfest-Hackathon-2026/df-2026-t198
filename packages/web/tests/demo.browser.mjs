@@ -31,7 +31,7 @@ for (const page of [student, supporter]) {
     if (path.startsWith('/api/')) requests.push({ path, status: response.status() });
   });
 }
-const base = 'http://127.0.0.1:5177';
+const base = process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5177';
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i19-evidence';
 // Fixed C34 steps: failures and unreached steps remain in the denominator.
 const steps = [
@@ -187,7 +187,9 @@ try {
   assert.equal(await eventCard.count(), 1);
   pass(5);
   await timetable.screenshot({ path: `${evidence}/calendar-updated.png`, fullPage: true });
-  await supporter.getByRole('region', { name: '前回の面談からの変化' }).getByText(/締切が .+ から .+ に変わりました/).waitFor();
+  const previousDate = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(oldDeadline));
+  await supporter.getByRole('region', { name: '前回の面談からの変化' })
+    .getByText(`締切が ${previousDate} から ${expectedDate} に変わりました`, { exact: false }).waitFor();
   assert.ok((await deadlines.innerText()).includes(expectedDate));
   pass(6);
   // A further open uses a new observation ID but must not duplicate the same event.

@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "operations": [
+    "compact supporter cell opens date and time with Enter; plan lists keep one row per plan",
+    "supporter adds candidate; author, dated timetable and durable mock event appear in the open student screen",
+    "reload retains one saved plan",
+    "390px student timetable and removal control remain reachable",
+    "student removes supporter plan; both screens and durable mock destination remove it",
+    "student cell omits author label; its time remains available in details and the list",
+    "student adds a plan; lost response retry keeps one plan and one calendar event",
+    "student removes own plan; supporter cannot remove the student plan",
+    "student and supporter both save session dates; the other open screen updates",
+    "revoked sharing removes planning data and controls"
+  ],
+  "browserErrors": 0
+}

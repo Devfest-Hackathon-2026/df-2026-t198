@@ -11,8 +11,8 @@ export const firebase = projectId && apiKey && authDomain ? (() => {
   const auth = getAuth(app);
   const db = getFirestore(app);
   if (emulator) {
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-    connectFirestoreEmulator(db, '127.0.0.1', 8085);
+    connectAuthEmulator(auth, `http://127.0.0.1:${import.meta.env.VITE_AUTH_EMULATOR_PORT || '9099'}`, { disableWarnings: true });
+    connectFirestoreEmulator(db, '127.0.0.1', Number(import.meta.env.VITE_FIRESTORE_EMULATOR_PORT || '8085'));
   }
   return { auth, db, login: () => signInWithPopup(auth, new GoogleAuthProvider()), logout: () => signOut(auth) };
 })() : null;
