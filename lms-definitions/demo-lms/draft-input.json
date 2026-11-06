@@ -1,0 +1,6 @@
+[
+  { "file": "lms-definitions/demo-lms/samples/home.html", "context": { "utcOffset": "+09:00" } },
+  { "file": "lms-definitions/demo-lms/samples/materials.html", "context": { "utcOffset": "+09:00", "courseId": "DEMO101" } },
+  { "file": "lms-definitions/demo-lms/samples/detail.html", "context": { "utcOffset": "+09:00", "courseId": "DEMO101", "sourceId": "DEMO101_TASK1" } },
+  { "file": "lms-definitions/demo-lms/samples/empty.html", "context": { "utcOffset": "+09:00", "courseId": "DEMO202" } }
+]
