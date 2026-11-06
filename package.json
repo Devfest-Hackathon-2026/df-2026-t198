@@ -14,7 +14,7 @@
     "test:notify-decisions": "node --test scripts/notify-decisions.test.mjs",
     "agent-merge": "node scripts/agent-merge.mjs",
     "build": "pnpm -r build",
-    "gcp-build": "pnpm --filter server build",
+    "gcp-build": "pnpm --filter server... build",
     "start": "pnpm --filter server start",
     "emulators": "firebase emulators:start --project demo-kadai-hisho",
     "test:sessions:emulator": "PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --project demo-kadai-hisho --only auth,firestore \"pnpm --filter server... build && RUN_SESSION_EMULATOR_TESTS=1 pnpm --filter web exec vitest run tests/session.emulator.test.ts\"",

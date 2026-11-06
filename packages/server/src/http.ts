@@ -58,7 +58,7 @@ export function createHttpServer(dependencies?: ObservationDependencies) {
       void receiveObservation(request, response, dependencies);
       return;
     }
-    if (request.method === 'GET' && path === '/healthz') {
+    if (request.method === 'GET' && path === '/api/health') {
       response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       response.end(JSON.stringify({ status: 'ok' }));
       return;
