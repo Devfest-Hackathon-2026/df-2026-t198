@@ -50,8 +50,8 @@ VITE_USE_FIREBASE_EMULATORS=true pnpm --filter web dev --port 5177 --strictPort
 - 学生を変えるときは「学生を選び直す」で一覧に戻る。共有の案内はこの一覧だけに出る。
 - 学生 `demo-student-b` に切り替えると、物理演習が出て数学レポートは消える。
 - 「面談日時を変える」から次の面談を課題の締切より前にして保存すると、締切の一覧から課題が外れる。空欄にすると期間を推測せず、日時の入力を促す。
-- 管理画面 `http://127.0.0.1:4000/firestore` で、選択中の `students/demo-student-a/supporters/demo-supporter` の `revokedAt` を日時の文字列に変える。開いている面談の全内容が消え、日時保存も拒否される。一覧の「一覧を更新」でも学生が消える。
-- ログアウトすると学生の選択肢と内容が消える。学生アカウント（`demo-student-a@example.invalid`、同じ手元用パスワード）では「自分の面談を見る」で読む。面談日時の編集は出ない。
+- 管理画面 `http://127.0.0.1:4000/firestore` で、選択中の `students/demo-student-a/supporters/demo-supporter` の `revokedAt` を日時の文字列に変える。開いている面談の全内容が消え、日時保存も拒否される。一覧は30秒ごとに自動で更新する。画面を再読み込みしても、取消した学生が消える。
+- ログアウトすると学生の選択肢と内容が消える。担当学生がいない場合だけ「自分の面談を見る」が出る。学生アカウント（`demo-student-a@example.invalid`、同じ手元用パスワード）では、このリンクで読む。面談日時の編集は出ない。
 
 ## ブラウザ試験
 
