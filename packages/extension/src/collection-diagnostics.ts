@@ -4,7 +4,7 @@ import { readPage } from '../../core/src/html-reader.js';
 
 export interface PageDiagnostic { httpStatus: number | null; pageType: string; path: string | null }
 const paths = new Set([navigation.home, navigation.course.path, navigation.detail.path,
-  '/lms/corsColl/doIndex']);
+  '/lms/corsColl/doIndex', '/lms/homeHoml/doLinkKougi', '/lms/corsColl/doLinkKyozaiTitle']);
 
 /** Only known action paths survive: arbitrary paths can themselves contain IDs. */
 export function safeDiagnostic(input?: Partial<PageDiagnostic>): PageDiagnostic {

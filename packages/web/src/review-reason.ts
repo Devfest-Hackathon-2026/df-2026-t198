@@ -1,7 +1,12 @@
-import type { LedgerAssignment } from '@kadai-hisho/core';
+import type { Deadline, LedgerAssignment } from '@kadai-hisho/core';
 
-export function reviewReasonText(reason: LedgerAssignment['reviewReasons'][number]) {
-  if (reason.kind === 'unreadable-deadline') return '今回、課題の締切を読めませんでした。';
+export function missingDeadlineText(deadline: Deadline | undefined) {
+  return deadline?.kind === 'unreadable' && deadline.dueText.trim() === '-'
+    ? 'LMSに締切日時の記載がありません（表示「-」）' : undefined;
+}
+
+export function reviewReasonText(reason: LedgerAssignment['reviewReasons'][number], deadline?: Deadline) {
+  if (reason.kind === 'unreadable-deadline') return missingDeadlineText(deadline) ?? '今回、課題の締切を読めませんでした。';
   const proposed = /\): (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2}))$/.exec(reason.detail)?.[1];
   if (!proposed || !Number.isFinite(Date.parse(proposed))) return '課題とお知らせの日付が食い違っています。';
   const date = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric',

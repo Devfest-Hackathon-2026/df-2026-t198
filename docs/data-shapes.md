@@ -214,7 +214,7 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 
 ## 手で入れた課題（Issue #98）
 
-型の正本は `ManualAssignmentInput`・`ManualAssignment`（`types.ts`）。LMSの観測・台帳とは別の `students/{uid}/manualAssignments/{manualAssignmentId}` に保存する。LMSの取得はこのコレクションを変更しない。[D30](decisions.md#d30-lmsに出ない課題を学生と支援担当が手で入れる2026-11-07issue-98)のSoraの承認範囲で実装。合意方法はD29に従う。
+型の正本は `ManualAssignmentInput`・`ManualAssignment`（`types.ts`）。LMSの観測・台帳とは別の `students/{uid}/manualAssignments/{manualAssignmentId}` に保存する。LMSの取得はこのコレクションを変更しない。[D31](decisions.md#d31-lmsに出ない課題を学生と支援担当が手で入れる2026-11-07issue-98)のSoraの承認範囲で実装。合意方法はD29に従う。
 
 - `PUT /api/v1/students/{uid}/manual-assignments/{id}` の本文は `{ title, date, time, course, memo }` のみ。IDはクライアントが操作ごとに作る小文字UUID v4。同じ内容の再試行は同じIDを使う。
 - `title` は空白だけを除く1〜160文字、`memo` は0〜300文字。両方とも制御文字は不可。`date` は実在する `YYYY-MM-DD`、`time` は日本時間の `HH:mm` またはnull。時刻がnullなら日付だけの締切として扱い、23:59などを補わない。過去の課題も登録できる。
@@ -227,3 +227,16 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - 同期対象は手入力文書と同じトランザクションで保存。`kind: 'manual-deadline'`、`sourceKey: { system: 'manual', sourceId: id }` とし、既存の版・世代・予定ID・結果報告を使う。日付のみは終日、時刻ありは5分の目印。説明には手入力の登録者区分と締切を出し、メモや架空のLMSリンクは入れない。
 - 体験用は既存の保存済み模擬予定へ同期。実物は既存の拡張機能に渡し、未接続ならキューに残す。実際のGoogleカレンダーへの書き込みはローカル試験に含めない。
 - 既存の「体験を最初からやり直す」は本人のactive/cancelled両方の手入力文書と同期対象・模擬予定を消す。`onlyIfStale: true` で日付が新しい間は課題を残す。他の組は消さない。
+
+## 今日やることと準備の記録（Issue #112）
+
+- `GET /api/v1/digest`：失効確認付きFirebase ID tokenの本人だけを読む。応答は `{ date, to, subject, text, html, empty, plans, assignments }`。`date` は日本時間の今日、`to` は検証済みtokenのメールだけ。メールが無ければ403。queryの学生ID・宛先は使わず、体験用の支援担当は403。送信は別のIssue #113で拡張から行う。
+- `plans[]` は今日の `active` な準備の予定で、課題が提出済み・取消済み・終了済みのものは除く。各項目は `{ planId, date, period, startsAt, endsAt, title, courseName, deadline, url, status, doneUrl, laterUrl, subject, text, html }`。項目内の件名と本文はその予定1つ分のメール。件名は「13:00から：課題名の準備」の形で、朝のまとめの件名と分ける。`assignments[]` は48時間以内の未提出・取消/終了以外の課題で `{ title, courseName, deadline, url }`。準備を `done` にしても、LMSで未提出なら締切のまとめには残す。LMSの提出状態は変えない。
+- `deadline` は原文を外した `{ kind: 'datetime', dueAt, timeZone }` / `{ kind: 'date', date, timeZone }` / `{ kind: 'none' | 'unreadable', timeZone }` / `null`。日時は現在と48時間後の両端を含み、日付だけの場合はそのタイムゾーンの両端の日付を含む。時刻を補わない。課題本文・解説・お知らせ本文・締切の原文は本文にもJSONにも複写しない。課題名と授業名の連続する空白・改行は空白1つにまとめる。HTMLは文字とリンクをescapeする。`packages/core/src/mail-safety.ts` の `isSafeMailText` とURL検査で危険な値を含む課題だけを除き、ほかの課題は返す。同関数はHTMLの文字参照と連続するパーセント符号を最大5巡で復号・検査し、収束しなければ拒否する。拡張も同関数を使い、送信直前には現在の認証値を任意の第2引数に渡して、復号した文字列との一致も拒否する。認証値はサーバーには渡さない。送信対象が無ければ `empty: true`。
+- `doneUrl` / `laterUrl` は `<公開先>/student/plan?id=<予定ID>&do=done|later&rev=<revision>`。秘密の値は含まない。公開先はサーバー設定 `PUBLIC_WEB_ORIGIN`（末尾の `/` は除く）。未設定でもAPI全体は起動し、`GET /api/v1/digest` だけ503を返す。準備の操作と体験見本の作成は公開先を必要としないため使える。HTTPSのoriginだけを認め、エミュレーターだけ `http://127.0.0.1:<port>` も使える。要求のHostからは作らない。Webページを開き、未ログインならログインしてから、認証した本人の予定だけをPOSTで操作する。GET APIで書き込まない。
+- `POST /api/v1/plans/{planId}/done|later?rev=<revision>`：本文なし、IDは既存の小文字UUID v4。保存先の学生はtokenのUIDだけで決め、共有中でも支援担当は学生の代わりに押せない。予定の `status` に `done` を追加。任意の `changedBy`・`changedAt` は認証済みUIDとサーバー時刻。古い予定は項目なしのまま「まだ」と読む。移動後は `laterResult: 'moved'` を任意で保存する（旧 `no-slot` も読み取れる）。正の安全な整数の版番号 `rev` が今の予定と一致するときだけ変更する。成功時は `students/{uid}/planActionReceipts/{planId}-{revision}-{action}` に応答を保存し、同じ版・同じ操作の再送・同時操作には保存した応答を返す。その版が別の操作で使われていたら409。記録のない古い版・未来の版も409。画面には「予定が変わりました。学生の画面で確かめてください。」と出す。記録はクライアントには読み書きさせない。
+- 応答は `{ outcome: 'done' | 'moved' | 'no-slot', plan: PreparationPlan }`。doneは準備の記録だけで、課題の提出状態は書き換えない。完了した準備のカレンダー予定は削除対象にする。laterは既存の候補と同じ、翌日以降・平日・締切の前日までのコマを順に調べ、元の予定より後で、今の学期の授業も他の有効な準備予定もない最初のコマへ移す。有効な準備との重なりは、保存された時限の番号ではなく、設定表の開始・終了と予定の開始・終了の時刻で判定する。接するだけの時刻は重なりに含めない。元の準備の長さを保つ。確認できる空きがなければ元の日時・版を保ち、操作の記録を保存せず毎回計算し直す。学生画面の後回しボタンは予定が未来で有効な限り表示し、新しい版から繰り返し動かせる。
+- 自動移動の時刻設定は共通核の `preparationPeriodTimes: Partial<Record<LmsSystem, PreparationPeriodTimes>>` で管理し、現在はYNUと架空の体験用だけ。YNUの公表時刻を使う（[D30](decisions.md#d30-今日やることと準備の完了後回し2026-11-07issue-112)）。未設定のPandAや、準備が1コマに収まらない場合は推測して動かさない。個人のカレンダーが空いているかは判断しない。
+- 状態・操作者・時刻・移動先・既存カレンダーの同期対象を同じトランザクションで保存する。done・laterの再送で版や時刻を進めない。体験用は保存後に模擬予定へ同期し、失敗時は同じ要求で再試行する。実物は既存の拡張機能による同期のきっかけを待つ。画面には実物の更新完了とは表示しない。学生と許可済み支援担当が `plans` を購読し、完了した予定も一覧に残す。クライアントからの書き込みは引き続き全拒否。
+- `POST /api/v1/digest/demo-plan`：本文なし、体験学生本人だけ。先に「LMSを開く」で台帳へ入れた架空課題に、今日のメールを試す固定IDの予定を1つだけ作る。前の予定が今日の有効な予定ならそのまま返し、別の日・完了・取消なら同じIDで版を進めて作り直す。授業と別の有効な準備の時間を避ける。過去の開始時刻も含む朝の見本で、実物アカウントや実物カレンダーには使えない。`/demo-lms` はGET digestのHTMLをそのまま描き、ボタンは同じ本人限定APIを呼ぶ。「体験を最初からやり直す」は `plans` と `planActionReceipts` も消し、操作の記録を戻す。
+- 未認証401、不正なID・本文あり400、本人の予定でない／体験条件を満たさない403、完了・取消後の別操作や対象課題の取消・提出409、内部の失敗500。エラーは固定コード、応答は `Cache-Control: no-store`。依存・Google Cloud資源・送信処理・定期実行は追加しない。

@@ -1,5 +1,6 @@
 import { deadlineEntries, entryDeadline } from './deadline-entries';
-import { reviewReasonText } from './review-reason';
+import { preparationSlots } from '@kadai-hisho/core';
+import { missingDeadlineText, reviewReasonText } from './review-reason';
 import type { AssignmentChange, Course, Deadline, FetchState, LedgerAssignment, LmsSystem,
   PreparationCandidate, PreparationPlan, ManualAssignment, SessionContext } from '../../core/src/types';
 
@@ -62,7 +63,7 @@ export function formatDeadline(deadline: Deadline) {
     case 'datetime': return new Intl.DateTimeFormat('ja-JP', { timeZone: deadline.timeZone,
       month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(deadline.dueAt));
     case 'none': return '締切なし';
-    case 'unreadable': return '締切を確認できませんでした';
+    case 'unreadable': return missingDeadlineText(deadline) ?? '締切を確認できませんでした';
   }
 }
 const changeLabels: Record<AssignmentChange['kind'], string> = { new: '課題が出ました', 'title-changed': '題名が変わりました',
@@ -77,32 +78,18 @@ export function changeDescription(change: AssignmentChange) {
 export function reviewDescription(row: LedgerAssignment) {
   const reason = row.reviewReasons[0];
   if (!reason) return row.presenceState === 'cancellation-candidate' ? 'LMSの一覧で見つかりませんでした。' : '';
-  return reviewReasonText(reason);
+  return reviewReasonText(reason, row.latest.deadline);
 }
 
 // Period times are not configured yet. Use only whole future days before the due date.
 export function preparationCandidates(data: SessionData, now: Date): PreparationCandidate[] {
   const candidates: PreparationCandidate[] = [];
-  const courses = data.courses.filter(course => course.currentTerm !== false);
-  const periods = Math.max(5, ...courses.flatMap(course => course.slots.map(slot => slot.period)));
   for (const row of buildSessionView(data, now).deadlines) {
     const deadline = row.officialDeadline!.deadline;
     if (deadline.kind !== 'date' && deadline.kind !== 'datetime') continue;
     // The timetable is in Japan time; compare a datetime deadline's date in that zone too.
     const dueDate = deadline.kind === 'date' ? deadline.date : dayInZone(new Date(deadline.dueAt), 'Asia/Tokyo');
-    const cursor = new Date(`${dayInZone(now, 'Asia/Tokyo')}T00:00:00Z`);
-    let count = 0;
-    while (count < 2) {
-      cursor.setUTCDate(cursor.getUTCDate() + 1);
-      const date = cursor.toISOString().slice(0, 10);
-      if (date >= dueDate) break;
-      const weekday = cursor.getUTCDay();
-      if (weekday === 0 || weekday === 6) continue;
-      for (let period = 1; period <= periods && count < 2; period++) {
-        if (courses.some(course => course.slots.some(slot => slot.weekday === weekday && slot.period === period))) continue;
-        candidates.push({ assignment: row.key, date, period }); count++;
-      }
-    }
+    candidates.push(...preparationSlots(row.key, dueDate, data.courses, now));
   }
   return candidates;
 }

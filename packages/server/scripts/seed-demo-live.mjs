@@ -6,6 +6,7 @@ import { pathToFileURL, URL } from 'node:url';
 import { initializeApp, applicationDefault, deleteApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { initialDemo } from '../src/demo-initial.ts';
 
 const projectId = 'project-00439085-4e2d-44c3-9a8';
 export function liveSetupOptions(args, env) {
@@ -57,27 +58,16 @@ async function seed() {
     await mkdir(folder, { recursive: true });
     // Persist once before remote writes so a partial failure does not lose passwords.
     await saveAccounts(path, { projectId, origin: `https://${projectId}.web.app`, pairs });
-    const now = Date.now();
-    const due = new Date(now + 3 * 86400_000);
-    due.setUTCHours(8, 0, 0, 0);
+    const initial = initialDemo(Date.now());
     for (const { student, supporter } of pairs) {
       for (const { uid, email, password } of [student, supporter]) await auth.createUser({ uid, email, password });
       const batch = db.batch();
       for (const [account, role] of [[student, 'student'], [supporter, 'supporter']]) {
         batch.create(db.doc(`demoAccounts/${account.uid}`), { role, studentId: student.uid });
       }
-      batch.create(db.doc(`students/${student.uid}/demo/current`), { courses: [
-        { courseId: 'DEMO101', name: '架空の観察入門', teacher: '架空の先生A', weekday: 1, period: 2, assignments: [
-          { sourceId: 'DEMO101_TASK1', title: '架空の観察ノート', dueAt: due.toISOString(), submission: 'not-submitted' },
-          { sourceId: 'DEMO101_TASK2', title: '架空の振り返り', dueAt: due.toISOString(), submission: 'submitted' },
-        ] },
-        { courseId: 'DEMO202', name: '架空の表現演習', teacher: '架空の先生B', weekday: 4, period: 4, assignments: [] },
-      ] });
+      batch.create(db.doc(`students/${student.uid}/demo/current`), initial.data);
       batch.create(db.doc(`students/${student.uid}/supporters/${supporter.uid}`), { scopes: ['all'], revokedAt: null });
-      batch.create(db.doc(`students/${student.uid}/sessionContext/current`), {
-        lastSessionAt: new Date(now - 7 * 86400_000).toISOString(),
-        nextSessionAt: new Date(now + 7 * 86400_000).toISOString(),
-      });
+      batch.create(db.doc(`students/${student.uid}/sessionContext/current`), initial.context);
       await batch.commit();
     }
     log('Prepared three fictional demo pairs. Credentials saved locally; no ledger observations seeded.');

@@ -1,5 +1,6 @@
 import { manualAssignmentActions, ManualAssignments, ManualAssignmentRow, type ManualAssignmentActions } from './manual-assignments';
 import { entryId } from './deadline-entries';
+import { planProgress } from './plan-progress';
 import { fetchStatus } from './fetch-status';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
@@ -9,10 +10,11 @@ import { sessionDeadlineEntries, buildSessionView, changeDescription, dayInZone,
   reviewDescription, type SessionData } from './session-model';
 import { watchSession, type SessionState } from './session-watch';
 import { SessionLink, sessionRoute } from './session-route';
-import { planActions, type PlanActions } from './preparation-plans';
+import { planActions, PlanList, type PlanActions } from './preparation-plans';
 import { SessionPlanning } from './session-planning';
 import './session.css';
 import { ChangedDeadline } from './deadline-change';
+import { missingDeadlineText } from './review-reason';
 import { DemoLogin } from './demo-login';
 
 export function SessionPage({ path = '/session' }: { path?: string }) {
@@ -138,19 +140,20 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
           const { stale, failed } = fetchStatus(state, now.getTime());
           const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
           if (stale || failed) return <p className="notice" key={state.system}>
-            {label}：{stale ? `最後にLMSから取ったのは${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。学生がLMSを開くと新しくなります。` :
-              '今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。'}</p>;
+            {label}：{stale ? `${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。学生がLMSを開くと新しくなります。` :
+              '課題をすべて確認できていません。LMSを一緒に開いて確かめてください。'}</p>;
           return <p key={state.system}>
             <strong>{state.system === 'ynu-lms' ? 'YNU' : label}</strong>{' '}
             {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
           </p>;
         })}
       </div>
+      <PlanList plans={data.plans} own={false} />
       <div className="session-check">
         {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>
           <ul className="panel session-rows">{promises.map((plan, i) =>
             <li key={i}>{data.assignments.find(row => sameAssignment(row, plan.assignment))?.latest.title ?? '課題'}：
-              {plan.date.replaceAll('-', '/')} {plan.period}限に準備</li>)}</ul>
+              {plan.date.replaceAll('-', '/')} {plan.period}限に準備 {planProgress(plan)}</li>)}</ul>
         </section>}
         <section aria-labelledby="session-changes"><h2 id="session-changes">前回の面談からの変化</h2>
           {!data.context.lastSessionAt && <p>前回の面談日時を入れると、それ以降の変化が出ます。</p>}
@@ -189,7 +192,8 @@ function SessionAssignment({ row, data }: { row: LedgerAssignment; data: Session
   return <li><details className="session-task"><summary><div>
     <span className="eyebrow">{course?.name ?? '授業'}</span>
     <h3>{row.latest.title}</h3>
-    <ChangedDeadline value={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確認できていません'} />
+    <ChangedDeadline value={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) :
+      missingDeadlineText(row.latest.deadline) ?? '締切を確認できていません'} />
     {reason && <span className="session-review"><span className="review-tag">要確認</span> {reason}</span>}
   </div></summary><div className="session-task-detail">
     <SourceLink url={row.latest.url} />

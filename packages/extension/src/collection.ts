@@ -11,7 +11,7 @@ export interface CollectionOptions {
   fetchedAt: string;
   onFailure?: (stage: LmsOperation['kind'], error: unknown) => void;
   onRecovered?: () => void;
-  onCourseResult?: (complete: boolean) => void;
+  onCourseResult?: (complete: boolean, failureKind?: FetchFailure['kind']) => void;
 }
 const context = { utcOffset: '+09:00' };
 const sourceKey = (courseId: string, sourceId: string) => `${courseId}_${sourceId}`;
@@ -56,6 +56,7 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
       const result = { courseId, listComplete: false, seenSourceIds: [] as string[], endedSourceIds: [] as string[] };
       observation.courseResults.push(result);
       let courseRetried = false;
+      let courseFailure: FetchFailure | undefined;
       const openCourse = async () => {
         const open = () => read({ kind: 'course', fields: { ...homeFields, kougiId: courseId } }, { ...context, courseId });
         try { return await open(); }
@@ -117,9 +118,12 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
             if (loggedOut(error)) break;
           }
         }
-        if (detailFailure) observation.failures.push(detailFailure);
-      } catch (error) { observation.failures.push(failure(error, courseId)); }
-      finally { options.onCourseResult?.(result.listComplete); }
+        courseFailure = detailFailure;
+      } catch (error) { courseFailure = failure(error, courseId); }
+      finally {
+        if (courseFailure) observation.failures.push(courseFailure);
+        options.onCourseResult?.(result.listComplete, courseFailure?.kind);
+      }
       if (observation.failures.at(-1)?.kind === 'not-logged-in') break;
     }
   } catch (error) { observation.failures.push(failure(error, null)); }

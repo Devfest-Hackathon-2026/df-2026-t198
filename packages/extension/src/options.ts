@@ -1,4 +1,5 @@
 import type { ProbeResult } from './auth-probe.js';
+import type { DigestStatus } from './digest-browser.js';
 
 const run = document.querySelector<HTMLButtonElement>('#run')!;
 const restore = document.querySelector<HTMLButtonElement>('#restore')!;
@@ -50,3 +51,24 @@ async function request(type: 'auth-probe-run' | 'auth-probe-status') {
 run.addEventListener('click', () => { void request('auth-probe-run'); });
 restore.addEventListener('click', () => { void request('auth-probe-status'); });
 void request('auth-probe-status');
+
+const digestToggle = document.querySelector<HTMLInputElement>('#digest-enabled')!;
+const digestStatus = document.querySelector<HTMLElement>('#digest-status')!;
+async function digestSetting(enabled?: boolean) {
+  digestToggle.disabled = true;
+  digestStatus.textContent = enabled === true ? 'Googleの画面で、メール送信の許可を確認してください。' : 'メールの設定を確認しています。';
+  try {
+    const result = await chrome.runtime.sendMessage<unknown, DigestStatus>(enabled === undefined
+      ? { type: 'digest-status' } : { type: 'digest-setting', enabled });
+    digestToggle.checked = result.enabled;
+    digestStatus.textContent = !result.ok ? 'メールの設定を確認できませんでした。Googleとの接続を確認して、もう一度操作してください。'
+      : result.problem === 'send-unconfirmed' ? '届いたか確認できないメールがあります。Gmailを確認してください。同じメールは自動で送り直しません。'
+      : result.problem === 'authorization-required' ? 'メール送信の許可を確認できません。「毎朝、今日やることをGmailで受け取る」を入れ直してください。'
+      : result.problem ? 'メールを用意できませんでした。しばらくしてから設定画面を開き直してください。'
+      : result.enabled ? '今日やることをメールで受け取ります。何もない日は送りません。' : 'メールは送りません。';
+  } catch {
+    digestStatus.textContent = 'メールの設定を確認できませんでした。設定画面を開き直してください。';
+  } finally { digestToggle.disabled = false; }
+}
+digestToggle.addEventListener('change', () => { void digestSetting(digestToggle.checked); });
+void digestSetting();

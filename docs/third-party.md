@@ -47,3 +47,11 @@ CoursePower（富士通）の画面の構造を抽出・架空化した試験用
 `design/mocks/2026-11-06/` の画像8枚は [Nano Banana 2.1](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/nano-banana-2-1)（Vertex AI）の生成物。利用条件は [Google Cloud のサービス規約](https://cloud.google.com/terms/service-terms)を参照。参照画像2枚はrepo内の架空の試作を撮影したもの。外部の写真・ロゴ・フォントファイルは追加していない。
 
 `design/mocks/2026-11-07/` の画像4枚も同じNano Banana 2.1（Vertex AI）による生成物で、上記のGoogle Cloudのサービス規約に従う。入力は架空のデータを含む依頼文だけ。外部の写真・参照画像・フォントは追加していない。
+
+## 自動移動に使う授業時刻（Issue #112）
+
+[YNU 全学教育科目時間割表（2025年3月21日現在）](https://ope.ynu.ac.jp/wp-content/uploads/2025/05/zengakujikanwari250328.pdf)の時限の開始・終了という事実のみを、YNUと架空の体験用の設定に使う。資料自体・レイアウト・説明文は複製しない。再利用ライセンスの指定は未確認であり、資料を同梱・再配布しない。レビューで値が一致したとされた出典へ修正した。今回の再取得は404のため値を再照合できていない。2026年度の表と別大学の時刻は未確認。
+
+## メールのボタンの見た目（2026-11-07）
+
+「今日やること」のメールの「✅ 終わった」「🕒 後回し」のボタンと、下の注意書きの色・大きさ・文言は、Soraの別のrepo `ynu-lms-agent` の `workers/sol/src/actions.mjs`（2026-11-07 02:22作成、大会の開始のあと）のメールに合わせた。Soraの作で、本人の許可（2026-11-07）を得て、見た目の値だけを `packages/server/src/digest.ts` に写した。コードは写していない。

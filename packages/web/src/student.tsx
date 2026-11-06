@@ -1,7 +1,8 @@
 import { manualAssignmentActions, ManualAssignments, ManualAssignmentForm, ManualAssignmentRow, manualAuthor, type ManualAssignmentActions } from './manual-assignments';
-import { deadlineEntries, entryBelongsTo, entryDeadline, entryId, entryTitle, deadlineValue } from './deadline-entries';
+import { deadlineEntries, entryBelongsTo, entryDeadline, entryDisplayDeadline, entryId, entryTitle, deadlineValue } from './deadline-entries';
+import { PlanLinkAction } from './plan-progress';
 import { fetchStatus } from './fetch-status';
-import { reviewReasonText } from './review-reason';
+import { missingDeadlineText, reviewReasonText } from './review-reason';
 import { useEffect, useRef, useState } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
 import { planActions, PlanCell, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
@@ -15,6 +16,8 @@ export const courseKey = (course: StudentCourse) => JSON.stringify([course.syste
 const belongsTo = (item: LedgerAssignment, course: StudentCourse) =>
   item.key.system === course.system && item.latest.courseId === course.courseId;
 const deadlineOf = (item: LedgerAssignment | undefined) => item?.officialDeadline?.deadline;
+const displayDeadlineOf = (item: LedgerAssignment | undefined) => deadlineOf(item) ??
+  (item?.latest.deadline.kind === 'unreadable' ? item.latest.deadline : undefined);
 const dateKey = (deadline: Deadline | undefined) => deadline?.kind === 'datetime' ? Date.parse(deadline.dueAt) :
   deadline?.kind === 'date' ? Date.parse(`${deadline.date}T00:00:00Z`) : Infinity;
 export function pending(items: LedgerAssignment[]) {
@@ -22,6 +25,8 @@ export function pending(items: LedgerAssignment[]) {
     .sort((a, b) => dateKey(deadlineOf(a)) - dateKey(deadlineOf(b)) || a.latest.title.localeCompare(b.latest.title, 'ja'));
 }
 export function deadlineText(deadline: Deadline | undefined) {
+  const missing = missingDeadlineText(deadline);
+  if (missing) return missing;
   if (!deadline || deadline.kind === 'unreadable') return '締切を確認できていません';
   if (deadline.kind === 'none') return '締切なし';
   if (deadline.kind === 'date') return `${Number(deadline.date.slice(5, 7))}/${Number(deadline.date.slice(8))}（日付のみ）`;
@@ -32,14 +37,14 @@ export function deadlineText(deadline: Deadline | undefined) {
 function Review({ item }: { item: LedgerAssignment }) {
   return <>{item.reviewReasons.map((reason, index) => <p className="review" key={index}>
     <span className="badge">要確認</span> {reason.kind === 'unreadable-deadline'
-      ? '今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。'
+      ? missingDeadlineText(item.latest.deadline) ?? '今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。'
       : reviewReasonText(reason)}</p>)}{item.presenceState === 'cancellation-candidate' &&
       <p className="review"><span className="badge">要確認</span> LMSの一覧で見つかりませんでした。LMSで確かめてください。</p>}</>;
 }
 function AssignmentRow({ item }: { item: LedgerAssignment }) {
   return <li className="assignment">
     <h3>{item.latest.title}</h3>
-    <p><ChangedDeadline value={deadlineText(deadlineOf(item))} /> {item.submission === 'submitted' && <span className="badge done">出せました</span>}
+    <p><ChangedDeadline value={deadlineText(displayDeadlineOf(item))} /> {item.submission === 'submitted' && <span className="badge done">出せました</span>}
       {item.presenceState === 'cancelled' && <span className="badge">取り消されました</span>}</p>
     {item.presenceState === 'ended' && <p className="muted">この課題は終了しました。</p>}
     {item.presenceState !== 'ended' && <Review item={item} />}
@@ -73,7 +78,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
   const finished = courseItems.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled' || item.presenceState === 'ended');
   const courseEntries = (owner: StudentCourse) => entries.filter(item => entryBelongsTo(item, owner));
   const changed = useDeadlineChanges(new Map(courses.map(c => [courseKey(c),
-    deadlineText(courseEntries(c)[0] ? entryDeadline(courseEntries(c)[0]!) : undefined)])));
+    deadlineText(courseEntries(c)[0] ? entryDisplayDeadline(courseEntries(c)[0]!) : undefined)])));
   const upcomingList = !!upcoming.length && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">締切の近い課題</h2>
       <ul>{upcoming.slice(0, 3).map(item => {
         const owner = data.courses.find(c => entryBelongsTo(item, c));
@@ -89,8 +94,8 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
       const { stale, failed } = fetchStatus(state, now);
       const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
       return stale || failed ? <p className="notice" key={state.system}>
-        {label}：{stale ? `最後にLMSから取ったのは${new Date(last!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。LMSを開くと新しくなります。` :
-          '一部の課題を確認できていません。LMSを開いて確かめてください。'}</p> : null;
+        {label}：{stale ? `${new Date(last!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。LMSを開くと新しくなります。` :
+          '課題をすべて確認できていません。LMSを開いて確かめてください。'}</p> : null;
     })}
     {!data.assignments.length && !hasManual && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
     {calendar ? <>{hasManual && upcomingList}<DemoCalendar courses={data.courses} fallback={hasManual ? undefined : upcomingList} now={now} /></> : upcomingList}
@@ -103,9 +108,9 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
             const next = courseEntries(c)[0];
             return <button className={`course-cell${changed.has(courseKey(c)) ? ' changed' : ''}`} key={courseKey(c)} onClick={() => select(c)}
               aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
-              <strong>{c.name}</strong>{next && <><span>{deadlineText(entryDeadline(next))}</span><span>{entryTitle(next)}</span>{next.kind === 'manual' && <small>手で入れた課題</small>}
+              <strong>{c.name}</strong>{next && <><span>{deadlineText(entryDisplayDeadline(next))}</span><span>{entryTitle(next)}</span>{next.kind === 'manual' && <small>手で入れた課題</small>}
                 {next.kind === 'lms' && (next.row.reviewReasons.length > 0 || next.row.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.row.reviewReasons[0]?.kind === 'unreadable-deadline'
-                  ? '締切を確認できていません。' : next.row.reviewReasons[0] ? reviewReasonText(next.row.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
+                  ? missingDeadlineText(next.row.latest.deadline) ?? '締切を確認できていません。' : next.row.reviewReasons[0] ? reviewReasonText(next.row.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
           })}{plans.filter(plan => (new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7) === d + 1 && plan.period === p + 1)
             .map(plan => <PlanCell key={plan.planId} plan={plan} selected={plan.planId === selectedPlanId}
@@ -146,10 +151,10 @@ export function StudentPage() {
   const client = firebase;
   const accountAction = (action: () => Promise<unknown>) => { setAuthError(false); void action().catch(() => setAuthError(true)); };
   return <>
-    {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin />
+    {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin returnTo={window.location.pathname === '/student/plan' ? window.location.pathname + window.location.search : undefined} />
       <button className="plain-button" onClick={() => accountAction(client.login)}>Googleでログイン</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
-        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
+        {state.status === 'ready' ? <>{window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} />}<StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
           {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</> : <p role="status">{state.status === 'error'
