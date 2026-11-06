@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 24/41（58%）、必須 22/37（59%）
+完成条件：全体 25/41（60%）、必須 23/37（62%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -50,7 +50,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C11 〈未定〉 観測から、新規・締切の変更・題名の変更・提出を台帳に記録する。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（新規・題名/締切変更・提出）
 - [x] C12 〈未定〉 一覧を最後まで取れた授業で2回続けて見当たらない課題を取消にする。1回だけなら取消の候補にとどめる。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（完全な一覧2回、詳細失敗、再出現）
 - [x] C13 〈未定〉 同じ観測を2回受け取っても台帳が変わらない。確かめ方：試験 → `packages/core/tests/ledger.test.ts`、`packages/server/tests/observations.emulator.test.ts`（再送と同時再送。文書・履歴・取消回数を維持）
-- [ ] C14 〈未定〉 サーバーをCloud Runに置き、台帳をFirestoreに書く。確かめ方：デプロイした先で観測を1つ送る → 初回デプロイとHosting転送のみ確認（[Issue #18の記録](docs/records/2026-11-06-issue-18-deployment.md)）。公開先への認証済み観測送信・Firestore保存は未確認
+- [x] C14 〈未定〉 サーバーをCloud Runに置き、台帳をFirestoreに書く。確かめ方：デプロイした先で観測を1つ送る → Issue #47、`demo-m6-live.browser.mjs`（公開先の認証済み観測・本人の受領記録・台帳の締切と観測IDを照合）。[再デプロイと保存の記録](docs/records/2026-11-06-issue-47-live.md)
 
 ### カレンダー
 
@@ -85,7 +85,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C31 〈未定〉 架空の授業と課題を載せた模擬LMS（CoursePowerとは違う作り）をFirebase Hostingに置く。確かめ方：公開したURL → Issue #59、[公開先の確認記録](docs/records/2026-11-06-issue-59-resumed.md)（Hostingの `/demo-lms` で学生ログイン・架空の授業と課題・先生役の締切延長を確認）
 - [x] C32 〈未定〉 模擬LMSは、`lms-definitions/` に読み取り方を1つ足すだけで取得できる。確かめ方：試験 → `packages/core/tests/demo-lms.test.mjs`、`packages/web/tests/demo-reader.test.mjs`、`packages/web/tests/demo.browser.mjs`（描いたDOMのouterHTML→共通reader→観測API→学生・面談画面、先生役の締切延長と応答を失った再送を確認）。記録：`docs/records/2026-11-06-issue-19-calendar-integration.md`
 - [x] C33 〈未定〉 試す人のための学生と支援担当のアカウントがあり、拡張機能を入れなくても一連の操作をブラウザで試せる。確かめ方：入れていないブラウザで操作 → Issue #59、`packages/web/tests/demo-live.browser.mjs`（公開先・3組6文脈・学生と面談の即時更新・他組不変・別組の読み取り24通りを拒否）。[操作結果と画像](docs/records/2026-11-06-issue-59-resumed.md)
-- [ ] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6 → ローカルの模擬経路は8/8（`pnpm metrics:m6`、[Issue #47の記録](docs/records/2026-11-06-issue-47-verification.md)）。デプロイ先は#59完了後に確認
+- [ ] C34 〈未定〉 「先生が締切を延ばす → 学生がLMSを開く → カレンダーと面談画面が変わる」が最後まで通る。確かめ方：指標M6 → Issue #47、ローカル・公開先とも8/8（体験用カレンダー。保存済み予定・版と再送時の不変も照合）。[公開先の操作結果と画像](docs/records/2026-11-06-issue-47-live.md)。体験用カレンダーで通った分をC34の合格とするか（design.md 7節の分け方の提案）は2人の合意待ち
 
 ### 提出
 
@@ -108,7 +108,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 | M3 | お知らせから締切の変更を拾えた割合（再現率）と、拾ったうち正しかった割合（適合率） | 再現率100%（18/18）、適合率100%（18/18）。初回・作成者既知の30件、未知の確認用は未実施（[記録](docs/records/2026-11-06-m3.md)、2026-11-06） | 再現率90%以上、適合率95%以上 | 架空のお知らせ30件 |
 | M4 | LMSを開いた回数のうち、裏の取得が最後まで済んだ割合 | 未測定 | 95%以上 | 拡張機能が手元で数える（回数と成否だけ。SIDや課題の中身は残さない） |
 | M5 | LMSを開いてから、学生の画面とカレンダーに変化が出るまでの時間（中央値） | 未測定 | 30秒以内 | M4と同じ記録の時刻から |
-| M6 | 試し方の筋書き（C34）の手順のうち通った割合 | 8/8（100%、ローカル・模擬カレンダーのみ、`pnpm metrics:m6`、2026-11-06）。デプロイ先は未測定 | 100% | 筋書きを自動で流す試験 |
+| M6 | 試し方の筋書き（C34）の手順のうち通った割合 | ローカル8/8・公開先8/8（各100%、体験用カレンダー、2026-11-06、[記録](docs/records/2026-11-06-issue-47-live.md)）。実物のGoogleカレンダーは対象外 | 100% | 筋書きを自動で流す試験 |
 | M7 | 実際の課題で、手で作った一覧に対して自動で拾えた割合 | 未測定 | 100% | 一覧は手元だけに置き、割合だけをここに書く |
 
 ## 日程の目安（案）
