@@ -29,3 +29,9 @@ it('removes the same calendar event and keeps the deletion pending until acknowl
   const cancelled = reconcileDesiredCalendarItem(created, source, manualDeadlineDesired({ ...row, status: 'cancelled' }), null, () => 'other')!;
   expect(cancelled).toMatchObject({ eventId: 'abcde', generation: 1, desiredRevision: 2, appliedRevision: 0, desired: { state: 'deleted' } });
 });
+
+it('keeps an overdue manual deadline on the calendar until explicitly cancelled', () => {
+  const overdue = { ...row, date: '2000-01-01' };
+  expect(manualDeadlineDesired(overdue)).toMatchObject({ state: 'present', event: { start: { date: '2000-01-01' } } });
+  expect(manualDeadlineDesired({ ...overdue, status: 'cancelled' })).toEqual({ state: 'deleted' });
+});

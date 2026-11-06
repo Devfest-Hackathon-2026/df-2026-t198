@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "definitionId": "coursepower",
-  "version": 3,
+  "version": 4,
   "readerVersion": 2,
   "pageChecks": {
     "loggedIn": {
@@ -72,7 +72,10 @@
         "after": "限"
       }
     },
-    "materialsLink": null
+    "materialsLink": null,
+    "term": {
+      "selector": "span.term"
+    }
   },
   "materials": {
     "rows": ".kyozai_table tr:has(> td.kyozaititleCell[id^=\"REP\"])",
@@ -106,7 +109,7 @@
       "selector": ".breadCrumb .current .textoverflow"
     },
     "due": {
-      "selector": ".cs_table3a tr:has(> th:contains(\"提出期間\")) td .red3"
+      "selector": ".cs_table3a tr:has(> th:contains(\"提出期間\")) td .red3, .cs_table3a tr:has(> th:contains(\"提出期間\")) td:not(:has(.red3))"
     },
     "status": {
       "selector": ".cs_table3a tr:has(> th:contains(\"状況\")) td .green1"

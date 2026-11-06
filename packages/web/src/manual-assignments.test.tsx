@@ -4,9 +4,9 @@ import type { User } from 'firebase/auth';
 import type { ManualAssignment } from '../../core/src/types';
 import { ManualAssignments, ManualAssignmentRow, manualAssignmentActions } from './manual-assignments';
 import { StudentView } from './student';
-import { studentFixture } from './student-fixture';
+import { assignment, dated, studentFixture } from './student-fixture';
 import { emptySession, sessionDeadlineEntries } from './session-model';
-import { entryTitle } from './deadline-entries';
+import { deadlineEntries, entryTitle } from './deadline-entries';
 const row: ManualAssignment = { manualAssignmentId: 'fictional-id', title: '架空の紙の課題', date: '2026-11-09', time: null,
   course: { system: 'demo-lms', courseId: 'math' }, courseName: '架空の線形代数', memo: '<架空のメモ>',
   createdBy: 'supporter-a', createdByRole: 'supporter', createdAt: '2026-11-07T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' };
@@ -53,4 +53,17 @@ it('distinguishes invalid input from retryable request failures', async () => {
   const input = { title: row.title, date: row.date, time: row.time, course: row.course, memo: row.memo };
   await expect(api.add('fictional-id', input)).rejects.toThrow('invalid-input');
   await expect(api.add('fictional-id', input)).rejects.toThrow('request-failed');
+});
+
+it('excludes ended LMS tasks from both deadline lists while keeping overdue manual tasks in the student list', () => {
+  const ended = assignment('架空の終了したLMS課題', dated('2026-11-09'), { presenceState: 'ended' });
+  const overdue = { ...row, date: '2026-11-06' };
+  const data = { ...studentFixture(), assignments: [ended], manualAssignments: [overdue] };
+  expect(deadlineEntries(data.assignments, data.manualAssignments).map(entryTitle)).toEqual([row.title]);
+  const html = renderToStaticMarkup(<StudentView data={data} now={Date.parse('2026-11-08T10:00:00+09:00')} />);
+  expect(html).toContain(row.title);
+  expect(html).not.toContain(ended.latest.title);
+  const session = { ...emptySession(), assignments: [ended], manualAssignments: [row],
+    context: { lastSessionAt: null, nextSessionAt: '2026-11-10T10:00:00+09:00' } };
+  expect(sessionDeadlineEntries(session, new Date('2026-11-08T10:00:00+09:00')).map(entryTitle)).toEqual([row.title]);
 });

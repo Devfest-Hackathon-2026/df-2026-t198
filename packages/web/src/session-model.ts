@@ -21,7 +21,7 @@ export function buildSessionView(data: Pick<SessionData, 'assignments' | 'change
   const { lastSessionAt, nextSessionAt } = data.context;
   const next = nextSessionAt ? new Date(nextSessionAt) : null;
   const deadlines = data.assignments.filter(row => {
-    if (!next || row.submission === 'submitted' || row.presenceState === 'cancelled') return false;
+    if (!next || row.submission === 'submitted' || row.presenceState === 'cancelled' || row.presenceState === 'ended') return false;
     const deadline = row.officialDeadline?.deadline;
     if (deadline?.kind === 'datetime') {
       const due = Date.parse(deadline.dueAt);
@@ -36,7 +36,7 @@ export function buildSessionView(data: Pick<SessionData, 'assignments' | 'change
   const changes = lastSessionAt ? data.changes.filter(change =>
     Date.parse(change.recordedAt) > Date.parse(lastSessionAt) && Date.parse(change.recordedAt) <= now.getTime())
     .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt)) : [];
-  const review = data.assignments.filter(row => row.presenceState !== 'cancelled' && row.reviewReasons.length > 0);
+  const review = data.assignments.filter(row => row.presenceState !== 'cancelled' && row.presenceState !== 'ended' && row.reviewReasons.length > 0);
   return { deadlines, changes, review };
 }
 export function sessionDeadlineEntries(data: SessionData, now: Date) {
@@ -67,7 +67,7 @@ export function formatDeadline(deadline: Deadline) {
 }
 const changeLabels: Record<AssignmentChange['kind'], string> = { new: '課題が出ました', 'title-changed': '題名が変わりました',
   'deadline-changed': '締切が変わりました', submitted: '提出しました', 'cancellation-candidate': '一覧に見当たりません',
-  cancelled: '課題が取り消されました', restored: '一覧に戻りました' };
+  cancelled: '課題が取り消されました', restored: '一覧に戻りました', ended: '課題が終了しました' };
 export function changeDescription(change: AssignmentChange) {
   const value = (v: AssignmentChange['before']) => typeof v === 'string' ? v : v ? formatDeadline(v) : '—';
   if (change.kind === 'deadline-changed') return `締切が ${value(change.before)} から ${value(change.after)} に変わりました`;
@@ -83,7 +83,8 @@ export function reviewDescription(row: LedgerAssignment) {
 // Period times are not configured yet. Use only whole future days before the due date.
 export function preparationCandidates(data: SessionData, now: Date): PreparationCandidate[] {
   const candidates: PreparationCandidate[] = [];
-  const periods = Math.max(5, ...data.courses.flatMap(course => course.slots.map(slot => slot.period)));
+  const courses = data.courses.filter(course => course.currentTerm !== false);
+  const periods = Math.max(5, ...courses.flatMap(course => course.slots.map(slot => slot.period)));
   for (const row of buildSessionView(data, now).deadlines) {
     const deadline = row.officialDeadline!.deadline;
     if (deadline.kind !== 'date' && deadline.kind !== 'datetime') continue;
@@ -98,7 +99,7 @@ export function preparationCandidates(data: SessionData, now: Date): Preparation
       const weekday = cursor.getUTCDay();
       if (weekday === 0 || weekday === 6) continue;
       for (let period = 1; period <= periods && count < 2; period++) {
-        if (data.courses.some(course => course.slots.some(slot => slot.weekday === weekday && slot.period === period))) continue;
+        if (courses.some(course => course.slots.some(slot => slot.weekday === weekday && slot.period === period))) continue;
         candidates.push({ assignment: row.key, date, period }); count++;
       }
     }

@@ -18,7 +18,7 @@ const deadlineOf = (item: LedgerAssignment | undefined) => item?.officialDeadlin
 const dateKey = (deadline: Deadline | undefined) => deadline?.kind === 'datetime' ? Date.parse(deadline.dueAt) :
   deadline?.kind === 'date' ? Date.parse(`${deadline.date}T00:00:00Z`) : Infinity;
 export function pending(items: LedgerAssignment[]) {
-  return items.filter(item => item.submission !== 'submitted' && item.presenceState !== 'cancelled')
+  return items.filter(item => item.submission !== 'submitted' && item.presenceState !== 'cancelled' && item.presenceState !== 'ended')
     .sort((a, b) => dateKey(deadlineOf(a)) - dateKey(deadlineOf(b)) || a.latest.title.localeCompare(b.latest.title, 'ja'));
 }
 export function deadlineText(deadline: Deadline | undefined) {
@@ -41,7 +41,8 @@ function AssignmentRow({ item }: { item: LedgerAssignment }) {
     <h3>{item.latest.title}</h3>
     <p><ChangedDeadline value={deadlineText(deadlineOf(item))} /> {item.submission === 'submitted' && <span className="badge done">出せました</span>}
       {item.presenceState === 'cancelled' && <span className="badge">取り消されました</span>}</p>
-    <Review item={item} />
+    {item.presenceState === 'ended' && <p className="muted">この課題は終了しました。</p>}
+    {item.presenceState !== 'ended' && <Review item={item} />}
     <details><summary>書いてあったこと</summary><p>{deadlineOf(item)?.dueText ?? item.latest.deadline.dueText}</p>
       <p className="muted">{new Date(item.officialDeadline?.fetchedAt ?? item.lastSeenAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} 時点</p></details>
     <a href={item.latest.url} target="_blank" rel="noreferrer">LMSで見る ›</a>
@@ -57,20 +58,21 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
       panel.current?.scrollIntoView({ block: 'start' });
     }
   }, [selected, selectedPlanId]);
+  const courses = data.courses.filter(course => course.currentTerm !== false);
   const course = data.courses.find(item => courseKey(item) === selected);
   const hasManual = data.manualAssignments.some(row => row.status === 'active');
   const entries = deadlineEntries(data.assignments, data.manualAssignments);
   const upcoming = entries.filter(item => Number.isFinite(deadlineValue(entryDeadline(item))));
   const plans = data.plans.filter(plan => plan.status === 'active');
   const selectedPlan = plans.find(plan => plan.planId === selectedPlanId);
-  const days = Math.max(5, ...plans.map(plan => new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7), ...data.courses.flatMap(c => c.slots.map(s => s.weekday)));
-  const periods = Math.max(5, ...plans.map(plan => plan.period), ...data.courses.flatMap(c => c.slots.map(s => s.period)));
+  const days = Math.max(5, ...plans.map(plan => new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7), ...courses.flatMap(c => c.slots.map(s => s.weekday)));
+  const periods = Math.max(5, ...plans.map(plan => plan.period), ...courses.flatMap(c => c.slots.map(s => s.period)));
   const select = (value: StudentCourse) => { setSelectedPlanId(null); setSelected(courseKey(value)); };
-  const unscheduled = data.courses.filter(c => c.slots.length === 0);
+  const unscheduled = courses.filter(c => c.slots.length === 0);
   const courseItems = course ? data.assignments.filter(item => belongsTo(item, course)) : [];
-  const finished = courseItems.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled');
+  const finished = courseItems.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled' || item.presenceState === 'ended');
   const courseEntries = (owner: StudentCourse) => entries.filter(item => entryBelongsTo(item, owner));
-  const changed = useDeadlineChanges(new Map(data.courses.map(c => [courseKey(c),
+  const changed = useDeadlineChanges(new Map(courses.map(c => [courseKey(c),
     deadlineText(courseEntries(c)[0] ? entryDeadline(courseEntries(c)[0]!) : undefined)])));
   const upcomingList = !!upcoming.length && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">締切の近い課題</h2>
       <ul>{upcoming.slice(0, 3).map(item => {
@@ -96,7 +98,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
       <div><div className="timetable-scroll"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
         <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d}>{'月火水木金土日'[d]}</th>)}</tr></thead>
         <tbody>{Array.from({ length: periods }, (_, p) => <tr key={p}><th scope="row">{p + 1}限</th>
-          {Array.from({ length: days }, (_, d) => <td key={d}>{data.courses.filter(c =>
+          {Array.from({ length: days }, (_, d) => <td key={d}>{courses.filter(c =>
             c.slots.some(slot => slot.weekday === d + 1 && slot.period === p + 1)).map(c => {
             const next = courseEntries(c)[0];
             return <button className={`course-cell${changed.has(courseKey(c)) ? ' changed' : ''}`} key={courseKey(c)} onClick={() => select(c)}

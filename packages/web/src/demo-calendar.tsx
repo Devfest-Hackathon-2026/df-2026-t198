@@ -38,7 +38,7 @@ export function DemoCalendarView({ integration, pending, now = Date.now(), cours
         <ul>{events.filter(([, { event }]) => eventDay(event) === day).map(([id, { event }]) => {
           const separator = event.summary.indexOf('：');
           const prefix = separator < 0 ? null : event.summary.slice(0, separator);
-          const course = courses.some(c => c.name === prefix || `【要確認】${c.name}` === prefix) ? prefix : null;
+          const course = prefix === '準備' || courses.some(c => c.name === prefix || `【要確認】${c.name}` === prefix) ? prefix : null;
           const title = course ? event.summary.slice(separator + 1) : event.summary;
           return <li key={id} className={`calendar-event${changed.has(id) ? ' changed' : ''}`}>
             <time>{eventTime(event)}</time> <strong>{title}</strong>{course && <span className="muted">{course}</span>}

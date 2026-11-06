@@ -4,6 +4,29 @@ import { deadlineText, pending, StudentView } from './student';
 import { assignment, dated, studentFixture } from './student-fixture';
 
 describe('学生が締切を確かめる画面', () => {
+  it('終了した課題は次の締切に数えず、過去の学期の授業は時間割にも出さない', () => {
+    const data = studentFixture();
+    const ended = assignment('終了したレポート', dated('2026-11-12'));
+    ended.presenceState = 'ended';
+    data.assignments = [ended];
+    expect(pending(data.assignments)).toEqual([]);
+    data.courses[0]!.currentTerm = false;
+    const html = renderToStaticMarkup(<StudentView data={data} />);
+    expect(html).not.toContain('架空の線形代数');
+    expect(html).not.toContain('終了したレポート');
+    expect(html).not.toContain('締切の近い課題');
+  });
+  it('前の学期でも残っている締切は一覧に出し、時間割には出さない', () => {
+    const data = studentFixture();
+    data.courses[0]!.currentTerm = false;
+    const html = renderToStaticMarkup(<StudentView data={data} />);
+    expect(html).toContain('締切の近い課題');
+    expect(html).toContain('レポートA');
+    expect(html).toContain('レポートB');
+    expect(html.match(/架空の線形代数/g)).toHaveLength(2); // 締切の一覧だけ
+    expect(html).not.toContain('提出した課題');
+    expect(html).not.toContain('取り消した課題');
+  });
   it('常設の操作説明を省き、要確認の詳しい説明は授業を選んだ先に置く', () => {
     const html = renderToStaticMarkup(<StudentView data={studentFixture()} />);
     expect(html).not.toContain('授業を押すと、課題が開きます。');

@@ -16,7 +16,7 @@ export function deadlineValue(deadline: Deadline | undefined) {
 }
 export function deadlineEntries(assignments: LedgerAssignment[], manual: ManualAssignment[]): DeadlineEntry[] {
   return [
-    ...assignments.filter(row => row.presenceState !== 'cancelled' && row.submission !== 'submitted').map(row => ({ kind: 'lms' as const, row })),
+    ...assignments.filter(row => row.presenceState !== 'cancelled' && row.presenceState !== 'ended' && row.submission !== 'submitted').map(row => ({ kind: 'lms' as const, row })),
     ...manual.filter(row => row.status === 'active').map(row => ({ kind: 'manual' as const, row })),
   ].sort((a, b) => deadlineValue(entryDeadline(a)) - deadlineValue(entryDeadline(b)) || entryTitle(a).localeCompare(entryTitle(b), 'ja'));
 }

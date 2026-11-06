@@ -1,6 +1,7 @@
 import { sessionFromUrl } from './session.js';
 import type { SessionFound } from './session.js';
 import { executeLmsRequest } from './lms-request.js';
+import { LmsReadError } from './collection-diagnostics.js';
 import { showChangeNotice } from './change-notice.js';
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
@@ -10,7 +11,8 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
   if (sender.id !== chrome.runtime.id || !current || request.sid !== current) { respond({ ok: false }); return false; }
   void executeLmsRequest(request.operation, window.location.href, current).then(
     page => respond({ ok: true, page }), error => respond({ ok: false,
-      code: error instanceof Error && error.message === 'not-logged-in' ? 'not-logged-in' : 'http-error' }),
+      code: error instanceof Error && error.message === 'not-logged-in' ? 'not-logged-in' : 'http-error',
+      ...(error instanceof LmsReadError ? { diagnostic: error.diagnostic } : {}) }),
   );
   return true;
 });
