@@ -92,11 +92,13 @@ export function PlanCell({ plan, selected, onSelect }: { plan: PreparationPlan; 
     {plan.createdByRole === 'supporter' && <small>支援担当が入れた</small>}
   </button>;
 }
+export function comparePreparationPlans(a: PreparationPlan, b: PreparationPlan) {
+  return a.date.localeCompare(b.date) || Date.parse(a.startsAt) - Date.parse(b.startsAt) || a.planId.localeCompare(b.planId);
+}
 export function PlanList({ plans, actions, viewerUid, own }: { plans: PreparationPlan[]; actions?: PlanActions | undefined; viewerUid?: string | undefined; own: boolean }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useOperationMessage();
-  const visible = plans.filter(plan => plan.status !== 'cancelled').sort((a, b) =>
-    a.date.localeCompare(b.date) || Date.parse(a.startsAt) - Date.parse(b.startsAt) || a.planId.localeCompare(b.planId));
+  const visible = plans.filter(plan => plan.status !== 'cancelled').sort(comparePreparationPlans);
   if (!visible.length) return message ? <p role="status">{message}</p> : null;
   async function act(plan: PreparationPlan, action: 'done' | 'later') {
     if (!actions?.act || busy) return;

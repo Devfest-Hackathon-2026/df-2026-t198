@@ -3,7 +3,7 @@ import { deadlineEntries, entryBelongsTo, entryDeadline, entryDisplayDeadline, e
 import { PlanLinkAction } from './plan-progress';
 import { fetchStatus } from './fetch-status';
 import { missingDeadlineText, reviewReasonText } from './review-reason';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
 import { planActions, PlanCell, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
 import { DemoCalendar } from './demo-calendar';
@@ -54,7 +54,7 @@ function AssignmentRow({ item }: { item: LedgerAssignment }) {
     <a href={item.latest.url} target="_blank" rel="noreferrer">LMSで見る ›</a>
   </li>;
 }
-export function StudentView({ data, now = Date.now(), calendar = false, actions, manualActions }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined }) {
+export function StudentView({ data, now = Date.now(), calendar = false, actions, manualActions, planLink }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
@@ -96,8 +96,9 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
         </button> : <span>{deadlineText(entryDeadline(item))} {entryTitle(item)}{item.kind === 'manual' && <small className="manual-author"> {manualAuthor(item.row)}</small>}</span>}</li>;
       })}</ul></section>;
   return <OperationMessages>
+    {planLink}
     <div className="student-heading"><h1>時間割と課題</h1><p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>
-      <p className="muted">黄色は、今変わった締切の目印です。しばらくすると元の色に戻ります。</p></div>
+      {changed.size > 0 && <p className="muted">黄色は、今変わった締切の目印です。しばらくすると元の色に戻ります。</p>}</div>
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
@@ -165,7 +166,8 @@ export function StudentPage() {
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin returnTo={window.location.pathname === '/student/plan' ? window.location.pathname + window.location.search : undefined} />
       <button className="plain-button" disabled={authBusy} onClick={() => accountAction(client.login)}>{authBusy ? 'ログイン中…' : 'Googleでログイン'}</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
-        {state.status === 'ready' ? <>{window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} />}<StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
+        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
+          planLink={window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} />}
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
           {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</> : <p role="status">{state.status === 'error'
