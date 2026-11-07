@@ -22,6 +22,8 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     for (const name of ['definition.json', 'navigation.json']) await cp(new URL(`../../../lms-definitions/coursepower/${name}`, import.meta.url), join(dir, `lms-definitions/coursepower/${name}`));
     await mkdir(join(dir, 'lms-definitions/kulms'), { recursive: true });
     await cp(new URL('../../../lms-definitions/kulms/definition.json', import.meta.url), join(dir, 'lms-definitions/kulms/definition.json'));
+    await mkdir(join(dir, 'lms-definitions/kulasis'), { recursive: true });
+    await cp(new URL('../../../lms-definitions/kulasis/definition.json', import.meta.url), join(dir, 'lms-definitions/kulasis/definition.json'));
     await symlink(fileURLToPath(new URL('../node_modules', import.meta.url)), join(extensionDir, 'node_modules'), 'dir');
     const config = {
       oauthClientId: '123-synthetic.apps.googleusercontent.com',
@@ -60,6 +62,10 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     expect(manifest.host_permissions).toContain('https://lms.gakusei.kyoto-u.ac.jp/*');
     expect(manifest.content_scripts).toContainEqual({ matches: ['https://lms.gakusei.kyoto-u.ac.jp/*'], js: ['kulms-content.js'], run_at: 'document_idle' });
     expect(await readFile(join(extensionDir, 'dist/kulms-content.js'), 'utf8')).toContain('same-origin');
+    expect(manifest.host_permissions).toContain('https://www.k.kyoto-u.ac.jp/*');
+    expect(manifest.content_scripts).toContainEqual({ matches: ['https://www.k.kyoto-u.ac.jp/student/*'], js: ['kulasis-content.js'], run_at: 'document_idle' });
+    expect(await readFile(join(extensionDir, 'dist/kulasis-content.js'), 'utf8')).toContain('shift_jis');
+    expect(manifest.content_security_policy.extension_pages.split(' ')).toContain('https://lms.gakusei.kyoto-u.ac.jp');
     expect(manifest.oauth2).toEqual({ client_id: config.oauthClientId, scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/gmail.send'] });
     const source = await readFile(join(extensionDir, 'dist/service-worker.js'), 'utf8');
     expect(source).toContain(config.firebase.apiKey);

@@ -1,12 +1,15 @@
+import { linkedCourses } from '../../core/src/course-links';
 import { useEffect, useRef, useState } from 'react';
 import type { PreparationCandidate } from '../../core/src/types';
 import { PlanCell, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
 import { buildSessionView, dayInZone, formatDeadline, preparationCandidates, reviewDescription, type SessionData } from './session-model';
 import { useOperationMessage } from './operation-messages';
+import { deadlineEntries, entryBelongsTo, entryTitle } from './deadline-entries';
 
 export function SessionPlanning({ data, now, actions, own = false, viewerUid }: {
   data: SessionData; now: Date; actions?: PlanActions | undefined; own?: boolean; viewerUid?: string | undefined;
 }) {
+  data = { ...data, courses: linkedCourses(data.courses) };
   const [candidate, setCandidate] = useState<PreparationCandidate | null>(null);
   const [message, setMessage] = useOperationMessage();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -29,6 +32,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
     !data.plans.some(plan => plan.status === 'active' && plan.date === candidate.date && plan.period === candidate.period &&
       plan.assignment.system === candidate.assignment.system && plan.assignment.sourceId === candidate.assignment.sourceId));
   const courses = data.courses.filter(course => course.currentTerm !== false);
+  const entries = deadlineEntries(data.assignments, data.manualAssignments, now.getTime());
   const periods = Math.max(5, ...data.plans.filter(plan => plan.status === 'active').map(plan => plan.period), ...courses.flatMap(course => course.slots.map(slot => slot.period)));
   const weekOf = (date: string) => {
     const monday = new Date(`${date}T00:00:00Z`);
@@ -76,7 +80,11 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
       <tbody>{Array.from({ length: periods }, (_, i) => <tr key={i}><th scope="row">{i + 1}限</th>
         {dates.map((date, d) => <td key={date}>
           {courses.filter(course => course.slots.some(slot => slot.weekday === d + 1 && slot.period === i + 1))
-            .map(course => <span className="session-course" key={JSON.stringify([course.system, course.courseId])}>{course.name}</span>)}
+            .map(course => {
+              const next = entries.find(entry => entryBelongsTo(entry, course));
+              return <span className="session-course" key={JSON.stringify([course.system, course.courseId])}>{course.name}
+                {next && <small>{entryTitle(next)}</small>}</span>;
+            })}
           {candidates.filter(candidate => candidate.date === date && candidate.period === i + 1).map(candidate =>
             <span className="session-candidate" key={JSON.stringify(candidate)}><strong>候補</strong>{task?.latest.title}
               {actions && <button onClick={() => { setMessage(''); setCandidate(candidate); }} aria-label={`${candidate.date} ${candidate.period}限に入れる`}>入れる</button>}</span>)}
@@ -86,6 +94,11 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
         </td>)}
       </tr>)}</tbody>
     </table></div>
+    {courses.some(course => !course.slots.length) && <section aria-label="曜日・時限がまだ分からない授業">
+      <h2>曜日・時限がまだ分からない授業</h2>
+      {courses.filter(course => !course.slots.length).map(course => <p key={JSON.stringify([course.system, course.courseId])}>
+        {course.name}{entries.filter(entry => entryBelongsTo(entry, course)).map(entry => <span key={entryTitle(entry)}>：{entryTitle(entry)}</span>)}</p>)}
+    </section>}
     {selectedPlan && <aside ref={panel} tabIndex={-1} className="course-panel preparation-details" id="preparation-details" aria-label="準備の予定の詳細">
       <div className="panel-heading"><h2>準備の予定</h2><button onClick={() => setSelectedPlanId(null)}>閉じる</button></div>
       <PlanSummary plan={selectedPlan} assignments={data.assignments} /><span>{selectedPlan.period}限（日本時間）</span>

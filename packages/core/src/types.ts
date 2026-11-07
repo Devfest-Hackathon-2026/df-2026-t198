@@ -27,6 +27,8 @@ export interface Course {
   url?: string;
   /** Omitted by older collectors; only explicit false excludes a course. */
   currentTerm?: boolean;
+  /** Explicit support-link destination, present only on KULASIS source courses. */
+  kulmsSiteId?: string;
 }
 
 export type Deadline = { dueText: string; timeZone: string } & (

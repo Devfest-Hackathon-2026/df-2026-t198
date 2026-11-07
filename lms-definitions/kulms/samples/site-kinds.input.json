@@ -1,0 +1,9 @@
+[
+  { "id": "fictional-site-0", "title": "架空の授業0", "type": "project", "published": true },
+  { "id": "fictional-site-1", "title": "架空の授業1", "type": "workspace", "published": true },
+  { "id": "fictional-site-2", "title": "架空の授業2", "type": "course", "published": false },
+  { "id": "fictional-site-3", "title": "架空の授業3" },
+  { "id": "fictional-site-4", "title": "架空の授業4", "type": "unknown-kind", "published": true },
+  { "id": "fictional-site-5", "title": "架空の授業5", "type": "course", "published": "unknown-state" },
+  { "id": "fictional-site-6", "title": "架空の授業6", "type": "course", "published": true }
+]

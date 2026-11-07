@@ -90,8 +90,11 @@ export function parseObservation(value: unknown): Observation {
   timestamp(input['fetchedAt']);
   const pastCourses = new Set<string>();
   const courseIds = list(input['catalogCourses'], 100).map(value => {
-    const course = record(value, ['courseId', 'name', 'slots'], ['url', 'currentTerm']);
+    const course = record(value, ['courseId', 'name', 'slots'], ['url', 'currentTerm', 'kulmsSiteId']);
     id(course['courseId']); text(course['name']);
+    if (Object.hasOwn(course, 'kulmsSiteId')) {
+      requireValid(input['system'] === 'kulasis'); id(course['kulmsSiteId']);
+    }
     if (Object.hasOwn(course, 'currentTerm')) {
       requireValid(typeof course['currentTerm'] === 'boolean');
       if (course['currentTerm'] === false) pastCourses.add(course['courseId']);
@@ -137,12 +140,15 @@ export function parseObservation(value: unknown): Observation {
     return assignment['sourceId'];
   });
   unique(sources);
+  if (input['system'] === 'kulasis' && input['definitionId'] === 'kulasis-timetable') requireValid(results.length === 0 && sources.length === 0);
   for (const value of list(input['failures'])) {
     const failure = record(value, ['courseId', 'kind', 'detail']);
+    const omitted = input['system'] === 'kulms' && failure['kind'] === 'parse' && failure['detail'] === 'course-limit';
+    if (omitted && failure['courseId'] !== null) id(failure['courseId']);
     requireValid(failure['courseId'] === null ||
-      (typeof failure['courseId'] === 'string' && courseIds.includes(failure['courseId'])));
+      (typeof failure['courseId'] === 'string' && (courseIds.includes(failure['courseId']) || omitted)));
     oneOf(failure['kind'], ['not-logged-in', 'http', 'parse']);
-    oneOf(failure['detail'], ['not-logged-in', 'http-error', 'parse-error', 'list-incomplete', 'detail-unavailable']);
+    oneOf(failure['detail'], ['not-logged-in', 'http-error', 'parse-error', 'list-incomplete', 'detail-unavailable', ...(omitted ? ['course-limit'] : [])]);
   }
   return structuredClone(input) as unknown as Observation;
 }

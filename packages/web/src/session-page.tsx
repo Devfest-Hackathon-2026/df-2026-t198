@@ -1,3 +1,4 @@
+import { linkedCourses } from '../../core/src/course-links';
 import { manualAssignmentActions, ManualAssignments, ManualAssignmentRow, type ManualAssignmentActions } from './manual-assignments';
 import { entryId } from './deadline-entries';
 import { planProgress } from './plan-progress';
@@ -113,6 +114,7 @@ function StudentSession({ uid, user, services, planning, displayName }: { uid: s
 export function SessionDetails({ data, now, own, save, uid, planning, actions, manualActions, viewerUid, displayName }: {
   data: SessionData; now: Date; own: boolean; uid: string; planning: boolean;
   actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; viewerUid?: string | undefined; displayName?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
+  data = { ...data, courses: linkedCourses(data.courses) };
   const view = buildSessionView(data, now);
   const deadlines = sessionDeadlineEntries(data, now);
   const promises = data.plans.filter(plan => plan.status !== 'cancelled' && data.context.lastSessionAt &&

@@ -1,4 +1,5 @@
 import { handleKulmsMessage } from './kulms-worker.js';
+import { handleKulasisMessage } from './kulasis-worker.js';
 import { startCalendarSync, handleCalendarMessage } from './calendar-browser.js';
 import { isSessionFound, sessionFromUrl } from './session.js';
 import { handleAuthProbeMessage } from './auth-probe-worker.js';
@@ -18,6 +19,8 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
   }
   const kulmsHandled = handleKulmsMessage(message, sender, respond);
   if (kulmsHandled !== undefined) return kulmsHandled;
+  const kulasisHandled = handleKulasisMessage(message, sender, respond);
+  if (kulasisHandled !== undefined) return kulasisHandled;
   const digestHandled = handleDigestMessage(message, sender, respond);
   if (digestHandled !== undefined) return digestHandled;
   const calendarHandled = handleCalendarMessage(message, sender, respond);

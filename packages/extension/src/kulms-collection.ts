@@ -2,7 +2,7 @@ import definition from '../../../lms-definitions/kulms/definition.json' with { t
 import { KULMS_ORIGIN, readSakaiAssignment, readSakaiCourse, sakaiCollection, sakaiId, sakaiRecord } from '../../core/src/sakai-reader.js';
 import type { FetchFailure, Observation } from '../../core/src/types.js';
 
-interface Options { fetcher: typeof fetch; observationId: string; fetchedAt: string; signal: AbortSignal }
+interface Options { fetcher: typeof fetch; observationId: string; fetchedAt: string; signal: AbortSignal; prioritySiteIds?: string[] }
 const failure = (error: unknown, courseId: string | null): FetchFailure => {
   const message = error instanceof Error ? error.message : '';
   const kind = message === 'not-logged-in' ? 'not-logged-in' : message === 'http-error' ? 'http' : 'parse';
@@ -50,21 +50,30 @@ export async function collectKulmsObservation(options: Options): Promise<Observa
     if (!user || typeof user !== 'object' || !sakaiRecord(user)['id']) throw new Error('not-logged-in');
     const userId = sakaiId(sakaiRecord(user)['id']);
     const ids = new Set<string>();
+    const catalog: Observation['catalogCourses'] = [];
     for (let page = 0, start = 0; ; page++) {
       if (page >= 100) throw new Error('parse-error');
       const sites = sakaiCollection(await retry(`site.json?_limit=200&_start=${start}`), definition.site.collection);
       if (!sites.length) break;
       for (const site of sites) {
         const course = readSakaiCourse(definition, site);
-        if (ids.has(course.courseId) || ids.size >= 100) throw new Error('parse-error');
-        ids.add(course.courseId); observation.catalogCourses.push(course);
+        if (ids.has(course.courseId)) throw new Error('parse-error');
+        ids.add(course.courseId);
+        const row = sakaiRecord(site);
+        // Only upstream Sakai's known values exclude; missing/new values stay eligible.
+        if (row[definition.siteFilter.published] === false || definition.siteFilter.excludedTypes.includes(String(row[definition.siteFilter.type]))) continue;
+        catalog.push(course);
       }
       start += sites.length;
     }
     const sources = new Set<string>();
-    for (const course of observation.catalogCourses) {
+    const priority = new Set(options.prioritySiteIds ?? []);
+    const selectTerm = catalog.length > 100 || priority.size > 0;
+    catalog.sort((a, b) => Number(priority.has(b.courseId)) - Number(priority.has(a.courseId)));
+    for (const course of catalog) {
+      const assignments: Observation['assignments'] = [];
+      let courseFailure: FetchFailure | undefined;
       const result = { courseId: course.courseId, listComplete: false, seenSourceIds: [] as string[], endedSourceIds: [] as string[] };
-      observation.courseResults.push(result);
       try {
         // Sakai's custom site action returns the whole list, ignoring _start/_limit.
         const items = sakaiCollection(await retry(`assignment/site/${encodeURIComponent(course.courseId)}.json`), definition.assignment.collection);
@@ -76,15 +85,29 @@ export async function collectKulmsObservation(options: Options): Promise<Observa
           if (assignment.deadline.kind === 'datetime' && Date.parse(assignment.deadline.dueAt) < Date.parse(options.fetchedAt)) {
             result.endedSourceIds.push(assignment.sourceId);
           } else {
-            if (observation.assignments.length >= 200) throw new Error('parse-error');
-            observation.assignments.push(assignment);
+            assignments.push(assignment);
           }
         }
         result.listComplete = true;
       } catch (error) {
-        active(); observation.failures.push(failure(error, course.courseId));
-        if (observation.failures.at(-1)?.kind === 'not-logged-in') break;
+        active(); courseFailure = failure(error, course.courseId);
       }
+      const hasFutureDeadline = assignments.some(a => a.deadline.kind === 'datetime' && Date.parse(a.deadline.dueAt) >= Date.parse(options.fetchedAt));
+      if (selectTerm && !priority.has(course.courseId) && !hasFutureDeadline && !courseFailure) continue;
+      if (observation.catalogCourses.length >= 100) {
+        // No courseResult for omitted sites: their stored tasks must not accrue missing counts.
+        observation.failures.push({ courseId: course.courseId, kind: 'parse', detail: 'course-limit' });
+      } else {
+        if (priority.has(course.courseId)) course.currentTerm = true;
+        observation.catalogCourses.push(course); observation.courseResults.push(result);
+        const remaining = 200 - observation.assignments.length;
+        if (assignments.length > remaining) {
+          result.listComplete = false; courseFailure = { courseId: course.courseId, kind: 'parse', detail: 'list-incomplete' };
+        }
+        observation.assignments.push(...assignments.slice(0, remaining));
+        if (courseFailure) observation.failures.push(courseFailure);
+      }
+      if (courseFailure?.kind === 'not-logged-in') break;
     }
     // A login change in another tab must not mix two students in one observation.
     const finalUser = await read('user/current.json');
@@ -94,6 +117,10 @@ export async function collectKulmsObservation(options: Options): Promise<Observa
     active();
     if (error instanceof Error && error.message === 'account-changed') throw error;
     observation.failures.push(failure(error, null));
+  }
+  if (observation.failures.length > 200) {
+    const last = observation.failures.at(-1)!;
+    observation.failures = [...observation.failures.slice(0, 199), last.courseId === null ? last : { courseId: null, kind: 'parse', detail: 'course-limit' }];
   }
   active();
   return observation;

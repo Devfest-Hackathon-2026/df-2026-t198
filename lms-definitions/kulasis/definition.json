@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "format": "kulasis-html",
+  "definitionId": "kulasis-timetable",
+  "version": 1,
+  "tables": "table",
+  "rows": "tr",
+  "links": "a[href]",
+  "terms": { "spring": "zenki", "autumn": "kouki" }
+}

@@ -79,6 +79,7 @@
 .session-timetable td { height: 72px; }
 .session-course, .session-candidate { display: block; padding: 8px; border-radius: 4px; overflow-wrap: anywhere; }
 .session-course { background: var(--side); }
+.session-course small { display: block; margin-top: 4px; }
 .session-candidate { border: 2px dashed var(--green); color: var(--green); }
 .session-candidate strong { display: block; font-size: 11px; }
 .session-confirm { margin-top: 24px; }

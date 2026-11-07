@@ -14,5 +14,5 @@ CoursePowerの画面移動の値は `coursepower/navigation.json`。`homePaths` 
 
 ## 関連調査資料: KULASIS（京都大学教務情報システム）
 
-- **KULASIS の位置づけ**: KULASIS は LMS 本体（KULMS）ではなく、時間割・シラバス・教務連絡などの教務情報を提供する補完サービスです。現時点で `kadai-hisho` における KULASIS 向けの定義（`lms-definitions`）および読み取り部品（reader / collector）は未実装です。
+- **KULASIS の位置づけ**: KULASIS は時間割を提供する、KULMSと同格の情報源です。`kulasis/definition.json` と架空のCP932/UTF-8の見本を使います。明示の対応による統合と実物での未確認事項は [データ契約](../docs/data-shapes.md#kulasisの時間割と授業の対応issue-180) を参照してください。
 - **詳細ドキュメント**: KULASIS で実際に確認した取得先・フィールド、および YNU / CoursePower・ダミー LMS・KULMS との比較については、[../docs/kulasis-data-comparison.md](../docs/kulasis-data-comparison.md) を参照してください。
