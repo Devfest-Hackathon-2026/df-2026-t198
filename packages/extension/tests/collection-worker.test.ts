@@ -34,7 +34,14 @@ beforeEach(async () => {
   fetcher.mockImplementation(async (url: string) => ({ ok: true, url, status: 200, text: async () => 'worker-html',
     json: async () => ({ status: 'applied', changed: true, changeCount: 1 }) }));
   vi.stubGlobal('fetch', fetcher);
-  vi.stubGlobal('chrome', { action: { setBadgeText: badge, setTitle: title, setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined) }, runtime: { id: 'synthetic-extension' }, tabs: { sendMessage: send }, storage: { session: {
+  vi.stubGlobal('chrome', { action: { setBadgeText: badge, setTitle: title, setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined) }, runtime: { id: 'synthetic-extension' }, tabs: {
+    query: async () => [{ id: 7 }],
+    sendMessage: async (tab: number, message: { type: string; restore?: boolean }, target: unknown) => {
+      if (message.type !== 'ynu-read-page') return { ok: true };
+      if (message.restore) return { ok: true, page: { html: 'home', url: 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex' } };
+      return send(tab, message, target);
+    },
+  }, storage: { session: {
     get: vi.fn(async () => session), set: vi.fn(async (values) => Object.assign(session, values)),
   } } });
   run = (await import('../src/collection-worker.js')).runCollection;
@@ -52,7 +59,8 @@ it('sends one observation with only the Firebase ID token and retains counts wit
   expect(fetcher.mock.invocationCallOrder.at(-1)).toBeLessThan(sync.mock.invocationCallOrder[0]!);
   const safeState = { ...session }; delete safeState['ynuSessionId'];
   expect(safeState).toMatchObject({ ynuFetchStats: { attempted: 1, backgroundSucceeded: 1, pageSucceeded: 0 } });
-  expect(safeState['ynuFetchSummary']).toEqual({ courses: 0, coursesComplete: 0, listed: 0, read: 0, unreadableDeadlines: 0, failures: {}, courseFailures: [], firstFailure: null, recovered: 0 });
+  expect(safeState['ynuFetchSummary']).toEqual({ courses: 0, coursesComplete: 0, listed: 0, read: 0, unreadableDeadlines: 0, failures: {}, courseFailures: [], firstFailure: null, recovered: 0,
+    yielded: 0, lmsStateErrors: 0, restoreSucceeded: 1, restoreFailed: 0 });
   expect(JSON.stringify(safeState)).not.toMatch(/synthetic-session|synthetic-id-token|page-html|worker-html/);
 });
 
