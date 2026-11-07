@@ -29,7 +29,7 @@ const assignments = () => db.collection(`students/${studentId}/assignments`).get
 const deadline = async () => (await assignments()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt;
 const confirmed = () => student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
 try {
-  await student.goto(`${base}/demo-lms`);
+  await student.goto(`${base}/`);
   const entry = student.getByRole('region', { name: '共用の体験', exact: true });
   await entry.getByRole('button', { name: '学生として試す', exact: true }).waitFor();
   assert.match(await entry.innerText(), /別のブラウザか別の端末/);
@@ -46,7 +46,7 @@ try {
   await student.waitForURL(`${base}/demo-lms`);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   assert.equal(await student.getByRole('region', { name: '共用の体験', exact: true }).count(), 0);
-  await supporter.goto(`${base}/demo-lms`);
+  await supporter.goto(`${base}/`);
   await supporter.getByRole('button', { name: '支援担当として試す', exact: true }).click();
   await supporter.waitForURL(`${base}/session`);
   await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();

@@ -53,7 +53,7 @@ async function login(page, role) {
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
 }
 try {
-  for (const path of ['/', '/student', '/session']) {
+  for (const path of ['/student', '/session']) {
     await student.goto(`${base}${path}`);
     const entry = student.locator('main a').first();
     await entry.waitFor();
@@ -138,10 +138,12 @@ try {
   const beforeTimetable = await timetable.locator('.course-panel').innerText();
   await mkdir(evidence, { recursive: true });
   await timetable.screenshot({ path: `${evidence}/student-before-wide.png`, fullPage: true });
+  await timetable.locator('.timetable').screenshot({ path: `${evidence}/landing-student.png` });
   await timetable.setViewportSize({ width: 390, height: 844 });
   await timetable.screenshot({ path: `${evidence}/student-before-narrow.png`, fullPage: true });
   await timetable.setViewportSize({ width: 1280, height: 960 });
   await student.screenshot({ path: `${evidence}/demo-wide.png`, fullPage: true });
+  await student.locator('[data-demo-page="home"]').screenshot({ path: `${evidence}/landing-lms.png` });
   await student.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
   await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   assert.equal((await changes()).size, beforeChanges);
@@ -203,6 +205,7 @@ try {
   assert.equal(await eventCard.count(), 1);
   pass(5);
   await timetable.screenshot({ path: `${evidence}/calendar-updated.png`, fullPage: true });
+  await timetable.locator('.timetable').screenshot({ path: `${evidence}/landing-updated.png` });
   const previousDate = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(oldDeadline));
   await supporter.getByRole('region', { name: '前回の面談からの変化' })
     .getByText(`締切が ${previousDate} から ${expectedDate} に変わりました`, { exact: false }).waitFor();
@@ -215,6 +218,7 @@ try {
   assert.deepEqual((await calendarTarget()).data(), savedTarget);
   pass(7);
   await supporter.screenshot({ path: `${evidence}/session-updated.png`, fullPage: true });
+  await supporter.locator('.session-page').screenshot({ path: `${evidence}/landing-session.png` });
   await timetable.waitForTimeout(Math.max(0, 7000 - (Date.now() - highlightAt)));
   for (const target of highlighted) assert.match(await target.getAttribute('class'), /changed/);
   await timetable.waitForTimeout(Math.max(0, 10000 - (Date.now() - highlightAt)));
