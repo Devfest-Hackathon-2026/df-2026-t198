@@ -36,7 +36,7 @@ repoのルートをソースにし、buildpacksがコンテナを作る。ルー
 
 `ENABLE_DEMO_ANNOUNCEMENTS=true` と `GOOGLE_CLOUD_PROJECT` は、体験用LMSの「お知らせを出す」の解析を有効にする設定（[data-shapes.md](data-shapes.md) の体験用データの節）。Cloud Runは `GOOGLE_CLOUD_PROJECT` を自動では入れないので明示する。実物のLMSのお知らせの解析は、この設定でも無効のまま。
 
-`PUBLIC_WEB_ORIGIN` は、今日やることのメールに入れる学生画面のリンク先。上のHostingの公開先を指定する。未設定では `GET /api/v1/digest` が503を返し、体験用LMSの「今朝のメール」も表示できない（ほかのAPIは起動する）。メール送信は本人が有効にしたChrome拡張が行うため、Cloud RunにGmailの送信権限や送信トークンは置かない。
+`PUBLIC_WEB_ORIGIN` は、今日やることのメールに入れる学生画面のリンク先。上のHostingの公開先を指定する。未設定では `GET /api/v1/digest` が503を返し、体験用LMSの「今朝のメール」も表示できない（ほかのAPIは起動する）。旧拡張のメール送信は、別Issueで切り替えるまで維持する。Issue #162のクラウド送信の準備は末尾を参照。
 
 ビルド時の `NODE_ENV=development` はbuildpacksの自動pruneを止めるために明記する。pnpm 11.8.0ではルートの `pnpm prune --prod` 後にserverの `firebase-admin` も消え、起動できないことを手元とCloud Runで確認した。初回デプロイは開発用の依存もイメージに残す。実行時の `NODE_ENV` は別に `production` にする。依存を小さくまとめる対応は、この制約を解消する別の作業とする。
 
@@ -103,3 +103,90 @@ curl --fail-with-body https://project-00439085-4e2d-44c3-9a8.web.app/api/health
 4. 記録を消さず、サーバー設定を `enabled: true, deliveryOwner: extension, migrationState: not-started` にして版を増やす。旧GETと新版拡張の確認が通ることを確かめてから、選んだ1台だけメールをONにする。他の端末はOFFを保つ。LMSとカレンダーはこの操作に含めない。
 
 送信可否の確認とGmail POSTは1つのtransactionにはできない。確認の直後に設定を変えれば、その1通は送信され得る。全端末の停止と処理終了を確認してからcloudを有効にすることが切替の前提であり、確認GETだけで二重送信を完全に防ぐとは説明しない。
+
+## 専用Gmailの通知準備（Issue #162、実行はorange）
+
+以下は未実行の手順。A1は仮採用で、orangeがD36案を確定してから実行する。資源・課金・権限・送信をこのPRで許可したとは扱わない。既定は送信無効。拡張の停止と移行状態の確定は別Issueで行う。
+
+1. プロダクト専用のGoogle/Gmailアカウントを作る（個人用と分ける）。復旧手段を管理する。以後の同意ではこの送信元だけにログインする。
+2. 下記の画面でGmail APIを有効にし、Google Auth Platformの同意画面をExternal/Testingにする。テストユーザーは送信元1アカウントだけ。Web applicationのOAuthクライアントを作り、redirect URIに `https://developers.google.com/oauthplayground` を登録する。クライアントを拡張と共用しない。
+
+```sh
+KADAI_PROJECT=project-00439085-4e2d-44c3-9a8
+open "https://console.cloud.google.com/apis/library/gmail.googleapis.com?project=$KADAI_PROJECT"
+open "https://console.cloud.google.com/auth/overview?project=$KADAI_PROJECT"
+open 'https://developers.google.com/oauthplayground/'
+```
+
+3. Playgroundの歯車で「Use your own OAuth credentials」を選び、自分のclient ID/secretを入力。scopeを `https://www.googleapis.com/auth/gmail.send` だけにする。offline・consentを指定して送信元で同意し、authorization codeをtokenへ交換する。Playground既定のclientは使わない。refresh tokenをブラウザ・通常ログ・会話へ写さず、次の非表示入力に渡す。実送信の試行はまだしない。
+4. 同意した日時（timezone付き）だけを非公開の運用記録に残し、7日後を計算する。Testingのrefresh tokenは7日で失効する。交換結果に `refresh_token_expires_in` があれば、その短い方も確認する。下の判定は11/15 00:00 JSTを越えることを確認するもので、11/15終日を保証しない。必要な稼働終了時刻がそれより遅ければ比較日時をorangeが先に決める。
+
+```sh
+python3 - <<'PY'
+from datetime import datetime, timedelta
+consent = datetime.fromisoformat(input('実際の同意日時 (例の形式 YYYY-MM-DDTHH:MM:SS+09:00): '))
+assert consent.utcoffset() is not None
+expiry = consent + timedelta(days=7)
+print('7日後:', expiry.isoformat())
+assert expiry > datetime.fromisoformat('2026-11-15T00:00:00+09:00'), '期限が不足。切替を止める'
+PY
+```
+
+11/10の締切後から11/14までは、手動再認可・secret版変更・再デプロイをしない（D35）。7日は失効しない保証ではなく、取消やパスワード変更等でも失効する。期限が不足するなら凍結前に再同意し固定版を更新するか、クラウドへの切替を止める。締切後に手でつなぎ直す案は採らない。
+
+5. repo外の権限制限した一時ファイルからSecret Managerへ登録する。次は新規secret・version 1の例。既存の場合は上書きせず新しい版を作り、番号を確認して後段の数字も合わせる。secretを表示するコマンドは使わない。
+
+```sh
+umask 077
+KADAI_SECRET_DIR=$(mktemp -d)
+python3 - "$KADAI_SECRET_DIR" <<'PY'
+import getpass, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+for name in ['gmail-client-id', 'gmail-client-secret', 'gmail-refresh-token']:
+    value = getpass.getpass(name + ' (非表示): ')
+    assert value and '\n' not in value
+    (root / name).write_text(value)
+PY
+for KADAI_SECRET in gmail-client-id gmail-client-secret gmail-refresh-token; do
+  gcloud secrets create "$KADAI_SECRET" --project "$KADAI_PROJECT" \
+    --replication-policy=automatic --data-file="$KADAI_SECRET_DIR/$KADAI_SECRET"
+  gcloud secrets add-iam-policy-binding "$KADAI_SECRET" --project "$KADAI_PROJECT" \
+    --member="serviceAccount:kadai-hisho-api@$KADAI_PROJECT.iam.gserviceaccount.com" \
+    --role=roles/secretmanager.secretAccessor
+done
+rm "$KADAI_SECRET_DIR/gmail-client-id" "$KADAI_SECRET_DIR/gmail-client-secret" "$KADAI_SECRET_DIR/gmail-refresh-token"
+rmdir "$KADAI_SECRET_DIR"
+```
+
+6. 上の通常のCloud Runデプロイが通る版に、secretの**数字の固定版**を結び付ける（latestは使わない）。送信元は実際の専用Gmailの裸のアドレス1つを入力。送信元とOAuthのアカウントが同じことをorangeが確認する。APIはそのアドレスの `/users/{from}/messages/send` へ送るため、別の送信元をリクエストで選べない。
+
+```sh
+KADAI_API_ORIGIN=$(gcloud run services describe kadai-hisho-api --project "$KADAI_PROJECT" \
+  --region asia-northeast1 --format='value(status.url)')
+KADAI_SCHEDULER_SA="notification-scheduler@$KADAI_PROJECT.iam.gserviceaccount.com"
+read 'KADAI_FROM?専用Gmailのアドレス: '
+gcloud iam service-accounts create notification-scheduler --project "$KADAI_PROJECT"
+gcloud run services update kadai-hisho-api --project "$KADAI_PROJECT" --region asia-northeast1 \
+  --update-secrets=GMAIL_CLIENT_ID=gmail-client-id:1,GMAIL_CLIENT_SECRET=gmail-client-secret:1,GMAIL_REFRESH_TOKEN=gmail-refresh-token:1 \
+  --update-env-vars="NOTIFICATION_FROM=$KADAI_FROM,NOTIFICATION_SEND_ENABLED=false,NOTIFICATION_OIDC_AUDIENCE=$KADAI_API_ORIGIN,NOTIFICATION_SCHEDULER_SERVICE_ACCOUNT=$KADAI_SCHEDULER_SA"
+gcloud scheduler jobs create http notification-tick --project "$KADAI_PROJECT" --location asia-northeast1 \
+  --schedule='* * * * *' --time-zone=Asia/Tokyo --http-method=POST \
+  --uri="$KADAI_API_ORIGIN/api/internal/notifications/tick" \
+  --oidc-service-account-email="$KADAI_SCHEDULER_SA" --oidc-token-audience="$KADAI_API_ORIGIN" \
+  --max-retry-attempts=0 --attempt-deadline=180s
+```
+
+Cloud Scheduler APIとサービスエージェントの `roles/cloudscheduler.serviceAgent`、実行者の対象SAへのactAs権限を確認する。不足はorangeに返し、プロジェクト全体のOwner等を追加しない。Cloud Runは公開入口なので、内部tickはアプリでOIDCを検証する。Scheduler用SAのtoken発行権限を他の利用者へ広げない。Schedulerの本文・queryでUID・時刻・有効フラグを指定しない。
+
+7. falseのままtickのdry-run・未認証401・不正OIDC401を確認する。設定画面は準備中となり、有効化を拒否する。secretの存在だけを「接続済み」「受信済み」と扱わない。orangeの実送信確認の段階でのみ、以下を実行する。
+
+```sh
+gcloud run services update kadai-hisho-api --project "$KADAI_PROJECT" --region asia-northeast1 \
+  --update-env-vars=NOTIFICATION_SEND_ENABLED=true
+```
+
+このフラグだけでは、移行前（owner none/extension、migrationState not-started）の本人は送信対象にならない。別Issueで旧拡張停止・対象者・戻し方を確認してowner cloud/migrationState readyとし、本人が通知を有効にする。古い拡張との二重送信を避けるため、本手順に移行状態を直接書き換えるコマンドは含めない。11/9 18:00までにAC-02/03の実受信が通らなければ切替を止める（#152）。
+
+自然時刻の朝と準備前で、予定時刻・処理開始・API受理・本人Gmailの受信を別々に記録する。PC/Chromeを閉じた条件、停止、失効、結果不明も確かめる。Gmailの401/403は接続のやり直し、429は未受理、5xx/応答喪失/不完全な成功応答は結果不明。いずれも送信POSTを自動再送しない。invalid_grant等で止まった送信元は、凍結前に再同意・固定版更新・revision更新で復旧する。
+
+公式資料：[Gmail送信API](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/send)、[エラー](https://developers.google.com/workspace/gmail/api/guides/handle-errors)、[offline access](https://developers.google.com/identity/protocols/oauth2/web-server#offline)、[Testingの7日期限](https://developers.google.com/identity/protocols/oauth2#expiration)、[Cloud Runのsecret](https://docs.cloud.google.com/run/docs/configuring/services/secrets)、[SchedulerのOIDC](https://docs.cloud.google.com/scheduler/docs/http-target-auth)。

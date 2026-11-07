@@ -16,6 +16,8 @@ import { DemoForbidden, type DemoStore } from './demo-store.js';
 import { receiveAnnouncement } from './announcements/http.js';
 import type { createAnnouncementStore } from './announcements/store.js';
 import { receiveNotificationTick, type NotificationHttpDependencies } from './notification-http.js';
+import { receiveNotificationSettings } from './notification-settings-http.js';
+import type { NotificationSettingsStore } from './notification-settings.js';
 
 export interface ObservationDependencies {
   verifyToken: (token: string) => Promise<string>;
@@ -29,6 +31,7 @@ export interface ObservationDependencies {
   demo?: DemoStore;
   announcements?: ReturnType<typeof createAnnouncementStore>;
   notifications?: NotificationHttpDependencies;
+  notificationSettings?: NotificationSettingsStore;
 }
 const MAX_BODY = 512 * 1024;
 function json(response: ServerResponse, status: number, body: unknown) {
@@ -71,6 +74,9 @@ async function receiveObservation(request: IncomingMessage, response: ServerResp
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
+    if (path === '/api/v1/notification-settings' && (request.method === 'GET' || request.method === 'PUT')) {
+      void receiveNotificationSettings(request, response, dependencies); return;
+    }
     if (path === '/api/internal/notifications/tick' && request.method === 'POST') {
       void receiveNotificationTick(request, response, dependencies?.notifications); return;
     }

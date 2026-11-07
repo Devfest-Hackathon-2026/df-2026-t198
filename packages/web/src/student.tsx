@@ -13,6 +13,7 @@ import { DemoLogin } from './demo-login';
 import { OperationMessages } from './operation-messages';
 import { firebase } from './firebase';
 import { watchAccount, type StudentCourse, type StudentData, type StudentState } from './student-data';
+import { NotificationSettingsPanel } from './notification-settings';
 
 export const courseKey = (course: StudentCourse) => JSON.stringify([course.system, course.courseId]);
 const belongsTo = (item: LedgerAssignment, course: StudentCourse) =>
@@ -174,7 +175,8 @@ export function StudentPage() {
           planLink={window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} data={state} />}
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
-          {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</> : <p role="status">{state.status === 'error'
+          {client.auth.currentUser && <><NotificationSettingsPanel key={client.auth.currentUser.uid} user={client.auth.currentUser} />
+            <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a></>}</> : <p role="status">{state.status === 'error'
           ? '課題を開けませんでした。接続を確かめて、画面を開き直してください。' : '課題を開いています…'}</p>}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;
