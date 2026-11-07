@@ -1,6 +1,7 @@
 import { manualAssignmentActions, ManualAssignments, ManualAssignmentRow, type ManualAssignmentActions } from './manual-assignments';
 import { entryId } from './deadline-entries';
 import { planProgress } from './plan-progress';
+import { LmsSourceLink } from './lms-link';
 import { fetchStatus } from './fetch-status';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
@@ -199,20 +200,13 @@ function SessionAssignment({ row, data }: { row: LedgerAssignment; data: Session
       missingDeadlineText(row.latest.deadline) ?? '締切を確認できていません'} />
     {reason && <span className="session-review"><span className="review-tag">要確認</span> {reason}</span>}
   </div></summary><div className="session-task-detail">
-    <SourceLink url={row.latest.url} />
+    <LmsSourceLink item={row} courseName={course?.name ?? '授業'} />
     <h4>LMSの課題ページに書いてあったこと</h4><p>{row.latest.deadline.dueText}</p>
     {row.officialDeadline && row.latest.deadline.kind === 'unreadable' && <p>
       前に確認できた締切：{row.officialDeadline.deadline.dueText}</p>}
     {!!changes.length && <><h4>これまでの変更</h4><ul>{changes.map(change => <li key={change.changeId}>
       <time>{formatMoment(change.recordedAt)}</time> {changeDescription(change)}</li>)}</ul></>}
   </div></details></li>;
-}
-function SourceLink({ url }: { url: string }) {
-  try {
-    const parsed = new URL(url);
-    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) return null;
-  } catch { return null; }
-  return <a href={url} target="_blank" rel="noreferrer">LMSで見る ›</a>;
 }
 function ContextEditor({ context, save }: { context: SessionContext; save: (context: SessionContext) => Promise<void> }) {
   const [busy, setBusy] = useState(false);

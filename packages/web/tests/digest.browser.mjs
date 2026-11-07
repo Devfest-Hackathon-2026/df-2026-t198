@@ -251,11 +251,72 @@ try {
   assert.doesNotMatch(await preview.getByRole('status').innerText(), /先に「LMSを開く」/);
   await screenshot(student, 'sample-after-deadline');
   pass('sample creation 409 explains the deadline cause without asking the student to reload the LMS');
+  // Issue #141: add only invented records for the submission stage and stateful links.
+  await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
+  await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
+  await openLms();
+  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
+  const sampleId = new URL(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href')).searchParams.get('id');
+  const source = (await ref.collection('assignments').get()).docs[0].data();
+  const submissionTask = { ...source, key: { system: 'ynu-lms', sourceId: 'fictional-141' },
+    latest: { ...source.latest, courseId: 'fictional-141', sourceId: 'fictional-141', title: '架空の提出レポート',
+      url: 'https://lms.example.invalid/lms/corsColl/linkKyozaiTitle' },
+    submission: 'not-submitted', presenceState: 'active' };
+  const submissionRef = ref.collection('assignments').doc('fictional-141');
+  await ref.collection('courses').doc('fictional-141').set({ system: 'ynu-lms', courseId: 'fictional-141', name: '架空の提出演習', slots: [] });
+  await submissionRef.set(submissionTask);
+  await ref.collection('plans').doc('fictional-141').set({ ...(await ref.collection('plans').doc(sampleId).get()).data(),
+    planId: 'fictional-141', assignment: submissionTask.key, status: 'done', title: submissionTask.latest.title });
+  const submissionSection = preview.getByRole('region', { name: '次は提出', exact: true });
+  await submissionSection.waitFor();
+  assert.equal(await submissionSection.getByRole('link', { name: 'LMSを開く', exact: true }).getAttribute('href'), 'https://lms.example.invalid/lms/homeHoml/doIndex');
+  assert.match(await submissionSection.innerText(), /道順：ホーム › 架空の提出演習 › 架空の提出レポート/);
+  assert.equal(await submissionSection.getByRole('link', { name: '✅ 終わった', exact: true }).count(), 0);
+  assert.equal((await preview.innerText()).match(/返信の入力は不要です/g).length, 1);
+  assert.equal(await preview.locator('article h3').count() >= 2, true);
+  for (const [width, height, size] of [[1280, 960, 'wide'], [390, 844, 'narrow']]) {
+    await student.setViewportSize({ width, height });
+    assert.equal(await student.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+    await preview.screenshot({ path: `${evidence}/submission-mail-${size}.png` });
+  }
+  await student.setViewportSize({ width: 1280, height: 960 });
+  await studentScreen.getByRole('button', { name: /架空の提出演習/ }).click();
+  const studentSource = studentScreen.locator('#course-assignments').getByRole('link', { name: 'LMSで見る ›', exact: true });
+  assert.equal(await studentSource.getAttribute('href'), 'https://lms.example.invalid/lms/homeHoml/doIndex');
+  await supporter.goto(`${base}/session/trial-student`);
+  const sessionTask = supporter.locator('.session-task').filter({ hasText: '架空の提出レポート' });
+  await sessionTask.locator('summary').click();
+  assert.equal(await sessionTask.getByRole('link', { name: 'LMSで見る ›', exact: true }).getAttribute('href'), 'https://lms.example.invalid/lms/homeHoml/doIndex');
+  assert.match(await sessionTask.innerText(), /ホーム › 架空の提出演習 › 架空の提出レポート/);
+  pass('Issue #141: morning preview headings, unchanged buttons, one final note and submission stage; both screens use the definition home and route');
+  const latestDoneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
+  const samplePlan = (await ref.collection('plans').doc(sampleId).get()).data();
+  const plannedTask = (await ref.collection('assignments').get()).docs.find(doc =>
+    doc.data().key.system === samplePlan.assignment.system && doc.data().key.sourceId === samplePlan.assignment.sourceId);
+  const directUrl = plannedTask.data().latest.url;
+  // Mixed-source records exercise rendering only. The demo API correctly rejects such data.
+  await submissionRef.delete();
+  await ref.collection('plans').doc('fictional-141').delete();
+  await ref.collection('courses').doc('fictional-141').delete();
+  await linkPage.goto(latestDoneUrl);
+  const nextSubmission = linkPage.getByRole('region', { name: '次は提出', exact: true });
+  // StrictMode may replay the same link; both responses must expose the live submission step.
+  await nextSubmission.waitFor();
+  await linkPage.screenshot({ path: `${evidence}/submission-action.png`, fullPage: true });
+  assert.equal(await nextSubmission.getByRole('link', { name: 'LMSを開く', exact: true }).getAttribute('href'), directUrl);
+  assert.match(await nextSubmission.innerText(), /締切/);
+  const actedPlan = (await ref.collection('plans').doc(sampleId).get()).data();
+  const actedTask = (await ref.collection('assignments').get()).docs.find(doc => doc.data().key.sourceId === actedPlan.assignment.sourceId);
+  await actedTask.ref.update({ submission: 'submitted' });
+  await nextSubmission.waitFor({ state: 'detached' });
+  await submissionSection.waitFor({ state: 'detached' });
+  pass('Issue #141: done link shows current deadline and direct demo destination; live submitted state removes the stage in the action screen and mail preview');
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/operations.json`, JSON.stringify({ status: 'pass', operations, browserErrors: 0 }, null, 2));
   log(JSON.stringify({ status: 'pass', operations: operations.length, browserErrors: 0, evidence }));
 } catch (error) {
   await student.screenshot({ path: `${evidence}/failure.png`, fullPage: true });
-  await writeFile(`${evidence}/failure.json`, JSON.stringify({ preview: await preview.innerText().catch(() => ''), operations }, null, 2));
+  await writeFile(`${evidence}/failure.json`, JSON.stringify({ preview: await preview.innerText().catch(() => ''), linkStatus: await linkPage.getByRole('status').allTextContents(), browserErrors: errors, operations }, null, 2));
   throw error;
 } finally { await browser.close(); await db.terminate(); await deleteApp(app); }
