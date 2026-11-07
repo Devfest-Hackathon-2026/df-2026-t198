@@ -37,7 +37,7 @@ async function login(page, role) {
 async function assertNoPreparationEvents() {
   assert.equal(Object.values((await target()).data().mockEvents).filter(value => value.event.summary.startsWith('準備：')).length, 0);
 }
-async function assertSingleRow(page) {
+async function assertPlanLayout(page) {
   const rows = await page.locator('.preparation-list li').evaluateAll(items => items.map(item => {
     const centers = Array.from(item.children, child => {
       const box = child.getBoundingClientRect(); return box.y + box.height / 2;
@@ -45,7 +45,14 @@ async function assertSingleRow(page) {
     return Math.max(...centers) - Math.min(...centers);
   }));
   assert.ok(rows.length > 0);
-  assert.ok(rows.every(spread => spread < 2), 'date, period, title, author and removal stay on one row');
+  if (page.viewportSize().width > 850) {
+    assert.ok(rows.every(spread => spread < 2), 'wide screens keep one row per plan');
+  } else {
+    assert.ok(rows.every(spread => spread > 40), 'narrow screens stack the date, state and controls');
+    assert.equal(await page.locator('.preparation-list li').evaluateAll(items => items.every(item =>
+      Array.from(item.querySelectorAll('button'), button => button.getBoundingClientRect()).every(box =>
+        box.left >= 0 && box.right <= globalThis.innerWidth))), true, 'all plan controls fit without horizontal scrolling');
+  }
 }
 async function assertCompactCell(page, fromSupporter) {
   const cell = page.locator('.preparation-cell');
@@ -89,7 +96,7 @@ try {
   await supporterDetails.getByText('09:00〜10:00', { exact: true }).waitFor();
   await supporter.screenshot({ path: `${evidence}/supporter-details-wide.png`, fullPage: true });
   await supporterDetails.getByRole('button', { name: '閉じる', exact: true }).click();
-  await assertSingleRow(student); await assertSingleRow(supporter);
+  await assertPlanLayout(student); await assertPlanLayout(supporter);
   pass('compact supporter cell opens date and time with Enter; plan lists keep one row per plan');
   const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
   const preparationEvent = calendar.locator('.calendar-event').filter({ hasText: '準備' }).getByText('架空の観察ノート', { exact: true });
@@ -106,14 +113,14 @@ try {
   assert.equal((await active()).length, 1); pass('reload retains one saved plan');
   await student.setViewportSize({ width: 390, height: 844 });
   assert.equal(await student.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
-  await assertSingleRow(student);
+  await assertPlanLayout(student);
   await assertCompactCell(student, true);
   await student.screenshot({ path: `${evidence}/student-narrow.png`, fullPage: true });
   await cell.click(); await details.getByText('09:00〜10:00', { exact: true }).waitFor();
   await student.screenshot({ path: `${evidence}/preparation-details-narrow.png`, fullPage: true });
   await details.getByRole('button', { name: '閉じる', exact: true }).click();
   await supporter.setViewportSize({ width: 390, height: 844 });
-  await assertSingleRow(supporter);
+  await assertPlanLayout(supporter);
   await assertCompactCell(supporter, true);
   assert.equal(await supporter.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
   await supporter.screenshot({ path: `${evidence}/supporter-narrow.png`, fullPage: true });

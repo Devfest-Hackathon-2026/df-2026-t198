@@ -11,5 +11,5 @@ export function reviewReasonText(reason: LedgerAssignment['reviewReasons'][numbe
   if (!proposed || !Number.isFinite(Date.parse(proposed))) return '課題とお知らせの日付が食い違っています。';
   const date = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric',
     hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(proposed));
-  return `お知らせでは締切が${date}に延びています。課題の欄と日付が違うので、LMSで確かめてください。`;
+  return `お知らせでは締切が${date}に延びています。LMSの課題ページの締切と日付が違うので、確かめてください。`;
 }

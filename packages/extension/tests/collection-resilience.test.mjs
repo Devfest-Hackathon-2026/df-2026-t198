@@ -18,7 +18,7 @@ async function runFake(options, pageRoute = false) {
   const { executeLmsRequest } = await import('../src/lms-request.js');
   const url = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session';
   const fRequest = op => executeLmsRequest(op, url, state.ynuSessionId, f.fetcher, async () => {});
-  vi.stubGlobal('chrome', { tabs: { query: async () => [{ id: 7 }], sendMessage: (tab, message, target) =>
+  vi.stubGlobal('chrome', { tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: (tab, message, target) =>
     message.type === 'ynu-read-page' ? send(tab, message, target) : Promise.resolve({ ok: true }) }, action: {}, storage: { session: {
     get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, globalThis.structuredClone(values)),
   } } });

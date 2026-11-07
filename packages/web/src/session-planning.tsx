@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { PreparationCandidate } from '../../core/src/types';
 import { PlanCell, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
 import { buildSessionView, dayInZone, formatDeadline, preparationCandidates, reviewDescription, type SessionData } from './session-model';
+import { useOperationMessage } from './operation-messages';
 
 export function SessionPlanning({ data, now, actions, own = false, viewerUid }: {
   data: SessionData; now: Date; actions?: PlanActions | undefined; own?: boolean; viewerUid?: string | undefined;
 }) {
   const [candidate, setCandidate] = useState<PreparationCandidate | null>(null);
+  const [message, setMessage] = useOperationMessage();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const selectedPlan = data.plans.find(plan => plan.status === 'active' && plan.planId === selectedPlanId);
   const panel = useRef<HTMLElement>(null);
@@ -47,8 +49,9 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
     const day = new Date(monday); day.setUTCDate(day.getUTCDate() + i); return day.toISOString().slice(0, 10);
   });
   return <div className="session-planning">
+    <p>準備は、課題に取り組む時間のことです。</p>
     <label className="session-topic">相談する課題
-      <select value={task ? JSON.stringify(task.key) : ''} onChange={event => { setSelected(event.target.value); setCandidate(null); }}>
+      <select value={task ? JSON.stringify(task.key) : ''} onChange={event => { setMessage(''); setSelected(event.target.value); setCandidate(null); }}>
         {!tasks.length && <option value="">次回までの課題がありません</option>}
         {tasks.map(row => <option key={JSON.stringify(row.key)} value={JSON.stringify(row.key)}>{row.latest.title}</option>)}
       </select>
@@ -64,7 +67,8 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
     {weeks.length > 1 && <nav className="session-weeks" aria-label="表示する週">{weeks.map(week =>
       <button key={week} aria-pressed={monday.toISOString().slice(0, 10) === week}
         onClick={() => setChosenWeek(week)}>{week.replaceAll('-', '/')}の週</button>)}</nav>}
-    <div className="session-timetable-scroll"><table className="session-timetable">
+    <p className="scroll-hint">時間割は左右に動かせます。</p>
+    <div className="session-timetable-scroll" tabIndex={0} role="region" aria-label="授業と準備の候補"><table className="session-timetable">
       <caption>授業と準備の候補</caption>
       <thead><tr><th scope="col">時限</th>{dates.map((date, i) => <th scope="col" key={date}>
         {Number(date.slice(5, 7))}/{Number(date.slice(8))}（{'月火水木金土日'[i]}）
@@ -75,7 +79,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
             .map(course => <span className="session-course" key={JSON.stringify([course.system, course.courseId])}>{course.name}</span>)}
           {candidates.filter(candidate => candidate.date === date && candidate.period === i + 1).map(candidate =>
             <span className="session-candidate" key={JSON.stringify(candidate)}><strong>候補</strong>{task?.latest.title}
-              {actions && <button onClick={() => setCandidate(candidate)} aria-label={`${candidate.date} ${candidate.period}限に入れる`}>入れる</button>}</span>)}
+              {actions && <button onClick={() => { setMessage(''); setCandidate(candidate); }} aria-label={`${candidate.date} ${candidate.period}限に入れる`}>入れる</button>}</span>)}
           {data.plans.filter(plan => plan.status === 'active' && plan.date === date && plan.period === i + 1).map(plan =>
             <PlanCell key={plan.planId} plan={plan} assignments={data.assignments} selected={plan.planId === selectedPlanId}
               onSelect={() => setSelectedPlanId(plan.planId)} />)}
@@ -87,9 +91,10 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
       <PlanSummary plan={selectedPlan} assignments={data.assignments} /><span>{selectedPlan.period}限（日本時間）</span>
     </aside>}
     {task && !candidates.length && <p>この課題の候補にできるコマがありません。</p>}
-    <p className="muted">授業以外の予定は、学生と確かめてください。</p>
+    <p className="muted">{own ? '授業以外の予定も確かめてください。' : '授業以外の予定は、学生と確かめてください。'}</p>
     {candidate && actions && <PlanForm key={JSON.stringify(candidate)} assignments={data.assignments} candidate={candidate}
-      actions={actions} onSaved={() => setCandidate(null)} />}
+      actions={actions} onSaved={() => { setCandidate(null); setMessage('準備の予定を入れました。'); }} />}
+    {message && <p role="status">{message}</p>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own={own} viewerUid={viewerUid} />
   </div>;
 }

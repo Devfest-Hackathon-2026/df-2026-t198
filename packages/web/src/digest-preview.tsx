@@ -5,10 +5,11 @@ import { firebase } from './firebase';
 import type { PreparationPlan } from '../../core/src/types';
 import { actionMessage, performPlanAction, planActionErrorMessage, planProgress } from './plan-progress';
 import './digest-preview.css';
+import { useOperationMessage } from './operation-messages';
 interface Preview { subject: string; html: string; empty: boolean }
 export function DigestPreview({ user }: { user: User }) {
   const [digest, setDigest] = useState<Preview | null>(null);
-  const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useOperationMessage(); const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
   useEffect(() => {
     let active = true; let request = 0;

@@ -3,12 +3,13 @@ import { deadlineEntries, entryBelongsTo, entryDeadline, entryDisplayDeadline, e
 import { PlanLinkAction } from './plan-progress';
 import { fetchStatus } from './fetch-status';
 import { missingDeadlineText, reviewReasonText } from './review-reason';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Deadline, LedgerAssignment } from '../../core/src/types';
 import { planActions, PlanCell, PlanForm, PlanList, PlanSummary, type PlanActions } from './preparation-plans';
 import { DemoCalendar } from './demo-calendar';
 import { ChangedDeadline, useDeadlineChanges } from './deadline-change';
 import { DemoLogin } from './demo-login';
+import { OperationMessages } from './operation-messages';
 import { firebase } from './firebase';
 import { watchAccount, type StudentCourse, type StudentData, type StudentState } from './student-data';
 
@@ -48,15 +49,23 @@ function AssignmentRow({ item }: { item: LedgerAssignment }) {
       {item.presenceState === 'cancelled' && <span className="badge">取り消されました</span>}</p>
     {item.presenceState === 'ended' && <p className="muted">この課題は終了しました。</p>}
     {item.presenceState !== 'ended' && <Review item={item} />}
-    <details><summary>書いてあったこと</summary><p>{deadlineOf(item)?.dueText ?? item.latest.deadline.dueText}</p>
-      <p className="muted">{new Date(item.officialDeadline?.fetchedAt ?? item.lastSeenAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} 時点</p></details>
+    <details><summary>LMSの課題ページに書いてあったこと</summary><p>{deadlineOf(item)?.dueText ?? item.latest.deadline.dueText}</p>
+      <p className="muted">{new Date(item.officialDeadline?.fetchedAt ?? item.lastSeenAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} 時点</p></details>
     <a href={item.latest.url} target="_blank" rel="noreferrer">LMSで見る ›</a>
   </li>;
 }
-export function StudentView({ data, now = Date.now(), calendar = false, actions, manualActions }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined }) {
+export function StudentView({ data, now = Date.now(), calendar = false, actions, manualActions, planLink }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
+  const timetable = useRef<HTMLDivElement>(null);
+  const todayWeekday = new Date(now).toLocaleDateString('en-US', { timeZone: 'Asia/Tokyo', weekday: 'short' });
+  const weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(todayWeekday) + 1;
+  useEffect(() => {
+    const scroll = timetable.current;
+    const today = scroll?.querySelector<HTMLElement>(`[data-weekday="${weekday}"]`);
+    if (scroll && today) scroll.scrollLeft = today.offsetLeft - 44;
+  }, [weekday]);
   useEffect(() => {
     if ((selected || selectedPlanId) && window.matchMedia('(max-width: 850px)').matches) {
       panel.current?.focus({ preventScroll: true });
@@ -70,7 +79,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
   const upcoming = entries.filter(item => Number.isFinite(deadlineValue(entryDeadline(item))));
   const plans = data.plans.filter(plan => plan.status === 'active');
   const selectedPlan = plans.find(plan => plan.planId === selectedPlanId);
-  const days = Math.max(5, ...plans.map(plan => new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7), ...courses.flatMap(c => c.slots.map(s => s.weekday)));
+  const days = Math.max(5, weekday, ...plans.map(plan => new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7), ...courses.flatMap(c => c.slots.map(s => s.weekday)));
   const periods = Math.max(5, ...plans.map(plan => plan.period), ...courses.flatMap(c => c.slots.map(s => s.period)));
   const select = (value: StudentCourse) => { setSelectedPlanId(null); setSelected(courseKey(value)); };
   const unscheduled = courses.filter(c => c.slots.length === 0);
@@ -88,8 +97,10 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
           <strong>{deadlineText(entryDeadline(item))}</strong> {entryTitle(item)}<span className="muted">{owner.name}</span>{item.kind === 'manual' && <small>{manualAuthor(item.row)}</small>}
         </button> : <span>{deadlineText(entryDeadline(item))} {entryTitle(item)}{item.kind === 'manual' && <small className="manual-author"> {manualAuthor(item.row)}</small>}</span>}</li>;
       })}</ul></section>;
-  return <>
-    <div className="student-heading"><h1>時間割と課題</h1></div>
+  return <OperationMessages>
+    {planLink}
+    <div className="student-heading"><h1>時間割と課題</h1><p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>
+      {changed.size > 0 && <p className="muted">黄色は、今変わった締切の目印です。しばらくすると元の色に戻ります。</p>}</div>
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
@@ -100,10 +111,10 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
           '課題をすべて確認できていません。LMSを開いて確かめてください。'}</p> : null;
     })}
     {!data.assignments.length && !hasManual && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
-    {calendar ? <>{hasManual && upcomingList}<DemoCalendar courses={data.courses} fallback={hasManual ? undefined : upcomingList} now={now} /></> : upcomingList}
+    {calendar ? <>{hasManual && upcomingList}<DemoCalendar courses={data.courses} assignments={data.assignments} fallback={hasManual ? undefined : upcomingList} now={now} /></> : upcomingList}
     <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
-      <div><div className="timetable-scroll"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
-        <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d}>{'月火水木金土日'[d]}</th>)}</tr></thead>
+      <div><p className="scroll-hint">時間割は左右に動かせます。</p><div ref={timetable} className="timetable-scroll" tabIndex={0} role="region" aria-label="授業と次の締切"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
+        <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d} data-weekday={d + 1}>{'月火水木金土日'[d]}</th>)}</tr></thead>
         <tbody>{Array.from({ length: periods }, (_, p) => <tr key={p}><th scope="row">{p + 1}限</th>
           {Array.from({ length: days }, (_, d) => <td key={d}>{courses.filter(c =>
             c.slots.some(slot => slot.weekday === d + 1 && slot.period === p + 1)).map(c => {
@@ -142,22 +153,24 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
       <PlanForm assignments={data.assignments} actions={actions} /></details>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own />
     <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own now={now} />
-  </>;
+  </OperationMessages>;
 }
 export function StudentPage() {
   const [state, setState] = useState<StudentState>({ status: 'loading' });
   const [authError, setAuthError] = useState(false);
+  const [authBusy, setAuthBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
   useEffect(() => firebase ? watchAccount(firebase.auth, firebase.db, setState) : undefined, []);
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer); }, []);
   if (!firebase) return <><h1>時間割と課題</h1><p>画面の準備中です。しばらくしてから開き直してください。</p></>;
   const client = firebase;
-  const accountAction = (action: () => Promise<unknown>) => { setAuthError(false); void action().catch(() => setAuthError(true)); };
+  const accountAction = (action: () => Promise<unknown>) => { setAuthError(false); setAuthBusy(true); void action().catch(() => setAuthError(true)).finally(() => setAuthBusy(false)); };
   return <>
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin returnTo={window.location.pathname === '/student/plan' ? window.location.pathname + window.location.search : undefined} />
-      <button className="plain-button" onClick={() => accountAction(client.login)}>Googleでログイン</button></> :
+      <button className="plain-button" disabled={authBusy} onClick={() => accountAction(client.login)}>{authBusy ? 'ログイン中…' : 'Googleでログイン'}</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
-        {state.status === 'ready' ? <>{window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} />}<StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
+        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
+          planLink={window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} />}
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
           {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</> : <p role="status">{state.status === 'error'

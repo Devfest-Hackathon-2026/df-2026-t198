@@ -79,6 +79,10 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       // A second visible LMS tab cannot share a single server-side screen safely.
       const tabs = await chrome.tabs.query({ url: `${new URL(pageUrl).origin}/*` });
       if (tabs.length !== 1 || tabs[0]?.id !== tabId) return { ok: false, code: 'not-idle' };
+      // The old home may remain visible during a slow navigation. Its recovery
+      // timer requests a retry; only the browser can confirm navigation ended.
+      const tab = await chrome.tabs.get(tabId).catch(() => undefined);
+      if (tab?.pendingUrl || tab?.status !== 'complete') return { ok: false, code: 'not-idle' };
       active = { sid, tabId, lease };
       const claim = await chrome.tabs.sendMessage(tabId, { type: 'ynu-collection-claim', sid }, target) as { ok?: boolean };
       claimed = claim?.ok === true;
