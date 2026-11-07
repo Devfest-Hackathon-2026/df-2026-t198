@@ -47,7 +47,7 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
   beforeEach(async () => {
     now = new Date('2030-11-11T00:00:00Z');
     for (const uid of [owner, real]) {
-      for (const name of ['plans', 'calendarItems', 'planActionReceipts']) for (const doc of (await student(uid).collection(name).get()).docs) await doc.ref.delete();
+      for (const name of ['plans', 'calendarItems', 'planActionReceipts', 'notificationSettings']) for (const doc of (await student(uid).collection(name).get()).docs) await doc.ref.delete();
       const sample = observation(); sample.definitionId = 'demo-lms'; sample.observationId = randomUUID();
       sample.catalogCourses[0]!.slots = [{ weekday: 2, period: 1 }];
       sample.assignments[0]!.deadline = { kind: 'datetime', dueAt: '2030-11-15T17:00:00+09:00', dueText: 'do not copy source', timeZone: 'Asia/Tokyo' };
@@ -165,6 +165,38 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect((await request('/api/v1/digest', supporter, 'GET')).status).toBe(403);
     const other = await (await request(`/api/v1/digest?uid=${owner}`, stranger, 'GET')).json();
     expect(other).toMatchObject({ to: `${stranger}@example.invalid`, empty: true, plans: [] });
+  });
+  it('blocks legacy digest for cloud owners, even OFF, but isolates the fictional preview', async () => {
+    for (const uid of [real, owner]) {
+      const settings = student(uid).collection('notificationSettings').doc('current');
+      for (const enabled of [true, false]) {
+        await settings.set({ enabled, deliveryOwner: 'cloud' });
+        const legacy = await request(`/api/v1/digest?preview=true&uid=${stranger}`, uid, 'GET');
+        expect(legacy.status).toBe(403); expect(await legacy.json()).toEqual({ error: 'forbidden' });
+        expect((await request('/api/v1/digest/demo-preview', uid, 'GET')).status).toBe(uid === owner ? 200 : 403);
+      }
+    }
+    expect((await request('/api/v1/digest/demo-preview', supporter, 'GET')).status).toBe(403);
+    expect((await request('/api/v1/digest/demo-preview', stranger, 'GET')).status).toBe(403);
+  });
+  it('allows extension delivery only for a valid enabled setting belonging to the authenticated non-demo student', async () => {
+    const settings = student(real).collection('notificationSettings').doc('current');
+    const valid = { enabled: true, deliveryOwner: 'extension', recipientUid: real, version: 1,
+      timeZone: 'Asia/Tokyo', morningTime: '07:30', migrationState: 'not-started', updatedAt: now.toISOString() };
+    for (const patch of [null, { enabled: false }, { deliveryOwner: 'none' }, { deliveryOwner: 'cloud' },
+      { recipientUid: owner }, { version: 0 }, { deliveryOwner: 'unexpected' }, { timeZone: 'UTC' }]) {
+      if (patch === null) await settings.delete(); else await settings.set({ ...valid, ...patch });
+      const response = await request(`/api/v1/digest/delivery?uid=${owner}`, real, 'GET');
+      expect(response.status).toBe(200); expect(await response.json()).not.toMatchObject({ enabled: true, deliveryOwner: 'extension' });
+    }
+    await settings.set(valid);
+    const before = await settings.get();
+    expect(await (await request('/api/v1/digest/delivery', real, 'GET')).json()).toEqual({ enabled: true, deliveryOwner: 'extension' });
+    expect((await request('/api/v1/digest', real, 'GET')).status).toBe(200);
+    await student().collection('notificationSettings').doc('current').set({ ...valid, recipientUid: owner });
+    expect(await (await request('/api/v1/digest/delivery', owner, 'GET')).json()).not.toMatchObject({ enabled: true, deliveryOwner: 'extension' });
+    expect((await request('/api/v1/digest/delivery', supporter, 'GET')).status).toBe(403);
+    expect((await settings.get()).updateTime).toEqual(before.updateTime);
   });
   it('rejects outsiders and even shared supporters; no GET can mutate a plan', async () => {
     for (const uid of [stranger, supporter]) expect((await act('done', uid)).status).toBe(403);
