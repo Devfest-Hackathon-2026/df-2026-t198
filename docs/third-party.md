@@ -89,3 +89,15 @@ CoursePower（富士通）の画面の構造を抽出・架空化した試験用
 
 - 今回の KULASIS 調査に関する加筆（[docs/kulasis-data-comparison.md](./kulasis-data-comparison.md) および関連追記）においては、実応答データ、HTML 原文、ならびに個人情報・認証情報の実値は含めておらず、汎用的なフィールド名と URL テンプレートのみを記録しています。
 - 大学サイトにおける個別画面・API の自動取得や外部連携に関する明示的な利用許諾条件は未確認であり、本ドキュメントは転載許可や公式 API 契約の存在を推測・主張するものではありません。
+
+## 紹介ページとロゴの書体（Issue #182）
+
+Google Fonts のCSSから以下の書体を読み込む。フォントファイルはrepoに同梱しない。いずれも SIL Open Font License 1.1。
+
+| 書体 | 用途 | 出典・ライセンス |
+|---|---|---|
+| Space Grotesk | ロゴ・欧文 | [Google Fonts](https://fonts.google.com/specimen/Space+Grotesk)、[OFL](https://github.com/google/fonts/blob/main/ofl/spacegrotesk/OFL.txt) |
+| BIZ UDPGothic | 紹介ページの日本語 | [Google Fonts](https://fonts.google.com/specimen/BIZ+UDPGothic)、[OFL](https://github.com/google/fonts/blob/main/ofl/bizudpgothic/OFL.txt) |
+| JetBrains Mono | 番号・時刻 | [Google Fonts](https://fonts.google.com/specimen/JetBrains+Mono)、[OFL](https://github.com/google/fonts/blob/main/ofl/jetbrainsmono/OFL.txt) |
+
+紹介ページの配色・構成・文・格子のロゴは、Sora承認の見本（Issue #182、D37）に従う。掲載画像は、このrepoの体験用データをローカルのエミュレーターで描いた画面を撮影したもの。実LMS・実際の課題のデータ・外部の画像は使っていない。
