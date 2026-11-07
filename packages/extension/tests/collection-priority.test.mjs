@@ -215,7 +215,8 @@ for (const pageRoute of [false, true]) it(`retries a loading tab and collects on
   expect(f.fetcher).not.toHaveBeenCalled();
   await vi.advanceTimersByTimeAsync(1);
   await vi.runAllTimersAsync();
-  expect(f.state.ynuFetchStatus).toBe('success');
+  // Web Crypto settles outside the fake timer queue; retain the same outcome and count assertions.
+  await vi.waitFor(() => expect(f.state.ynuFetchStatus).toBe('success'));
   expect(f.state.ynuFetchStats.attempted).toBe(1);
   expect(f.uploads).toHaveLength(1);
   expect(f.pageReads.mock.calls.filter(([, message]) => message.type === 'ynu-collection-claim')).toHaveLength(1);

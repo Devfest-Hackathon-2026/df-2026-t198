@@ -11,7 +11,7 @@ const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-sessio
 // navigation invalidates issued form fields. Only reopening the parent renews them.
 export async function fakeLms({ stage = 'course', wrongPage = false, permanent = false, logout = false, logoutStatus = 403,
   unreadableCourses = 0, emptyCourses = 0, unreadableDetail = false, moveStudent = true, redirectCourse = false,
-  stateError = false, errorStatus = 500, errorRedirect = true, strictState = false } = {}) {
+  stateError = false, errorStatus = 500, errorRedirect = true, strictState = false, transformHome = html => html } = {}) {
   const home = await sample('home'), list = await sample('assignment-list');
   const detail = await sample('assignment-detail-open'), expired = await sample('session-expired');
   let epoch = 0, moved = false, homeReads = 0, listReads = 0, courseId = '', stageRequests = 0, screen = 'home';
@@ -34,7 +34,7 @@ export async function fakeLms({ stage = 'course', wrongPage = false, permanent =
     else if (stale) { status = wrongPage ? 200 : 409; html = home; }
     else if (kind === 'home') {
       homeReads++; screen = 'home';
-      html = home + `<form id="homeHomlForm"><input name="nendo" value="${epoch}"></form>`;
+      html = transformHome(home) + `<form id="homeHomlForm"><input name="nendo" value="${epoch}"></form>`;
     } else if (kind === 'course') {
       listReads++; screen = 'course'; courseId = fields.get('kougiId');
       if (!courseOrder.has(courseId)) courseOrder.set(courseId, courseOrder.size);

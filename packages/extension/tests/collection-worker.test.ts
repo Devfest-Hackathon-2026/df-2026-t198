@@ -61,7 +61,7 @@ it('sends one observation with only the Firebase ID token and retains counts wit
   const safeState = { ...session }; delete safeState['ynuSessionId'];
   expect(safeState).toMatchObject({ ynuFetchStats: { attempted: 1, backgroundSucceeded: 1, pageSucceeded: 0 } });
   expect(safeState['ynuFetchSummary']).toEqual({ courses: 0, coursesComplete: 0, listed: 0, read: 0, unreadableDeadlines: 0, failures: {}, courseFailures: [], firstFailure: null, recovered: 0,
-    yielded: 0, lmsStateErrors: 0, restoreSucceeded: 1, restoreFailed: 0 });
+    yielded: 0, lmsStateErrors: 0, reusedCourses: 0, restoreSucceeded: 1, restoreFailed: 0 });
   expect(JSON.stringify(safeState)).not.toMatch(/synthetic-session|synthetic-id-token|page-html|worker-html/);
 });
 
