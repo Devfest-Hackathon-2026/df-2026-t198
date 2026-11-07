@@ -26,7 +26,9 @@ export function createSessionStore(db: Firestore): SessionStore {
           path[3] === supporterUid && allowed(grant.data())) {
           const uid = path[1]!;
           const profile = (await db.doc(`demoAccounts/${uid}`).get()).data();
-          students.push({ uid, ...(isDemoStudent(profile, uid) ? { displayName: demoStudentDisplayName } : {}) });
+          students.push({ uid, ...(isDemoStudent(profile, uid) ? {
+            displayName: typeof profile?.['displayName'] === 'string' ? profile['displayName'] : demoStudentDisplayName,
+          } : {}) });
         }
       }
       return students.sort((a, b) => a.uid.localeCompare(b.uid));
