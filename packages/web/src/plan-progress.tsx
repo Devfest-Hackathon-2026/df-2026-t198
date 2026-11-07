@@ -46,8 +46,8 @@ export function NextSubmission({ plan, assignments, courses }: Pick<StudentData,
   const task = assignments.find(row => row.key.system === plan.assignment.system && row.key.sourceId === plan.assignment.sourceId);
   if (!task || task.submission === 'submitted' || task.presenceState === 'cancelled' || task.presenceState === 'ended') return null;
   const courseName = courses.find(course => course.system === task.key.system && course.courseId === task.latest.courseId)?.name ?? '授業';
-  return <section aria-label="次は提出"><h2>次は提出</h2><h3>{courseName}：{task.latest.title}</h3>
-    <p>締切 {task.officialDeadline ? formatDeadline(task.officialDeadline.deadline) : 'LMSで確かめてください'}</p>
+  return <section className="next-submission" aria-label="次は提出"><h2>次は提出</h2><h3>{courseName}：{task.latest.title}</h3>
+    <p className="submission-deadline">締切 {task.officialDeadline ? formatDeadline(task.officialDeadline.deadline) : 'LMSで確かめてください'}</p>
     <LmsSourceLink item={task} courseName={courseName} label="LMSを開く" />
     <p>提出済みかどうかは、次にLMSを開いたときに確かめます。提出済みと分かると「次は提出」から消えます。</p></section>;
 }
@@ -57,7 +57,7 @@ export function PlanLinkAction({ user, data, link }: { user: User; data: PlanLin
   const id = query.get('id'); const action = query.get('do'); const rev = query.get('rev') ?? '';
   if (!id || !/^[a-f0-9-]{36}$/.test(id) || (action !== 'done' && action !== 'later') ||
     !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) {
-    return <section className="notice" aria-label="準備の予定の操作"><p role="status">準備の予定のリンクを確かめてください。</p><a href="/student">時間割を見る</a></section>;
+    return <section className="notice plan-confirmation" aria-label="準備の予定の操作"><p role="status">準備の予定のリンクを確かめてください。</p><a href="/student">時間割を見る</a></section>;
   }
   return <PlanConfirmation key={`${user.uid}-${id}-${action}-${rev}`} user={user} data={data} id={id} action={action} revision={Number(rev)} />;
 }
@@ -93,7 +93,7 @@ function PlanConfirmation({ user, data, id, action, revision }: {
       }
     } finally { inFlight.current = false; }
   }
-  return <section className="notice" aria-label="準備の予定の操作"><h2>準備の記録を確認</h2>
+  return <section className="notice plan-confirmation" aria-label="準備の予定の操作"><h2>準備の記録を確認</h2>
     {plan ? <><h3>{course ? `${course.name}：` : ''}{task?.latest.title ?? plan.title}</h3>
       <p>準備の日時：{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}（日本時間）</p>
       <p role={message ? undefined : 'status'}>{state === 'idle' ? currentPlanMessage(plan) : `今の状態：${plan.status === 'cancelled' ? '予定を外した' : planProgress(plan) || 'まだ'}`}</p>

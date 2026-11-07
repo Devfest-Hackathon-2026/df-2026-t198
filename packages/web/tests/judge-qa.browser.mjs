@@ -70,7 +70,7 @@ try {
       await calendar.getByRole('button', { name: '今日へ', exact: true }).click();
       assert.equal(await calendar.locator('.calendar-scroll').evaluate(element => Math.round(element.scrollLeft)), 0);
       assert.equal(await student.locator('.scroll-hint').first().isVisible(), width <= 850);
-      assert.equal(await student.getByText('黄色は、今変わった締切の目印です。しばらくすると元の色に戻ります。', { exact: true }).count(), 0);
+      assert.equal(await student.getByText('朱色は、今変わった締切の目印です。しばらくすると元の色に戻ります。', { exact: true }).count(), 0);
     });
     await check(`${width}: period labels stay visible after horizontal scrolling`, async () => {
       const region = student.locator('.timetable-scroll');
@@ -166,6 +166,8 @@ try {
     const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
     await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
     await preview.getByRole('link', { name: /終わった/, exact: false }).click();
+    await preview.getByRole('region', { name: '準備の予定の操作', exact: true })
+      .getByRole('button', { name: '終わった', exact: true }).click();
     await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
     await student.getByRole('button', { name: /の締切を1日延ばす/ }).first().click();
     await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();

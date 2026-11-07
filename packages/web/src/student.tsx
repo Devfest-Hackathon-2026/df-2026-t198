@@ -104,7 +104,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
   return <OperationMessages>
     {planLink}
     <div className="student-heading"><h1>時間割と課題</h1><p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>
-      {changed.size > 0 && <p className="muted">黄色は、今変わった締切の目印です。しばらくすると元の色に戻ります。</p>}</div>
+      {changed.size > 0 && <p className="muted">朱色は、今変わった締切の目印です。しばらくすると元の色に戻ります。</p>}</div>
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;

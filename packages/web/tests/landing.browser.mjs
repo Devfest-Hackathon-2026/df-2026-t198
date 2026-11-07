@@ -27,6 +27,8 @@ try {
     await page.evaluate(() => globalThis.document.fonts.ready);
     await page.locator('.shot').evaluateAll(images => Promise.all(images.map(image => image.decode())));
     assert.equal(await page.getByLabel('パスワード').count(), 0);
+    await page.getByText('共有の許可がある学生の授業と課題が、面談画面に出ます。面談の前に、何が変わったかを確かめられます。', { exact: true }).waitFor();
+    await page.getByText('支援担当が見られるのは、共有の許可がある学生だけです', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: '学生として試す', exact: true }).count(), 0);
     await page.getByText('審査の方へ', { exact: true }).waitFor();
     assert.equal(await page.locator('main section.sec > h2').count(), 5);
