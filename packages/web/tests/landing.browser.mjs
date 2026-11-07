@@ -32,6 +32,13 @@ try {
     assert.equal(await page.locator('main section.sec > h2').count(), 5);
     assert.equal(await page.locator('.vis[aria-hidden="true"] .cell').count(), 6);
     await noOverflow();
+    const hero = await page.locator('.hero').boundingBox();
+    const mail = await page.locator('.hero .mail').boundingBox();
+    assert(mail.y + mail.height < hero.y + hero.height, `Mail card must fit inside the hero at ${width}px`);
+    if (width === 390) {
+      const visual = await page.locator('.hero .vis').boundingBox();
+      assert(mail.y + mail.height <= visual.y + visual.height, 'Mail card must contribute to the mobile illustration height');
+    }
     await page.screenshot({ path: `${evidence}/after-${width}.png`, fullPage: true });
     await page.getByRole('link', { name: '体験版を開く', exact: true }).click();
     assert.equal(new URL(page.url()).hash, '#try');

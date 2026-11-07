@@ -96,6 +96,7 @@
   .landing .try { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
+  .landing :is(h1, h2, h3) { text-wrap: balance; }
   .landing .pc-only, .landing .mail .mb { display: none; }
   .landing .brand svg { width: 24px; height: 24px; }
   .landing .top { flex-wrap: wrap; padding: 14px 16px; }
@@ -110,7 +111,7 @@
   .landing .lead { font-size: 15px; margin-top: 14px; }
   .landing .btns { flex-direction: column; gap: 10px; margin-top: 20px; }
   .landing .btn { font-size: 16px; padding: 14px 16px; text-align: center; }
-  .landing .vis { position: relative; height: 330px; margin-top: 26px; }
+  .landing .vis { position: relative; height: auto; margin-top: 26px; }
   .landing .grid { position: static; width: auto; grid-template-columns: 28px repeat(3, minmax(0, 1fr)); }
   .landing .grid > :nth-child(6n), .landing .grid > :nth-child(6n - 1), .landing .grid > :nth-child(n + 19) { display: none; }
   .landing .gh { height: 30px; font-size: 12px; }
@@ -121,12 +122,12 @@
   .landing .cn { font-size: 12px; }
   .landing .nx { font-size: 11px; }
   .landing .wire { left: 61px; top: 222px; height: 28px; }
-  .landing .mail { left: 12px; right: 0; top: 250px; width: auto; padding: 12px 14px; }
+  .landing .mail { position: static; margin: 28px 0 0 12px; width: auto; padding: 12px 14px; }
   .landing .mh { font-size: 11px; }
   .landing .ms { font-size: 16px; margin-top: 6px; }
   .landing .mi { font-size: 13px; margin-top: 4px; }
   .landing .sec { padding: 40px 16px 4px; }
-  .landing .sh { font-size: 22px; margin-top: 10px; line-height: 1.45; }
+  .landing .sh { font-size: 21px; margin-top: 10px; line-height: 1.45; }
   .landing .bar { width: 44px; margin-top: 12px; }
   .landing .steps, .landing .two, .landing .try, .landing .start, .landing .safe { display: block; margin-top: 20px; }
   .landing .step, .landing .who { padding-top: 14px; margin-top: 20px; }
