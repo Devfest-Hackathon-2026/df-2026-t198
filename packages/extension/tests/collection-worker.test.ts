@@ -34,7 +34,15 @@ beforeEach(async () => {
   fetcher.mockImplementation(async (url: string) => ({ ok: true, url, status: 200, text: async () => 'worker-html',
     json: async () => ({ status: 'applied', changed: true, changeCount: 1 }) }));
   vi.stubGlobal('fetch', fetcher);
-  vi.stubGlobal('chrome', { action: { setBadgeText: badge, setTitle: title, setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined) }, runtime: { id: 'synthetic-extension' }, tabs: { sendMessage: send }, storage: { session: {
+  vi.stubGlobal('chrome', { action: { setBadgeText: badge, setTitle: title, setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined) }, runtime: { id: 'synthetic-extension' }, tabs: {
+    query: async () => [{ id: 7 }],
+    get: async () => ({ id: 7, status: 'complete' }),
+    sendMessage: async (tab: number, message: { type: string; restore?: boolean }, target: unknown) => {
+      if (message.type !== 'ynu-read-page') return { ok: true };
+      if (message.restore) return { ok: true, page: { html: 'home', url: 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex' } };
+      return send(tab, message, target);
+    },
+  }, storage: { session: {
     get: vi.fn(async () => session), set: vi.fn(async (values) => Object.assign(session, values)),
   } } });
   run = (await import('../src/collection-worker.js')).runCollection;
@@ -52,7 +60,8 @@ it('sends one observation with only the Firebase ID token and retains counts wit
   expect(fetcher.mock.invocationCallOrder.at(-1)).toBeLessThan(sync.mock.invocationCallOrder[0]!);
   const safeState = { ...session }; delete safeState['ynuSessionId'];
   expect(safeState).toMatchObject({ ynuFetchStats: { attempted: 1, backgroundSucceeded: 1, pageSucceeded: 0 } });
-  expect(safeState['ynuFetchSummary']).toEqual({ courses: 0, coursesComplete: 0, listed: 0, read: 0, unreadableDeadlines: 0, failures: {}, courseFailures: [], firstFailure: null, recovered: 0 });
+  expect(safeState['ynuFetchSummary']).toEqual({ courses: 0, coursesComplete: 0, listed: 0, read: 0, unreadableDeadlines: 0, failures: {}, courseFailures: [], firstFailure: null, recovered: 0,
+    yielded: 0, lmsStateErrors: 0, restoreSucceeded: 1, restoreFailed: 0 });
   expect(JSON.stringify(safeState)).not.toMatch(/synthetic-session|synthetic-id-token|page-html|worker-html/);
 });
 
@@ -141,13 +150,13 @@ it('keeps an accepted observation and change notice when calendar sync fails', a
 });
 
 it.each([
-  ['api-not-configured', '!', '課題を確かめられませんでした。拡張機能の接続先の設定が必要です'],
-  ['success', '', 'LMSの課題を確かめました'],
-  ['partial', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
-  ['collection-unavailable', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
-  ['send-failed', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
-  ['sign-in-required', '!', '課題を確かめられませんでした。拡張機能の設定からGoogleにログインしてください'],
-  ['not-logged-in', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
+  ['api-not-configured', '!', '課題を更新できませんでした。拡張機能の接続先の設定が必要です'],
+  ['success', '', 'LMSの課題を更新しました'],
+  ['partial', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
+  ['collection-unavailable', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
+  ['send-failed', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
+  ['sign-in-required', '!', '課題を更新できませんでした。拡張機能の設定からGoogleにログインしてください'],
+  ['not-logged-in', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
 ])('shows running then %s on the badge, title, and popup data', async (outcome, expectedBadge, message) => {
   if (outcome === 'api-not-configured') apiOrigin.mockReturnValue(null);
   else if (outcome === 'sign-in-required') identity.mockResolvedValue(null);
@@ -158,7 +167,7 @@ it.each([
   }
   await run(pageUrl, 7);
   expect(badge.mock.calls[0]).toEqual([{ text: '…' }]);
-  expect(title.mock.calls[0]).toEqual([{ title: 'LMSの課題を確かめています' }]);
+  expect(title.mock.calls[0]).toEqual([{ title: 'LMSの課題を更新しています' }]);
   expect(badge).toHaveBeenLastCalledWith({ text: expectedBadge });
   expect(title).toHaveBeenLastCalledWith({ title: expect.stringMatching(new RegExp('^\\d{1,2}/\\d{1,2} \\d{2}:\\d{2} に' + message + '$')) });
   const { collectionDisplay } = await import('../src/collection-display.js');

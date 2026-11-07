@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { createContext, runInContext } from 'node:vm';
 import { fileURLToPath, URL, URLSearchParams } from 'node:url';
 import { expect, it, vi } from 'vitest';
+import { setTimeout, clearTimeout, setImmediate } from 'node:timers';
 import { parseObservation } from '../../server/src/observation-input.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { applyObservation } from '../../core/src/ledger.js';
@@ -113,21 +114,21 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
     return reply(200, applied.result);
   });
   let elapsed = 0;
-  const common = { Date: class extends Date { static now() { return Date.now() + elapsed; } }, URL, URLSearchParams, AbortSignal: globalThis.AbortSignal, crypto: { randomUUID },
-    setTimeout: (fn) => { globalThis.queueMicrotask(fn); return 0; }, console: { warn: vi.fn() } };
+  const common = { Date: class extends Date { static now() { return Date.now() + elapsed; } }, URL, URLSearchParams, AbortSignal: globalThis.AbortSignal, AbortController: globalThis.AbortController, crypto: { randomUUID },
+    clearTimeout, setTimeout: (fn, ms) => { if (ms >= 4000) return setTimeout(fn, ms); if (ms === 2000) elapsed += ms; globalThis.queueMicrotask(fn); return 0; }, console: { warn: vi.fn() } };
   const call = (listener, message, sender) => new Promise(resolve => listener(message, sender, resolve));
   const getAuthToken = vi.fn(async options => { expect(options.interactive).toBe(false); return { token: 'synthetic-google-token' }; });
   const workerContext = createContext({ ...common, sdk, fetch: fetcher, chrome: {
     identity: { getAuthToken },
     runtime: { id: 'synthetic-extension', onStartup: { addListener: vi.fn() }, onInstalled: { addListener: vi.fn() }, onMessage: { addListener: fn => { workerListener = fn; } } },
     storage: { session: { set: async values => Object.assign(state, globalThis.structuredClone(values)), get: async () => globalThis.structuredClone(state) } },
-    tabs: { sendMessage: async (tabId, message, target) => {
+    tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: async (tabId, message, target) => {
       expect(tabId).toBe(7); expect(target).toEqual({ frameId: 0, documentId: 'synthetic-document' });
       return call(contentListener, message, { id: 'synthetic-extension' });
     } },
   } }, { codeGeneration: { strings: false, wasm: false } });
   const { document } = parseHTML('<html><body><main>架空のLMS</main></body></html>');
-  const contentContext = createContext({ ...common, document, fetch: pageFetch, window: { location: { href: pageUrl } }, chrome: {
+  const contentContext = createContext({ ...common, document, fetch: pageFetch, window: { location: { href: pageUrl }, addEventListener: () => {} }, chrome: {
     runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { contentListener = fn; } },
       sendMessage: message => {
         trigger = call(workerListener, message, { id: 'synthetic-extension', frameId: 0, url: pageUrl, tab: { id: 7 }, documentId: 'synthetic-document' });
@@ -135,7 +136,9 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
       } },
   } }, { codeGeneration: { strings: false, wasm: false } });
   runInContext(worker.outputFiles[0].text, workerContext);
+  trigger = undefined;
   runInContext(content.outputFiles[0].text, contentContext);
+  await new Promise(resolve => setImmediate(resolve));
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
   const notice = [...document.body.children].find(node => node.shadowRoot).shadowRoot.querySelector('a');
   expect(notice.textContent).toBe('課題の変更が198件あります。学生の画面を開く');
@@ -175,7 +178,9 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   extended = true;
   elapsed += 10 * 60_000;
   // Reopen the page, using the same worker and saved calendar, after the LMS changes.
+  trigger = undefined;
   runInContext(content.outputFiles[0].text, contentContext);
+  await new Promise(resolve => setImmediate(resolve));
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
   expect(apiBodies).toHaveLength(2);
   expect(apiBodies[1].observationId).not.toBe(apiBodies[0].observationId);
@@ -191,7 +196,9 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   ended = true;
   elapsed += 10 * 60_000;
   const priorDetailCount = calls.filter(c => c.url.includes('linkKyozaiTitle')).length;
+  trigger = undefined;
   runInContext(content.outputFiles[0].text, contentContext);
+  await new Promise(resolve => setImmediate(resolve));
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
   await vi.waitFor(() => expect(reports).toHaveLength(594), { timeout: 10_000 });
   expect(events.size).toBe(0);

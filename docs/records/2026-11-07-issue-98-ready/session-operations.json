@@ -1,0 +1,48 @@
+{
+  "status": "pass",
+  "operations": [
+    "stale notice at 72 hours at 1280px and 390px",
+    "failed fetch notice and live recovery",
+    "secondary student IDs and no redundant selector actions",
+    "own session only without assigned students",
+    "no internal timezone labels and trial LMS wording",
+    "link-style logout",
+    "deadline extension sentence after live update",
+    "aligned disclosure and Enter/Space at 1280px and 390px",
+    "student selector only sharing notice",
+    "checking without timetable or decisions",
+    "row-only source details",
+    "previous promises",
+    "planning without full deadline/change list",
+    "two free weekday suggestions",
+    "available add buttons and no writes before choosing",
+    "both step links",
+    "browser back",
+    "direct URL reload",
+    "390px checking and planning",
+    "student switch",
+    "session time edit and unset",
+    "live assignment update",
+    "revocation clears planning and promises",
+    "revoked student removed",
+    "shared login across routes",
+    "logout clears data"
+  ],
+  "markerMeasurements": [
+    {
+      "width": 1280,
+      "topDifference": 0
+    },
+    {
+      "width": 390,
+      "topDifference": 0
+    }
+  ],
+  "browserErrors": [],
+  "viewport": [
+    1280,
+    960,
+    390,
+    844
+  ]
+}

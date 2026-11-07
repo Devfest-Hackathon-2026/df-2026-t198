@@ -7,6 +7,7 @@ import { firebase } from './firebase';
 import { DemoPages, demoDueText } from './demo-pages';
 import { readDemoAnnouncements, readDemoObservation } from './demo-reader';
 import './demo.css';
+import { OperationMessages, useOperationMessage } from './operation-messages';
 
 class DemoRequestError extends Error {
   constructor(readonly status: number) { super('demo-request-failed'); }
@@ -21,6 +22,7 @@ async function post(user: User, path: string, body: unknown) {
 export function DemoPage() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [error, setError] = useState('');
+  const [loginBusy, setLoginBusy] = useState(false);
   useEffect(() => firebase ? onAuthStateChanged(firebase.auth, setUser) : undefined, []);
   useEffect(() => {
     const returnTo = new URLSearchParams(window.location.search).get('returnTo');
@@ -37,20 +39,22 @@ export function DemoPage() {
   if (!firebase) return <p>体験画面の準備中です。担当者に確認してください。</p>;
   const client = firebase;
   async function login(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setError('');
+    event.preventDefault(); setError(''); setLoginBusy(true);
     const form = new FormData(event.currentTarget);
     try { await signInWithEmailAndPassword(client.auth, String(form.get('email')), String(form.get('password'))); }
     catch { setError('ログインできませんでした。アカウントと接続を確かめてください。'); }
+    finally { setLoginBusy(false); }
   }
   return <div className="demo-shell"><header className="demo-header"><h1>課題の秘書を試す</h1>
     {user && <button className="demo-logout" onClick={() => { void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')); }}>ログアウト</button>}</header>
     <p>ここで扱う授業と課題は架空のものです。学生と支援担当は別のブラウザでログインしてください。</p>
+    <p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>
     {user === undefined ? <p role="status">ログインを確かめています…</p> : user ? <>
       <DemoWorkspace key={user.uid} user={user} />
     </> : <form className="session-login" onSubmit={event => { void login(event); }}>
       <label>メールアドレス<input name="email" type="email" autoComplete="username" required /></label>
       <label>パスワード<input name="password" type="password" autoComplete="current-password" required /></label>
-      <button>ログイン</button>
+      <button disabled={loginBusy}>{loginBusy ? 'ログイン中…' : 'ログイン'}</button>
     </form>}
     {error && <p role="alert">{error}</p>}
   </div>;
@@ -94,14 +98,14 @@ function DemoWorkspace({ user }: { user: User }) {
   if (failure) return <p role="alert">体験用のデータを開けませんでした。体験用アカウントと接続を確かめてください。</p>;
   if (!account) return <p role="status">体験用のデータを開いています…</p>;
   if (account.role === 'supporter') return <><p>面談画面で、担当する学生を選んでください。</p><a href="/session">面談を開く</a></>;
-  return data ? <DemoStudent key={user.uid} user={user} data={data} /> : <p role="status">授業を開いています…</p>;
+  return data ? <OperationMessages><DemoStudent key={user.uid} user={user} data={data} /></OperationMessages> : <p role="status">授業を開いています…</p>;
 }
 function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   const pages = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [awaiting, setAwaiting] = useState<{ dates: { sourceId: string; dueAt: string }[]; announcementIds?: string[]; message: string } | null>(null);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useOperationMessage();
+  const [error, setError] = useOperationMessage();
   const pending = useRef<Observation | null>(null);
   const active = useRef(true);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
@@ -139,7 +143,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
     }));
     if (results.some(result => result.status === 'rejected' ||
       !['proposal', 'duplicate', 'abstained'].includes(result.value))) {
-      return '課題を確認しました。お知らせの確認は終わりませんでした。LMSのお知らせと課題の欄を見比べてください。';
+      return '課題を確認しました。お知らせの確認は終わりませんでした。LMSのお知らせと課題ページの締切を見比べてください。';
     }
     return '課題を確認しました。学生の画面と面談画面で今の締切を見られます。';
   });
@@ -157,13 +161,13 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         <p>延ばしたら、もう一度 1 を押します。</p>
         {data.courses.flatMap(course => course.assignments).filter(task => task.submission !== 'submitted').map(task =>
           <div className="demo-teacher-action" key={task.sourceId}><p>{task.title}：{demoDueText(task.dueAt)}</p>
-            <button disabled={blocked || pending.current !== null} onClick={() => { void action(async () => {
+            <div className="demo-teacher-option"><button disabled={blocked || pending.current !== null} onClick={() => { void action(async () => {
               const response = await post(user, '/api/v1/demo/extend', { sourceId: task.sourceId, expectedDueAt: task.dueAt });
               const expected = await response.json() as { sourceId: string; dueAt: string };
               setAwaiting({ dates: [expected], message: 'LMSの締切を1日延ばしました。「LMSを開く」で課題を確かめてください。' });
               return 'LMSの締切が変わるのを待っています…';
-            }); }}>「{task.title}」の締切を1日延ばす</button>
-            <button disabled={blocked || pending.current !== null} onClick={() => { void action(async () => {
+            }); }}>「{task.title}」の締切を1日延ばす</button></div>
+            <div className="demo-teacher-option"><button disabled={blocked || pending.current !== null} onClick={() => { void action(async () => {
               const response = await post(user, '/api/v1/demo/announce', { sourceId: task.sourceId, expectedDueAt: task.dueAt });
               const result = await response.json() as { announcementId: string };
               setAwaiting({ dates: [], announcementIds: [...(data.announcements ?? [])
@@ -172,7 +176,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
                 message: 'お知らせを出しました。「LMSを開く」で、課題の締切との違いを確かめてください。' });
               return 'お知らせが画面に出るのを待っています…';
             }); }}>お知らせを出す</button>
-            <p>課題の欄はそのままに、締切を延ばすお知らせを出します。もう一度 1 を押すと「要確認」が出ます。</p>
+            <p>LMSの課題ページの締切はそのままに、延ばすお知らせを出します。もう一度 1 を押すと「要確認」が出ます。</p></div>
           </div>)}
       </section></li>
     </ol>

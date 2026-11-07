@@ -1,7 +1,8 @@
+import { deadlineEntries, entryDeadline } from './deadline-entries';
 import { preparationSlots } from '@kadai-hisho/core';
 import { missingDeadlineText, reviewReasonText } from './review-reason';
 import type { AssignmentChange, Course, Deadline, FetchState, LedgerAssignment, LmsSystem,
-  PreparationCandidate, PreparationPlan, SessionContext } from '../../core/src/types';
+  PreparationCandidate, PreparationPlan, ManualAssignment, SessionContext } from '../../core/src/types';
 
 export interface SessionData {
   assignments: LedgerAssignment[];
@@ -10,8 +11,9 @@ export interface SessionData {
   courses: (Course & { system: LmsSystem })[];
   fetchStates: FetchState[];
   plans: PreparationPlan[];
+  manualAssignments: ManualAssignment[];
 }
-export const emptySession = (): SessionData => ({ assignments: [], changes: [], courses: [], fetchStates: [], plans: [],
+export const emptySession = (): SessionData => ({ assignments: [], changes: [], courses: [], fetchStates: [], plans: [], manualAssignments: [],
   context: { lastSessionAt: null, nextSessionAt: null } });
 export function dayInZone(at: Date, timeZone: string) {
   return new Intl.DateTimeFormat('sv-SE', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
@@ -37,6 +39,15 @@ export function buildSessionView(data: Pick<SessionData, 'assignments' | 'change
     .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt)) : [];
   const review = data.assignments.filter(row => row.presenceState !== 'cancelled' && row.presenceState !== 'ended' && row.reviewReasons.length > 0);
   return { deadlines, changes, review };
+}
+export function sessionDeadlineEntries(data: SessionData, now: Date) {
+  const next = data.context.nextSessionAt;
+  if (!next || Date.parse(next) < now.getTime()) return [];
+  return deadlineEntries(data.assignments, data.manualAssignments, now.getTime()).filter(entry => {
+    const deadline = entryDeadline(entry);
+    if (deadline?.kind === 'datetime') return Date.parse(deadline.dueAt) >= now.getTime() && Date.parse(deadline.dueAt) <= Date.parse(next);
+    return deadline?.kind === 'date' && deadline.date >= dayInZone(now, deadline.timeZone) && deadline.date <= dayInZone(new Date(next), deadline.timeZone);
+  });
 }
 function deadlineSortKey(deadline: Deadline) {
   if (deadline.kind === 'datetime') return dayInZone(new Date(deadline.dueAt), deadline.timeZone) + 'T' + deadline.dueAt;

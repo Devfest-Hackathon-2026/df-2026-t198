@@ -1,8 +1,21 @@
 import { expect, it } from 'vitest';
-import { preparationSlots, preparationPeriodTimes } from '../src/preparation.js';
+import { preparationAfterDeadline, preparationSlots, preparationPeriodTimes } from '../src/preparation.js';
 import type { PreparationPlan } from '../src/types.js';
 const assignment = { system: 'ynu-lms' as const, sourceId: 'fictional' };
 const now = new Date('2030-11-11T00:00:00Z');
+it('compares exact instants and includes the entire date-only day in its own time zone', () => {
+  const base = { dueText: '架空', timeZone: 'Asia/Tokyo' };
+  const datetime = { ...base, kind: 'datetime' as const, dueAt: '2030-11-15T17:00:00+09:00' };
+  expect(preparationAfterDeadline('2030-11-15T08:00:00Z', datetime)).toBe(false);
+  expect(preparationAfterDeadline('2030-11-15T08:00:01Z', datetime)).toBe(true);
+  const date = { ...base, kind: 'date' as const, date: '2030-11-15' };
+  expect(preparationAfterDeadline('2030-11-15T23:59:59+09:00', date)).toBe(false);
+  expect(preparationAfterDeadline('2030-11-16T00:00:00+09:00', date)).toBe(true);
+  expect(preparationAfterDeadline('2030-11-16T09:00:00+09:00', { ...date, timeZone: 'America/Los_Angeles' })).toBe(false);
+  for (const deadline of [null, undefined, { ...base, kind: 'none' as const }, { ...base, kind: 'unreadable' as const }]) {
+    expect(preparationAfterDeadline('2030-11-18T13:00:00+09:00', deadline)).toBe(false);
+  }
+});
 it('excludes clock overlaps regardless of the saved period or date label, and permits adjacent intervals', () => {
   const occupied = [{ status: 'active', date: '2030-11-11', period: 5,
     startsAt: '2030-11-11T23:00:00+09:00', endsAt: '2030-11-12T11:00:00+09:00' },

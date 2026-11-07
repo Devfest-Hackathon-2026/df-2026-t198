@@ -9,7 +9,7 @@ import { studentFixture, dated } from '../src/student-fixture.ts';
 // Playwright is supplied by the operator, without changing workspace dependencies.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const require = createRequire(new URL('../../server/package.json', import.meta.url));
-process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8085';
+process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8085';
 const { initializeApp, deleteApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const app = initializeApp({ projectId: 'demo-kadai-hisho' }, 'student-browser');
@@ -22,7 +22,7 @@ const evidenceDir = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i20-evidenc
 page.on('pageerror', () => errors.push('browser-error'));
 let student;
 try {
-  await page.goto('http://127.0.0.1:5176/student');
+  await page.goto(`${process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5176'}/student`);
   await page.getByRole('button', { name: 'Googleでログイン' }).waitFor();
   const uid = await page.evaluate(async () => {
     const { firebase } = await import('/src/firebase.ts');
@@ -64,9 +64,9 @@ try {
   await panel.getByText('終了した課題', { exact: true }).click();
   assert.match(await panel.innerText(), /出せました/);
   assert.match(await panel.innerText(), /取り消されました/);
-  await panel.getByText('書いてあったこと', { exact: true }).first().click();
+  await panel.getByText('LMSの課題ページに書いてあったこと', { exact: true }).first().click();
   assert.equal(await panel.getByRole('link', { name: 'LMSで見る ›' }).first().getAttribute('href'), 'https://example.invalid/task');
-  await page.getByText('最後にLMSから取ったのは', { exact: false }).waitFor();
+  await page.getByText('から更新がありません', { exact: false }).waitFor();
   await mkdir(evidenceDir, { recursive: true });
   await page.screenshot({ path: `${evidenceDir}/student-wide.png`, fullPage: true });
   await student.collection('assignments').doc('a0').update({ 'officialDeadline.deadline': dated('2026-11-08') });

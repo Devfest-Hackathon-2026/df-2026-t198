@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
 import { readFile } from 'node:fs/promises';
+import { setImmediate } from 'node:timers';
 import { createRequire } from 'node:module';
 import { fileURLToPath, URL } from 'node:url';
 import { createContext, runInContext } from 'node:vm';
@@ -25,12 +26,15 @@ async function openLms(response, source = content) {
   const main = document.querySelector('main');
   const before = main.outerHTML;
   const sendMessage = vi.fn().mockResolvedValue(response);
-  const context = createContext({ URL, document, window: { location: { href: 'https://lms.ynu.ac.jp/lms/home;SID=synthetic-session' } },
+  let elapsed = 0, idle;
+  const context = createContext({ URL, document, Date: class extends Date { static now() { return Date.now() + elapsed; } },
+    setTimeout: fn => { idle = fn; return 0; }, AbortController: globalThis.AbortController, clearTimeout: globalThis.clearTimeout, window: { addEventListener: () => {}, location: { href: 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session' } },
     chrome: { runtime: { sendMessage, onMessage: { addListener: vi.fn() } } } },
   { codeGeneration: { strings: false, wasm: false } });
   runInContext(source, context);
+  elapsed += 2000; idle();
   await sendMessage.mock.results[0].value;
-  await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
   expect(main.outerHTML).toBe(before);
   return { document, notice: [...document.body.children].find(node => node.shadowRoot)?.shadowRoot };
 }
@@ -93,12 +97,13 @@ it('keeps an open popup in step with session status and ignores other storage ar
   await vi.waitFor(() => expect(document.querySelector('#collection-status').hidden).toBe(true));
   const finishedAt = new Date(2098, 10, 7, 4, 12).getTime();
   for (const [status, text] of [
-    ['running', 'LMSの課題を確かめています'],
-    ['success', '11/7 04:12 にLMSの課題を確かめました'],
-    ['partial', '11/7 04:12 に一部の課題を確かめられませんでした。LMSを開き直してください'],
-    ['collection-unavailable', '11/7 04:12 に一部の課題を確かめられませんでした。LMSを開き直してください'],
-    ['sign-in-required', '11/7 04:12 に課題を確かめられませんでした。拡張機能の設定からGoogleにログインしてください'],
-    ['api-not-configured', '11/7 04:12 に課題を確かめられませんでした。拡張機能の接続先の設定が必要です'],
+    ['running', 'LMSの課題を更新しています'],
+    ['yielded', '11/7 04:12 にLMSの操作を優先して更新を中断しました'],
+    ['success', '11/7 04:12 にLMSの課題を更新しました'],
+    ['partial', '11/7 04:12 に一部の課題を更新できませんでした。LMSを開き直してください'],
+    ['collection-unavailable', '11/7 04:12 に一部の課題を更新できませんでした。LMSを開き直してください'],
+    ['sign-in-required', '11/7 04:12 に課題を更新できませんでした。拡張機能の設定からGoogleにログインしてください'],
+    ['api-not-configured', '11/7 04:12 に課題を更新できませんでした。拡張機能の接続先の設定が必要です'],
   ]) {
     saved = { ynuCollectionDisplay: { status, finishedAt } };
     change({ ynuCollectionDisplay: {} }, 'session');
@@ -119,5 +124,5 @@ it('shows the last completed status when reopening the popup', async () => {
   const storage = popupStorage();
   storage.session.get = async () => ({ ynuCollectionDisplay: { status: 'success', finishedAt: new Date(2098, 10, 7, 4, 12).getTime() } });
   runInContext(popup, createContext({ document, chrome: { storage, tabs: { create: vi.fn() } } }));
-  await vi.waitFor(() => expect(document.querySelector('#collection-status').textContent).toBe('11/7 04:12 にLMSの課題を確かめました'));
+  await vi.waitFor(() => expect(document.querySelector('#collection-status').textContent).toBe('11/7 04:12 にLMSの課題を更新しました'));
 });

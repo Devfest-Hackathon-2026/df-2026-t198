@@ -45,7 +45,7 @@ describe('学生が締切を確かめる画面', () => {
     expect(html).not.toContain('23:59');
     expect(html).toContain('要確認');
     expect(html).toContain('要確認：締切を確認できていません。');
-    expect(html).toContain('最後にLMSから取ったのは');
+    expect(html).toContain('から更新がありません');
     expect(html).not.toContain('未提出');
   });
   it('同じ授業IDの別大学を混ぜず、週末・6限・複数コマ・時限のない授業を出す', () => {
@@ -72,7 +72,7 @@ describe('学生が締切を確かめる画面', () => {
     expect(JSON.stringify(item)).toBe(before);
   });
   it('初回の案内と、締切なし・不明・タイムゾーン付き日時を区別する', () => {
-    const html = renderToStaticMarkup(<StudentView data={{ plans: [], courses: [], assignments: [], fetchStates: [], online: true }} />);
+    const html = renderToStaticMarkup(<StudentView data={{ manualAssignments: [], plans: [], courses: [], assignments: [], fetchStates: [], online: true }} />);
     expect(html).toContain('まだ課題がありません');
     expect(html).not.toContain('要確認');
     expect(deadlineText({ kind: 'none', dueText: 'なし', timeZone: 'Asia/Tokyo' })).toBe('締切なし');
@@ -85,8 +85,8 @@ describe('学生が締切を確かめる画面', () => {
     const data = studentFixture();
     data.fetchStates = [{ ...data.fetchStates[0]!, lastSucceededAt: '2026-11-03T15:30:00Z', lastResult: 'success' }];
     const render = (now: string) => renderToStaticMarkup(<StudentView data={data} now={Date.parse(now)} />);
-    expect(render('2026-11-06T15:29:59Z')).not.toContain('最後にLMSから取ったのは');
-    expect(render('2026-11-06T15:30:00Z')).toContain('最後にLMSから取ったのは11/4です。LMSを開くと新しくなります。');
+    expect(render('2026-11-06T15:29:59Z')).not.toContain('から更新がありません');
+    expect(render('2026-11-06T15:30:00Z')).toContain('11/4から更新がありません。LMSを開くと新しくなります。');
     expect(render('2026-11-07T15:30:00Z')).not.toContain('changed');
   });
 
@@ -97,5 +97,5 @@ it.each(['partial', 'failed'] as const)('学生の失敗の案内を維持する
   data.fetchStates = [{ ...data.fetchStates[0]!, system: 'ynu-lms', lastSucceededAt: null, lastResult }];
   const html = renderToStaticMarkup(<StudentView data={data} now={Date.parse('2026-11-06T15:30:00Z')} />);
   expect(html).toContain('class="notice"');
-  expect(html).toContain('YNU LMS：一部の課題を確認できていません。LMSを開いて確かめてください。');
+  expect(html).toContain('YNU LMS：課題をすべて確認できていません。LMSを開いて確かめてください。');
 });

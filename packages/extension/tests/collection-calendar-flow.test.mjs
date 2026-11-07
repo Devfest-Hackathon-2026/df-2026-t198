@@ -80,12 +80,14 @@ async function fixture({ uploadStatus = 200, googleStatus = 200, holdPendingRead
     return { token: 'synthetic-google-token' };
   });
   const chrome = {
+    tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: async () => ({ ok: true }) },
     runtime: { id: 'synthetic-extension', getURL: path => `chrome-extension://synthetic-extension/${path}`,
       onMessage: { addListener: fn => { listener = fn; } }, onStartup: { addListener: vi.fn() }, onInstalled: { addListener: vi.fn() } },
     storage: { session: { get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, values) } },
     identity: { getAuthToken, removeCachedAuthToken: vi.fn() },
   };
   runInContext(worker.outputFiles[0].text, createContext({ chrome, fetch, URL, AbortSignal: globalThis.AbortSignal,
+    AbortController: globalThis.AbortController, setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout,
     crypto: { randomUUID: () => 'synthetic-worker' } }, { codeGeneration: { strings: false, wasm: false } }));
   chrome.runtime.onStartup.addListener.mock.calls.forEach(([listener]) => listener());
   await vi.waitFor(() => expect(syncReads).toBe(1));

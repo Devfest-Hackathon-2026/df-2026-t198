@@ -1,19 +1,22 @@
+import { manualAssignmentActions, ManualAssignments, ManualAssignmentRow, type ManualAssignmentActions } from './manual-assignments';
+import { entryId } from './deadline-entries';
 import { planProgress } from './plan-progress';
 import { fetchStatus } from './fetch-status';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { AssignmentChange, LedgerAssignment, SessionContext } from '../../core/src/types';
 import { getSessionServices, type SessionServices } from './session-firebase';
-import { buildSessionView, changeDescription, dayInZone, emptySession, formatDeadline, formatMoment,
+import { sessionDeadlineEntries, buildSessionView, changeDescription, dayInZone, emptySession, formatDeadline, formatMoment,
   reviewDescription, type SessionData } from './session-model';
 import { watchSession, type SessionState } from './session-watch';
 import { SessionLink, sessionRoute } from './session-route';
-import { planActions, PlanList, type PlanActions } from './preparation-plans';
+import { comparePreparationPlans, planActions, PlanList, type PlanActions } from './preparation-plans';
 import { SessionPlanning } from './session-planning';
 import './session.css';
 import { ChangedDeadline } from './deadline-change';
 import { missingDeadlineText } from './review-reason';
 import { DemoLogin } from './demo-login';
+import { OperationMessages, useOperationMessage } from './operation-messages';
 
 export function SessionPage({ path = '/session' }: { path?: string }) {
   const [services] = useState(() => { try { return getSessionServices(); } catch { return null; } });
@@ -53,7 +56,7 @@ function Login({ services }: { services: SessionServices }) {
   </form>;
 }
 function SessionWorkspace({ user, services, path }: { user: User; services: SessionServices; path: string }) {
-  const [students, setStudents] = useState<{ uid: string }[] | null>(null);
+  const [students, setStudents] = useState<{ uid: string; displayName?: string }[] | null>(null);
   const { uid: selected, planning } = sessionRoute(path);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -74,21 +77,22 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
     return () => { active = false; window.clearInterval(interval); };
   }, [user, services]);
   if (selected) return <div className="session-content">
-    <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>
-    <StudentSession key={selected} uid={selected} user={user} services={services} planning={planning} />
+    {selected !== user.uid && <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>}
+    <StudentSession key={selected} uid={selected} user={user} services={services} planning={planning}
+      displayName={students === null ? '学生' : students.find(student => student.uid === selected)?.displayName} />
   </div>;
   return <section className="session-students">
-    <h2>担当する学生</h2>
-    <p>学生が見せることにした授業と課題だけを出しています。</p>
+    <h2>{students?.length === 0 ? '自分の面談' : '担当する学生'}</h2>
+    {students?.length !== 0 && <p>学生が見せることにした授業と課題だけを出しています。</p>}
     <nav aria-label="担当する学生">
       {students?.map(student => <SessionLink key={student.uid} href={`/session/${encodeURIComponent(student.uid)}`}>
-        <strong>学生</strong>{' '}<span className="session-student-id">{student.uid}</span></SessionLink>)}
+        <strong>{student.displayName ?? '学生'}</strong>{!student.displayName && <>{' '}<span className="session-student-id">{student.uid}</span></>}</SessionLink>)}
     </nav>
     {students?.length === 0 && <SessionLink href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談を見る</SessionLink>}
     {error && <p role="alert">{error}</p>}
   </section>;
 }
-function StudentSession({ uid, user, services, planning }: { uid: string; user: User; services: SessionServices; planning: boolean }) {
+function StudentSession({ uid, user, services, planning, displayName }: { uid: string; user: User; services: SessionServices; planning: boolean; displayName?: string | undefined }) {
   const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
   const [now, setNow] = useState(() => new Date());
   useEffect(() => watchSession(services.source, uid, user.uid, state => {
@@ -101,25 +105,26 @@ function StudentSession({ uid, user, services, planning }: { uid: string; user: 
   }, []);
   if (state.status === 'loading') return <p role="status">面談の内容を開いています…</p>;
   if (state.status === 'denied') return <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>;
-  if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。学生を選び直してください。</p>;
+  if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。{uid === user.uid ? '接続を確かめて、画面を開き直してください。' : '学生を選び直してください。'}</p>;
   return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning}
-    actions={planActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
+    displayName={displayName} actions={planActions(user, uid)} manualActions={manualAssignmentActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
 }
-export function SessionDetails({ data, now, own, save, uid, planning, actions, viewerUid }: {
+export function SessionDetails({ data, now, own, save, uid, planning, actions, manualActions, viewerUid, displayName }: {
   data: SessionData; now: Date; own: boolean; uid: string; planning: boolean;
-  actions?: PlanActions | undefined; viewerUid?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
+  actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; viewerUid?: string | undefined; displayName?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
   const view = buildSessionView(data, now);
+  const deadlines = sessionDeadlineEntries(data, now);
   const promises = data.plans.filter(plan => plan.status !== 'cancelled' && data.context.lastSessionAt &&
-    plan.decidedOn === dayInZone(new Date(data.context.lastSessionAt), 'Asia/Tokyo'));
+    plan.decidedOn === dayInZone(new Date(data.context.lastSessionAt), 'Asia/Tokyo')).sort(comparePreparationPlans);
   const changeLine = (change: AssignmentChange) => <>
     <time>{formatMoment(change.recordedAt)}</time>{' '}
     {data.assignments.find(row => sameAssignment(row, change.assignmentKey))?.latest.title ?? '課題'}：{changeDescription(change)}
   </>;
   const base = `/session/${encodeURIComponent(uid)}`;
-  return <>
+  return <OperationMessages>
     <header className="session-heading">
-      <div><h1>{own ? '自分の面談' : '学生'}</h1>
-        {!own && <p className="session-student-id">{uid}</p>}</div>
+      <div><h1>{own ? '自分の面談' : displayName ?? '学生'}</h1>
+        {!own && !displayName && <p className="session-student-id">{uid}</p>}</div>
       <div className="session-dates">
         <p>前回 {data.context.lastSessionAt ? formatMoment(data.context.lastSessionAt) : '日時がまだありません'}</p>
         <p>次回 <strong>{data.context.nextSessionAt ? formatMoment(data.context.nextSessionAt) : '日時を決めてください'}</strong></p>
@@ -131,26 +136,27 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
       <SessionLink href={`${base}/plan`} aria-current={planning ? 'step' : undefined}>② 相談する</SessionLink>
     </nav>
     <ContextEditor key={`${data.context.lastSessionAt}/${data.context.nextSessionAt}`} context={data.context} save={save} />
+    {!planning && <p>準備は、課題に取り組む時間のことです。</p>}
     {planning ? <SessionPlanning data={data} now={now} actions={actions} own={own} viewerUid={viewerUid} /> : <>
       <div className="session-updates">
         {data.fetchStates.map(state => {
           const { stale, failed } = fetchStatus(state, now.getTime());
           const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
           if (stale || failed) return <p className="notice" key={state.system}>
-            {label}：{stale ? `最後にLMSから取ったのは${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}です。学生がLMSを開くと新しくなります。` :
-              '今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。'}</p>;
+            {label}：{stale ? `${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。学生がLMSを開くと新しくなります。` :
+              '課題をすべて確認できていません。LMSを一緒に開いて確かめてください。'}</p>;
           return <p key={state.system}>
             <strong>{state.system === 'ynu-lms' ? 'YNU' : label}</strong>{' '}
             {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
           </p>;
         })}
       </div>
-      <PlanList plans={data.plans} own={false} />
+      <PlanList plans={data.plans} assignments={data.assignments} own={own} />
       <div className="session-check">
         {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>
-          <ul className="panel session-rows">{promises.map((plan, i) =>
-            <li key={i}>{data.assignments.find(row => sameAssignment(row, plan.assignment))?.latest.title ?? '課題'}：
-              {plan.date.replaceAll('-', '/')} {plan.period}限に準備 {planProgress(plan)}</li>)}</ul>
+          <ul className="panel session-rows">{promises.map(plan =>
+            <li key={plan.planId}>{data.assignments.find(row => sameAssignment(row, plan.assignment))?.latest.title ?? '課題'}：
+              <time dateTime={plan.startsAt}>{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time> {plan.period}限に準備 {planProgress(plan)}</li>)}</ul>
         </section>}
         <section aria-labelledby="session-changes"><h2 id="session-changes">前回の面談からの変化</h2>
           {!data.context.lastSessionAt && <p>前回の面談日時を入れると、それ以降の変化が出ます。</p>}
@@ -163,8 +169,9 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
         </section>
         <section aria-labelledby="session-deadlines"><h2 id="session-deadlines">次の面談までの締切</h2>
           {!data.context.nextSessionAt && <p>次の面談日時を決めると、この期間の締切が出ます。</p>}
-          {!!view.deadlines.length && <ul className="panel session-rows">{view.deadlines.map(row =>
-            <SessionAssignment key={JSON.stringify(row.key)} row={row} data={data} />)}</ul>}
+          {!!deadlines.length && <ul className="panel session-rows">{deadlines.map(entry => entry.kind === 'lms'
+            ? <SessionAssignment key={entryId(entry)} row={entry.row} data={data} />
+            : <ManualAssignmentRow key={entryId(entry)} row={entry.row} actions={manualActions} own={own} viewerUid={viewerUid} />)}</ul>}
         </section>
         {!!view.review.filter(row => !view.deadlines.includes(row)).length && <ul className="panel session-rows session-other-review"
           aria-label="締切を確かめる課題">
@@ -174,7 +181,8 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
         <SessionLink className="session-next" href={`${base}/plan`}>準備する時間を相談する →</SessionLink>
       </div>
     </>}
-  </>;
+    <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own={own} viewerUid={viewerUid} now={now.getTime()} />
+  </OperationMessages>;
 }
 function sameAssignment(row: LedgerAssignment, key: LedgerAssignment['key']) {
   return row.key.system === key.system && row.key.sourceId === key.sourceId;
@@ -192,7 +200,7 @@ function SessionAssignment({ row, data }: { row: LedgerAssignment; data: Session
     {reason && <span className="session-review"><span className="review-tag">要確認</span> {reason}</span>}
   </div></summary><div className="session-task-detail">
     <SourceLink url={row.latest.url} />
-    <h4>書いてあったこと</h4><p>{row.latest.deadline.dueText}</p>
+    <h4>LMSの課題ページに書いてあったこと</h4><p>{row.latest.deadline.dueText}</p>
     {row.officialDeadline && row.latest.deadline.kind === 'unreadable' && <p>
       前に確認できた締切：{row.officialDeadline.deadline.dueText}</p>}
     {!!changes.length && <><h4>これまでの変更</h4><ul>{changes.map(change => <li key={change.changeId}>
@@ -208,7 +216,7 @@ function SourceLink({ url }: { url: string }) {
 }
 function ContextEditor({ context, save }: { context: SessionContext; save: (context: SessionContext) => Promise<void> }) {
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useOperationMessage();
   const localInput = (value: string | null) => value ? `${dayInZone(new Date(value), 'Asia/Tokyo')}T${new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value))}` : '';
   async function submit(event: FormEvent<HTMLFormElement>) {

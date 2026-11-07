@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { PreparationPlan, PreparationPlanInput, LedgerAssignment, Course } from '@kadai-hisho/core';
+import { preparationAfterDeadline } from '@kadai-hisho/core';
 import { preparationDesired, reconcileDesiredCalendarItem, type CalendarItem, type CalendarIntegration } from '@kadai-hisho/core/calendar';
 import type { Firestore } from 'firebase-admin/firestore';
 import { documentKey } from './observation-store.js';
@@ -7,6 +8,7 @@ import { SessionForbidden } from './session-store.js';
 import { isDemoStudent } from './demo-store.js';
 
 export class PlanConflict extends Error {}
+export class PlanAfterDeadline extends PlanConflict {}
 export interface PlanStore {
   save(actor: string, studentUid: string, planId: string, input: PreparationPlanInput | null): Promise<PreparationPlan>;
 }
@@ -43,6 +45,7 @@ export function createPlanStore(db: Firestore, syncDemo: (uid: string) => Promis
         const assignment = (await tx.get(student.collection('assignments').doc(documentKey(input.assignment.system, input.assignment.sourceId)))).data() as LedgerAssignment | undefined;
         const courses = await tx.get(student.collection('courses'));
         const weekday = new Date(`${input.date}T00:00:00Z`).getUTCDay() || 7;
+        if (assignment && preparationAfterDeadline(input.startsAt, assignment.officialDeadline?.deadline)) throw new PlanAfterDeadline();
         if (!assignment || assignment.presenceState === 'cancelled' || assignment.submission === 'submitted' ||
           Date.parse(input.startsAt) <= Date.now() || courses.docs.some(doc => (doc.data() as Course).slots.some(slot =>
             slot.weekday === weekday && slot.period === input.period))) throw new PlanConflict();

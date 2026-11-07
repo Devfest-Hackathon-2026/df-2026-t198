@@ -34,6 +34,9 @@ service cloud.firestore {
       match /fetchStates/{system} {
         allow read: if canReadShared(uid);
       }
+      match /manualAssignments/{id} {
+        allow read: if canReadShared(uid);
+      }
       // Preparation progress is shared like the plan; only the authenticated API may change it.
       match /plans/{planId} {
         allow read: if canReadShared(uid);

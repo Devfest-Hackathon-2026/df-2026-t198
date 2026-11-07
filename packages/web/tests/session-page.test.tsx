@@ -63,6 +63,25 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
 function RoutedSession() { const path = usePathname(); return <SessionPage path={path} />; }
 async function open() { await act(async () => { root.render(<RoutedSession />); }); }
+it('shows the fictional demo name in both the picker and heading without a visible internal id', async () => {
+  holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }];
+  await open();
+  expect(host.textContent).toContain('架空の学生A');
+  expect(host.textContent).not.toContain('student-a');
+  await click('架空の学生A');
+  expect(host.querySelector('h1')?.textContent).toBe('架空の学生A');
+  expect(host.querySelector('.session-heading .session-student-id')).toBeNull();
+});
+it('does not show an internal demo id while its name is loading on a direct session link', async () => {
+  let provideName!: (rows: { uid: string; displayName: string }[]) => void;
+  holder.services!.students = () => new Promise(resolve => { provideName = resolve; });
+  window.history.pushState(null, '', '/session/student-a');
+  await open();
+  expect(host.textContent).not.toContain('student-a');
+  await act(async () => provideName([{ uid: 'student-a', displayName: '架空の学生A' }]));
+  expect(host.querySelector('h1')?.textContent).toBe('架空の学生A');
+  expect(host.querySelector('.session-heading .session-student-id')).toBeNull();
+});
 async function click(text: string) {
   const button = [...host.querySelectorAll('button, a')].find(button => button.textContent?.trim() === text);
   expect(button, text).toBeDefined();
@@ -216,7 +235,7 @@ it.each([
       lastResult: 'success', lastFailureKind: null, lastAppliedObservationId: 'fictional' }];
     await open(); await click('学生 student-a');
     const notice = host.querySelector('.session-updates .notice');
-    if (stale) expect(notice?.textContent).toBe('YNU LMS：最後にLMSから取ったのは11/4です。学生がLMSを開くと新しくなります。');
+    if (stale) expect(notice?.textContent).toBe('YNU LMS：11/4から更新がありません。学生がLMSを開くと新しくなります。');
     else {
       expect(notice).toBeNull();
       expect(host.querySelector('.session-updates')?.textContent).toContain('11/4(水) 00:30 時点の情報');
@@ -232,5 +251,5 @@ it.each(['partial', 'failed'] as const)('shows incomplete fetching in a notice: 
     lastResult, lastFailureKind: 'http', lastAppliedObservationId: 'fictional' }];
   await open(); await click('学生 student-a');
   expect(host.querySelector('.session-updates .notice')?.textContent).toBe(
-    'YNU LMS：今回すべての課題を確認できませんでした。LMSを一緒に開いて確かめてください。');
+    'YNU LMS：課題をすべて確認できていません。LMSを一緒に開いて確かめてください。');
 });

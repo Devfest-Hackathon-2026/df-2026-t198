@@ -4,6 +4,8 @@ import { InvalidObservation, parseObservation } from './observation-input.js';
 import { receiveCalendarRequest } from './calendar-http.js';
 import type { CalendarStore } from './calendar-store.js';
 import { receiveSessionRequest } from './session-http.js';
+import { receiveManualAssignmentRequest } from './manual-assignment-http.js';
+import type { ManualAssignmentStore } from './manual-assignment-store.js';
 import { receiveDigestRequest } from './digest-http.js';
 import type { DigestStore } from './digest-store.js';
 import { receivePlanRequest } from './plan-http.js';
@@ -19,6 +21,7 @@ export interface ObservationDependencies {
   saveObservation: (uid: string, observation: Observation) => Promise<ObservationResult>;
   session?: SessionStore;
   plans?: PlanStore;
+  manualAssignments?: ManualAssignmentStore;
   verifyDigestToken?: (token: string) => Promise<{ uid: string; email?: string | undefined }>;
   digest?: DigestStore;
   calendar?: CalendarStore;
@@ -66,6 +69,9 @@ async function receiveObservation(request: IncomingMessage, response: ServerResp
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
+    if ((request.method === 'PUT' || request.method === 'DELETE') && /^\/api\/v1\/students\/[^/]+\/manual-assignments\/[^/]+$/.test(path ?? '')) {
+      void receiveManualAssignmentRequest(request, response, dependencies); return;
+    }
     if ((request.method === 'GET' && path === '/api/v1/digest') ||
       (request.method === 'POST' && path === '/api/v1/digest/demo-plan') ||
       (request.method === 'POST' && /^\/api\/v1\/plans\/[^/]+\/(done|later)$/.test(path ?? ''))) {

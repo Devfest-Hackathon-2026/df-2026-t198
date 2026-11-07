@@ -17,15 +17,28 @@ const plan = (id = 'p1', date = '2030-11-11'): PreparationPlan => ({ planId: id,
 const courses = [{ system: 'ynu-lms' as const, courseId: 'c1', name: '架空の授業', slots: [] }];
 const digest = (plans: PreparationPlan[], assignments: LedgerAssignment[]) => buildDigest('self@example.invalid', plans, assignments, courses, 'https://study.example.invalid', now);
 describe('today digest content contract', () => {
+  it('orders today by the actual start time and uses time labels on a Saturday', () => {
+    const saturday = new Date('2030-11-16T00:00:00+09:00');
+    const late = plan('late', '2030-11-16');
+    const early = { ...late, planId: 'early', period: 1, startsAt: '2030-11-16T08:50:00+09:00', endsAt: '2030-11-16T10:20:00+09:00' };
+    const data = buildDigest('self@example.invalid', [late, early], [row('task')], courses, 'https://study.example.invalid', saturday);
+    expect(data.plans.map(item => item.planId)).toEqual(['early', 'late']);
+    expect(data.text).toContain('今日 08:50〜10:20');
+    expect(data.text).not.toMatch(/今日 [0-9]+限/);
+  });
   it('uses JST today, actual start time, official deadline and explicit safe fields only', () => {
     const data = digest([plan(), plan('yesterday', '2030-11-10'), plan('tomorrow', '2030-11-12')], [row('task')]);
     expect(data.date).toBe('2030-11-11'); expect(data.to).toBe('self@example.invalid'); expect(data.plans).toHaveLength(1);
     expect(data.plans[0]).toMatchObject({ planId: 'p1', period: 3, startsAt: '2030-11-11T13:00:00+09:00', title: '<課題&ノート>', courseName: '架空の授業', status: 'active' });
-    expect(data.text).toContain('今日 3限（13:00〜）');
+    expect(data.text).toContain('今日 13:00〜14:30');
+    expect(data.text).not.toContain('今日 3限');
     expect(data.plans[0]!.doneUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=done&rev=1');
     expect(data.plans[0]!.laterUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=later&rev=1');
     expect(data.html).toContain('&lt;課題&amp;ノート&gt;'); expect(data.html).not.toContain('<課題');
-    expect(data.plans[0]!.text).toContain('LMSへの提出は別');
+    for (const content of [data.text, data.html, data.plans[0]!.text, data.plans[0]!.html]) {
+      expect(content).toContain('「終わった」は準備が終わったときに押してください。LMSへの提出は別に行ってください。');
+      expect(content).not.toContain('準備の記録');
+    }
     expect(JSON.stringify(data)).not.toMatch(/DO NOT COPY|PRIVATE ANNOUNCEMENT|private-id|confirmedBy|dueText/);
   });
   it('includes both 48h boundaries, excludes past, submitted and cancelled but retains unsubmitted work after preparation', () => {
@@ -95,4 +108,12 @@ it.each(['得点の30% sid%3Dfictional', 'Cookie&#58; 設定'])('omits just the 
   expect(data.plans).toHaveLength(1);
   expect(JSON.stringify(data)).not.toContain(title);
   expect(mailIsSafe(data, [])).toBe(true);
+});
+
+it('renders the done and later links as Sora\'s mail buttons, with the no-reply note', () => {
+  const html = digest([plan()], [row('task')]).plans[0]!.html;
+  expect(html).toContain('style="display:inline-block;padding:15px 22px;margin:5px 8px 5px 0;border-radius:10px;text-decoration:none;font-weight:700;background:#17694e;color:white">✅ 終わった</a>');
+  expect(html).toContain('background:#edf1f6;color:#263746">🕒 後回し</a>');
+  expect(html).toContain('返信の入力は不要です。リンク先で1回押すと記録されます。');
+  expect(html.indexOf('✅ 終わった')).toBeLessThan(html.indexOf('🕒 後回し'));
 });
