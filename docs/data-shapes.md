@@ -248,3 +248,25 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - 拡張の `digest-browser.ts` が、設定で本人が有効にした場合だけ `gmail.send` の許可を求め、Gmail APIの `users/me/messages/send` で認証済み本人宛てに送る。Googleの送信用トークンをサーバーに送らず、メールの読み取りもしない。設定はFirebase UIDと接続設定にひも付け、別の本人には引き継がない。
 - 日本時間の7:30以降に朝のまとめを1回、今日の有効な準備の開始30分前から開始前までにその準備1件のメールを送る。Chromeの起動・拡張の実行・有効な認可が前提。予定の再取得は通常15分間隔で、送信対象の時刻にも本文を取得する。対象が空なら送らない。
 - 送信前に当日の送信記録を `chrome.storage.local` へ置く。応答が失われた場合も同じメールを自動再送せず、設定画面でGmailの確認を促す。メール本文は保存しない。朝のまとめ・準備ごとの送信と、無効化・本人変更・認可・本文の安全検査は `packages/extension/tests/digest-browser.test.mjs` で検証する。実際のGmailへの配信はこの試験の対象外。
+
+## クラウド通知の共通部分（Issue #156、送り方と切替は未接続）
+
+#153 のN1〜N4を具体化した契約。型は `NotificationSettings`・`NotificationStatus`・`NotificationTarget`・`NotificationDelivery`。契約と規則のmergeにはorangeの確認が必要。既存の拡張送信・GET digest・準備操作はこのPRでは変更しない。
+
+| 保存先 | 内容と権限 |
+|---|---|
+| `students/{uid}/notificationSettings/current` | `enabled`、`deliveryOwner: none/extension/cloud`、正の整数`version`、`timeZone: Asia/Tokyo`、`morningTime: 07:30`、`recipientUid`、`migrationState: not-started/ready`、`updatedAt`。本人だけread。全client write deny。設定APIと移行手順は後続Issue。 |
+| `students/{uid}/notificationStatus/current` | `state`、`settingsVersion`、`updatedAt`、`lastAcceptedAt`、`errorCode`。本人だけread、server write。API受理は受信トレイへの到着確認ではない。支援担当の共有対象に含めない。 |
+| `students/{uid}/notificationDeliveries/{key}` | 対象・時間窓・予定の版・設定の版・状態・attempt・予約/開始/応答時刻。全client read/write deny。宛先・本文・認証情報・秘密の参照は保存しない。 |
+
+設定欠損・OFF・cloud以外・本人UID不一致・移行未完了・体験アカウントは対象外。宛先はFirebase Authで無効でなく確認済みの本人から取得する口を用意し、リクエストから宛先を受け取らない。実senderと通知設定を更新するAPIは未接続。
+
+`POST /api/internal/notifications/tick` は本文/queryなし。`NOTIFICATION_OIDC_AUDIENCE` と `NOTIFICATION_SCHEDULER_SERVICE_ACCOUNT` で指定した、GoogleのRS256署名・issuer・aud・有効期限・確認済みサービスアカウントを検証する。Firebase利用者tokenとSchedulerを名乗るheaderは使わない。既存APIのFirebase認証は維持する。許可したサービスアカウントのtokenを発行できる権限自体はCloud IAMで制限する必要があり、本PRで実設定は検証しない。
+
+`PUBLIC_WEB_ORIGIN` と上のOIDC設定がないと入口は503。既定はdry-run。実送信は `NOTIFICATION_SEND_ENABLED=true` に加えてsenderの接続が必要で、このPRには実senderがないため設定だけでは送らない。dry-runは候補数だけを返し、送信台帳・本人状態を変更しない。処理終了を待って200と `{ dryRun, candidates, attempted }` を返す。未認証401、不正本文/query400、未設定503、処理失敗500。応答はno-store、失敗は固定コードのみ。
+
+- 朝は日本時間07:30以上08:00未満、準備前は開始30分前以上・開始未満。翌日00時台の予定も前日中に選ぶ。朝のキーはUID・日本日付・morning、準備前はUID・planId・正規化した開始日時・reminderのJSONのSHA-256。設定/予定の版をキーに足さず、同じ日時に戻してもaccepted/unknownは再送しない。
+- `pending → reserved → sending → accepted/failed/unknown`。予約と送信開始と結果保存を別のtransactionにし、外部senderはtransactionの外だけで呼ぶ。予約のleaseは2分、attemptを照合して回収し、古いattemptは開始/結果保存できない。送信開始時に最新設定・版・体験プロフィール・課題・予定を同じtransactionで読み直し、不要はskipped、時間外はexpired。停止が先に確定した場合は開始しない。開始が先なら、その1通は停止後にも受理される可能性がある。
+- sendingのlease切れ、応答喪失、受理後の保存失敗はunknown。保存自体が失敗した場合はsendingを残し、後のtickでunknownにする。OFFになった利用者も回収対象。sending/unknownをpendingへ戻さない。failedは確実な未受理だけで、今回はfailed/skippedも自動再試行しない。未送信になる可能性を残す保守的な扱いで、exactly-onceを保証しない。
+- 送信直前の提出・取消・終了・準備完了・移動・通知停止を反映する。締切の瞬間は含み、直後は除く。日付のみは元のtimezoneの当日を含み、時刻を補わない。完了した準備の未提出課題は既存の「次は提出」を使う。メールには接続先ごとの最終成功時刻・一部取得/失敗・72時間以上/取得歴なし・PC停止中のLMS変更は未反映という案内を付ける。既存Webの鮮度表示は変更しない。
+- 設定はcollection groupをフィルターなしで最大51件読み、50件超なら固定エラーで停止する。厳密な文書パスを検証し、親のstudent文書の存在を前提にしない。新しい複合indexは不要。本人ごとの読取上限は予定200・課題200・授業100・取得状態3、回収対象200。超過時は切り詰めて送らず停止する。実Cloudのquery・IAM・費用・自然時刻の受信確認は後続Issue。

@@ -477,3 +477,10 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 - 理由：東京会場のプレゼン4分（デモ必須）・質疑1分と、MP4本体とスライドへの埋め込みの両方を求める公式の条件に合わせる。提出形式・締切後の凍結は [submission.md](submission.md) を正本とする。
 - 採らなかった案：スライドと提出用に別々の動画を作る案は、Soraが同じ1本と決めたため採らない。
 - このPRはC37・C38・C39・C41・C42の基準だけを変え、完了のチェックを付けない（`docs/loop.md` 2節）。D29によるorangeへの通知は統合役が行う。
+
+## Issue #156 の共通通知の実装判断（2026-11-08、orangeの契約確認前）
+
+- 決めた人：Codex。Issue #156 が指定した送り方に依らないN1〜N4を実装する。D36の送信元・認証・Cloud構成の決定はorangeに残し、この記録では確定しない。契約は [data-shapes.md](data-shapes.md#クラウド通知の共通部分issue-156送り方と切替は未接続)。
+- 台帳は予約・開始・結果を分け、結果不明を再送しない。朝の補送は07:30〜08:00未満。準備前は日付をまたいで選ぶ。未受理のfailedも今回は自動再試行せず、未着の可能性を残して重複抑止を優先する。既存の拡張の同日補送と切替は変更しない。
+- 対象は上限付きcollection group読取と厳密なパス確認で列挙する。上限超過は固定エラーで止め、student親文書の存在や新しいindexを前提にしない。大量配信の仕組みは今回作らない。
+- OIDCは[Googleの検証要件](https://developers.google.com/identity/openid-connect/openid-connect#validatinganidtoken)と[SchedulerのHTTP認証](https://docs.cloud.google.com/scheduler/docs/http-target-auth)を参照。既存OSSのgoogle-auth-libraryも確認したが、直接依存の追加はorangeの追加合意が必要なため今回は追加せず、Node標準cryptoで固定Google公開鍵のRS256だけを検証する。汎用JWT実装やtokeninfoへの毎回問い合わせは採らない。署名とclaimは合成鍵で試験し、実Cloudのtoken/IAMは未確認。
