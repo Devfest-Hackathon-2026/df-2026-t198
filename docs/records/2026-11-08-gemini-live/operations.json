@@ -1,0 +1,115 @@
+{
+  "startedAt": "2026-11-07T17:50:33.497Z",
+  "origin": "https://project-00439085-4e2d-44c3-9a8.web.app",
+  "browser": "Chromium, two isolated contexts",
+  "checks": [
+    "server-managed trial student profile verified",
+    "initial review reasons empty",
+    "publishing does not change the ledger or add review",
+    "open student screen unchanged until LMS read",
+    "one fictional deadline-extension announcement published",
+    "announcement API returned proposal and changed=true",
+    "only one conflicting-deadline review reason; official deadline and URL unchanged",
+    "runtime budget recorded one model call",
+    "reopening does not parse the same notice again",
+    "runtime model-call count unchanged after duplicate",
+    "no browser page errors"
+  ],
+  "requests": [
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/observations",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/supporter/students",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/announce",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/observations",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/announcements",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/observations",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/announcements",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    }
+  ],
+  "browserErrors": 0,
+  "announcementStartedAt": "2026-11-07T17:50:43.638Z",
+  "announcementResponse": {
+    "httpStatus": 200,
+    "status": "proposal",
+    "changed": true
+  },
+  "officialDueAt": "2026-11-11T17:00:00+09:00",
+  "studentReviewText": "架空の観察入門\n閉じる\n\n月曜2限\n\nLMSで授業を開く\n架空の観察ノート\n\n11/11 17:00\n\n要確認 お知らせでは締切が11/12 17:00に延びています。LMSの課題ページの締切と日付が違うので、確かめてください。\n\nLMSの課題ページに書いてあったこと\nLMSで見る ›\nこの授業の課題を手で入れる\n終了した課題",
+  "supporterReviewText": "要確認 お知らせでは締切が11/12 17:00に延びています。LMSの課題ページの締切と日付が違うので、確かめてください。",
+  "runtimeUsage": {
+    "before": {
+      "calls": 1,
+      "yen": 0.3999
+    },
+    "after": {
+      "calls": 2,
+      "yen": 0.7997999999999996
+    },
+    "callsDelta": 1
+  },
+  "duplicateResponse": {
+    "httpStatus": 200,
+    "status": "duplicate",
+    "changed": false
+  },
+  "status": "pass",
+  "cleanupReset": true,
+  "studentLoggedOut": true,
+  "supporterLoggedOut": true,
+  "finishedAt": "2026-11-07T17:50:50.398Z"
+}

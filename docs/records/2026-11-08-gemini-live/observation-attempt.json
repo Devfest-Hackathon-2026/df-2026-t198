@@ -1,0 +1,85 @@
+{
+  "startedAt": "2026-11-07T17:48:59.643Z",
+  "origin": "https://project-00439085-4e2d-44c3-9a8.web.app",
+  "browser": "Chromium, two isolated contexts",
+  "checks": [
+    "server-managed trial student profile verified",
+    "initial review reasons empty",
+    "publishing does not change the ledger or add review",
+    "open student screen unchanged until LMS read",
+    "one fictional deadline-extension announcement published",
+    "announcement API returned proposal and changed=true"
+  ],
+  "requests": [
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/observations",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/supporter/students",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/announce",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/observations",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/announcements",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    }
+  ],
+  "browserErrors": 0,
+  "announcementStartedAt": "2026-11-07T17:49:09.679Z",
+  "announcementResponse": {
+    "httpStatus": 200,
+    "status": "proposal",
+    "changed": true
+  },
+  "errorType": "AssertionError",
+  "status": "failed",
+  "failedPhase": "screen-review",
+  "cleanupReset": true,
+  "studentLoggedOut": true,
+  "supporterLoggedOut": false,
+  "finishedAt": "2026-11-07T17:50:04.019Z"
+}
