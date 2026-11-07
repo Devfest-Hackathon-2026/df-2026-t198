@@ -43,7 +43,7 @@ export function buildSessionView(data: Pick<SessionData, 'assignments' | 'change
 export function sessionDeadlineEntries(data: SessionData, now: Date) {
   const next = data.context.nextSessionAt;
   if (!next || Date.parse(next) < now.getTime()) return [];
-  return deadlineEntries(data.assignments, data.manualAssignments).filter(entry => {
+  return deadlineEntries(data.assignments, data.manualAssignments, now.getTime()).filter(entry => {
     const deadline = entryDeadline(entry);
     if (deadline?.kind === 'datetime') return Date.parse(deadline.dueAt) >= now.getTime() && Date.parse(deadline.dueAt) <= Date.parse(next);
     return deadline?.kind === 'date' && deadline.date >= dayInZone(now, deadline.timeZone) && deadline.date <= dayInZone(new Date(next), deadline.timeZone);

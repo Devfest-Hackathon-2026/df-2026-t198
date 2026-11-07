@@ -4,6 +4,7 @@ import { manualDeadline } from '@kadai-hisho/core';
 import type { ManualAssignment, ManualAssignmentInput } from '../../core/src/types';
 import type { StudentCourse } from './student-data';
 import { formatDeadline } from './session-model';
+import { manualAssignmentEnded } from './deadline-entries';
 import './manual-assignments.css';
 
 export interface ManualAssignmentActions {
@@ -89,13 +90,18 @@ export function ManualAssignmentRow({ row, actions, own, viewerUid }: {
     {error && <p role="alert">{error}</p>}
   </li>;
 }
-export function ManualAssignments({ rows, courses, actions, own, viewerUid }: {
+export function ManualAssignments({ rows, courses, actions, own, viewerUid, now = Date.now() }: {
   rows: ManualAssignment[]; courses: StudentCourse[]; actions?: ManualAssignmentActions | undefined; own: boolean; viewerUid?: string | undefined;
+  now?: number | undefined;
 }) {
-  const active = rows.filter(row => row.status === 'active');
+  const active = rows.filter(row => row.status === 'active' && !manualAssignmentEnded(row, now));
+  const finished = rows.filter(row => row.status === 'active' && manualAssignmentEnded(row, now));
   return <section className="manual-assignments" aria-label="手で入れた課題">
     {!!active.length && <><h2>手で入れた課題</h2><ul>{active.map(row => <ManualAssignmentRow key={row.manualAssignmentId}
       row={row} actions={actions} own={own} viewerUid={viewerUid} />)}</ul></>}
+    {!!finished.length && <details className="finished-assignments"><summary>終了した課題</summary>
+      <ul>{finished.map(row => <ManualAssignmentRow key={row.manualAssignmentId}
+        row={row} actions={actions} own={own} viewerUid={viewerUid} />)}</ul></details>}
     {actions && <details><summary>課題を手で入れる</summary><ManualAssignmentForm courses={courses} actions={actions} /></details>}
   </section>;
 }
