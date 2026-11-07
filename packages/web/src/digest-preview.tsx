@@ -3,14 +3,17 @@ import type { User } from 'firebase/auth';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { firebase } from './firebase';
 import type { PreparationPlan } from '../../core/src/types';
-import { actionMessage, performPlanAction, planActionErrorMessage, planProgress } from './plan-progress';
+import { PlanLinkAction, planProgress } from './plan-progress';
 import './digest-preview.css';
+import type { StudentData } from './student-data';
 import { useOperationMessage } from './operation-messages';
 interface Preview { subject: string; html: string; empty: boolean }
 export function DigestPreview({ user }: { user: User }) {
   const [digest, setDigest] = useState<Preview | null>(null);
   const [message, setMessage] = useOperationMessage(); const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
+  const [actionLink, setActionLink] = useState<string>();
+  const [data, setData] = useState<Pick<StudentData, 'plans' | 'assignments' | 'courses'>>({ plans: [], assignments: [], courses: [] });
   useEffect(() => {
     let active = true; let request = 0;
     const load = async () => {
@@ -22,8 +25,11 @@ export function DigestPreview({ user }: { user: User }) {
         if (active && current === request) setDigest(value);
       } catch { if (active && current === request) { setDigest(null); setMessage('メールの見本を開けませんでした。接続を確かめてください。'); } }
     };
-    const stop = ['plans', 'assignments'].map(name => onSnapshot(collection(firebase!.db, 'students', user.uid, name),
-      () => { void load(); }, () => { request++; setDigest(null); setMessage('メールの見本を開けませんでした。'); }));
+    const stop = (['plans', 'assignments', 'courses'] as const).map(name => onSnapshot(collection(firebase!.db, 'students', user.uid, name),
+      snapshot => {
+        if (!active) return;
+        setData(current => ({ ...current, [name]: snapshot.docs.map(doc => doc.data()) })); void load();
+      }, () => { request++; setActionLink(undefined); setDigest(null); setMessage('メールの見本を開けませんでした。'); }));
     return () => { active = false; stop.forEach(cancel => cancel()); };
   }, [user, version]);
   async function prepare() {
@@ -44,24 +50,20 @@ export function DigestPreview({ user }: { user: User }) {
     }
     finally { setBusy(false); }
   }
-  async function click(event: MouseEvent<HTMLDivElement>) {
+  function click(event: MouseEvent<HTMLDivElement>) {
     const anchor = (event.target as Element).closest('a'); if (!anchor) return;
     const url = new URL(anchor.href);
     if (url.pathname !== '/student/plan') return;
     event.preventDefault(); if (busy) return;
-    const id = url.searchParams.get('id'); const action = url.searchParams.get('do');
-    const rev = url.searchParams.get('rev') ?? '';
-    if (!id || (action !== 'done' && action !== 'later') || !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) return;
-    setBusy(true); setMessage('');
-    try { const result = await performPlanAction(user, id, action, Number(rev)); setMessage(actionMessage(result.outcome, result.plan, result.demo)); }
-    catch (error) { setMessage(planActionErrorMessage(error, '予定の変更を確認できませんでした。もう一度お試しください。')); }
-    finally { setBusy(false); }
+    setActionLink(url.href);
   }
+
   return <section className="digest-preview" aria-label="今日やることのメール"><h2>今日やることのメール</h2>
     <p>今日の準備と次に提出する課題、締切の近い課題を知らせるメールの見本です。ここからメールは送りません。</p>
     <button disabled={busy} onClick={() => { void prepare(); }}>今日の準備の見本を用意する</button>
     {digest && !digest.empty && <><h3>{digest.subject}</h3>
-      <div aria-busy={busy} onClick={event => { void click(event); }} dangerouslySetInnerHTML={{ __html: digest.html }} /></>}
+      <div aria-busy={busy} onClick={click} dangerouslySetInnerHTML={{ __html: digest.html }} /></>}
+    {actionLink && <PlanLinkAction user={user} data={data} link={actionLink} />}
     {digest?.empty && <p>今日の準備や次に提出する課題、近い締切がない日は、メールを送りません。</p>}
     {message && <p role="status">{message}</p>}
   </section>;
