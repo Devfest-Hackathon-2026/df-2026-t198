@@ -146,6 +146,26 @@ export interface PreparationPlanInput extends PreparationCandidate {
   endsAt: IsoDateTime;
 }
 
+/** A hand-entered deadline, stored separately from all LMS observations. */
+export interface ManualAssignmentInput {
+  title: string;
+  date: IsoDate;
+  /** Japan time HH:mm; null preserves date-only precision. */
+  time: string | null;
+  course: { system: LmsSystem; courseId: string } | null;
+  memo: string;
+}
+export interface ManualAssignment extends ManualAssignmentInput {
+  manualAssignmentId: string;
+  courseName: string | null;
+  createdBy: string;
+  createdByRole: 'student' | 'supporter';
+  createdAt: IsoDateTime;
+  status: 'active' | 'cancelled';
+  revision: number;
+  calendarItemKey: string;
+}
+
 export interface FetchState {
   studentId: string;
   system: LmsSystem;
@@ -169,8 +189,8 @@ export type CalendarDesired = { state: 'present'; event: DeadlineEvent } | { sta
 export type CalendarErrorCode = 'authorization-required' | 'calendar-unavailable' | 'event-conflict' | 'network-error';
 export interface CalendarItem {
   itemKey: string;
-  kind: 'deadline' | 'preparation';
-  sourceKey: AssignmentKey;
+  kind: 'deadline' | 'preparation' | 'manual-deadline';
+  sourceKey: AssignmentKey | { system: 'manual'; sourceId: string };
   calendarId: string | null;
   eventId: string;
   generation: number;

@@ -11,7 +11,7 @@ import {
 
 // The access matrix comes from docs/design.md sections 1 and 2, not the rules.
 const student = 'student-a';
-const sharedCollections = ['courses', 'assignments', 'changes', 'fetchStates', 'plans'];
+const sharedCollections = ['courses', 'assignments', 'changes', 'fetchStates', 'plans', 'manualAssignments'];
 const sharedPaths = [...sharedCollections.map((name) => `${name}/sample`), 'sessionContext/current'];
 const privatePaths = ['calendarItems/sample', 'integrations/calendar', 'observationReceipts/sample'];
 const roles = [
