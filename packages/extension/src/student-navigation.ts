@@ -17,16 +17,21 @@ export function protectStudentNavigation(doc: Document, view: Window,
   const pending: (() => void)[] = [];
   const replayed = new WeakSet<Event>();
   const home = () => policy.homePaths.includes(new URL(view.location.href).pathname.replace(/;[^/]*/g, ''));
-  const schedule = () => {
+  const schedule = (delay = STUDENT_IDLE_MS) => {
     clearTimeout(idle);
     if (departed || abandoned || navigating || borrowed || waiting || !home()) return;
     idle = setTimeout(() => {
-      if (!departed && !abandoned && !navigating && !borrowed && !waiting && home() && Date.now() - lastActivity >= STUDENT_IDLE_MS) {
-        void collect().then(result => {
-          if ((result as { code?: string } | null)?.code === 'yielded') schedule();
-        }).catch(() => { /* The next student action remains available. */ });
+      if (departed || abandoned || navigating || borrowed || waiting || !home()) return;
+      const remaining = STUDENT_IDLE_MS - (Date.now() - lastActivity);
+      if (remaining > 0) {
+        schedule(remaining);
+        return;
       }
-    }, STUDENT_IDLE_MS);
+      void collect().then(result => {
+        const code = (result as { code?: string } | null)?.code;
+        if (code === 'yielded' || code === 'not-idle') schedule();
+      }).catch(() => { /* The next student action remains available. */ });
+    }, delay);
   };
   const activity = () => {
     if (replaying) return;

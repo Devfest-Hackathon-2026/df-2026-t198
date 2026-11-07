@@ -188,6 +188,42 @@ it('does not claim or read when the tab state cannot be inspected', async () => 
   expect(f.fetcher).not.toHaveBeenCalled();
 });
 
+for (const pageRoute of [false, true]) it(`retries a loading tab and collects once after it completes (page: ${pageRoute})`, async () => {
+  const f = await fixture({ pageRoute });
+  vi.useFakeTimers();
+  let status = 'loading', guard;
+  const get = vi.fn(async () => ({ id: 7, status }));
+  globalThis.chrome.tabs.get = get;
+  const read = f.pageReads.getMockImplementation();
+  f.pageReads.mockImplementation((tab, message) => {
+    if (message.type === 'ynu-collection-claim') return { ok: guard.claim() };
+    if (message.type === 'ynu-collection-release') { guard.release(); return { ok: true }; }
+    return read(tab, message);
+  });
+  const collect = vi.fn(() => f.worker.runCollection(url, 7));
+  guard = protectStudentNavigation({ addEventListener() {} },
+    { location: { href: url }, addEventListener() {} }, async () => ({ ok: true }), collect);
+  const prior = globalThis.structuredClone(f.state);
+  await vi.advanceTimersByTimeAsync(4000);
+  expect(collect).toHaveBeenCalledTimes(2);
+  expect(get).toHaveBeenCalledTimes(2);
+  expect(f.pageReads).not.toHaveBeenCalled();
+  expect(f.fetcher).not.toHaveBeenCalled();
+  expect(f.state).toEqual(prior);
+  status = 'complete';
+  await vi.advanceTimersByTimeAsync(1999);
+  expect(f.fetcher).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(1);
+  await vi.runAllTimersAsync();
+  expect(f.state.ynuFetchStatus).toBe('success');
+  expect(f.state.ynuFetchStats.attempted).toBe(1);
+  expect(f.uploads).toHaveLength(1);
+  expect(f.pageReads.mock.calls.filter(([, message]) => message.type === 'ynu-collection-claim')).toHaveLength(1);
+  await vi.advanceTimersByTimeAsync(120_000);
+  expect(collect).toHaveBeenCalledTimes(3);
+  expect(f.uploads).toHaveLength(1);
+});
+
 for (const previous of ['first', 'yielded']) it(`rejects recovery during a slow navigation without cooldown (${previous})`, async () => {
   const f = await fixture();
   vi.useFakeTimers();

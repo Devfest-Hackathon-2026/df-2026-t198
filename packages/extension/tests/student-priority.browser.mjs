@@ -170,8 +170,6 @@ try {
         return reply;
       });
     });
-    await page.clock.install({ time: new Date('2098-11-07T00:00:00Z') });
-    await page.clock.pauseAt(new Date('2098-11-07T00:00:01Z'));
     await page.addInitScript(() => {
       const originalTimeout = globalThis.setTimeout;
       globalThis.setTimeout = (fn, ms, ...args) => {
@@ -182,9 +180,6 @@ try {
         onMessage: { addListener: fn => { globalThis.contentListener = fn; } }, sendMessage: message => globalThis.sendToWorker(message) } };
     });
     await page.goto(pageUrl); await page.addScriptTag({ content });
-    // Establish the collector's initial idle interval deterministically, then
-    // use real time for collection and the student's slow navigation as before.
-    await page.clock.runFor(2000); await page.clock.resume();
     if (yielding) {
       await assertEventually(() => held, () => ({ pageRoute, scenario, status: state.ynuFetchStatus, reads: actions.length,
         notifications: sessionNotifications, lastCollectionReply }));

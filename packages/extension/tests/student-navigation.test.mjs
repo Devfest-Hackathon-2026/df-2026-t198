@@ -47,6 +47,31 @@ it('does not start or claim on a course page, regardless of idle time', async ()
   expect(f.collect).not.toHaveBeenCalled(); expect(f.guard.claim()).toBe(false);
 });
 
+it('retries not-idle after two seconds and stops retrying after success', async () => {
+  const f = fixture();
+  f.collect.mockResolvedValueOnce({ ok: false, code: 'not-idle' });
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1999);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(f.collect).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(120_000);
+  expect(f.collect).toHaveBeenCalledTimes(2);
+});
+
+it('re-arms the remaining idle wait if the wall clock moved backward', async () => {
+  const f = fixture();
+  vi.setSystemTime(Date.now() - 5);
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(f.collect).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(4);
+  expect(f.collect).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(1);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(true);
+});
+
 for (const reply of ['resolve', 'reject', 'throw', 'never']) it(`replays every held click once when the worker will ${reply}`, async () => {
   let respond;
   const yieldSession = vi.fn(() => {
