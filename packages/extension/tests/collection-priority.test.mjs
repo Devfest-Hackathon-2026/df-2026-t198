@@ -189,8 +189,16 @@ it('does not claim or read when the tab state cannot be inspected', async () => 
 });
 
 for (const pageRoute of [false, true]) it(`retries a loading tab and collects once after it completes (page: ${pageRoute})`, async () => {
-  const f = await fixture({ pageRoute });
+  // Install the clock first so the fixture's 250ms pause bypass stays active.
   vi.useFakeTimers();
+  const f = await fixture({ pageRoute });
+  const digest = globalThis.crypto.subtle.digest.bind(globalThis.crypto.subtle);
+  let releaseDigest;
+  const digestGate = new Promise(resolve => { releaseDigest = resolve; });
+  vi.spyOn(globalThis.crypto.subtle, 'digest').mockImplementation(async (...args) => {
+    await digestGate;
+    return digest(...args);
+  });
   let status = 'loading', guard;
   const get = vi.fn(async () => ({ id: 7, status }));
   globalThis.chrome.tabs.get = get;
@@ -215,8 +223,13 @@ for (const pageRoute of [false, true]) it(`retries a loading tab and collects on
   expect(f.fetcher).not.toHaveBeenCalled();
   await vi.advanceTimersByTimeAsync(1);
   await vi.runAllTimersAsync();
-  // Web Crypto settles outside the fake timer queue; retain the same outcome and count assertions.
-  await vi.waitFor(() => expect(f.state.ynuFetchStatus).toBe('success'));
+  expect(collect).toHaveBeenCalledTimes(3);
+  expect(globalThis.crypto.subtle.digest).toHaveBeenCalledTimes(1);
+  expect(f.fetcher).not.toHaveBeenCalled();
+  // Force Web Crypto to settle after the fake queue drains, then await the collection itself.
+  releaseDigest();
+  await expect(collect.mock.results[2].value).resolves.toMatchObject({ ok: true });
+  expect(f.state.ynuFetchStatus).toBe('success');
   expect(f.state.ynuFetchStats.attempted).toBe(1);
   expect(f.uploads).toHaveLength(1);
   expect(f.pageReads.mock.calls.filter(([, message]) => message.type === 'ynu-collection-claim')).toHaveLength(1);
