@@ -116,7 +116,7 @@ try {
     const state = {}, actions = [];
     const slow = scenario.startsWith('slow-'), yielding = scenario === 'yield' || slow;
     let screen = 'home', release, held = false, listener, studentErrors = 0, uploads = 0;
-    let studentPending = false, releaseStudent, sessionNotifications = 0;
+    let studentPending = false, releaseStudent, sessionNotifications = 0, lastCollectionReply;
     const lms = async (url, init = {}, student = false) => {
       const path = new URL(url).pathname.replace(/;[^/]*/g, '');
       const kind = path.includes('studentCourse') ? 'student' : path.includes('linkKyozaiTitle') ? 'detail'
@@ -165,8 +165,13 @@ try {
     await page.exposeFunction('sendToWorker', message => {
       if (message.type === 'ynu-session-found') sessionNotifications++;
       return new Promise(resolve => listener(message,
-        { id: 'synthetic-extension', frameId: 0, url: page.url(), tab: { id: 7 }, documentId: 'synthetic-document' }, resolve));
+        { id: 'synthetic-extension', frameId: 0, url: page.url(), tab: { id: 7 }, documentId: 'synthetic-document' }, resolve)).then(reply => {
+        if (message.type === 'ynu-session-found') lastCollectionReply = reply;
+        return reply;
+      });
     });
+    await page.clock.install({ time: new Date('2098-11-07T00:00:00Z') });
+    await page.clock.pauseAt(new Date('2098-11-07T00:00:01Z'));
     await page.addInitScript(() => {
       const originalTimeout = globalThis.setTimeout;
       globalThis.setTimeout = (fn, ms, ...args) => {
@@ -177,8 +182,12 @@ try {
         onMessage: { addListener: fn => { globalThis.contentListener = fn; } }, sendMessage: message => globalThis.sendToWorker(message) } };
     });
     await page.goto(pageUrl); await page.addScriptTag({ content });
+    // Establish the collector's initial idle interval deterministically, then
+    // use real time for collection and the student's slow navigation as before.
+    await page.clock.runFor(2000); await page.clock.resume();
     if (yielding) {
-      await assertEventually(() => held, () => ({ pageRoute, scenario, status: state.ynuFetchStatus, reads: actions.length }));
+      await assertEventually(() => held, () => ({ pageRoute, scenario, status: state.ynuFetchStatus, reads: actions.length,
+        notifications: sessionNotifications, lastCollectionReply }));
       const navigation = page.waitForURL('**/lms/studentCourse*');
       if (scenario === 'slow-submit') await page.evaluate(() => globalThis.document.querySelector('#student-form')
         .requestSubmit(globalThis.document.querySelector('#student-submit')));
