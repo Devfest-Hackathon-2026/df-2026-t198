@@ -1,0 +1,22 @@
+{"name": "1280: student sees login in progress", "status": "pass"}
+{"name": "1280: submitted deadlines, scroll hints and date navigation", "status": "pass"}
+{"name": "1280: supporter sees login in progress", "status": "pass"}
+{"name": "1280: candidate focuses its prefilled form and save button", "status": "pass"}
+{"name": "1280: known period mismatch is explained", "status": "pass"}
+{"name": "1280: supporter sees saved notice after form closes", "status": "pass"}
+{"name": "1280: student chronological cards include visible state and controls", "status": "pass"}
+{"name": "1280: supporter chronological cards include visible state and controls", "status": "pass"}
+{"name": "1280: adding then removing leaves only the latest notice", "status": "pass"}
+{"name": "1280: own session omits student picker and addresses the student", "status": "pass"}
+{"name": "1280: next LMS operation clears the email action notice", "status": "pass"}
+{"name": "390: student sees login in progress", "status": "pass"}
+{"name": "390: submitted deadlines, scroll hints and date navigation", "status": "pass"}
+{"name": "390: supporter sees login in progress", "status": "pass"}
+{"name": "390: candidate focuses its prefilled form and save button", "status": "pass"}
+{"name": "390: known period mismatch is explained", "status": "pass"}
+{"name": "390: supporter sees saved notice after form closes", "status": "pass"}
+{"name": "390: student chronological cards include visible state and controls", "status": "pass"}
+{"name": "390: supporter chronological cards include visible state and controls", "status": "pass"}
+{"name": "390: adding then removing leaves only the latest notice", "status": "pass"}
+{"name": "390: own session omits student picker and addresses the student", "status": "pass"}
+{"name": "390: next LMS operation clears the email action notice", "status": "pass"}

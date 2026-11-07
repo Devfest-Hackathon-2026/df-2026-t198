@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useOperationMessage } from './operation-messages';
 import type { User } from 'firebase/auth';
 import type { PreparationPlan } from '../../core/src/types';
 
@@ -19,12 +20,12 @@ export function PlanLinkAction({ user }: { user: User }) {
   const query = new URLSearchParams(window.location.search);
   const id = query.get('id'); const action = query.get('do');
   const rev = query.get('rev') ?? '';
-  const [message, setMessage] = useState('準備の予定を確かめています…');
+  const [message, setMessage] = useOperationMessage();
   const [retry, setRetry] = useState(0); const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!id || !/^[a-f0-9-]{36}$/.test(id) || (action !== 'done' && action !== 'later') ||
       !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) { setMessage('準備の予定のリンクを確かめてください。'); return; }
-    let active = true; setFailed(false);
+    let active = true; setFailed(false); setMessage('準備の予定を確かめています…');
     void performPlanAction(user, id, action, Number(rev)).then(result => { if (active) setMessage(actionMessage(result.outcome)); })
       .catch((error: unknown) => { if (active) {
         setMessage(planActionErrorMessage(error, 'この予定を変更できませんでした。本人のアカウントか、接続と予定の状態を確かめてください。'));
@@ -32,6 +33,7 @@ export function PlanLinkAction({ user }: { user: User }) {
       } });
     return () => { active = false; };
   }, [user, id, action, rev, retry]);
+  if (!message) return null;
   return <section className="notice" aria-label="準備の予定の操作"><p role="status">{message}</p>
     {failed && <button onClick={() => setRetry(retry + 1)}>もう一度試す</button>}<a href="/student">時間割を見る</a></section>;
 }

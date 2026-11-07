@@ -10,6 +10,12 @@ const now = Date.parse('2026-11-05T15:00:00Z'); // 日本時間11/6の始まり
 const render = (value = integration, pending = false) => renderToStaticMarkup(<DemoCalendarView integration={value} pending={pending} now={now} />);
 const cell = (html: string, day: string) => html.match(new RegExp(`<td[^>]*data-date="${day}"[^>]*>(.*?)</td>`))?.[1];
 describe('体験用カレンダーの保存済み予定', () => {
+  it('distinguishes submitted deadlines by the saved item identity', () => {
+    const html = renderToStaticMarkup(<DemoCalendarView integration={integration} pending={false} now={now} submitted={new Set(['task'])} />);
+    expect(cell(html, '2026-11-12')).toContain('calendar-event submitted');
+    expect(cell(html, '2026-11-12')).toContain('出せました');
+    expect(render()).not.toContain('出せました');
+  });
   it('日本時間の今日から7列を出し、日付だけの締切に時刻を補わない', () => {
     const html = render(integration, true);
     expect(html).toContain('締切のカレンダー');

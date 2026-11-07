@@ -74,7 +74,7 @@ export function buildDigest(to: string, plans: PreparationPlan[], assignments: L
     if (!task) return [];
     const link = (action: string) => new URL(`/student/plan?id=${encodeURIComponent(plan.planId)}&do=${action}&rev=${plan.revision}`, origin).href;
     const doneUrl = link('done'); const laterUrl = link('later');
-    const line = `今日 ${plan.period}限（${plan.startsAt.slice(11, 16)}〜）：${task.title}の準備。締切は${deadlineLabel(task.deadline)}。`;
+    const line = `今日 ${plan.startsAt.slice(11, 16)}〜${plan.endsAt.slice(11, 16)}：${task.title}に取り組む時間。締切は${deadlineLabel(task.deadline)}。`;
     const text = `${line}\n${task.courseName}\nLMSで見る：${task.url}\n✅ 終わった：${doneUrl}\n🕒 後回し：${laterUrl}\n${mailNote}`;
     const html = `<article><p style="font-weight:700;font-size:17px;margin:20px 0 6px">${escape(line)}</p><p style="margin:0 0 6px">${escape(task.courseName)}</p><p style="margin:0 0 6px"><a href="${escape(task.url)}">LMSで見る</a></p><p>${mailButton(doneUrl, 'done')}\n${mailButton(laterUrl, 'later')}</p><p style="${mailNoteStyle}">${escape(mailNote)}</p></article>`;
     return [{ ...task, planId: plan.planId, date, period: plan.period, startsAt: plan.startsAt, endsAt: plan.endsAt,
