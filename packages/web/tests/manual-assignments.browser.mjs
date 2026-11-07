@@ -20,7 +20,7 @@ const studentContext = await browser.newContext({ viewport: { width: 1280, heigh
 const supporterContext = await browser.newContext({ viewport: { width: 1280, height: 960 } });
 const student = await studentContext.newPage(); const supporter = await supporterContext.newPage();
 const errors = [];
-for (const page of [student, supporter]) { page.setDefaultTimeout(15000); page.on('pageerror', () => errors.push('browser-error')); }
+for (const page of [student, supporter]) { await page.clock.install(); page.setDefaultTimeout(15000); page.on('pageerror', () => errors.push('browser-error')); }
 const base = process.env.KADAI_WEB_ORIGIN;
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i98-browser';
 const ref = db.doc('students/trial-student');
@@ -148,6 +148,71 @@ try {
   await manualList(supporter).getByRole('button', { name: '架空の面談で追加を消す', exact: true }).click();
   await manualList(supporter).getByRole('heading', { name: '架空の面談で追加' }).waitFor({ state: 'detached' });
   pass('supporter removes own task from session');
+  // Reset cleared courses, so collect the fictional LMS again before selecting a course.
+  await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
+  await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
+  // Move the clock across both deadline boundaries without changing saved task state.
+  await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
+  const timedTitle = '架空の時刻境界の課題';
+  const dateTitle = '架空の日付境界の課題';
+  for (const [title, time, owner] of [[timedTitle, '12:00', course], [dateTitle, null, '']]) {
+    const boundaryForm = await form(student, title, dueDate, time, owner);
+    await boundaryForm.getByRole('button', { name: '課題を入れる', exact: true }).click();
+    await boundaryForm.getByRole('status').filter({ hasText: '課題を入れました' }).waitFor();
+    await manualList(student).getByText('課題を手で入れる', { exact: true }).click();
+    await deadlines.getByRole('heading', { name: title, exact: true }).waitFor();
+  }
+  async function at(value) {
+    for (const page of [student, supporter]) {
+      await page.clock.setFixedTime(new Date(value));
+      await page.clock.fastForward(60_000);
+    }
+  }
+  async function checkBoundary(title, ended) {
+    const studentUpcoming = student.getByRole('region', { name: '締切の近い課題', exact: true });
+    if (ended) {
+      await studentUpcoming.getByText(title, { exact: false }).waitFor({ state: 'detached' });
+      await deadlines.getByRole('heading', { name: title, exact: true }).waitFor({ state: 'detached' });
+    } else {
+      await studentUpcoming.getByText(title, { exact: false }).waitFor();
+      await deadlines.getByRole('heading', { name: title, exact: true }).waitFor();
+    }
+    for (const page of [student, supporter]) {
+      const finished = manualList(page).locator('.finished-assignments');
+      assert.equal(await finished.getByRole('heading', { name: title, exact: true, includeHidden: true }).count(), ended ? 1 : 0);
+    }
+  }
+  await student.locator('.course-cell').filter({ hasText: '架空の観察入門' }).first().click();
+  const boundaryPanel = student.getByRole('complementary', { name: '架空の観察入門の課題', exact: true });
+  for (const time of ['11:59:59.999', '12:00:00.000']) {
+    await at(`${dueDate}T${time}+09:00`);
+    await checkBoundary(timedTitle, false); await checkBoundary(dateTitle, false);
+    await boundaryPanel.getByRole('heading', { name: timedTitle, exact: true }).waitFor();
+  }
+  await at(`${dueDate}T12:00:00.001+09:00`);
+  await checkBoundary(timedTitle, true); await checkBoundary(dateTitle, false);
+  await boundaryPanel.locator('.finished-assignments').getByRole('heading', { name: timedTitle, exact: true, includeHidden: true }).waitFor({ state: 'attached' });
+  assert.equal(await student.locator('.course-cell').filter({ hasText: timedTitle }).count(), 0);
+  await at(`${dueDate}T23:59:59.999+09:00`);
+  await checkBoundary(dateTitle, false);
+  const tomorrow = new Date(Date.parse(`${dueDate}T00:00:00+09:00`) + 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+  await at(`${tomorrow}T00:00:00.000+09:00`);
+  await checkBoundary(dateTitle, true);
+  for (const page of [student, supporter]) {
+    const finished = manualList(page).locator('.finished-assignments');
+    await finished.locator('summary').click();
+    await finished.getByRole('heading', { name: dateTitle, exact: true }).waitFor();
+    await finished.getByText('架空の紙を持参', { exact: true }).first().waitFor();
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 960 }); await assertWidth(page);
+      await page.screenshot({ path: `${evidence}/${page === student ? 'student' : 'supporter'}-finished-${width}.png`, fullPage: true });
+    }
+  }
+  assert.equal((await rows()).docs.filter(doc => doc.data().status === 'active').length, 2);
+  await manualList(student).getByRole('button', { name: `${dateTitle}を消す`, exact: true }).click();
+  await manualList(student).getByRole('heading', { name: dateTitle, exact: true }).waitFor({ state: 'detached' });
+  await manualList(supporter).getByRole('heading', { name: dateTitle, exact: true }).waitFor({ state: 'detached' });
+  pass('both screens cross datetime before/equal/after and Japan date-only midnight; course and no-course tasks remain inspectable and removable at 1280/390px');
   await ref.collection('supporters').doc('trial-supporter').update({ revokedAt: new Date().toISOString() });
   await supporter.getByRole('alert').filter({ hasText: /表示.*消しました/ }).waitFor();
   assert.equal(await supporter.locator('.manual-assignment, .manual-assignment-form').count(), 0);

@@ -1,5 +1,5 @@
 import { manualAssignmentActions, ManualAssignments, ManualAssignmentForm, ManualAssignmentRow, manualAuthor, type ManualAssignmentActions } from './manual-assignments';
-import { deadlineEntries, entryBelongsTo, entryDeadline, entryDisplayDeadline, entryId, entryTitle, deadlineValue } from './deadline-entries';
+import { deadlineEntries, entryBelongsTo, entryDeadline, entryDisplayDeadline, entryId, entryTitle, deadlineValue, manualAssignmentEnded } from './deadline-entries';
 import { PlanLinkAction } from './plan-progress';
 import { fetchStatus } from './fetch-status';
 import { missingDeadlineText, reviewReasonText } from './review-reason';
@@ -66,7 +66,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
   const courses = data.courses.filter(course => course.currentTerm !== false);
   const course = data.courses.find(item => courseKey(item) === selected);
   const hasManual = data.manualAssignments.some(row => row.status === 'active');
-  const entries = deadlineEntries(data.assignments, data.manualAssignments);
+  const entries = deadlineEntries(data.assignments, data.manualAssignments, now);
   const upcoming = entries.filter(item => Number.isFinite(deadlineValue(entryDeadline(item))));
   const plans = data.plans.filter(plan => plan.status === 'active');
   const selectedPlan = plans.find(plan => plan.planId === selectedPlanId);
@@ -76,6 +76,8 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
   const unscheduled = courses.filter(c => c.slots.length === 0);
   const courseItems = course ? data.assignments.filter(item => belongsTo(item, course)) : [];
   const finished = courseItems.filter(item => item.submission === 'submitted' || item.presenceState === 'cancelled' || item.presenceState === 'ended');
+  const finishedManual = data.manualAssignments.filter(row => row.status === 'active' && course &&
+    entryBelongsTo({ kind: 'manual', row }, course) && manualAssignmentEnded(row, now));
   const courseEntries = (owner: StudentCourse) => entries.filter(item => entryBelongsTo(item, owner));
   const changed = useDeadlineChanges(new Map(courses.map(c => [courseKey(c),
     deadlineText(courseEntries(c)[0] ? entryDisplayDeadline(courseEntries(c)[0]!) : undefined)])));
@@ -126,9 +128,10 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
           : <ManualAssignmentRow key={entryId(entry)} row={entry.row} actions={manualActions} own />)}</ul>
         {manualActions && <details><summary>この授業の課題を手で入れる</summary>
           <ManualAssignmentForm key={courseKey(course)} courses={data.courses} course={course} actions={manualActions} /></details>}
-        {!!finished.length && <details className="finished-assignments"><summary>終了した課題</summary>
-          <ul>{finished.map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}</ul></details>}
-        {!courseItems.length && !courseEntries(course).length && <p>この授業の課題はまだありません。</p>}
+        {(!!finished.length || !!finishedManual.length) && <details className="finished-assignments"><summary>終了した課題</summary>
+          <ul>{finished.map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}
+            {finishedManual.map(row => <ManualAssignmentRow key={row.manualAssignmentId} row={row} actions={manualActions} own />)}</ul></details>}
+        {!courseItems.length && !courseEntries(course).length && !finishedManual.length && <p>この授業の課題はまだありません。</p>}
       </aside>}
       {selectedPlan && <aside ref={panel} tabIndex={-1} className="course-panel preparation-details" id="preparation-details" aria-label="準備の予定の詳細">
         <div className="panel-heading"><h2>準備の予定</h2><button onClick={() => setSelectedPlanId(null)}>閉じる</button></div>
@@ -138,7 +141,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
     {actions && <details className="preparation-add"><summary>準備の予定を入れる</summary>
       <PlanForm assignments={data.assignments} actions={actions} /></details>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own />
-    <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own />
+    <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own now={now} />
   </>;
 }
 export function StudentPage() {

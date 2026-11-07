@@ -179,7 +179,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
         <SessionLink className="session-next" href={`${base}/plan`}>準備する時間を相談する →</SessionLink>
       </div>
     </>}
-    <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own={own} viewerUid={viewerUid} />
+    <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own={own} viewerUid={viewerUid} now={now.getTime()} />
   </>;
 }
 function sameAssignment(row: LedgerAssignment, key: LedgerAssignment['key']) {

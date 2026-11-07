@@ -1,4 +1,4 @@
-import { assignmentDeadline } from '@kadai-hisho/core';
+import { assignmentDeadline, manualDeadline } from '@kadai-hisho/core';
 import type { Deadline, LedgerAssignment, ManualAssignment } from '../../core/src/types';
 import type { StudentCourse } from './student-data';
 
@@ -16,9 +16,19 @@ export function deadlineValue(deadline: Deadline | undefined) {
   return deadline?.kind === 'datetime' ? Date.parse(deadline.dueAt)
     : deadline?.kind === 'date' ? Date.parse(`${deadline.date}T00:00:00+09:00`) : Infinity;
 }
-export function deadlineEntries(assignments: LedgerAssignment[], manual: ManualAssignment[]): DeadlineEntry[] {
+export function manualAssignmentEnded(row: ManualAssignment, now: number): boolean {
+  const deadline = manualDeadline(row);
+  if (deadline.kind === 'datetime') return Date.parse(deadline.dueAt) < now;
+  if (deadline.kind === 'date') {
+    const today = new Intl.DateTimeFormat('sv-SE', { timeZone: deadline.timeZone,
+      year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now));
+    return deadline.date < today;
+  }
+  return false;
+}
+export function deadlineEntries(assignments: LedgerAssignment[], manual: ManualAssignment[], now = Date.now()): DeadlineEntry[] {
   return [
     ...assignments.filter(row => row.presenceState !== 'cancelled' && row.presenceState !== 'ended' && row.submission !== 'submitted').map(row => ({ kind: 'lms' as const, row })),
-    ...manual.filter(row => row.status === 'active').map(row => ({ kind: 'manual' as const, row })),
+    ...manual.filter(row => row.status === 'active' && !manualAssignmentEnded(row, now)).map(row => ({ kind: 'manual' as const, row })),
   ].sort((a, b) => deadlineValue(entryDeadline(a)) - deadlineValue(entryDeadline(b)) || entryTitle(a).localeCompare(entryTitle(b), 'ja'));
 }
