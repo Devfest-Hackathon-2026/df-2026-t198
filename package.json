@@ -35,6 +35,7 @@
     "definition:check": "node scripts/check-definition-draft.mjs",
     "test:demo:emulator": "PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --project demo-kadai-hisho --only auth,firestore \"pnpm --filter @kadai-hisho/core build && RUN_DEMO_EMULATOR_TESTS=1 pnpm --filter server exec vitest run --testTimeout=20000 tests/demo.emulator.test.ts tests/demo-calendar.emulator.test.ts\"",
     "test:demo-announcements:emulator": "pnpm build && PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --project demo-kadai-hisho --only auth,firestore \"node packages/web/tests/run-demo-announcements-browser.mjs\"",
+    "test:public-demo:browser": "pnpm build && PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --project demo-kadai-hisho --only auth,firestore \"node packages/web/tests/run-demo-browser.mjs --public-demo\"",
     "metrics:m6": "pnpm build && PATH=\"/opt/homebrew/opt/openjdk@21/bin:${JAVA_HOME_21_X64:+$JAVA_HOME_21_X64/bin:}$PATH\" firebase emulators:exec --project demo-kadai-hisho --only auth,firestore \"node packages/web/tests/run-demo-browser.mjs\""
   },
   "devDependencies": {

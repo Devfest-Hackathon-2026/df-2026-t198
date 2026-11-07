@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ObservationDependencies } from '../http.js';
 import { InvalidAnnouncement, parseAnnouncement } from './input.js';
 import { AnnouncementForbidden } from './store.js';
+import { PublicDemoLimit } from './extract.js';
 
 export async function receiveAnnouncement(request: IncomingMessage, response: ServerResponse,
   dependencies?: ObservationDependencies) {
@@ -32,7 +33,8 @@ export async function receiveAnnouncement(request: IncomingMessage, response: Se
     const input = parseAnnouncement(JSON.parse(Buffer.concat(chunks).toString('utf8')));
     json(200, await dependencies.announcements(uid, input));
   } catch (error) {
-    if (error instanceof AnnouncementForbidden) json(403, { error: 'forbidden' });
+    if (error instanceof PublicDemoLimit) json(429, { error: 'public-demo-limit' });
+    else if (error instanceof AnnouncementForbidden) json(403, { error: 'forbidden' });
     else if (error instanceof InvalidAnnouncement || error instanceof SyntaxError) json(400, { error: 'invalid-announcement' });
     else json(500, { error: 'internal-error' });
   }

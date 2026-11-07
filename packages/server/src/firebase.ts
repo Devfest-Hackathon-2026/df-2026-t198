@@ -55,9 +55,8 @@ export function firebaseDependencies() {
     demo: createDemoStore(db),
   };
   if (process.env['ENABLE_DEMO_ANNOUNCEMENTS'] === 'true' && project) {
-    dependencies.announcements = createAnnouncementStore(db, {
-      generate: (announcement, candidates) => createGeminiModel(project, createRuntimeBudget(db)).generate(announcement, candidates),
-    });
+    dependencies.announcements = createAnnouncementStore(db, publicDemo =>
+      createGeminiModel(project, createRuntimeBudget(db, new Date(), publicDemo)));
   }
   const audience = process.env['NOTIFICATION_OIDC_AUDIENCE'];
   const serviceAccount = process.env['NOTIFICATION_SCHEDULER_SERVICE_ACCOUNT'];
