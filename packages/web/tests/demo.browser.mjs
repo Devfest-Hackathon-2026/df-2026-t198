@@ -208,9 +208,9 @@ try {
   }
   const fetchState = db.doc('students/trial-student/fetchStates/demo-lms');
   const fresh = (await fetchState.get()).data().lastSucceededAt;
-  assert.equal(await timetable.getByText('最後にLMSから取ったのは', { exact: false }).count(), 0);
+  assert.equal(await timetable.getByText('から更新がありません', { exact: false }).count(), 0);
   await fetchState.update({ lastSucceededAt: new Date(Date.now() - 3 * 86400000 - 60000).toISOString() });
-  await timetable.getByText('最後にLMSから取ったのは', { exact: false }).waitFor();
+  await timetable.getByText('から更新がありません', { exact: false }).waitFor();
   await timetable.screenshot({ path: `${evidence}/stale-wide.png`, fullPage: true });
   await timetable.setViewportSize({ width: 390, height: 844 });
   const scroll = timetable.locator('.calendar-scroll');
@@ -221,7 +221,7 @@ try {
   await timetable.screenshot({ path: `${evidence}/stale-narrow.png`, fullPage: true });
   await scroll.evaluate(node => { node.scrollLeft = 0; });
   await fetchState.update({ lastSucceededAt: fresh });
-  await timetable.getByText('最後にLMSから取ったのは', { exact: false }).waitFor({ state: 'detached' });
+  await timetable.getByText('から更新がありません', { exact: false }).waitFor({ state: 'detached' });
   await student.setViewportSize({ width: 390, height: 844 });
   assert.equal(await student.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
   await student.screenshot({ path: `${evidence}/demo-narrow.png`, fullPage: true });

@@ -150,13 +150,13 @@ it('keeps an accepted observation and change notice when calendar sync fails', a
 });
 
 it.each([
-  ['api-not-configured', '!', '課題を確かめられませんでした。拡張機能の接続先の設定が必要です'],
-  ['success', '', 'LMSの課題を確かめました'],
-  ['partial', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
-  ['collection-unavailable', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
-  ['send-failed', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
-  ['sign-in-required', '!', '課題を確かめられませんでした。拡張機能の設定からGoogleにログインしてください'],
-  ['not-logged-in', '!', '一部の課題を確かめられませんでした。LMSを開き直してください'],
+  ['api-not-configured', '!', '課題を更新できませんでした。拡張機能の接続先の設定が必要です'],
+  ['success', '', 'LMSの課題を更新しました'],
+  ['partial', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
+  ['collection-unavailable', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
+  ['send-failed', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
+  ['sign-in-required', '!', '課題を更新できませんでした。拡張機能の設定からGoogleにログインしてください'],
+  ['not-logged-in', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
 ])('shows running then %s on the badge, title, and popup data', async (outcome, expectedBadge, message) => {
   if (outcome === 'api-not-configured') apiOrigin.mockReturnValue(null);
   else if (outcome === 'sign-in-required') identity.mockResolvedValue(null);
@@ -167,7 +167,7 @@ it.each([
   }
   await run(pageUrl, 7);
   expect(badge.mock.calls[0]).toEqual([{ text: '…' }]);
-  expect(title.mock.calls[0]).toEqual([{ title: 'LMSの課題を確かめています' }]);
+  expect(title.mock.calls[0]).toEqual([{ title: 'LMSの課題を更新しています' }]);
   expect(badge).toHaveBeenLastCalledWith({ text: expectedBadge });
   expect(title).toHaveBeenLastCalledWith({ title: expect.stringMatching(new RegExp('^\\d{1,2}/\\d{1,2} \\d{2}:\\d{2} に' + message + '$')) });
   const { collectionDisplay } = await import('../src/collection-display.js');
