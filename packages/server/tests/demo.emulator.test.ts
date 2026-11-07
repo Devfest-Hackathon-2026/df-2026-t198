@@ -83,7 +83,7 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
   });
   it('refuses real-LMS observations and masquerading definitions for demo students', async () => {
     const before = await ledger(student.uid);
-    for (const system of ['ynu-lms', 'panda'] as const) {
+    for (const system of ['ynu-lms', 'kulms'] as const) {
       const body = { ...observation(), observationId: randomUUID(), system };
       const response = await post('observations', body);
       expect(response.status).toBe(403);

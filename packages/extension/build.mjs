@@ -7,7 +7,7 @@ const config = await loadConfig();
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await build({
-  entryPoints: ['src/service-worker.ts', 'src/content.ts', 'src/options.ts', 'src/popup.ts'],
+  entryPoints: ['src/service-worker.ts', 'src/content.ts', 'src/kulms-content.ts', 'src/options.ts', 'src/popup.ts'],
   bundle: true,
   outdir: 'dist',
   platform: 'browser',

@@ -19,13 +19,13 @@ afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGloba
 const plan = { planId: 'fictional', title: '架空の準備', date: '2099-11-11', period: 3,
   startsAt: '2099-11-11T13:00:00+09:00', endsAt: '2099-11-11T14:30:00+09:00',
   status: 'active', createdByRole: 'student', laterResult: 'moved', revision: 2 } as PreparationPlan;
-it('prefills known candidate periods but does not guess PandA times', () => {
-  for (const system of ['ynu-lms', 'demo-lms', 'panda'] as const) {
+it('prefills known candidate periods but does not guess KULMS times', () => {
+  for (const system of ['ynu-lms', 'demo-lms', 'kulms'] as const) {
     const assignment = { key: { system, sourceId: 'fictional' }, latest: { title: '架空の課題' } } as LedgerAssignment;
     const html = renderToStaticMarkup(<PlanForm assignments={[assignment]} candidate={{ assignment: assignment.key, date: '2099-11-11', period: 1 }} actions={{ add: vi.fn(), remove: vi.fn() }} />);
     const { document } = parseHTML(html);
-    expect(document.querySelector('[name="start"]').getAttribute('value')).toBe(system === 'panda' ? '' : '08:50');
-    expect(document.querySelector('[name="end"]').getAttribute('value')).toBe(system === 'panda' ? '' : '10:20');
+    expect(document.querySelector('[name="start"]').getAttribute('value')).toBe(system === 'kulms' ? '' : '08:50');
+    expect(document.querySelector('[name="end"]').getAttribute('value')).toBe(system === 'kulms' ? '' : '10:20');
   }
 });
 it('keeps the future later button after a move and sends the displayed revision', async () => {

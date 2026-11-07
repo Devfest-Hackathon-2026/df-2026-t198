@@ -142,7 +142,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
       <div className="session-updates">
         {data.fetchStates.map(state => {
           const { stale, failed } = fetchStatus(state, now.getTime());
-          const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
+          const label = { 'ynu-lms': 'YNU LMS', kulms: 'KULMS', kulasis: 'KULASIS', 'demo-lms': '体験用LMS' }[state.system];
           if (stale || failed) return <p className="notice" key={state.system}>
             {label}：{stale ? `${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。学生がLMSを開くと新しくなります。` :
               '課題をすべて確認できていません。LMSを一緒に開いて確かめてください。'}</p>;

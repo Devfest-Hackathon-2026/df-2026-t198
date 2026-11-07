@@ -62,6 +62,8 @@ CoursePower（富士通）の画面の構造を抽出・架空化した試験用
 
 - **非転載・非同梱**: 本リポジトリには、KULMS の `/direct/describe` 等が出力する API 定義原文、Sakai のソースコード、および実環境の API 応答データや HTML を転載・同梱していません。文書には公開仕様上のエンドポイント構造とフィールド名のみを記録しています。
 - **参照した Sakai 上流ソースファイルのライセンス**: 権限制御や小テスト項目の補助根拠として参照した [Sakai Project (`sakaiproject/sakai`)](https://github.com/sakaiproject/sakai) の [`GradebookNgEntityProvider.java`](https://github.com/sakaiproject/sakai/blob/5dc84ab5588662e202509cea3a6f5d3360a9da2d/gradebookng/tool/src/java/org/sakaiproject/gradebookng/rest/GradebookNgEntityProvider.java) および [`PublishedAssessmentEntityProviderImpl.java`](https://github.com/sakaiproject/sakai/blob/5dc84ab5588662e202509cea3a6f5d3360a9da2d/samigo/samigo-services/src/java/org/sakaiproject/tool/assessment/entity/impl/PublishedAssessmentEntityProviderImpl.java) は、各ファイルヘッダーにおいて **Educational Community License, Version 2.0 (ECL-2.0)** と明記されています（Sakai リポジトリ内の全ファイルについて一律に断定するものではありません）。
+- **Issue #179のKULMS変換の補助根拠**：[AssignmentEntityProvider.java](https://github.com/sakaiproject/sakai/blob/5dc84ab5588662e202509cea3a6f5d3360a9da2d/assignment/tool/src/java/org/sakaiproject/assignment/entityproviders/AssignmentEntityProvider.java)（ECL-2.0、ファイルのヘッダーで確認）。授業別custom actionの全件応答、`SimpleSubmission.submitted` と提出者IDの仕様だけを参照し、コードは転載・同梱していない。KULMSに配備された版との一致は未確認。
+
 - **KULMS 自動生成 API 定義のライセンス表記**: KULMS 実環境の `/direct/describe` および `/direct/{prefix}/describe` が返す自己記述ページの個別ライセンス表記は未確認です（そのため原文の複製・同梱は行っていません）。
 
 ---

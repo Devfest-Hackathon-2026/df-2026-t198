@@ -84,7 +84,7 @@ export function parseObservation(value: unknown): Observation {
   requireValid(input['schemaVersion'] === 1);
   text(input['observationId'], 36);
   requireValid(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(input['observationId']));
-  oneOf(input['system'], ['ynu-lms', 'panda', 'demo-lms']);
+  oneOf(input['system'], ['ynu-lms', 'kulms', 'kulasis', 'demo-lms']);
   id(input['definitionId']);
   requireValid(Number.isSafeInteger(input['definitionVersion']) && Number(input['definitionVersion']) > 0);
   timestamp(input['fetchedAt']);

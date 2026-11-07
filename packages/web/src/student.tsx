@@ -107,7 +107,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
       const { stale, failed } = fetchStatus(state, now);
-      const label = { 'ynu-lms': 'YNU LMS', panda: 'PandA', 'demo-lms': '体験用LMS' }[state.system];
+      const label = { 'ynu-lms': 'YNU LMS', kulms: 'KULMS', kulasis: 'KULASIS', 'demo-lms': '体験用LMS' }[state.system];
       return stale || failed ? <p className="notice" key={state.system}>
         {label}：{stale ? `${new Date(last!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。LMSを開くと新しくなります。` :
           '課題をすべて確認できていません。LMSを開いて確かめてください。'}</p> : null;

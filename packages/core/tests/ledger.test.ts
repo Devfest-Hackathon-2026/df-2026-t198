@@ -183,7 +183,7 @@ describe('observation ledger', () => {
 
   it('leaves other systems and courses not fetched unchanged', () => {
     const first = applyObservation([], observation(1), at);
-    const other = { ...missing(2), system: 'panda' as const };
+    const other = { ...missing(2), system: 'kulms' as const };
     expect(applyObservation(first.assignments, other, at).assignments).toEqual(first.assignments);
     expect(applyObservation(first.assignments, { ...missing(2), courseResults: [] }, at).assignments)
       .toEqual(first.assignments);

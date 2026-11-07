@@ -1,0 +1,126 @@
+{
+  "user": {
+    "id": "fictional-student"
+  },
+  "sites": {
+    "site_collection": [
+      {
+        "id": "fictional-course",
+        "title": "架空の授業",
+        "createdDate": 0
+      }
+    ]
+  },
+  "assignments": {
+    "assignment_collection": [
+      {
+        "id": "fictional-a",
+        "context": "fictional-course",
+        "title": "架空の課題A",
+        "dueTime": {
+          "epochSecond": 1920553200,
+          "nano": 0
+        },
+        "dueTimeString": "2030/11/11 00:00",
+        "submissions": [
+          {
+            "submitters": [
+              {
+                "id": "fictional-student"
+              }
+            ],
+            "submitted": false,
+            "draft": false
+          }
+        ]
+      },
+      {
+        "id": "fictional-b",
+        "context": "fictional-course",
+        "title": "架空の課題B",
+        "dueTime": {
+          "epochSecond": 1920553200,
+          "nano": 123000000
+        },
+        "submissions": [
+          {
+            "submitters": [
+              {
+                "id": "fictional-student"
+              }
+            ],
+            "submitted": true,
+            "draft": false,
+            "dateSubmittedEpochSeconds": 1920466800
+          }
+        ]
+      },
+      {
+        "id": "fictional-c",
+        "context": "fictional-course",
+        "title": "架空の課題C",
+        "dueTime": null,
+        "submissions": []
+      },
+      {
+        "id": "fictional-d",
+        "context": "fictional-course",
+        "title": "架空の課題D",
+        "dueTime": {
+          "epochSecond": 1920553200000,
+          "nano": 0
+        },
+        "closeTime": {
+          "epochSecond": 1920553200,
+          "nano": 0
+        },
+        "submissions": [
+          {
+            "submitters": [
+              {
+                "id": "fictional-student"
+              }
+            ],
+            "submitted": false,
+            "draft": true
+          }
+        ]
+      },
+      {
+        "id": "fictional-e",
+        "context": "fictional-course",
+        "title": "架空の課題E",
+        "dueTime": {
+          "epochSecond": 1920553200,
+          "nano": 0
+        },
+        "submissions": [
+          {
+            "submitted": false,
+            "draft": false,
+            "submitters": [
+              {
+                "id": "fictional-other"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "fictional-ended",
+        "context": "fictional-course",
+        "title": "架空の終了課題",
+        "dueTime": {
+          "epochSecond": 0,
+          "nano": 0
+        },
+        "submissions": null
+      }
+    ]
+  },
+  "calendar": {
+    "firstTime": {
+      "time": 1920553200000
+    }
+  }
+}

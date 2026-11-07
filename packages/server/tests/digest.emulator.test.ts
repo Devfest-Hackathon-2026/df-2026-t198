@@ -394,8 +394,8 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
       startsAt: '2030-11-12T10:45:00+09:00', endsAt: '2030-11-12T13:15:00+09:00' });
     expect(await (await act('later')).json()).toMatchObject({ outcome: 'moved', plan: { period: 4, startsAt: '2030-11-12T14:40:00+09:00' } });
     const task = (await assignmentRef(real).get()).data()!;
-    await student(real).collection('assignments').doc(documentKey('panda', 'fictional/task')).set({ ...task, key: { system: 'panda', sourceId: 'fictional/task' } });
-    await plans(real).doc(id).update({ assignment: { system: 'panda', sourceId: 'fictional/task' } });
+    await student(real).collection('assignments').doc(documentKey('kulms', 'fictional/task')).set({ ...task, key: { system: 'kulms', sourceId: 'fictional/task' } });
+    await plans(real).doc(id).update({ assignment: { system: 'kulms', sourceId: 'fictional/task' } });
     expect(await (await act('later', real)).json()).toMatchObject({ outcome: 'no-slot', plan: { revision: 1 } });
   });
 

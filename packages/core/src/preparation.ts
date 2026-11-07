@@ -30,6 +30,8 @@ export function preparationSlotOccupied(system: LmsSystem, date: string, period:
 export function preparationSlots(assignment: PreparationCandidate['assignment'], dueDate: string,
   courses: Course[], now: Date, limit = 2, occupied: PreparationPlan[] = [], after?: PreparationCandidate): PreparationCandidate[] {
   courses = courses.filter(course => course.currentTerm !== false);
+  // KULMS has no timetable; missing slots are not evidence of a free period.
+  if (['kulms', 'kulasis'].includes(assignment.system) && (!courses.length || courses.some(course => !course.slots.length))) return [];
   const result: PreparationCandidate[] = [];
   const periods = Math.max(5, ...courses.flatMap(course => course.slots.map(slot => slot.period)));
   const cursor = new Date(`${now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })}T00:00:00Z`);

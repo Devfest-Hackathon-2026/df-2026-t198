@@ -33,7 +33,7 @@ function text(value: unknown, max: number) {
 }
 export function parseAnnouncement(value: unknown): AnnouncementInput {
   const input = record(value, ['system', 'courseId', 'announcement']);
-  check(typeof input['system'] === 'string' && ['ynu-lms', 'panda', 'demo-lms'].includes(input['system']));
+  check(typeof input['system'] === 'string' && ['ynu-lms', 'kulms', 'kulasis', 'demo-lms'].includes(input['system']));
   text(input['courseId'], 200);
   const a = record(input['announcement'], ['announcementId', 'version', 'publishedAt', 'body']);
   text(a['announcementId'], 200); text(a['version'], 100); text(a['body'], 12000);
