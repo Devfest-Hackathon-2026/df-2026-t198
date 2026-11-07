@@ -1,4 +1,5 @@
 import { actionMessage, performPlanAction, planActionErrorMessage, planProgress } from './plan-progress';
+import type { PlanActionResponse } from './plan-progress';
 import { useRef, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { LedgerAssignment, PreparationCandidate, PreparationPlan, PreparationPlanInput } from '../../core/src/types';
@@ -8,7 +9,7 @@ import './preparation-plans.css';
 export interface PlanActions {
   add: (id: string, input: PreparationPlanInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  act?: (id: string, action: 'done' | 'later', revision: number) => Promise<{ outcome: string; plan?: PreparationPlan; demo?: boolean }>;
+  act?: (id: string, action: 'done' | 'later', revision: number) => Promise<PlanActionResponse>;
 }
 export function planActions(user: User, student: string): PlanActions {
   const request = async (id: string, input?: PreparationPlanInput) => {

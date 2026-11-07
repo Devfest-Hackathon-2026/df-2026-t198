@@ -11,6 +11,9 @@ const plan: PreparationPlan = { planId: 'fictional', assignment: { system: 'demo
   timeZone: 'Asia/Tokyo', decidedOn: '2030-11-11', confirmedBy: 'supporter', createdByRole: 'supporter',
   confirmedAt: '2030-11-10T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'key' };
 describe('preparation progress belongs to the plan, not LMS submission', () => {
+  it('does not describe a replay without a current plan as a missing slot', () => {
+    expect(actionMessage('unchanged')).toBe('予定が変わりました。学生の画面で確かめてください。');
+  });
   it('uses the server destination even when a regular account has a demo-lms assignment', () => {
     expect(actionMessage('moved', plan, false)).toContain('拡張機能がGoogleにつながる');
     expect(actionMessage('moved', plan, false)).not.toContain('体験用の予定を更新しました');

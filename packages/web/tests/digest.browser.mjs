@@ -23,8 +23,8 @@ for (const page of [student, supporter, studentScreen, linkPage]) {
   page.setDefaultTimeout(15000); page.on('pageerror', () => errors.push('browser-error'));
 }
 const base = process.env.KADAI_WEB_ORIGIN; const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i112-browser';
-const ref = db.doc('students/trial-student'); const planId = '11200000-0000-4000-8000-000000000001';
-const planRef = ref.collection('plans').doc(planId);
+const ref = db.doc('students/trial-student');
+let planRef;
 const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
 const preparationList = page => page.getByRole('region', { name: '入れた準備の予定', exact: true });
 async function login(page, role) {
@@ -69,10 +69,11 @@ try {
     await preparationList(page).getByText('架空の観察ノート', { exact: true }).waitFor();
     assert.equal(await preparationList(page).getByText('まだ', { exact: true }).count(), 0);
   }
-  const doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
+  let doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
   const laterUrl = await preview.getByRole('link', { name: '🕒 後回し', exact: true }).getAttribute('href');
   assert.ok(doneUrl.startsWith(base)); assert.ok(laterUrl.includes('/student/plan?id='));
   assert.equal(new URL(doneUrl).searchParams.get('rev'), '1'); assert.equal(new URL(laterUrl).searchParams.get('rev'), '1');
+  planRef = ref.collection('plans').doc(new URL(doneUrl).searchParams.get('id'));
   const before = (await planRef.get()).data();
   const beforeItem = (await ref.collection('calendarItems').doc(before.calendarItemKey).get()).data();
   assert.equal(beforeItem.appliedRevision, beforeItem.desiredRevision);
@@ -133,20 +134,28 @@ try {
   }
   await supporter.locator('.session-deadline').waitFor();
   await screenshot(supporter, 'session-plan-later');
-  // B4 then B1: preparing again must preserve the move; finish that same plan, then open the first mail.
+  // README step 6: a fresh sample restores today's email while retaining the postponed plan.
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
-  assert.match(await preview.getByRole('status').innerText(), /後回しにした/);
+  const replacementLink = preview.getByRole('link', { name: '✅ 終わった', exact: true });
+  await replacementLink.waitFor();
+  const replacementRef = ref.collection('plans').doc(new URL(await replacementLink.getAttribute('href')).searchParams.get('id'));
+  assert.notEqual(replacementRef.id, planRef.id);
   assert.deepEqual((await planRef.get()).data(), movedAgain);
-  await preparationList(studentScreen).getByRole('button', { name: '終わった', exact: true }).click();
-  await preparationList(studentScreen).getByText('終わった（LMSへの提出は別）', { exact: true }).waitFor();
+  await replacementLink.click();
+  await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
+  assert.equal((await replacementRef.get()).data().status, 'done');
+  assert.deepEqual((await planRef.get()).data(), movedAgain);
+  pass('B4: later, prepare a fresh sample, and finish it from today\'s email while the postponed plan remains intact');
+  await preparationList(studentScreen).locator('li').filter({ hasText: '後回しにした' }).getByRole('button', { name: '終わった', exact: true }).click();
+  await preparationList(studentScreen).getByText('終わった（LMSへの提出は別）', { exact: true }).nth(1).waitFor();
   const finishedMoved = (await planRef.get()).data();
   await linkPage.goto(laterUrl);
   await linkPage.getByRole('status').filter({ hasText: 'もう「終わった」' }).waitFor();
   assert.doesNotMatch(await linkPage.getByRole('status').innerText(), /動かしました/);
   assert.deepEqual((await planRef.get()).data(), finishedMoved);
   await screenshot(linkPage, 'old-mail-after-done');
-  pass('B1/B4: recreate after later preserves the moved plan, and the first email after done reports current state without a success claim');
+  pass('B1: the first email after completion reports the old plan\'s current state without a success claim');
   // Reset, prepare again, then exercise the other button inside the exact same preview.
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
@@ -155,6 +164,9 @@ try {
   await preparationList(supporter).waitFor({ state: 'detached' });
   await openLms();
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
+  doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
+  planRef = ref.collection('plans').doc(new URL(doneUrl).searchParams.get('id'));
   await preview.getByRole('link', { name: '✅ 終わった', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
   for (const page of [studentScreen, supporter]) await preparationList(page).getByText('終わった（LMSへの提出は別）', { exact: true }).waitFor();
@@ -191,12 +203,13 @@ try {
   pass('signed-out email link asks for login and resumes only after the owner authenticates');
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
-  assert.match(await preview.getByRole('status').innerText(), /終わった.*体験を最初からやり直す/);
-  const renewed = (await planRef.get()).data();
-  assert.deepEqual(renewed, finished);
-  assert.equal(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).count(), 0);
+  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
+  const renewedId = new URL(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href')).searchParams.get('id');
+  assert.notEqual(renewedId, planRef.id);
+  assert.deepEqual((await planRef.get()).data(), finished);
+  assert.equal((await ref.collection('plans').doc(renewedId).get()).data().status, 'active');
   await screenshot(student, 'sample-preserves-done');
-  pass('B4: prepare after completion preserves the record, reports current state and explains the explicit reset');
+  pass('B4: prepare after completion creates a new active sample and retains the completed record');
 
   const form = studentScreen.locator('.preparation-form');
   await studentScreen.getByText('準備の予定を入れる', { exact: true }).click();
@@ -205,7 +218,8 @@ try {
     await form.getByLabel('準備する日').fill(date); await form.getByLabel('時間割の時限').fill('3');
     await form.getByLabel('開始時刻').fill('13:00'); await form.getByLabel('終了時刻').fill('14:00');
   };
-  const count = (await ref.collection('plans').get()).size;
+  const previousIds = new Set((await ref.collection('plans').get()).docs.map(doc => doc.id));
+  const count = previousIds.size;
   await fillPlan(japanDate(7)); await form.getByRole('button', { name: '入れる', exact: true }).click();
   await form.getByRole('status').filter({ hasText: '締切より後の予定は入れられません' }).waitFor();
   assert.equal((await ref.collection('plans').get()).size, count);
@@ -213,8 +227,9 @@ try {
   pass('B2: student input after the deadline is rejected with a specific explanation and creates no plan');
   await fillPlan(japanDate(1)); await form.getByRole('button', { name: '入れる', exact: true }).click();
   await form.getByRole('status').filter({ hasText: '準備の予定を入れました' }).waitFor();
-  const activePlan = (await ref.collection('plans').get()).docs.find(doc => doc.data().status === 'active');
+  const activePlan = (await ref.collection('plans').get()).docs.find(doc => !previousIds.has(doc.id));
   const scheduled = activePlan.data();
+  const scheduledRow = preparationList(studentScreen).locator('li').filter({ has: studentScreen.locator(`time[datetime="${scheduled.startsAt}"]`) });
   const taskRef = (await ref.collection('assignments').get()).docs.find(doc => doc.data().key.sourceId === scheduled.assignment.sourceId).ref;
   await taskRef.update({ 'officialDeadline.deadline': { kind: 'datetime', dueAt: `${japanDate(1)}T12:00:00+09:00`, dueText: '架空の前倒し', timeZone: 'Asia/Tokyo' } });
   await preparationList(studentScreen).getByText('締切より後の予定です', { exact: true }).waitFor();
@@ -222,11 +237,20 @@ try {
   await preparationList(supporter).getByText('締切より後の予定です', { exact: true }).waitFor();
   const marker = supporter.locator('.session-deadline');
   await marker.waitFor(); assert.match(await marker.innerText(), /締切.*12:00/);
-  await preparationList(studentScreen).getByRole('button', { name: '後回し', exact: true }).click();
+  await scheduledRow.getByRole('button', { name: '後回し', exact: true }).click();
   await preparationList(studentScreen).getByRole('status').filter({ hasText: '予定を動かしませんでした' }).waitFor();
   assert.deepEqual((await activePlan.ref.get()).data(), scheduled);
   await screenshot(studentScreen, 'deadline-moved-before-plan'); await screenshot(supporter, 'session-deadline-marker');
   pass('B2: earlier deadline preserves and warns on the existing plan in both screens, marks the timetable and refuses postponement beyond it');
+  // Exercise the real 409 response, rather than replacing the browser's fetch response.
+  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).click();
+  await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
+  await taskRef.update({ 'officialDeadline.deadline': { kind: 'datetime', dueAt: `${japanDate(0)}T08:00:00+09:00`, dueText: '架空の前倒し', timeZone: 'Asia/Tokyo' } });
+  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await preview.getByRole('status').filter({ hasText: '今日の空いたコマは課題の締切より後' }).waitFor();
+  assert.doesNotMatch(await preview.getByRole('status').innerText(), /先に「LMSを開く」/);
+  await screenshot(student, 'sample-after-deadline');
+  pass('sample creation 409 explains the deadline cause without asking the student to reload the LMS');
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/operations.json`, JSON.stringify({ status: 'pass', operations, browserErrors: 0 }, null, 2));
   log(JSON.stringify({ status: 'pass', operations: operations.length, browserErrors: 0, evidence }));

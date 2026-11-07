@@ -33,10 +33,15 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
     monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
     return monday.toISOString().slice(0, 10);
   };
-  const weeks = [...new Set([...candidates.map(candidate => weekOf(candidate.date)), ...data.plans.filter(plan => plan.status === 'active').map(plan => weekOf(plan.date)), ...(deadlineDate ? [weekOf(deadlineDate)] : [])])].sort();
+  const candidateWeeks = [...new Set(candidates.map(candidate => weekOf(candidate.date)))].sort();
+  const weeks = [...new Set([
+    ...candidateWeeks,
+    ...data.plans.filter(plan => plan.status === 'active').map(plan => weekOf(plan.date)),
+    ...(deadlineDate ? [weekOf(deadlineDate)] : []),
+  ])].sort();
   if (!weeks.length) weeks.push(weekOf(now.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })));
   const [chosenWeek, setChosenWeek] = useState('');
-  const monday = new Date(`${weeks.includes(chosenWeek) ? chosenWeek : weeks[0]}T00:00:00Z`);
+  const monday = new Date(`${weeks.includes(chosenWeek) ? chosenWeek : candidateWeeks[0] ?? weeks[0]}T00:00:00Z`);
   const weekendDeadline = deadlineDate && [0, 6].includes(new Date(`${deadlineDate}T00:00:00Z`).getUTCDay());
   const dates = Array.from({ length: weekendDeadline ? 7 : 5 }, (_, i) => {
     const day = new Date(monday); day.setUTCDate(day.getUTCDate() + i); return day.toISOString().slice(0, 10);

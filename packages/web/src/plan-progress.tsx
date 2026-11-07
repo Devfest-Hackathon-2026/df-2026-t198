@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import type { PreparationPlan } from '../../core/src/types';
 
+export interface PlanActionResponse {
+  outcome: 'done' | 'moved' | 'no-slot' | 'unchanged';
+  plan: PreparationPlan;
+  demo: boolean;
+}
 export function planProgress(plan: PreparationPlan) {
   return plan.status === 'done' ? '終わった（LMSへの提出は別）' : plan.laterResult === 'moved' ? '後回しにした' : '';
 }
@@ -10,8 +15,8 @@ export function currentPlanMessage(plan: PreparationPlan) {
   if (plan.status === 'cancelled') return 'この準備の予定は外されています。変更していません。';
   return `この準備は「${planProgress(plan) || 'まだ'}」と記録されています（${plan.date.replaceAll('-', '/')} ${plan.startsAt.slice(11, 16)}〜${plan.endsAt.slice(11, 16)}）。変更していません。`;
 }
-export function actionMessage(outcome: string, plan?: PreparationPlan, demo = false) {
-  if (outcome === 'unchanged' && plan) return currentPlanMessage(plan);
+export function actionMessage(outcome: PlanActionResponse['outcome'], plan?: PreparationPlan, demo = false) {
+  if (outcome === 'unchanged') return plan ? currentPlanMessage(plan) : '予定が変わりました。学生の画面で確かめてください。';
   if (outcome === 'done') return '準備が終わりました。LMSへの提出は別に行ってください。';
   if (outcome === 'moved') return '準備の予定を次の空いたコマに動かしました。' + (demo
     ? '体験用の予定を更新しました。' : 'カレンダーの予定は、拡張機能がGoogleにつながると動きます。');
@@ -30,7 +35,7 @@ export async function performPlanAction(user: User, id: string, action: 'done' |
     const value = await response.json().catch(() => ({})) as { plan?: PreparationPlan };
     throw new PlanActionError(response.status === 409 ? 'plan-conflict' : 'plan-action-failed', response.status === 409 ? value.plan : undefined);
   }
-  return await response.json() as { outcome: 'done' | 'moved' | 'no-slot' | 'unchanged'; plan: PreparationPlan; demo: boolean };
+  return await response.json() as PlanActionResponse;
 }
 export function PlanLinkAction({ user }: { user: User }) {
   const query = new URLSearchParams(window.location.search);
