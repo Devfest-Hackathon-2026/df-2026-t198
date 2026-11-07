@@ -37,3 +37,37 @@ APIのfetchStateはsuccessで最終成功時刻を更新した。保存課題17�
 型・lint・全パッケージの試験・build・進捗整合・保存見本17ファイルの点検が成功した。全試験の途中で既存の8085番ポートとの競合が起きたため、Firestore規則の試験だけは同じ規則と試験を一時設定の空きポートで実行し、残る試験を続けて全て成功させた。既存のプロセスや製品設定は変更していない。通常実行でskipされる別の連携試験は今回も未実行で、Web buildの既存の大きいbundleの警告も残る。実物の3条件の匿名記録にも機械的な照合を行い、各条件のsuccess、23/23授業、失敗0件、操作中のrunning、ページ側の成功増分、通常版ファイルへの復帰を確認した。
 
 進捗は全体31/43・必須29/39から、全体33/43・必須31/39へ更新した。今回の製品コード変更はなく、差分は計画と検証の記録だけである。
+
+## #121・#132入りの版（e331dde）での再確認
+
+上のc6bf48cの結果は過去の版の記録として残す。C04・C05の主な根拠は、以下の2026-11-07 10時台にSoraがmain e331ddeのビルドで行った再確認とする。件数・状態と読み方は、Soraの結果ファイル（`results-e331dde.md`）から転記した。今回の追記では実LMSの再操作はしていない。
+
+同日06:53、#119の版で、取得中に学生がLMSの画面を移るとシステムエラーが出た観測がある。#121・#132では取得中の学生の操作を優先し、ホームで2秒手を止めてから取得を始め、タブの移動が終わるまで始めないように対策した。
+
+手順：拡張の再読み込み → LMSのタブを1つ → 取得中にLMSを使う（講義を開く・戻る）→ 結果。続けて待ち時間を消し、service worker の fetch を lms.ynu.ac.jp だけ失敗させる差し替えを入れ、LMSのタブを再読み込みして同じく使う → 結果 → 拡張の再読み込みで元に戻す。両方とも画面にシステムエラーは出なかった（Soraの確認）。
+
+### 取得中にLMSを使った回
+
+```json
+{"ynuFetchStats":{"attempted":2,"backgroundSucceeded":1,"failed":0,"pageSucceeded":0},"ynuFetchStatus":"success","ynuFetchSummary":{"courseFailures":[],"courses":23,"coursesComplete":23,"failures":{},"firstFailure":null,"listed":35,"lmsStateErrors":0,"read":12,"recovered":0,"restoreFailed":0,"restoreSucceeded":1,"unreadableDeadlines":0,"yielded":0}}
+```
+
+### 裏の通信を止めた回
+
+```json
+{"ynuFetchStats":{"attempted":4,"backgroundSucceeded":1,"failed":0,"pageSucceeded":1},"ynuFetchStatus":"success","ynuFetchSummary":{"courseFailures":[],"courses":23,"coursesComplete":23,"failures":{},"firstFailure":{"httpStatus":null,"pageType":"unknown","path":"/lms/homeHoml/doIndex","route":"background","stage":"home"},"listed":35,"lmsStateErrors":0,"read":12,"recovered":0,"restoreFailed":0,"restoreSucceeded":1,"unreadableDeadlines":0,"yielded":0}}
+```
+
+### 読み方（統合役）
+
+- 使った回：attempted 2 のうち1回は学生の操作に道を譲って中断（failedに数えない）、ホームに戻って2秒手を止めた後の1回が最後まで成功。成功した回は、途中で学生の操作が入れば中断する作りなので、操作の入らない取得（静置）としても通っている。
+- 止めた回：裏の home の取得が強制の失敗 → ページ側へ切り替え、pageSucceeded 0→1、失敗0件。attempted 2→4 は、1回が講義を開いて中断、1回が成功。
+- 両方とも lmsStateErrors 0、restoreSucceeded 1（取得後にサーバーの今の画面をホームへ戻した）。
+
+この版では通常版への復帰は拡張の再読み込みまでを確認した。復帰後の新しい通常取得の結果、カレンダー照合、戻る以外を含む連続遷移の網羅的な確認はこの結果ファイルにはなく、c6bf48cの測定値で補わない。M4・M5・M7の正式な測定は今回も未測定。
+
+### 追記時の検査
+
+origin/main 1a41c40を同じブランチへmergeした作業ツリーで、指定の `pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm progress --check && pnpm check:samples` がすべて終了コード0。Hosting 8件・Firestore規則44件、core 217件・拡張327件・server 183件・web 98件が成功し、見本17件も成功した。既定のserver/web連携試験81件はskipで、Webの500kB超のbundle警告は残る。実機確認の版はe331ddeであり、今回のローカル検査の版と区別する。
+
+転記した2件のJSONと「読み方」が結果ファイルと一致し、c6bf48cの既存の記録が変更されていないことを照合した。進捗は全体33/43・必須31/39。製品コードと見本の正解・判定基準は変更していない。
