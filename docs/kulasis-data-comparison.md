@@ -76,10 +76,10 @@
 | **授業名 (`Course.name`)** | 取得・観測出力あり | 取得・観測出力あり | 取得確認済み（`/direct/site.json` 等） | 取得確認済み（時間割・授業サポート・シラバス） |
 | **曜日・時限 (`Course.slots`)** | 取得・観測出力あり | 取得・観測出力あり | 11/6 調査範囲では API 項目未確認 | 取得確認済み（`/entry/zenki`、`/entry/kouki` 等。時限番号と実時刻は別） |
 | **担当教員・単位・教室・シラバス本文** | `ReadCourse.teacher` は中間結果のみ（共通 `Course` 契約外のため観測非出力） | `teacher` は中間結果のみ（観測非出力） | 11/6 調査範囲では時間割・教室等は未確認 | シラバス詳細・授業基本情報で教員・単位・教室・評価方法・計画等を取得確認（現行 `Course` 契約外） |
-| **今学期判定 (`currentTerm`)** | 実装済み（過去学期は収集抑止・`currentTerm=false` 扱い） | 実装済み | 未接続 | 前期/後期画面や開講期表示を確認（共通型への変換規則は未決） |
+| **今学期判定 (`currentTerm`)** | 実装済み（過去学期は収集抑止・`currentTerm=false` 扱い） | 現行collectorは未判定・未出力 | 未接続 | 前期/後期画面や開講期表示を確認（共通型への変換規則は未決） |
 | **課題一覧・締切 (`deadline`)** | 取得・観測出力あり（`datetime` / `unreadable`、`sourceId` は `courseId`+教材ID） | 取得・観測出力あり（`datetime` / `unreadable`、明示的空印・終端印あり） | JSON API で課題名・日時締切の取得確認済み | `/support/report_list` 等に到達したが調査対象授業で空（実課題の締切読取は未確認） |
 | **提出状態 (`submission`) / 提出日時 (`submittedAt`)** | `submitted` / `not-submitted` / `unknown` を出力。`submittedAt` は非出力 | `submission` を出力。`submittedAt` は非出力 | JSON API で提出状態・提出日時・自己提出本文・採点結果の取得確認済み | 対象授業でレポート一覧が空のため実データ未確認 |
-| **公開終了・終端課題 (`endedSourceIds`)** | 公開終了・期限終了等を `endedSourceIds` として出力 | 終端印に対応 | 未接続 | 未確認 |
+| **公開終了・終端課題 (`endedSourceIds`)** | 公開終了・期限終了等を `endedSourceIds` として出力 | `endedSourceIds` 未出力（一覧終端印は `listComplete` 判定に使用） | 未接続 | 未確認 |
 | **お知らせ・通知** | 共通観測契約外 | 別 DOM からお知らせ専用 API へ送信（体験学生本人のみ受付） | `/direct/announcement/...` で件名・本文等の取得確認済み | 全学掲示・教務厚生通知（件名・本文・PDF 添付 `HEAD 200`）・授業連絡メール枠を確認 |
 | **授業資料・添付ファイル** | 課題回収用のため教材一覧から課題を抽出 | 課題・お知らせ中心 | Content / Resources API で資料一覧取得確認済み | `/support/lecture_material_list` は対象授業で空。通知添付 PDF は `HEAD 200` 確認（本体 GET は `NOT_RUN`） |
 | **システム間リンク** | 単一 LMS 内で完結 | 単一 LMS 内で完結 | サイト ID（`siteId`）単位 | 授業サポート内に KULMS への `/direct/courselink/_kcd={科目コード}` を確認（全件突合は `NOT_RUN`） |
