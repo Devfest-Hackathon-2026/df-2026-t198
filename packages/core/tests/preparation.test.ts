@@ -32,5 +32,13 @@ it('exposes clock times only for configured systems, using the YNU table for the
   expect(preparationPeriodTimes['ynu-lms']).toEqual([['08:50', '10:20'], ['10:30', '12:00'], ['13:00', '14:30'],
     ['14:40', '16:10'], ['16:15', '17:45'], ['17:50', '19:20'], ['19:25', '20:55']]);
   expect(preparationPeriodTimes['demo-lms']).toEqual(preparationPeriodTimes['ynu-lms']);
-  expect(preparationPeriodTimes.panda).toBeUndefined();
+  expect(preparationPeriodTimes.kulms).toBeUndefined();
+});
+
+it('does not suggest free KULMS periods before the timetable is known', () => {
+  const key = { system: 'kulms' as const, sourceId: 'fictional' };
+  const now = new Date('2030-11-08T00:00:00Z');
+  expect(preparationSlots(key, '2030-11-20', [], now)).toEqual([]);
+  expect(preparationSlots(key, '2030-11-20', [{ courseId: 'fictional', name: '架空の授業', slots: [] }], now)).toEqual([]);
+  expect(preparationSlots(key, '2030-11-20', [{ courseId: 'fictional', name: '架空の授業', slots: [{ weekday: 1, period: 1 }] }], now)).toHaveLength(2);
 });

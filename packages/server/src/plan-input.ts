@@ -11,7 +11,7 @@ export function parsePlan(value: unknown): PreparationPlanInput {
   const key = body['assignment'];
   if (!key || typeof key !== 'object' || Array.isArray(key) || Object.keys(key).sort().join(',') !== 'sourceId,system') throw new InvalidPlan();
   const assignment = key as Record<string, unknown>;
-  if (!['demo-lms', 'ynu-lms', 'panda'].includes(String(assignment['system'])) ||
+  if (!['demo-lms', 'ynu-lms', 'kulms', 'kulasis'].includes(String(assignment['system'])) ||
     typeof assignment['sourceId'] !== 'string' || !assignment['sourceId'].length || assignment['sourceId'].length > 256 ||
     [...assignment['sourceId']].some(c => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127)) throw new InvalidPlan();
   const date = body['date'];

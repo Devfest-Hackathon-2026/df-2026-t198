@@ -2,7 +2,7 @@
 export type IsoDateTime = string;
 /** Calendar date in YYYY-MM-DD form. */
 export type IsoDate = string;
-export type LmsSystem = 'ynu-lms' | 'panda' | 'demo-lms';
+export type LmsSystem = 'ynu-lms' | 'kulms' | 'kulasis' | 'demo-lms';
 export type Submission = 'submitted' | 'not-submitted' | 'unknown';
 export type FailureKind = 'not-logged-in' | 'http' | 'parse';
 

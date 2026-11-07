@@ -18,7 +18,7 @@ export function parseManualAssignment(value: unknown): ManualAssignmentInput {
   if (course !== null) {
     if (!course || typeof course !== 'object' || Array.isArray(course) || Object.keys(course).sort().join(',') !== 'courseId,system') throw new InvalidManualAssignment();
     const key = course as Record<string, unknown>;
-    if (!['demo-lms', 'ynu-lms', 'panda'].includes(String(key['system'])) || !text(key['courseId'], 1, 256)) throw new InvalidManualAssignment();
+    if (!['demo-lms', 'ynu-lms', 'kulms', 'kulasis'].includes(String(key['system'])) || !text(key['courseId'], 1, 256)) throw new InvalidManualAssignment();
   }
   return { title: body['title'], date, time: body['time'] as string | null,
     course: course as ManualAssignmentInput['course'], memo: body['memo'] };

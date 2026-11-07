@@ -27,7 +27,7 @@ Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用
 |---|---|
 | `schemaVersion` | `1` |
 | `observationId` | 取得1回のUUID（小文字）。再送では同じID、別の取得では新しいID |
-| `system` | 接続先：`ynu-lms`、`panda`、`demo-lms` |
+| `system` | 接続先：`ynu-lms`、`kulms`、`kulasis`、`demo-lms` |
 | `definitionId`、`definitionVersion` | 読み取りに使った定義のIDと正の整数の版 |
 | `fetchedAt` | タイムゾーン付きISO 8601日時。表示と根拠に使い、順序の判定には使わない |
 | `catalogCourses` | ホームで見つけた授業。`courseId`、`name`、`slots`（`weekday`: 月1〜日7、`period`: 1以上）、任意の `url`（授業の参照URL）、任意の `currentTerm`（今の学期か。省略はtrue） |
@@ -122,6 +122,17 @@ APIは受領記録、授業、台帳、履歴、取得状態を1つのFirestore�
 `PreparationPlan` は下記のIssue #49の保存契約。自動の準備の目安・一時的な候補とは別に扱う。
 
 HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形とは別。従来の `dueAt`・`dueText` を持ち、取得部品が根拠に応じて上の `deadline` に変換する。`dueAt: null` だけから締切なしとは判断しない。`stripSessionId` はpathの `;SID=...` を除く既存の補助で、queryなどを含む一般的な秘密除去ではない。
+
+## KULMSのJSON読み取り（Issue #179）
+
+`lms-definitions/kulms/definition.json` は `format: sakai-json` の専用定義。HTML向けの定義を流用せず、コレクション名・ID・題名・締切・提出記録と秒/nanoのフィールド名を持つ。任意のコード・URL・HTTPメソッドは指定できない。変換は `packages/core/src/sakai-reader.ts`、取得は拡張のKULMS専用content scriptで行う。
+
+- `panda` は未実装だった接続先名を `kulms` に置き換える。`kulasis` は次のIssueのために型と入力検査だけを用意する（Issue #2のorangeの合意）。
+- `slots: []`。時間割が未確認のKULMS/KULASISには空きコマ候補を出さない。学期を確定できる項目が調査で確認されていないので `currentTerm` を省略する。D28の未知の学期の扱いで取得するが、今の学期への限定は実物で確認待ち。授業名・作成日から推測しない。
+- `dueTime.epochSecond` と `nano` を日時へ変換する。`dueTimeString` は根拠の文字列。null・欠損・不正値は `unreadable`。`closeTime`・カレンダーのミリ秒は締切に使わない。確定した締切が取得時刻より前の課題は `endedSourceIds` に入れる。
+- 現在の利用者IDと `submissions[].submitters[].id` が一致する唯一の記録で、booleanの `submitted` を読む。trueとdraftの矛盾、欠損・曖昧な複数記録は `unknown`。提出日時は提出済みで秒値を検証できたときだけ送る。利用者IDは観測に含めない。
+- 授業一覧は空の終端ページまで取得する。課題の授業別custom actionは全件応答（上流の公開実装に基づく。KULMS実物では未確認）。壊れた応答・上限超過・HTTP失敗の授業は `listComplete: false` と固定の失敗だけを送る。
+- 参照URLは認証情報のない授業ページを組み立てる。採点・提出本文・添付・お知らせは送らない。KULMSのAPIから取った生のJSONやCookieをservice workerへ渡さない。
 
 ## 面談日時と担当する学生（Issue #21）
 
@@ -238,7 +249,7 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - `doneUrl` / `laterUrl` は `<公開先>/student/plan?id=<予定ID>&do=done|later&rev=<revision>`。秘密の値は含まない。公開先はサーバー設定 `PUBLIC_WEB_ORIGIN`（末尾の `/` は除く）。未設定でもAPI全体は起動し、`GET /api/v1/digest` だけ503を返す。準備の操作と体験見本の作成は公開先を必要としないため使える。HTTPSのoriginだけを認め、エミュレーターだけ `http://127.0.0.1:<port>` も使える。要求のHostからは作らない。Webページを開き、未ログインならログインしてから、認証した本人の予定だけをPOSTで操作する。GET APIで書き込まない。
 - `POST /api/v1/plans/{planId}/done|later?rev=<revision>`：本文なし、IDは既存の小文字UUID v4。保存先の学生はtokenのUIDだけで決め、共有中でも支援担当は学生の代わりに押せない。予定の `status` に `done` を追加。任意の `changedBy`・`changedAt` は認証済みUIDとサーバー時刻。古い予定は項目なしのまま「まだ」と読む。移動後は `laterResult: 'moved'` を任意で保存する（旧 `no-slot` も読み取れる）。正の安全な整数の版番号 `rev` が今の予定と一致するときだけ変更する。成功時は `students/{uid}/planActionReceipts/{planId}-{revision}-{action}` に応答を保存し、同じ版・同じ操作の再送・同時操作には変更せず `outcome: unchanged` と現在の予定を返す（Issue #129）。その版が別の操作で使われていたら409。記録のない古い版・未来の版も409。409の `plan-conflict` には認証した本人の現在の `plan` を添え、画面は変更していないことと現在の状態・日時を伝える。現在の予定を添えられない競合では「予定が変わりました。学生の画面で確かめてください。」と出す（Issue #129）。記録はクライアントには読み書きさせない。
 - 応答は `{ outcome: 'done' | 'moved' | 'no-slot' | 'unchanged', plan: PreparationPlan, demo: boolean }`。doneは準備の記録だけで、課題の提出状態は書き換えない。完了した準備のカレンダー予定は削除対象にする。laterは既存の候補と同じ、翌日以降・平日・締切の前日までのコマを順に調べ、元の予定より後で、今の学期の授業も他の有効な準備予定もない最初のコマへ移す。有効な準備との重なりは、保存された時限の番号ではなく、設定表の開始・終了と予定の開始・終了の時刻で判定する。接するだけの時刻は重なりに含めない。元の準備の長さを保ち、移動先の開始も締切の検査を通す。確認できる空きがなければ元の日時・版を保ち、操作の記録を保存せず毎回計算し直す。学生画面の後回しボタンは予定が未来で有効な限り表示し、新しい版から繰り返し動かせる。
-- 自動移動の時刻設定は共通核の `preparationPeriodTimes: Partial<Record<LmsSystem, PreparationPeriodTimes>>` で管理し、現在はYNUと架空の体験用だけ。YNUの公表時刻を使う（[D30](decisions.md#d30-今日やることと準備の完了後回し2026-11-07issue-112)）。未設定のPandAや、準備が1コマに収まらない場合は推測して動かさない。個人のカレンダーが空いているかは判断しない。
+- 自動移動の時刻設定は共通核の `preparationPeriodTimes: Partial<Record<LmsSystem, PreparationPeriodTimes>>` で管理し、現在はYNUと架空の体験用だけ。YNUの公表時刻を使う（[D30](decisions.md#d30-今日やることと準備の完了後回し2026-11-07issue-112)）。未設定のKULMSや、準備が1コマに収まらない場合は推測して動かさない。個人のカレンダーが空いているかは判断しない。
 - 状態・操作者・時刻・移動先・既存カレンダーの同期対象を同じトランザクションで保存する。done・laterの再送で版や時刻を進めない。体験用は保存後に模擬予定へ同期し、失敗時は同じ要求で再試行する。実物は既存の拡張機能による同期のきっかけを待つ。画面には実物の更新完了とは表示しない。応答の `demo` は同じトランザクションで確認したサーバーのプロフィールから決める。画面は課題の接続先から推測せず、体験用の移動成功には「体験用の予定を更新しました」と表示し、拡張機能の案内を出さない（Issue #129）。学生と許可済み支援担当が `plans` を購読し、完了した予定も一覧に残す。クライアントからの書き込みは引き続き全拒否。
 - `POST /api/v1/digest/demo-plan`：本文なし、体験学生本人だけ。先に「LMSを開く」で台帳へ入れた架空課題に、今日のメールを試す見本を用意する。今日の日付の有効な（`active`）見本があれば、そのまま返す。なければ（後回しで別の日へ動いた・終わった・外した・前の日のもの）、新しいID・版1で今日の見本を作る。前の予定・カレンダーの同期対象・操作の受領記録を、新しい見本の内容で上書きしない。画面に現在の日時と状態を示し、最初から試すときは「体験を最初からやり直す」を案内する（Issue #129）。授業と別の有効な準備の時間を避ける。過去の開始時刻も含む朝の見本で、実物アカウントや実物カレンダーには使えない。`/demo-lms` は専用のGET demo-previewのHTMLをそのまま描き、ボタンは同じ本人限定APIを呼ぶ。「体験を最初からやり直す」は `plans` と `planActionReceipts` も消し、操作の記録を戻す。
 - 未認証401、不正なID・本文あり400、本人の予定でない／体験条件を満たさない403、完了・取消後の別操作や対象課題の取消・提出409、内部の失敗500。エラーは固定コード、応答は `Cache-Control: no-store`。このAPIではメールの送信・定期実行を行わない。拡張の送信処理は次節を参照。
