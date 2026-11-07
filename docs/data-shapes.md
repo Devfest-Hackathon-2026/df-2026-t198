@@ -6,7 +6,7 @@ Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](
 
 Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用の型は [`demo.ts`](../packages/core/src/demo.ts)。
 
-- `demoAccounts/{uid}`：`role`（`student` / `supporter`）と、対応する学生の`studentId`。体験学生には任意の `displayName`（架空の名前）があり、seedとリセットは `initialDemo` の同じ名前を使う。学生は`studentId === uid`。サーバー管理で、本人だけ読み取り可。
+- `demoAccounts/{uid}`：`role`（`student` / `supporter`）と、対応する学生の`studentId`。体験学生には任意の `displayName`（架空の名前）があり、seedとリセットは `initialDemo` の同じ名前を使う。学生は`studentId === uid`。サーバー管理で、本人だけ読み取り可。任意の `public: true` は誰でも入れる共用の組（`public-1`）だけの目印。学生・支援担当の両方に付け、既存の `trial-*` には付けない。
 - `students/{uid}/demo/current`：`courses`配列。授業は`courseId`・`name`・`teacher`・`weekday`（月1〜日7）・`period`・`assignments`。課題は`sourceId`・`title`・`dueAt`（UTC、ミリ秒付きのISO日時）・`submission`。本人だけ読み取り可、支援担当にも直接見せない。台帳は従来の共有許可で見せる。
 - `POST /api/v1/demo/extend`：Firebase ID tokenで認証し、`sourceId`と`expectedDueAt`だけを受け取る（上限2 KiB）。本人の学生プロフィールと一致する課題を確認し、期待した締切と等しい場合だけ1日延長。プロフィール・データの読み取りと更新を同じトランザクションで行う。成功は200で`{ sourceId, dueAt }`、不一致409、体験学生でない／課題がない場合403。未認証401、不正な本文400、サイズ超過413、JSON以外415、内部エラー500。すべて`Cache-Control: no-store`、エラーは固定コードのみ。
 - `POST /api/v1/demo/announce`（Issue #84）：延長APIと同じ認証・本文・上限・エラー形式。本人の体験学生の未提出課題と期待する締切を同じトランザクションで確認し、サーバーが架空の締切延長文を作る。日時は操作時刻+4日と課題の締切+1日の遅い側の日本時間17時。成功は200で `{ announcementId }`。課題の締切と台帳は変えない。
@@ -16,6 +16,8 @@ Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用
 - やり直すと `announcements` も空に戻る。解析の受領記録と全体の費用予約は消さない。新しい投稿IDにより、やり直し後も新しい架空のお知らせを処理できる。同じ体験アカウントでの並行操作は従来どおり同じ体験を共有する。
 - 体験UIDの観測は`system: demo-lms`・`definitionId: demo-lms`だけを認める。支援担当や不正なプロフィールも403。プロフィール判定を台帳の保存トランザクション内で行い、再送でも判定する。プロフィールのない既存の利用者の観測契約は変えない。
 - カレンダーAPI（`GET/POST /api/v1/calendar-sync`）は`demoAccounts/{uid}`のある利用者を403で拒否する。接続・同期対象の取得・結果報告の各トランザクションの先頭で確認する。画面のボタンを隠すだけにはしない。
+
+共用の組のお知らせ解析（Issue #178）：`POST /api/v1/demo/announce` は架空のお知らせを出すだけで、Geminiを呼ばない。その後の「LMSを開く」による `POST /api/v1/announcements` で、サーバーのプロフィールが `public: true` なら `students/{uid}/publicDemoUsage/{日本時間の日付}` の `calls` を上限10として予約する。学生本人のUIDが組のキー。同じトランザクションでプロフィール・受領記録・回数を読み、受領記録の作成と加算を確定してから既存の費用予約・Geminiへ進む。同じお知らせの再送・不正な入力は回数を使わず、予約後の失敗は回数を戻さない。超過は429と `{ error: 'public-demo-limit' }`（no-store）。やり直しで回数を消さず、日付変更で新しい文書を使う。延長・やり直しと既存の `trial-*` は制限せず、全体の1日3,000円の費用予約も維持する。この文書はクライアントから読み書きできない。
 
 体験用の文書へのクライアント書き込みは禁止。先生役の延長APIは体験データだけを変え、描いたDOMのouterHTMLを既存のreaderで読んだ観測が届くまで台帳は変わらない。ブラウザ内の送信再試行は通信失敗と5xxに限り、同じ観測IDを使う。4xxでは送信待ちを破棄してアカウントの設定確認を促す。延長は応答の締切が購読で画面に届くまで次の読み取りを止める。再読み込み後の送信待ちは保持しない。初期設定と操作は [demo.md](demo.md) を参照。
 

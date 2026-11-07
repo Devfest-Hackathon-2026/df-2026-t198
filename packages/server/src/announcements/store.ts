@@ -2,14 +2,14 @@ import { createHash } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { LedgerAssignment } from '@kadai-hisho/core/ledger';
 import { documentKey } from '../observation-store.js';
-import { createAnnouncementExtractor, type AnnouncementModel } from './extract.js';
+import { createAnnouncementExtractor, PublicDemoLimit, type AnnouncementModel } from './extract.js';
 import { announcementCandidates, announcementReviewReason } from './ledger.js';
 import type { AnnouncementInput } from './input.js';
 
 export class AnnouncementForbidden extends Error {
   constructor() { super('announcement-forbidden'); }
 }
-export function createAnnouncementStore(db: Firestore, model: AnnouncementModel) {
+export function createAnnouncementStore(db: Firestore, model: AnnouncementModel, clock = Date.now) {
   return async (uid: string, input: AnnouncementInput) => {
     // A caller-supplied system flag alone cannot enable real text processing.
     const account = (await db.doc(`demoAccounts/${uid}`).get()).data();
@@ -23,7 +23,19 @@ export function createAnnouncementStore(db: Firestore, model: AnnouncementModel)
     const receiptId = createHash('sha256').update(JSON.stringify([input.system, input.courseId, a.announcementId, a.version])).digest('hex');
     const receiptRef = student.collection('announcementReceipts').doc(receiptId);
     const extractor = createAnnouncementExtractor(model, async () => db.runTransaction(async tx => {
+      const profile = (await tx.get(db.doc(`demoAccounts/${uid}`))).data();
+      if (profile?.['role'] !== 'student' || profile['studentId'] !== uid) throw new AnnouncementForbidden();
       if ((await tx.get(receiptRef)).exists) return false;
+      if (profile['public'] === true) {
+        const day = new Date(clock() + 9 * 3600_000).toISOString().slice(0, 10);
+        const ref = student.collection('publicDemoUsage').doc(day);
+        const usage = await tx.get(ref);
+        const calls: unknown = usage.exists ? usage.data()?.['calls'] : 0;
+        if (typeof calls !== 'number' || !Number.isSafeInteger(calls) || calls < 0) throw new Error('invalid-public-demo-usage');
+        if (calls >= 10) throw new PublicDemoLimit();
+        // Keep the daily reservation with the receipt; resets never delete either.
+        tx.set(ref, { calls: calls + 1 });
+      }
       // A crash leaves a claim, never the text. Do not retry an uncertain provider call.
       tx.create(receiptRef, { status: 'processing' });
       return true;

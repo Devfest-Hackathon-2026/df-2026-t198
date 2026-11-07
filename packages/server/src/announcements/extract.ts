@@ -21,6 +21,9 @@ export interface Proposal {
 export interface AnnouncementModel {
   generate(announcement: Announcement, candidates: readonly AssignmentCandidate[]): Promise<{ output: unknown; usage: Usage }>;
 }
+export class PublicDemoLimit extends Error {
+  constructor() { super('public-demo-limit'); }
+}
 export type ExtractionResult =
   | { status: 'proposal'; proposal: Proposal; usage: Usage }
   | { status: 'abstained' | 'invalid-output'; usage: Usage }
@@ -80,6 +83,7 @@ export function createAnnouncementExtractor(model: AnnouncementModel, claim?: (i
         if (result === 'abstained') return { status: 'abstained', usage };
         return { status: 'proposal', proposal: { ...result, announcementVersion: a.version }, usage };
       } catch (error) {
+        if (error instanceof PublicDemoLimit) throw error;
         if (error instanceof Error && error.message === 'budget-limit') return { status: 'budget-limit' };
         // Upstream exceptions can contain the entire request, credentials or response; do not expose them.
         return { status: 'model-error' };

@@ -17,6 +17,7 @@ describe.skipIf(!enabled)('announcement intake with local Auth and Firestore', (
   let db: ReturnType<typeof getFirestore>;
   let server: ReturnType<typeof createHttpServer>;
   let base: string;
+  let analysisClock = Date.now;
   let owner: { uid: string; token: string };
   const notice = { announcementId: 'fictional-notice', version: '1', publishedAt: observation().fetchedAt,
     body: '架空のレポートの締切を2026年11月30日17時に延長します。' };
@@ -39,7 +40,7 @@ describe.skipIf(!enabled)('announcement intake with local Auth and Firestore', (
     }
     if (process.env['GCLOUD_PROJECT'] !== 'demo-kadai-hisho') throw new Error('demo-project-required');
     initializeApp({ projectId: 'demo-kadai-hisho' }); db = getFirestore();
-    server = createHttpServer({ ...firebaseDependencies(), announcements: createAnnouncementStore(db, { generate }) });
+    server = createHttpServer({ ...firebaseDependencies(), announcements: createAnnouncementStore(db, { generate }, () => analysisClock()) });
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('missing-port');
@@ -179,6 +180,50 @@ describe.skipIf(!enabled)('announcement intake with local Auth and Firestore', (
       expect(stored).not.toContain(notice.body);
       expect(stored).not.toContain('private-provider-response');
     }
+  });
+
+  it('limits public pairs to ten analyses per JST day, atomically across stores and retries', async () => {
+    const shared = await account();
+    await db.doc(`demoAccounts/${shared.uid}`).update({ public: true });
+    expect((await post('observations', observation(), shared.token)).status).toBe(200);
+    let now = Date.parse('2026-11-08T14:59:59Z');
+    analysisClock = () => now;
+    const stores = [createAnnouncementStore(db, { generate }, () => now), createAnnouncementStore(db, { generate }, () => now)];
+    const request = (id: string) => ({ ...input(), announcement: { ...notice, announcementId: id } });
+    const count = generate.mock.calls.length;
+    for (let i = 1; i <= 9; i++) await stores[0]!(shared.uid, request(`public-${i}`));
+    expect(generate).toHaveBeenCalledTimes(count + 9);
+    const tenth = await Promise.allSettled(stores.map((store, i) => store(shared.uid, request(`race-${i}`))));
+    expect(tenth.filter(r => r.status === 'fulfilled')).toHaveLength(1);
+    expect(tenth.filter(r => r.status === 'rejected')).toHaveLength(1);
+    expect(generate).toHaveBeenCalledTimes(count + 10);
+    expect(await stores[1]!(shared.uid, request('public-1'))).toEqual({ status: 'duplicate', changed: false });
+    await expect(stores[0]!(shared.uid, request('eleventh'))).rejects.toThrow('public-demo-limit');
+    // HTTP returns a fixed code without model/identity details.
+    const response = await post('announcements', request('http-limit'), shared.token);
+    expect(response.status).toBe(429);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({ error: 'public-demo-limit' });
+    // Reset and extension remain allowed, and cannot erase usage.
+    const { createDemoStore } = await import('../src/demo-store.js');
+    const { initialDemo } = await import('../src/demo-initial.js');
+    await db.doc(`students/${shared.uid}/demo/current`).set(initialDemo(now).data);
+    const demo = createDemoStore(db, () => now);
+    const reset = await demo.reset(shared.uid, false);
+    const task = reset.data.courses[0]!.assignments[0]!;
+    await demo.extend(shared.uid, task.sourceId, task.dueAt);
+    expect((await post('observations', observation(), shared.token)).status).toBe(200);
+    await expect(stores[0]!(shared.uid, request('after-reset'))).rejects.toThrow('public-demo-limit');
+    // Non-public trial profiles keep their existing behavior, including more than ten calls.
+    const trial = await account();
+    expect((await post('observations', observation(), trial.token)).status).toBe(200);
+    for (let i = 0; i < 11; i++) await stores[0]!(trial.uid, request(`trial-${i}`));
+    expect((await db.collection(`students/${trial.uid}/publicDemoUsage`).get()).empty).toBe(true);
+    now += 1000; // Midnight in Japan, still the same UTC day.
+    await stores[1]!(shared.uid, request('next-day'));
+    expect((await db.doc(`students/${shared.uid}/publicDemoUsage/2026-11-08`).get()).data()).toEqual({ calls: 10 });
+    expect((await db.doc(`students/${shared.uid}/publicDemoUsage/2026-11-09`).get()).data()).toEqual({ calls: 1 });
+    analysisClock = Date.now;
   });
 
   it('reserves a shared daily budget atomically, settles valid usage and retains unknown usage reservations', async () => {
