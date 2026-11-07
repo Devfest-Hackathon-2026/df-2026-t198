@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "observationId": "00000000-0000-4000-8000-000000000179",
+  "system": "kulms",
+  "definitionId": "sakai-direct",
+  "definitionVersion": 1,
+  "fetchedAt": "2030-11-08T00:00:00.000Z",
+  "catalogCourses": [
+    {
+      "courseId": "fictional-course",
+      "name": "架空の授業",
+      "slots": [],
+      "url": "https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-course"
+    }
+  ],
+  "courseResults": [
+    {
+      "courseId": "fictional-course",
+      "listComplete": true,
+      "seenSourceIds": [
+        "fictional-a",
+        "fictional-b",
+        "fictional-c",
+        "fictional-d",
+        "fictional-e",
+        "fictional-ended"
+      ],
+      "endedSourceIds": [
+        "fictional-ended"
+      ]
+    }
+  ],
+  "assignments": [
+    {
+      "sourceId": "fictional-a",
+      "courseId": "fictional-course",
+      "title": "架空の課題A",
+      "url": "https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-course",
+      "deadline": {
+        "kind": "datetime",
+        "dueAt": "2030-11-10T15:00:00.000Z",
+        "dueText": "2030/11/11 00:00",
+        "timeZone": "Asia/Tokyo"
+      },
+      "submission": "not-submitted"
+    },
+    {
+      "sourceId": "fictional-b",
+      "courseId": "fictional-course",
+      "title": "架空の課題B",
+      "url": "https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-course",
+      "deadline": {
+        "kind": "datetime",
+        "dueAt": "2030-11-10T15:00:00.123Z",
+        "dueText": "",
+        "timeZone": "Asia/Tokyo"
+      },
+      "submission": "submitted",
+      "submittedAt": "2030-11-09T15:00:00.000Z"
+    },
+    {
+      "sourceId": "fictional-c",
+      "courseId": "fictional-course",
+      "title": "架空の課題C",
+      "url": "https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-course",
+      "deadline": {
+        "kind": "unreadable",
+        "dueText": "",
+        "timeZone": "Asia/Tokyo"
+      },
+      "submission": "unknown"
+    },
+    {
+      "sourceId": "fictional-d",
+      "courseId": "fictional-course",
+      "title": "架空の課題D",
+      "url": "https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-course",
+      "deadline": {
+        "kind": "unreadable",
+        "dueText": "",
+        "timeZone": "Asia/Tokyo"
+      },
+      "submission": "not-submitted"
+    },
+    {
+      "sourceId": "fictional-e",
+      "courseId": "fictional-course",
+      "title": "架空の課題E",
+      "url": "https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-course",
+      "deadline": {
+        "kind": "datetime",
+        "dueAt": "2030-11-10T15:00:00.000Z",
+        "dueText": "",
+        "timeZone": "Asia/Tokyo"
+      },
+      "submission": "unknown"
+    }
+  ],
+  "failures": []
+}

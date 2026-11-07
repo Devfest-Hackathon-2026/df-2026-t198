@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "format": "sakai-json",
+  "definitionId": "sakai-direct",
+  "version": 1,
+  "site": { "collection": "site_collection", "id": "id", "name": "title" },
+  "assignment": { "collection": "assignment_collection", "id": "id", "courseId": "context", "title": "title", "deadline": "dueTime", "deadlineText": "dueTimeString", "submissions": "submissions" },
+  "instant": { "seconds": "epochSecond", "nanoseconds": "nano" }
+}
