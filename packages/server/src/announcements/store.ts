@@ -9,7 +9,7 @@ import type { AnnouncementInput } from './input.js';
 export class AnnouncementForbidden extends Error {
   constructor() { super('announcement-forbidden'); }
 }
-export function createAnnouncementStore(db: Firestore, model: AnnouncementModel, clock = Date.now) {
+export function createAnnouncementStore(db: Firestore, model: AnnouncementModel | ((publicDemo: boolean) => AnnouncementModel)) {
   return async (uid: string, input: AnnouncementInput) => {
     // A caller-supplied system flag alone cannot enable real text processing.
     const account = (await db.doc(`demoAccounts/${uid}`).get()).data();
@@ -22,25 +22,25 @@ export function createAnnouncementStore(db: Firestore, model: AnnouncementModel,
     const a = input.announcement;
     const receiptId = createHash('sha256').update(JSON.stringify([input.system, input.courseId, a.announcementId, a.version])).digest('hex');
     const receiptRef = student.collection('announcementReceipts').doc(receiptId);
-    const extractor = createAnnouncementExtractor(model, async () => db.runTransaction(async tx => {
+    let publicDemo = false;
+    const extractor = createAnnouncementExtractor({
+      generate: (announcement, candidates) =>
+        (typeof model === 'function' ? model(publicDemo) : model).generate(announcement, candidates),
+    }, async () => db.runTransaction(async tx => {
       const profile = (await tx.get(db.doc(`demoAccounts/${uid}`))).data();
       if (profile?.['role'] !== 'student' || profile['studentId'] !== uid) throw new AnnouncementForbidden();
       if ((await tx.get(receiptRef)).exists) return false;
-      if (profile['public'] === true) {
-        const day = new Date(clock() + 9 * 3600_000).toISOString().slice(0, 10);
-        const ref = student.collection('publicDemoUsage').doc(day);
-        const usage = await tx.get(ref);
-        const calls: unknown = usage.exists ? usage.data()?.['calls'] : 0;
-        if (typeof calls !== 'number' || !Number.isSafeInteger(calls) || calls < 0) throw new Error('invalid-public-demo-usage');
-        if (calls >= 10) throw new PublicDemoLimit();
-        // Keep the daily reservation with the receipt; resets never delete either.
-        tx.set(ref, { calls: calls + 1 });
-      }
+      // Select the budget from the trusted profile, never from request fields.
+      publicDemo = profile['public'] === true;
       // A crash leaves a claim, never the text. Do not retry an uncertain provider call.
       tx.create(receiptRef, { status: 'processing' });
       return true;
     }));
-    const extraction = await extractor.extract(a, candidates);
+    const extraction = await extractor.extract(a, candidates).catch(async error => {
+      // A refused reservation never calls Gemini; allow this notice again after the day changes.
+      if (error instanceof PublicDemoLimit) await receiptRef.delete();
+      throw error;
+    });
     if (extraction.status === 'duplicate' || extraction.status === 'invalid-input') return { status: extraction.status, changed: false };
     return db.runTransaction(async tx => {
       let changed = false;

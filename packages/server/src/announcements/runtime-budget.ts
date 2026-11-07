@@ -1,12 +1,13 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { estimatedYen } from './budget.js';
-import type { Usage } from './extract.js';
+import { PublicDemoLimit, type Usage } from './extract.js';
 
 // First 30-notice evaluation: 19,410 tokens (docs/records/2026-11-06-m3.md).
 const MAX_CALL_TOKENS = 19_410 * 3;
-export function createRuntimeBudget(db: Firestore, now = new Date()) {
+export function createRuntimeBudget(db: Firestore, now = new Date(), publicDemo = false) {
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo' }).format(now);
-  const ref = db.collection('announcementUsage').doc(day);
+  const ref = db.collection(publicDemo ? 'publicAnnouncementUsage' : 'announcementUsage').doc(day);
+  const dailyLimit = publicDemo ? 3000 : 10000;
   let reservation: { input: number; output: number; yen: number } | undefined;
   const count = (n: number) => Number.isSafeInteger(n) && n >= 0;
   return {
@@ -17,7 +18,11 @@ export function createRuntimeBudget(db: Firestore, now = new Date()) {
         const data = (await tx.get(ref)).data();
         const spent = data?.['yen'] ?? 0;
         const calls = data?.['calls'] ?? 0;
-        if (!Number.isFinite(spent) || spent < 0 || !count(calls) || spent + yen > 3000) throw new Error('budget-limit');
+        if (!Number.isFinite(spent) || spent < 0 || !count(calls)) throw new Error('budget-limit');
+        if (spent + yen > dailyLimit) {
+          if (publicDemo) throw new PublicDemoLimit();
+          throw new Error('budget-limit');
+        }
         tx.set(ref, { yen: spent + yen, calls: calls + 1 });
       });
       reservation = { input, output, yen };

@@ -64,16 +64,16 @@ try {
   const expectedDate = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric',
     hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(await deadline()));
   await deadlines.getByText(expectedDate, { exact: false }).first().waitFor();
-  // The server reads the trusted public marker and the shared counter; no real model is used.
+  // The server selects and reserves the separate public budget; no real model is used.
   const day = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
-  await db.doc(`students/${studentId}/publicDemoUsage/${day}`).set({ calls: 10 });
+  await db.doc(`publicAnnouncementUsage/${day}`).set({ yen: 3000, calls: 12 });
   await student.getByRole('button', { name: 'お知らせを出す', exact: true }).first().click();
   await student.getByRole('status').filter({ hasText: 'お知らせを出しました' }).waitFor();
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
-  await student.getByRole('status').filter({ hasText: '今日の共用の体験で試せる回数を使い切りました' }).waitFor();
+  await student.getByRole('status').filter({ hasText: '今日の共用の体験では、お知らせの読み取りを使い切りました' }).waitFor();
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
-  assert.deepEqual((await db.doc(`students/${studentId}/publicDemoUsage/${day}`).get()).data(), { calls: 10 });
+  assert.deepEqual((await db.doc(`publicAnnouncementUsage/${day}`).get()).data(), { yen: 3000, calls: 12 });
   assert.deepEqual(errors, []);
   log('Public demo: role buttons, fixed login failures, extension -> LMS -> live supporter update, quota message and reset passed (emulators only).');
 } finally {

@@ -58,7 +58,7 @@ WebのFirebase接続設定は [README](../README.md#画面) の3つの `VITE_FIR
 
 ## 共用の体験の準備（Issue #178）
 
-実行は人のOKを受けた統合役が行う。先に [Cloud Run](#cloud-run) のコマンドでこの版のAPIを反映し、共用のGemini上限を有効にする。Firebase・Google Cloudの設定や資源は追加しない。次の入口は固定プロジェクト・明示引数・エミュレーター設定なしを要求し、既存のアカウント・プロフィール・体験データ・共有許可・面談日時・保存ファイルがあれば停止する。
+実行は人のOKを受けた統合役が行う。先に [Cloud Run](#cloud-run) のコマンドでこの版のAPIを反映し、Geminiの事故止めを、共用の組の別枠と審査用・通常の枠に分ける。両枠の額と保存先は [データの契約](data-shapes.md#お知らせの受信と要確認issue-45) を参照。設定を変えずにAPIの版で適用し、共用の回数制限は置かない。Firebase・Google Cloudの設定や資源は追加しない。次の入口は固定プロジェクト・明示引数・エミュレーター設定なしを要求し、既存のアカウント・プロフィール・体験データ・共有許可・面談日時・保存ファイルがあれば停止する。
 
 ```sh
 node packages/server/scripts/seed-demo-live.mjs --project project-00439085-4e2d-44c3-9a8 --create-public-pair
