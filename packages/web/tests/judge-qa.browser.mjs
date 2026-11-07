@@ -161,11 +161,19 @@ try {
       assert.equal(await student.getByText('授業以外の予定は、学生と確かめてください。', { exact: true }).count(), 0);
     });
     await student.goto(`${base}/student/plan?id=invalid&do=done&rev=1`);
-    await student.getByRole('status').filter({ hasText: '準備の予定のリンクを確かめてください' }).waitFor();
+    const invalidLinkText = '準備の予定のリンクを確かめてください。';
+    const confirmation = student.getByRole('region', { name: '準備の予定の操作', exact: true });
+    await confirmation.getByRole('status').filter({ hasText: invalidLinkText }).waitFor();
+    assert.deepEqual(await confirmation.getByRole('status').allTextContents(), [invalidLinkText]);
+    const planCount = await list(student).locator('li').count();
     await list(student).getByRole('button', { name: /準備を外す/ }).first().click();
     await student.getByRole('status').filter({ hasText: '準備の予定を外しました' }).waitFor();
     await check(`${width}: a later operation replaces the mail link result`, async () => {
-      assert.equal(await student.getByRole('status').filter({ hasText: '準備の予定のリンクを確かめてください' }).count(), 0);
+      // Wait for the saved cancellation to reach the page, so a data refresh cannot revive the old notice.
+      await student.waitForFunction(count => globalThis.document.querySelectorAll('.preparation-list li').length === count - 1, planCount);
+      assert.equal(await student.getByText(invalidLinkText, { exact: true }).count(), 0);
+      assert.deepEqual(await student.getByRole('status').allTextContents(), ['準備の予定を外しました。']);
+      await confirmation.getByRole('link', { name: '時間割を見る', exact: true }).waitFor();
     });
     await student.goto(`${base}/demo-lms`); await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
     await student.screenshot({ path: `${evidence}/demo-lms-${width}.png`, fullPage: true });

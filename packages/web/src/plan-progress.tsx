@@ -57,9 +57,16 @@ export function PlanLinkAction({ user, data, link }: { user: User; data: PlanLin
   const id = query.get('id'); const action = query.get('do'); const rev = query.get('rev') ?? '';
   if (!id || !/^[a-f0-9-]{36}$/.test(id) || (action !== 'done' && action !== 'later') ||
     !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) {
-    return <section className="notice plan-confirmation" aria-label="準備の予定の操作"><p role="status">準備の予定のリンクを確かめてください。</p><a href="/student">時間割を見る</a></section>;
+    return <InvalidPlanLink key={`${user.uid}-${query}`} />;
   }
   return <PlanConfirmation key={`${user.uid}-${id}-${action}-${rev}`} user={user} data={data} id={id} action={action} revision={Number(rev)} />;
+}
+function InvalidPlanLink() {
+  const [message, setMessage] = useOperationMessage();
+  // Publish once for this link; a data refresh must not revive a replaced notice.
+  useEffect(() => { setMessage('準備の予定のリンクを確かめてください。'); }, []);
+  return <section className="notice plan-confirmation" aria-label="準備の予定の操作">
+    {message && <p role="status">{message}</p>}<a href="/student">時間割を見る</a></section>;
 }
 function PlanConfirmation({ user, data, id, action, revision }: {
   user: User; data: PlanLinkData; id: string; action: 'done' | 'later'; revision: number;
