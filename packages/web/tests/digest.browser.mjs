@@ -234,6 +234,8 @@ try {
 
   const form = studentScreen.locator('.preparation-form');
   await studentScreen.getByText('準備の予定を入れる', { exact: true }).click();
+  // Keep the deadline-boundary checks on the original report when other courses are present.
+  await form.locator('select[name="assignment"]').selectOption(JSON.stringify({ system: 'demo-lms', sourceId: 'DEMO101_TASK1' }));
   const japanDate = offset => new Date(Date.now() + 9 * 3600000 + offset * 86400000).toISOString().slice(0, 10);
   const fillPlan = async date => {
     await form.getByLabel('準備する日').fill(date); await form.getByLabel('時間割の時限').fill('3');

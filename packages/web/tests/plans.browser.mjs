@@ -73,6 +73,8 @@ try {
   await login(supporter, 'supporter'); await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
   await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
   await supporter.getByRole('link', { name: '② 相談する', exact: true }).click();
+  // Keep the existing task expectations when several demo courses share a deadline.
+  await supporter.locator('.session-topic select').selectOption(JSON.stringify({ system: 'demo-lms', sourceId: 'DEMO101_TASK1' }));
   assert.equal(await supporter.getByRole('button', { name: '学生に確認を頼む', exact: true }).count(), 0);
   await supporter.locator('.session-candidate button').first().click();
   await supporter.getByLabel('開始時刻', { exact: true }).fill('09:00');
@@ -139,6 +141,7 @@ try {
   pass('student removes supporter plan; both screens and durable mock destination remove it');
   await student.getByText('準備の予定を入れる', { exact: true }).click();
   const form = student.locator('.preparation-form');
+  await form.locator('select[name="assignment"]').selectOption(JSON.stringify({ system: 'demo-lms', sourceId: 'DEMO101_TASK1' }));
   await form.getByLabel('準備する日', { exact: true }).fill(plan.date);
   await form.getByLabel('時間割の時限', { exact: true }).fill('3');
   await form.getByLabel('開始時刻', { exact: true }).fill('13:00');

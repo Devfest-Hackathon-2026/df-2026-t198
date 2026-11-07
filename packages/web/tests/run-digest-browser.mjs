@@ -40,7 +40,7 @@ try {
   await ready(`http://127.0.0.1:${apiPort}/api/health`, api);
   const web = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', webPort, '--strictPort'], true);
   await ready(env.KADAI_WEB_ORIGIN, web);
-  await finish(start('node', ['packages/web/tests/digest.browser.mjs']));
+  await finish(start('node', [process.argv.includes('--todoku') ? 'packages/web/tests/todoku.browser.mjs' : 'packages/web/tests/digest.browser.mjs']));
 } finally {
   for (const child of children) if (child.exitCode === null) child.kill('SIGTERM');
 }

@@ -171,8 +171,12 @@ try {
     eventCard, timetable.locator('.course-panel .assignment').filter({ hasText: '書き方を書くレポート' }).locator('.deadline'), deadlines.locator('.deadline')];
   for (const target of highlighted) {
     await target.locator('xpath=self::*[contains(@class,"changed")]').waitFor({ timeout: Math.max(1, 2000 - (Date.now() - openedAt)) });
-    assert.equal(await target.evaluate(node => globalThis.getComputedStyle(node).backgroundColor), 'rgb(249, 240, 220)');
+    assert.equal(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
   }
+  const oldDate = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(oldDeadline));
+  const previousDeadline = timetable.locator('.course-panel .previous-deadline');
+  assert.equal(await previousDeadline.innerText(), oldDate);
+  assert.equal(await previousDeadline.evaluate(node => globalThis.getComputedStyle(node).textDecorationLine), 'line-through');
   const highlightAt = Date.now();
   assert.ok(highlightAt - openedAt <= 2000, 'all deadlines highlight within two seconds of opening LMS');
   const afterApplied = (await changes()).size;
@@ -224,8 +228,9 @@ try {
   await timetable.waitForTimeout(Math.max(0, 10000 - (Date.now() - highlightAt)));
   for (const target of highlighted) {
     assert.doesNotMatch(await target.getAttribute('class'), /changed/);
-    assert.notEqual(await target.evaluate(node => globalThis.getComputedStyle(node).backgroundColor), 'rgb(249, 240, 220)');
+    assert.notEqual(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
   }
+  assert.equal(await previousDeadline.count(), 0);
   const fetchState = db.doc('students/trial-student/fetchStates/demo-lms');
   const fresh = (await fetchState.get()).data().lastSucceededAt;
   assert.equal(await timetable.getByText('から更新がありません', { exact: false }).count(), 0);
