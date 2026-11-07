@@ -21,7 +21,7 @@ const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i19-evidence';
 const student = db.doc('students/trial-student');
 const source = student.collection('demo').doc('current');
 const open = page.getByRole('button', { name: 'LMSを開く', exact: true });
-const teacher = page.getByRole('button', { name: '「架空の観察ノート」の締切を1日延ばす', exact: true });
+const teacher = page.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true });
 const status = text => page.getByRole('status').filter({ hasText: text }).waitFor();
 try {
   const stale = (await source.get()).data();
@@ -39,13 +39,13 @@ try {
   assert.ok(Date.parse((await student.collection('sessionContext').doc('current').get()).data().nextSessionAt) > Date.now());
   const order = await page.locator('main').evaluate(main => Array.from(main.querySelectorAll('button, a')).map(el => el.textContent));
   assert.ok(order.indexOf('LMSを開く') < order.indexOf('学生の画面を開く'));
-  assert.ok(order.indexOf('学生の画面を開く') < order.indexOf('「架空の観察ノート」の締切を1日延ばす'));
+  assert.ok(order.indexOf('学生の画面を開く') < order.indexOf('「書き方を書くレポート」の締切を1日延ばす'));
   assert.equal(await page.locator('.demo-steps > li').count(), 3);
   await page.getByRole('heading', { name: 'LMSの画面（架空）', exact: true }).waitFor();
   const markers = await page.locator('.demo-list-end, .demo-availability').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().width));
   assert.ok(markers.length > 0 && markers.every(width => width <= 1));
   assert.equal(await page.locator('[data-demo-page="materials"] [data-demo-page="detail"]').count(), 0);
-  assert.equal(await page.locator('[data-demo-page="detail"] h1').count(), 2);
+  assert.equal(await page.locator('[data-demo-page="detail"] h1').count(), 5);
   // Return the extension response while withholding the corresponding source snapshot.
   const dueAt = new Date(Date.parse(current.courses[0].assignments[0].dueAt) + 86400_000).toISOString();
   await page.route('**/api/v1/demo/extend', route => route.fulfill({ json: { sourceId: 'DEMO101_TASK1', dueAt } }), { times: 1 });
@@ -81,12 +81,13 @@ try {
   assert.equal((await retry).postDataJSON().observationId, previousId);
   await status('課題を確認しました');
   assert.equal(await open.evaluate(button => button.nextElementSibling.getAttribute('role')), 'status');
-  assert.equal((await student.collection('assignments').get()).size, 2);
+  assert.equal((await student.collection('assignments').get()).size, 5);
   await mkdir(evidence, { recursive: true });
   await page.screenshot({ path: `${evidence}/issue-68-wide.png`, fullPage: true });
   // End with an explicit reset; the existing, unchanged M6 scenario runs next.
   await page.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await status('体験を最初の状態に戻しました');
+  assert.equal(await page.locator('[data-demo-page="home"] .demo-course').count(), 6);
   for (const name of ['assignments', 'courses', 'changes', 'fetchStates', 'observationReceipts', 'calendarItems']) {
     assert.equal((await student.collection(name).get()).size, 0);
   }

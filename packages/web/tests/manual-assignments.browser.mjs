@@ -57,7 +57,7 @@ try {
   const dueDate = new Date(Date.now() + 2 * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
   await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
   await login(supporter, 'supporter'); await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '架空の学生A', exact: true }).click();
+  await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
   const validationForm = await form(student, '  　 ', dueDate, null);
   let validationRequests = 0;
   await student.route('**/api/v1/students/trial-student/manual-assignments/*', async route => {
@@ -90,8 +90,8 @@ try {
   const item = (await ref.collection('calendarItems').doc(saved.data().calendarItemKey).get()).data();
   assert.equal(item.appliedRevision, item.desiredRevision);
   assert.equal((await target()).data().mockEvents[item.eventId].event.start.date, dueDate);
-  await student.locator('.course-cell').filter({ hasText: '架空の観察入門' }).first().click();
-  const panel = student.getByRole('complementary', { name: '架空の観察入門の課題', exact: true });
+  await student.locator('.course-cell').filter({ hasText: 'レポートの書き方の書き方' }).first().click();
+  const panel = student.getByRole('complementary', { name: 'レポートの書き方の書き方の課題', exact: true });
   await panel.getByRole('heading', { name: paper, exact: true }).waitFor();
   assert.equal(await panel.locator('.manual-assignment a').count(), 0);
   pass('supporter adds date-only task; student course, upcoming list, session deadlines and durable mock calendar update');
@@ -182,8 +182,8 @@ try {
       assert.equal(await finished.getByRole('heading', { name: title, exact: true, includeHidden: true }).count(), ended ? 1 : 0);
     }
   }
-  await student.locator('.course-cell').filter({ hasText: '架空の観察入門' }).first().click();
-  const boundaryPanel = student.getByRole('complementary', { name: '架空の観察入門の課題', exact: true });
+  await student.locator('.course-cell').filter({ hasText: 'レポートの書き方の書き方' }).first().click();
+  const boundaryPanel = student.getByRole('complementary', { name: 'レポートの書き方の書き方の課題', exact: true });
   for (const time of ['11:59:59.999', '12:00:00.000']) {
     await at(`${dueDate}T${time}+09:00`);
     await checkBoundary(timedTitle, false); await checkBoundary(dateTitle, false);

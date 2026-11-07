@@ -19,3 +19,5 @@ await build({
 const manifest = configureManifest(JSON.parse(await readFile('manifest.json', 'utf8')), config);
 await writeFile('dist/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
 for (const asset of ['options.html', 'options.css', 'popup.html', 'popup.css']) await copyFile(asset, `dist/${asset}`);
+await mkdir('dist/icons', { recursive: true });
+for (const size of [16, 48, 128]) await copyFile(`icons/todoku-icon-${size}.png`, `dist/icons/todoku-icon-${size}.png`);

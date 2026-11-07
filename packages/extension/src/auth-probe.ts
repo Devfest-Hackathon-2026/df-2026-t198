@@ -32,8 +32,8 @@ export interface ProbeDependencies {
   request(path: string, token: string, body?: object): Promise<{ status: number; data?: unknown }>;
 }
 
-const calendarName = '課題の秘書・接続テスト';
-const eventName = '課題の秘書の接続テスト（架空の予定）';
+const calendarName = 'ToDoku・接続テスト';
+const eventName = 'ToDokuの接続テスト（架空の予定）';
 
 class ProbeFailure extends Error {
   constructor(readonly code: string, message: string) { super(message); }

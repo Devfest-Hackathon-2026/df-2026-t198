@@ -57,7 +57,12 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         const current = savedPlans.docs.find(doc => doc.id.startsWith(demoPlanPrefix) && doc.data()['date'] === date && doc.data()['status'] === 'active');
         if (current) return current.data() as PreparationPlan;
         const assignments = (await tx.get(student.collection('assignments'))).docs.map(doc => doc.data() as LedgerAssignment);
-        const task = assignments.find(row => row.key.system === 'demo-lms' && row.submission !== 'submitted' && row.presenceState !== 'cancelled' && row.presenceState !== 'ended');
+        const unfinished = assignments.filter(row => row.key.system === 'demo-lms' && row.submission !== 'submitted' && row.presenceState !== 'cancelled' && row.presenceState !== 'ended');
+        const dueAt = (row: LedgerAssignment) => {
+          const deadline = row.officialDeadline?.deadline;
+          return deadline?.kind === 'datetime' ? Date.parse(deadline.dueAt) : Infinity;
+        };
+        const task = unfinished.sort((a, b) => dueAt(a) - dueAt(b) || a.key.sourceId.localeCompare(b.key.sourceId))[0];
         if (!task) throw new PlanConflict();
         const courses = (await tx.get(student.collection('courses'))).docs.map(doc => doc.data() as Course).filter(course => course.currentTerm !== false);
         const periods = preparationPeriodTimes['demo-lms']!;

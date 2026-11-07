@@ -1,4 +1,4 @@
-# kadai-hisho（課題の秘書・仮称）
+# ToDoku（トドク。開発用の名前は kadai-hisho）
 
 status: active
 
