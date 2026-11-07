@@ -11,8 +11,8 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
   let supporter: { uid: string; token: string };
   let regular: { uid: string; token: string };
   const originalDue = '2026-11-12T08:00:00.000Z';
-  const data = { courses: [{ courseId: 'DEMO101', name: '架空の観察入門', teacher: '架空の先生A', weekday: 1, period: 2,
-    assignments: [{ sourceId: 'DEMO101_TASK1', title: '架空の観察ノート', dueAt: originalDue, submission: 'not-submitted' }] }] };
+  const data = { courses: [{ courseId: 'DEMO101', name: 'レポートの書き方の書き方', teacher: '架空の先生A', weekday: 1, period: 2,
+    assignments: [{ sourceId: 'DEMO101_TASK1', title: '書き方を書くレポート', dueAt: originalDue, submission: 'not-submitted' }] }] };
   async function account() {
     const result = await fetch(`http://${process.env['FIREBASE_AUTH_EMULATOR_HOST']}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=emulator-only`,
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) });
@@ -72,7 +72,7 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
     expect(after['announcements']).toHaveLength(1);
     const notice = after['announcements'][0];
     expect(notice.courseId).toBe('DEMO101');
-    expect(notice.announcement.body).toMatch(/^架空の観察ノートの提出期限を\d{4}-\d{2}-\d{2} 17:00/);
+    expect(notice.announcement.body).toMatch(/^書き方を書くレポートの提出期限を\d{4}-\d{2}-\d{2} 17:00/);
     expect(Date.parse(notice.announcement.publishedAt)).toBeGreaterThan(Date.now() - 60000);
     expect(await ledger(other.uid)).toEqual(ledgerBefore);
     expect((await source(student.uid).get()).data()).toEqual(studentBefore);
@@ -146,6 +146,8 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
     expect((await sharing.get()).data()).toEqual({ scopes: ['all'], revokedAt: null });
     expect(await snapshotOther()).toEqual(beforeOther);
     const initial = (await source(owner.uid).get()).data()!;
+    expect(initial['courses']).toHaveLength(6);
+    expect(initial['courses'].flatMap((course: { assignments: unknown[] }) => course.assignments)).toHaveLength(5);
     expect(initial['courses'][0].assignments.map((item: { submission: string }) => item.submission)).toEqual(['not-submitted', 'submitted']);
     const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(start));
     const due = new Date(Date.parse(`${today}T17:00:00+09:00`) + 3 * 86400_000);
@@ -159,7 +161,7 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
       expect(at.getUTCHours()).toBe(6); expect(at.getUTCMinutes()).toBe(0);
       expect(at.getUTCDay()).toBeGreaterThan(0); expect(at.getUTCDay()).toBeLessThan(6);
     }
-    expect((await fixture.db.doc(`demoAccounts/${owner.uid}`).get()).data()!['displayName']).toBe('架空の学生A');
+    expect((await fixture.db.doc(`demoAccounts/${owner.uid}`).get()).data()!['displayName']).toBe('戸田 ひなた');
     // Re-login while fresh must preserve the ongoing scenario and its ledger.
     expect((await post('observations', sample, owner.token)).status).toBe(200);
     const changesBefore = (await studentRef.collection('changes').get()).docs.map(doc => doc.data());

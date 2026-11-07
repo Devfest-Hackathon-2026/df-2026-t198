@@ -93,10 +93,10 @@ try {
   const timetable = await popup;
   timetable.setDefaultTimeout(30000);
   timetable.on('pageerror', () => { browserErrors++; });
-  await timetable.locator('.timetable').getByRole('button', { name: /架空の観察入門/ }).click();
-  await timetable.getByRole('heading', { name: '架空の観察ノート', exact: true }).waitFor();
+  await timetable.locator('.timetable').getByRole('button', { name: /レポートの書き方の書き方/ }).click();
+  await timetable.getByRole('heading', { name: '書き方を書くレポート', exact: true }).waitFor();
   const calendar = region(timetable, '締切のカレンダー');
-  const calendarTask = calendar.locator('li').filter({ hasText: '架空の観察ノート' });
+  const calendarTask = calendar.locator('li').filter({ hasText: '書き方を書くレポート' });
   await calendarTask.waitFor();
   const beforePanel = await timetable.locator('.course-panel').innerText();
   const beforeCalendar = await calendar.innerText();
@@ -109,12 +109,12 @@ try {
   phase = 'step-3-choose-student';
   await supporter.locator(`a[href="/session/${pair.student.uid}"]`).click();
   const deadlines = region(supporter, '次の面談までの締切');
-  await deadlines.getByText('架空の観察ノート', { exact: true }).waitFor();
+  await deadlines.getByText('書き方を書くレポート', { exact: true }).waitFor();
   const beforeSession = await deadlines.innerText();
   operations.push('3: 別ブラウザの支援担当が学生の次の締切を表示');
 
   phase = 'step-4-source-only';
-  await button(student, '「架空の観察ノート」の締切を1日延ばす').click();
+  await button(student, '「書き方を書くレポート」の締切を1日延ばす').click();
   await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   const extendedDue = (await student.locator('.demo-due').first().innerText()).match(/(\d{4})\/(\d{2})\/(\d{2})/);
   assert.ok(extendedDue);
@@ -135,7 +135,7 @@ try {
   const expectedDue = `${Number(extendedDue[2])}/${Number(extendedDue[3])} 17:00`;
   assert.ok((await timetable.locator('.course-panel').innerText()).includes(expectedDue));
   assert.ok((await deadlines.innerText()).includes(expectedDue));
-  await calendar.locator(`td[data-date="${extendedDue[1]}-${extendedDue[2]}-${extendedDue[3]}"]`).getByText('架空の観察ノート', { exact: true }).waitFor();
+  await calendar.locator(`td[data-date="${extendedDue[1]}-${extendedDue[2]}-${extendedDue[3]}"]`).getByText('書き方を書くレポート', { exact: true }).waitFor();
   await screenshot(deadlines, 'session-deadline.png');
   phase = 'step-5-planning';
   await supporter.getByRole('link', { name: '② 相談する', exact: true }).click();
@@ -157,7 +157,7 @@ try {
   await plans(supporter).waitFor({ state: 'detached' });
   await timetable.locator('.timetable .preparation-cell').waitFor({ state: 'detached' });
   await supporter.getByRole('link', { name: '① 確かめる', exact: true }).click();
-  await deadlines.getByText('架空の観察ノート', { exact: true }).waitFor();
+  await deadlines.getByText('書き方を書くレポート', { exact: true }).waitFor();
   const updatedCalendar = await calendar.innerText();
   const updatedPanel = await timetable.locator('.course-panel').innerText();
   const updatedSession = await deadlines.innerText();
@@ -199,7 +199,7 @@ try {
   operations.push('6: 再取得で予定・変更は増えず、後回しの記録を保ち新ID・版1の見本を作成、終わったが両画面へ反映');
 
   phase = 'step-6-announcement-publish';
-  await button(student, 'お知らせを出す').click();
+  await button(student.locator('.demo-teacher-action').filter({ hasText: '書き方を書くレポート' }), 'お知らせを出す').click();
   await student.getByRole('status').filter({ hasText: 'お知らせを出しました' }).waitFor();
   assert.deepEqual((await student.locator('.demo-due').first().innerText()).match(/(\d{4})\/(\d{2})\/(\d{2})/), extendedDue);
   phase = 'step-6-announcement-parse';
@@ -219,7 +219,7 @@ try {
   phase = 'step-6-announcement-deadline';
   assert.ok((await timetable.locator('.course-panel').innerText()).includes(expectedDue));
   assert.ok((await deadlines.innerText()).includes(expectedDue));
-  await calendar.locator(`td[data-date="${extendedDue[1]}-${extendedDue[2]}-${extendedDue[3]}"]`).getByText('架空の観察ノート', { exact: true }).waitFor();
+  await calendar.locator(`td[data-date="${extendedDue[1]}-${extendedDue[2]}-${extendedDue[3]}"]`).getByText('書き方を書くレポート', { exact: true }).waitFor();
   assert.equal(await changes.count(), 1);
   await screenshot(deadlines, 'announcement-review.png');
   operations.push('6追加: お知らせを出してLMSを開くと両画面に要確認、公式締切・カレンダーの日付と変更件数は維持');
@@ -238,7 +238,7 @@ try {
       cleanupPhase = 'clear-plans';
       await plans(timetable).waitFor({ state: 'detached' });
       cleanupPhase = 'clear-tasks';
-      await timetable.getByText('架空の観察ノート', { exact: true }).waitFor({ state: 'detached' });
+      await timetable.getByText('書き方を書くレポート', { exact: true }).waitFor({ state: 'detached' });
     }
     reset = true;
   } catch { process.exitCode = 1; reset = false; cleanupFailures.push(cleanupPhase); }

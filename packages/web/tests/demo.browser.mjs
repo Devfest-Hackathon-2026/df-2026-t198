@@ -62,6 +62,10 @@ try {
     await student.getByLabel('メールアドレス').waitFor();
   }
   assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
+  assert.equal(await student.title(), 'ToDoku');
+  assert.equal(await student.locator('.brand').innerText(), 'ToDoku');
+  await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();
+  assert.match(await student.locator('main').innerText(), /ここで扱う授業と課題は架空のものです/);
   // A signed-in account without a demo profile can return to the demo login.
   await getAuth(app).createUser({ uid: 'non-demo-student', email: 'trial-ordinary@example.invalid',
     password: process.env.KADAI_DEMO_PASSWORD });
@@ -78,25 +82,37 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '架空の学生A', exact: true }).click();
+  await supporter.getByRole('link', { name: '戸田 ひなた', exact: true }).click();
   pass(0);
   const deadlines = supporter.getByRole('region', { name: '次の面談までの締切' });
   assert.equal((await ledger()).size, 0);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
-  await deadlines.getByText('架空の観察ノート', { exact: true }).waitFor();
-  assert.equal((await ledger()).size, 2);
-  assert.equal(await deadlines.getByText('架空の振り返り', { exact: true }).count(), 0);
+  await deadlines.getByText('書き方を書くレポート', { exact: true }).waitFor();
+  assert.equal((await ledger()).size, 5);
+  assert.equal(await deadlines.getByText('第3回 ふりかえり', { exact: true }).count(), 0);
   pass(1);
   const timetable = await studentContext.newPage();
   timetable.setDefaultTimeout(15000);
   timetable.on('pageerror', () => errors.push('browser-error'));
   await timetable.goto(`${base}/student`);
-  await timetable.locator('.timetable').getByRole('button', { name: /架空の観察入門/ }).click();
-  await timetable.getByRole('heading', { name: '架空の観察ノート', exact: true }).waitFor();
+  assert.equal(await timetable.title(), 'ToDoku');
+  await timetable.locator('.timetable').waitFor();
+  assert.deepEqual((await timetable.locator('.course-cell strong').allTextContents()).sort(), [
+    'レポートの書き方の書き方', 'キャンパス植物図鑑演習', '線形代数（再）', '学食経済学', '自転車置き場の社会学', '90分の数理',
+  ].sort());
+  for (const [name, weekday, period] of [
+    ['レポートの書き方の書き方', 1, 2], ['キャンパス植物図鑑演習', 4, 4], ['線形代数（再）', 2, 1],
+    ['学食経済学', 3, 3], ['自転車置き場の社会学', 3, 1], ['90分の数理', 5, 2],
+  ]) {
+    await timetable.locator(`.timetable tbody tr:nth-child(${period}) td:nth-of-type(${weekday})`)
+      .getByRole('button').filter({ hasText: name }).waitFor();
+  }
+  await timetable.locator('.timetable').getByRole('button', { name: /レポートの書き方の書き方/ }).click();
+  await timetable.getByRole('heading', { name: '書き方を書くレポート', exact: true }).waitFor();
   const oldDeadline = (await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt;
   const calendar = timetable.getByRole('region', { name: '締切のカレンダー', exact: true });
-  await calendar.getByText(/架空の観察ノート/).waitFor();
+  await calendar.getByText(/書き方を書くレポート/).waitFor();
   await timetable.emulateMedia({ reducedMotion: 'reduce' });
   assert.equal(await timetable.locator('.course-cell').first().evaluate(node => globalThis.getComputedStyle(node).transitionDuration), '0s');
   const beforeCalendar = await calendar.innerText();
@@ -104,7 +120,7 @@ try {
   assert.equal(await timetable.getByRole('heading', { name: '締切の近い課題' }).count(), 0);
   assert.equal(await timetable.locator('.changed').count(), 0);
   assert.equal(await supporter.locator('.changed').count(), 0);
-  const eventCard = calendar.locator('.calendar-event').filter({ hasText: '架空の観察ノート' });
+  const eventCard = calendar.locator('.calendar-event').filter({ hasText: '書き方を書くレポート' });
   const eventDay = () => eventCard.locator('..').locator('..').getAttribute('data-date');
   const oldDay = await eventDay();
   const jstDay = value => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(value));
@@ -115,7 +131,7 @@ try {
   const initialTarget = (await calendarTarget()).data();
   assert.equal(initialTarget.mode, 'mock');
   assert.equal(initialTarget.executor, 'demo');
-  const oldEventId = Object.keys(initialTarget.mockEvents).find(id => initialTarget.mockEvents[id].event.summary.includes('架空の観察ノート'));
+  const oldEventId = Object.keys(initialTarget.mockEvents).find(id => initialTarget.mockEvents[id].event.summary.includes('書き方を書くレポート'));
   assert.ok(oldEventId);
   const beforeChanges = (await changes()).size;
   const sessionBefore = await deadlines.innerText();
@@ -126,7 +142,7 @@ try {
   await timetable.screenshot({ path: `${evidence}/student-before-narrow.png`, fullPage: true });
   await timetable.setViewportSize({ width: 1280, height: 960 });
   await student.screenshot({ path: `${evidence}/demo-wide.png`, fullPage: true });
-  await student.getByRole('button', { name: '「架空の観察ノート」の締切を1日延ばす', exact: true }).click();
+  await student.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
   await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   assert.equal((await changes()).size, beforeChanges);
   assert.equal((await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt, oldDeadline);
@@ -149,8 +165,8 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('alert').filter({ hasText: '操作が終わりませんでした' }).waitFor();
   // Observe all highlights immediately after the first applied response (before replay).
-  const highlighted = [timetable.locator('.course-cell').filter({ hasText: '架空の観察入門' }),
-    eventCard, timetable.locator('.course-panel .assignment').filter({ hasText: '架空の観察ノート' }).locator('.deadline'), deadlines.locator('.deadline')];
+  const highlighted = [timetable.locator('.course-cell').filter({ hasText: 'レポートの書き方の書き方' }),
+    eventCard, timetable.locator('.course-panel .assignment').filter({ hasText: '書き方を書くレポート' }).locator('.deadline'), deadlines.locator('.deadline')];
   for (const target of highlighted) {
     await target.locator('xpath=self::*[contains(@class,"changed")]').waitFor({ timeout: Math.max(1, 2000 - (Date.now() - openedAt)) });
     assert.equal(await target.evaluate(node => globalThis.getComputedStyle(node).backgroundColor), 'rgb(249, 240, 220)');
@@ -176,7 +192,7 @@ try {
   assert.equal(Date.parse(`${await eventDay()}T00:00:00Z`) - Date.parse(`${oldDay}T00:00:00Z`), 86400000);
   assert.match(await eventCard.innerText(), /17:00/);
   const savedTarget = (await calendarTarget()).data();
-  assert.equal(Object.keys(savedTarget.mockEvents).length, 2);
+  assert.equal(Object.keys(savedTarget.mockEvents).length, 5);
   assert.equal(Date.parse(savedTarget.mockEvents[oldEventId].event.start.dateTime), Date.parse(newDue));
   for (const item of (await calendarItems()).docs.map(doc => doc.data())) {
     assert.equal(item.appliedRevision, item.desiredRevision);
@@ -228,15 +244,23 @@ try {
   await timetable.setViewportSize({ width: 390, height: 844 });
   assert.equal(await timetable.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
   await timetable.screenshot({ path: `${evidence}/calendar-narrow.png`, fullPage: true });
+  const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
+  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  const done = preview.getByRole('link', { name: '✅ 終わった', exact: true });
+  await done.waitFor();
+  const sampleId = new URL(await done.getAttribute('href')).searchParams.get('id');
+  const sample = (await db.doc(`students/trial-student/plans/${sampleId}`).get()).data();
+  assert.deepEqual(sample.assignment, { system: 'demo-lms', sourceId: 'DEMO101_TASK1' });
+  assert.match(await preview.innerText(), /書き方を書くレポート/);
   assert.doesNotMatch(await student.locator('main').innerText(), /Googleでログイン|カレンダーに接続|YNUに接続/);
   await student.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await student.getByLabel('メールアドレス').waitFor();
-  assert.doesNotMatch(await student.locator('main').innerText(), /架空の観察ノート|架空の観察入門/);
+  assert.doesNotMatch(await student.locator('main').innerText(), /書き方を書くレポート|レポートの書き方の書き方/);
   await timetable.getByRole('button', { name: 'Googleでログイン', exact: true }).waitFor();
   assert.equal(await timetable.getByRole('region', { name: '締切のカレンダー', exact: true }).count(), 0);
   await supporter.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await supporter.getByRole('heading', { name: '面談にログイン', exact: true }).waitFor();
-  assert.doesNotMatch(await supporter.locator('main').innerText(), /架空の観察ノート|学生 trial-student/);
+  assert.doesNotMatch(await supporter.locator('main').innerText(), /書き方を書くレポート|学生 trial-student/);
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/operations.json`, JSON.stringify({ status: 'pass', operations: [
     'email login in separate student and supporter browsers', 'source has no preseeded ledger',

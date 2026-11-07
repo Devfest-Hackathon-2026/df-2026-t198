@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as core from '@kadai-hisho/core';
-import type { CalendarItem, PreparationPlan } from '@kadai-hisho/core';
+import type { CalendarItem, LedgerAssignment, PreparationPlan } from '@kadai-hisho/core';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { createPlanStore } from '../src/plan-store.js';
 import { createDigestStore, type PlanActionResult } from '../src/digest-store.js';
 import { createDemoCalendarSync } from '../src/demo-calendar.js';
+import { initialDemo } from '../src/demo-initial.js';
 import { createHttpServer } from '../src/http.js';
 import { firebaseDependencies } from '../src/firebase.js';
 import { observation } from './observation-fixture.js';
@@ -65,6 +66,28 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
   });
   afterAll(async () => { if (server) await new Promise<void>(resolve => server.close(() => resolve())); await fixture?.close(); });
   afterEach(() => vi.restoreAllMocks());
+  it('keeps DEMO101 as the mail sample when the six-course seed adds unfinished assignments', async () => {
+    const baseTask = (await assignmentRef().get()).data() as LedgerAssignment;
+    const { data } = initialDemo(now.getTime());
+    for (const course of data.courses) for (const task of course.assignments) {
+      await student().collection('assignments').doc(documentKey('demo-lms', task.sourceId)).set({
+        ...baseTask, key: { system: 'demo-lms', sourceId: task.sourceId }, submission: task.submission,
+        latest: { ...baseTask.latest, sourceId: task.sourceId, courseId: course.courseId, title: task.title },
+        officialDeadline: { ...baseTask.officialDeadline, deadline: {
+          kind: 'datetime', dueAt: task.dueAt, dueText: task.dueAt, timeZone: 'Asia/Tokyo',
+        } },
+      });
+    }
+    try {
+      const sample = await store.prepareDemo(owner);
+      expect(sample.assignment).toEqual({ system: 'demo-lms', sourceId: 'DEMO101_TASK1' });
+      expect(sample.title).toBe('書き方を書くレポート');
+    } finally {
+      for (const course of data.courses) for (const task of course.assignments) {
+        await student().collection('assignments').doc(documentKey('demo-lms', task.sourceId)).delete();
+      }
+    }
+  });
   it('reports current completion when an old later link is replayed (B1)', async () => {
     expect((await act('later')).status).toBe(200);
     const finished = await (await act('done', owner, 2)).json() as PlanActionResult;
@@ -123,7 +146,7 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
   });
   it('reads the demo display name from the profile and falls back only for legacy profiles', async () => {
     const sessions = createSessionStore(fixture.db);
-    expect(await sessions.listStudents(supporter)).toEqual([{ uid: owner, displayName: '架空の学生A' }]);
+    expect(await sessions.listStudents(supporter)).toEqual([{ uid: owner, displayName: '戸田 ひなた' }]);
     const profile = fixture.db.doc(`demoAccounts/${owner}`);
     try {
       await profile.update({ displayName: '架空の学生B' });

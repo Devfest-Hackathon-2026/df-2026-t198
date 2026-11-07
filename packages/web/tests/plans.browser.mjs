@@ -56,7 +56,7 @@ async function assertPlanLayout(page) {
 }
 async function assertCompactCell(page, fromSupporter) {
   const cell = page.locator('.preparation-cell');
-  assert.equal((await cell.innerText()).trim(), `準備 架空の観察ノート${fromSupporter ? '\n支援担当が入れた' : ''}`);
+  assert.equal((await cell.innerText()).trim(), `準備 書き方を書くレポート${fromSupporter ? '\n支援担当が入れた' : ''}`);
   assert.equal(await cell.evaluate(element => Array.from(element.children).every(child =>
     child.getBoundingClientRect().height <= parseFloat(globalThis.getComputedStyle(child).lineHeight) + 1)), true);
 }
@@ -71,7 +71,7 @@ try {
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
   await login(supporter, 'supporter'); await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '架空の学生A', exact: true }).click();
+  await supporter.getByRole('link', { name: '戸田 ひなた', exact: true }).click();
   await supporter.getByRole('link', { name: '② 相談する', exact: true }).click();
   assert.equal(await supporter.getByRole('button', { name: '学生に確認を頼む', exact: true }).count(), 0);
   await supporter.locator('.session-candidate button').first().click();
@@ -99,7 +99,7 @@ try {
   await assertPlanLayout(student); await assertPlanLayout(supporter);
   pass('compact supporter cell opens date and time with Enter; plan lists keep one row per plan');
   const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
-  const preparationEvent = calendar.locator('.calendar-event').filter({ hasText: '準備' }).getByText('架空の観察ノート', { exact: true });
+  const preparationEvent = calendar.locator('.calendar-event').filter({ hasText: '準備' }).getByText('書き方を書くレポート', { exact: true });
   await calendar.getByText('体験用の予定です。Googleカレンダーには入りません。', { exact: true }).waitFor();
   await preparationEvent.waitFor();
   const item = (await ref.collection('calendarItems').doc(plan.calendarItemKey).get()).data();

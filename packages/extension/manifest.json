@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "課題の秘書",
+  "name": "ToDoku",
+  "description": "ToDoku（トドク）は大学のLMSから課題を集め、時間割・カレンダー・メールで次の一歩を知らせます。",
   "version": "0.0.0",
   "minimum_chrome_version": "105",
   "permissions": [

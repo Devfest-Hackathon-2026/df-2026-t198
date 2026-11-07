@@ -45,7 +45,7 @@ export function DemoPage() {
     catch { setError('ログインできませんでした。アカウントと接続を確かめてください。'); }
     finally { setLoginBusy(false); }
   }
-  return <div className="demo-shell"><header className="demo-header"><h1>課題の秘書を試す</h1>
+  return <div className="demo-shell"><header className="demo-header"><h1>ToDokuを試す</h1>
     {user && <button className="demo-logout" onClick={() => { void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')); }}>ログアウト</button>}</header>
     <p>ここで扱う授業と課題は架空のものです。学生と支援担当は別のブラウザでログインしてください。</p>
     <p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>

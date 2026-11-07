@@ -31,6 +31,11 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     await promisify(execFile)(process.execPath, ['build.mjs'], { cwd: extensionDir });
     const manifest = JSON.parse(await readFile(join(extensionDir, 'dist/manifest.json'), 'utf8'));
     const original = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+    expect(manifest.name).toBe('ToDoku');
+    expect(manifest.description).toContain('ToDoku');
+    const popup = await readFile(join(extensionDir, 'dist/popup.html'), 'utf8');
+    expect(popup).toContain('<title>ToDoku</title>');
+    expect(popup).toContain('<h1>ToDoku</h1>');
     expect(manifest.action).toEqual({ default_popup: 'popup.html' });
     expect(await readFile(join(extensionDir, 'dist/popup.html'), 'utf8')).toContain('src="popup.js"');
     expect(await readFile(join(extensionDir, 'dist/popup.js'), 'utf8')).toContain('chrome.tabs.create');
@@ -45,6 +50,8 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     const source = await readFile(join(extensionDir, 'dist/service-worker.js'), 'utf8');
     expect(source).toContain(config.firebase.apiKey);
     const html = await readFile(join(extensionDir, 'dist/options.html'), 'utf8');
+    expect(html).toContain('<title>ToDokuの設定</title>');
+    expect(html).toContain('<h1>ToDokuの設定</h1>');
     expect(html).toContain('src="options.js"');
     expect(html).not.toMatch(/<script[^>]+src=['"]https?:/);
     await expect(readFile(join(extensionDir, 'dist/config.local.json'))).rejects.toMatchObject({ code: 'ENOENT' });

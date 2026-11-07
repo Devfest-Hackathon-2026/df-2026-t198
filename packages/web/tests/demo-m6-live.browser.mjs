@@ -116,7 +116,7 @@ try {
   phase = 'initial-observation-and-receipt';
   await openLms();
   const initialLedger = await ledger();
-  assert.equal(initialLedger.length, 2);
+  assert.equal(initialLedger.length, 5);
   const initialReceipt = await document(`observationReceipts/${student.observationId}`);
   assert.equal(initialReceipt.observationId, student.observationId);
   assert.equal(initialReceipt.result.status, 'applied');
@@ -124,24 +124,24 @@ try {
   beforeDue = task(initialLedger).officialDeadline.deadline.dueAt;
   c14 = true;
   const deadlines = supporter.page.getByRole('region', { name: '次の面談までの締切' });
-  await deadlines.getByText('架空の観察ノート', { exact: true }).waitFor();
+  await deadlines.getByText('書き方を書くレポート', { exact: true }).waitFor();
   pass(1);
 
   const timetable = await student.context.newPage();
   timetable.setDefaultTimeout(30000);
   timetable.on('pageerror', () => errors.push('browser-error'));
   await timetable.goto(`${origin}/student`);
-  await timetable.locator('.timetable').getByRole('button', { name: /架空の観察入門/ }).click();
-  await timetable.getByRole('heading', { name: '架空の観察ノート', exact: true }).waitFor();
+  await timetable.locator('.timetable').getByRole('button', { name: /レポートの書き方の書き方/ }).click();
+  await timetable.getByRole('heading', { name: '書き方を書くレポート', exact: true }).waitFor();
   const calendar = timetable.getByRole('region', { name: '締切のカレンダー', exact: true });
-  await calendar.getByText(/架空の観察ノート/).waitFor();
+  await calendar.getByText(/書き方を書くレポート/).waitFor();
   const beforeCalendar = await calendar.innerText();
   const initialTarget = await calendarTarget();
   const initialItems = await calendarItems();
   assert.equal(initialTarget.mode, 'mock');
   assert.equal(initialTarget.executor, 'demo');
   const oldEventId = Object.keys(initialTarget.mockEvents).find(id =>
-    initialTarget.mockEvents[id].event.summary.includes('架空の観察ノート'));
+    initialTarget.mockEvents[id].event.summary.includes('書き方を書くレポート'));
   assert.ok(oldEventId);
   const beforeChanges = await changes();
   const sessionBefore = await deadlines.innerText();
@@ -153,7 +153,7 @@ try {
   }
   await screenshot(timetable, 'student-before.png');
   phase = 'teacher-changes-source-only';
-  await student.page.getByRole('button', { name: '「架空の観察ノート」の締切を1日延ばす', exact: true }).click();
+  await student.page.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
   await student.page.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   afterDue = (await document('demo/current')).courses[0].assignments[0].dueAt;
   assert.equal(Date.parse(afterDue) - Date.parse(beforeDue), 86400_000);
@@ -204,11 +204,11 @@ try {
   phase = 'persisted-calendar-and-revisions';
   const eventDay = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(afterDue));
   const eventTime = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(afterDue));
-  const eventCard = calendar.locator(`td[data-date="${eventDay}"] .calendar-event`).filter({ hasText: '架空の観察ノート' });
+  const eventCard = calendar.locator(`td[data-date="${eventDay}"] .calendar-event`).filter({ hasText: '書き方を書くレポート' });
   await eventCard.getByText(eventTime, { exact: true }).waitFor();
   const savedTarget = await calendarTarget();
   const savedItems = await calendarItems();
-  assert.equal(Object.keys(savedTarget.mockEvents).length, 2);
+  assert.equal(Object.keys(savedTarget.mockEvents).length, 5);
   assert.equal(Date.parse(savedTarget.mockEvents[oldEventId].event.start.dateTime), Date.parse(afterDue));
   for (const { data: item } of savedItems) {
     assert.equal(item.appliedRevision, item.desiredRevision);
@@ -216,7 +216,7 @@ try {
       itemKey: item.itemKey, generation: item.generation, revision: item.appliedRevision, event: item.desired.event,
     });
   }
-  assert.equal(await calendar.locator('li').filter({ hasText: '架空の観察ノート' }).count(), 1);
+  assert.equal(await calendar.locator('li').filter({ hasText: '書き方を書くレポート' }).count(), 1);
   pass(5);
   await screenshot(timetable, 'student-after.png');
 

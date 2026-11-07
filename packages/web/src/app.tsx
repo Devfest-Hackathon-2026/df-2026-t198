@@ -15,7 +15,7 @@ export function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <a className="brand" href="/student">課題の秘書</a>
+        <a className="brand" href="/student">ToDoku</a>
         <nav aria-label="画面">
           <a href="/demo-lms" aria-current={path === '/demo-lms' ? 'page' : undefined}>体験用LMS</a>
           <a href="/student" aria-current={path === '/student' || path === '/student/plan' || path === '/' ? 'page' : undefined}>学生</a>

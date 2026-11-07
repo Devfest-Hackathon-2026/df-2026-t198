@@ -26,7 +26,8 @@ const tasks = () => student.collection('assignments').get();
 const task = async () => (await tasks()).docs.find(doc => doc.data().key.sourceId === 'DEMO101_TASK1').data();
 const calls = async () => JSON.parse(await readFile(`${evidence}/fake-model.json`, 'utf8')).calls;
 const open = page.getByRole('button', { name: 'LMSを開く', exact: true });
-const publish = page.getByRole('button', { name: 'お知らせを出す', exact: true });
+const publish = page.locator('.demo-teacher-action').filter({ hasText: '書き方を書くレポート' })
+  .getByRole('button', { name: 'お知らせを出す', exact: true });
 const status = text => page.getByRole('status').filter({ hasText: text }).waitFor();
 const notices = page.locator('[data-demo-announcement]');
 const errors = [];
@@ -43,7 +44,7 @@ try {
   await open.waitFor();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '架空の学生A', exact: true }).click();
+  await supporter.getByRole('link', { name: '戸田 ひなた', exact: true }).click();
   const original = (await source.get()).data();
   await publish.click();
   await status('お知らせを出しました');
@@ -51,12 +52,15 @@ try {
   const announced = (await source.get()).data();
   assert.deepEqual(announced.courses, original.courses);
   assert.equal((await tasks()).size, 0, 'publishing must not write the ledger');
-  assert.match(await notices.innerText(), /架空の観察ノートの提出期限/);
+  assert.match(await notices.innerText(), /書き方を書くレポートの提出期限/);
   // The reader must send what the LMS DOM says, not reach back into Firestore.
   const sent = page.waitForRequest('**/api/v1/announcements');
+  const parsed = page.waitForResponse('**/api/v1/announcements');
   await open.click();
   const payload = (await sent).postDataJSON();
   assert.deepEqual(payload, { system: 'demo-lms', ...announced.announcements[0] });
+  assert.equal((await parsed).status(), 200);
+  assert.equal((await (await parsed).json()).status, 'proposal');
   await status('課題を確認しました。学生の画面');
   const after = await task();
   assert.equal(Date.parse(after.officialDeadline.deadline.dueAt), Date.parse(original.courses[0].assignments[0].dueAt));
@@ -64,7 +68,7 @@ try {
   assert.equal(await calls(), 1);
   const timetable = await context.newPage();
   await timetable.goto('http://127.0.0.1:5177/student');
-  await timetable.locator('.timetable').getByRole('button', { name: /架空の観察入門/ }).click();
+  await timetable.locator('.timetable').getByRole('button', { name: /レポートの書き方の書き方/ }).click();
   await timetable.locator('.course-panel').getByText('要確認', { exact: true }).waitFor();
   await timetable.locator('.course-panel').getByText(/お知らせでは締切が/).waitFor();
   await supporter.getByText(/お知らせでは締切が/).first().waitFor();
