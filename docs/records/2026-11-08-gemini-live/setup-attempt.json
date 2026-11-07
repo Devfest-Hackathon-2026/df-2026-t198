@@ -1,0 +1,48 @@
+{
+  "startedAt": "2026-11-07T17:47:41.657Z",
+  "origin": "https://project-00439085-4e2d-44c3-9a8.web.app",
+  "browser": "Chromium, two isolated contexts",
+  "checks": [
+    "server-managed trial student profile verified"
+  ],
+  "requests": [
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/digest",
+      "status": 200
+    },
+    {
+      "path": "/api/v1/demo/reset",
+      "status": 200
+    }
+  ],
+  "browserErrors": 0,
+  "status": "failed",
+  "failedPhase": "reset",
+  "cleanupReset": true,
+  "studentLoggedOut": true,
+  "finishedAt": "2026-11-07T17:48:31.406Z"
+}
