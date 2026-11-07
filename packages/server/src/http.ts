@@ -83,7 +83,7 @@ export function createHttpServer(dependencies?: ObservationDependencies) {
     if ((request.method === 'PUT' || request.method === 'DELETE') && /^\/api\/v1\/students\/[^/]+\/manual-assignments\/[^/]+$/.test(path ?? '')) {
       void receiveManualAssignmentRequest(request, response, dependencies); return;
     }
-    if ((request.method === 'GET' && path === '/api/v1/digest') ||
+    if ((request.method === 'GET' && ['/api/v1/digest', '/api/v1/digest/delivery', '/api/v1/digest/demo-preview'].includes(path ?? '')) ||
       (request.method === 'POST' && path === '/api/v1/digest/demo-plan') ||
       (request.method === 'POST' && /^\/api\/v1\/plans\/[^/]+\/(done|later)$/.test(path ?? ''))) {
       void receiveDigestRequest(request, response, dependencies); return;

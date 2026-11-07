@@ -74,6 +74,36 @@ curl --fail-with-body https://project-00439085-4e2d-44c3-9a8.web.app/api/health
 
 公式資料：[Node.js buildpacks](https://docs.cloud.google.com/docs/buildpacks/nodejs)、[Procfile](https://docs.cloud.google.com/docs/buildpacks/about-procfile)、[ソースからのCloud Runデプロイ](https://docs.cloud.google.com/run/docs/deploying-source-code)、[HostingからCloud Runへの転送](https://firebase.google.com/docs/hosting/cloud-run)。
 
+## 拡張のメールからクラウド通知へ移す（Issue #163）
+
+実行者はorange。以下は手順の記述で、切替を実行した記録ではない。#162の送信元接続とクラウドから本人への実受信（朝・準備前）が通るまで、cloudを有効にしない。11/9 18:00の打ち切りと凍結期間は #152 と [提出の決まり](submission.md) に従う。LMS取得とカレンダー同期は拡張に残す。
+
+### 切替前の確認
+
+- 本人のUID・接続先設定と、使うすべての端末・Chromeプロファイル・拡張の版を照合する。休止中・オフラインの端末も含める。確認できない端末があれば切替を止める。
+- 新版拡張は `GET /api/v1/digest/delivery` が `cloud` を返すか、通信失敗・不正な記録などで確認できなければ送らない。記録なし・`none`・`extension` なら、サーバーの `enabled` にかかわらず拡張の本人の同意に従う。既存の拡張送信を維持するためにサーバー設定を新設する必要はない。詳しくは [切替確認の契約](data-shapes.md#拡張送信の切替確認issue-163) を参照。
+- サーバーの旧GET制限と、体験用の専用GETを使うWebをそろえて出す。体験学生だけが `/api/v1/digest/demo-preview` を読め、通常利用者・支援担当は読めないことを確かめる。新版拡張だけの導入では、旧版の送信を止めたとは扱わない。デプロイの実行は別途承認された作業で行う。
+
+### 本人ごとの切替順
+
+1. **端末を確認する。** 全端末がそろい、同じ本人を操作していることを再確認する。切替中は端末の追加・再ログイン・準備予定の移動を止める。日本日付が変わったら記録を読み直して手順をやり直す。
+2. **旧送信を止める。** 全端末の拡張のメール設定をOFFにし、実行中のGmail POSTとworkerの処理終了を確認する。LMS取得・カレンダー接続の設定は変えない。各端末の `digestReceipt:<接続設定のnamespace>:<uid>` の当日 `date` と `planIds`、`digestSchedule` の準備IDと開始日時だけを手元で照合する。メール本文・トークン・SIDや実際の課題をrepo・ログ・Issueへ出さない。
+3. **サーバーで旧GETを止める。** 信頼された管理操作で本人の `notificationSettings/current` を `enabled: false, deliveryOwner: cloud, migrationState: not-started` にし、`version` を増やす。他の必須項目は契約どおり維持する。同じ本人の旧 `GET /api/v1/digest` が403で本文を返さず、新版拡張の確認が送信不可になることを確かめる。新旧の処理が取得済みの本文を持っていた場合に備え、手順2の終了確認を省かない。
+4. **当日の記録を引き継ぐ。** 全端末の当日 `planIds` の和集合を使う。拡張の記録はPOST直前の予約を含み、配信成功の証拠ではないため、サーバーの `notificationDeliveries` には `accepted` でなく **`unknown`** として置く。キーと時間窓は [notification-targets.ts](../packages/server/src/notification-targets.ts) と同じ規則を使う。
+   - 朝のID `morning` は、`JSON.stringify([uid, 日本日付, 'morning'])` のSHA-256（hex）。`scheduledAt` はその日の07:30、`expiresAt` は08:00のUTC表記、`kind: morning`。`planId/startsAt/planRevision` はnull。
+   - 準備IDは、台帳の本人の予定と端末の保存日時を照合し、現在の開始日時も含む該当の開始日時ごとに `JSON.stringify([uid, planId, 開始日時のUTC ISO表記, 'reminder'])` のSHA-256（hex）。`kind: reminder`、開始30分前から開始までの時間窓、予定ID・正規化した開始日時・現在の予定の版を記録する。IDが解決できない、日時が不明、端末の記録が欠ける場合は移行完了にしない。
+   - 各文書は契約の全項目を満たし、`settingsVersion` は手順3の版、`state: unknown, errorCode: outcome-unknown`、`attemptId/reservedAt/leaseUntil/startedAt` はnull、`respondedAt` は引継ぎ時刻にする。管理側のtransactionで未作成の場合だけ作り、既存の送信記録は上書きしない。通知状態に「受理済み」を作らない。文書のキー・件数・状態を読み戻して端末の和集合と照合する。このPRは引継ぎを実行する管理ツールを提供しないため、実行前にその操作を別途用意・レビューする。
+5. **cloudを有効にする。** 実受信の証拠、全端末の停止、旧GETの403、引継ぎ記録の照合がそろってから、orangeが `migrationState: ready, enabled: true, deliveryOwner: cloud` にし、`version` を増やす。全端末のメール設定はOFFを維持する。設定保存やAPI受理を受信確認とは扱わない。
+
+### 戻す順
+
+1. まずサーバーの通知を `enabled: false` にして版を増やし、`deliveryOwner: cloud` を保つ。これで旧GETも止めたままになる。設定を削除しない。
+2. クラウドの実行中の処理が終わるまで待ち、`reserved/sending` の記録を確認する。lease切れの回収も確認し、結果不明を再送しない。停止前に開始済みの1通は、停止後に受理される可能性がある。
+3. クラウドの `accepted/unknown` と全端末の当日記録を和集合にし、戻す**1台だけ**の拡張の当日receiptへ、朝は `morning`、準備は `planId` として戻す。クラウド側は前日から始まる翌日00時台の準備も扱うため、拡張が扱う当日開始分を漏らさず照合する。不明・処理中の記録があればその日は拡張を有効にせず、クラウドも停止のままにする。
+4. 記録を消さず、サーバー設定を `enabled: true, deliveryOwner: extension, migrationState: not-started` にして版を増やす。旧GETと新版拡張の確認が通ることを確かめてから、選んだ1台だけメールをONにする。他の端末はOFFを保つ。LMSとカレンダーはこの操作に含めない。
+
+送信可否の確認とGmail POSTは1つのtransactionにはできない。確認の直後に設定を変えれば、その1通は送信され得る。全端末の停止と処理終了を確認してからcloudを有効にすることが切替の前提であり、確認GETだけで二重送信を完全に防ぐとは説明しない。
+
 ## 専用Gmailの通知準備（Issue #162、実行はorange）
 
 以下は未実行の手順。A1は仮採用で、orangeがD36案を確定してから実行する。資源・課金・権限・送信をこのPRで許可したとは扱わない。既定は送信無効。拡張の停止と移行状態の確定は別Issueで行う。

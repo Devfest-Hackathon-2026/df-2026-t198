@@ -16,8 +16,12 @@ export async function receiveDigestRequest(request: IncomingMessage, response: S
   } catch { json(401, { error: 'unauthorized' }); return; }
   try {
     if (request.method === 'GET') {
+      const path = request.url?.split('?')[0];
+      if (path === '/api/v1/digest/delivery') { json(200, await deps.digest.delivery(identity.uid)); return; }
       if (!identity.email || !/^[^\s@<>]+@[^\s@<>]+$/.test(identity.email)) { json(403, { error: 'email-required' }); return; }
-      json(200, await deps.digest.read(identity.uid, identity.email));
+      json(200, path === '/api/v1/digest/demo-preview'
+        ? await deps.digest.read(identity.uid, identity.email, true)
+        : await deps.digest.read(identity.uid, identity.email));
     } else {
       if (request.url?.split('?')[0] === '/api/v1/digest/demo-plan') {
         for await (const chunk of request) if (chunk.length) { json(400, { error: 'body-not-allowed' }); return; }

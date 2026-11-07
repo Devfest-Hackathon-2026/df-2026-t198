@@ -19,7 +19,7 @@ export function DigestPreview({ user }: { user: User }) {
     const load = async () => {
       const current = ++request;
       try {
-        const response = await fetch('/api/v1/digest', { cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
+        const response = await fetch('/api/v1/digest/demo-preview', { cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
         if (!response.ok) throw new Error();
         const value = await response.json() as Preview;
         if (active && current === request) setDigest(value);
