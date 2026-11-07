@@ -80,7 +80,7 @@ async function fixture({ uploadStatus = 200, googleStatus = 200, holdPendingRead
     return { token: 'synthetic-google-token' };
   });
   const chrome = {
-    tabs: { query: async () => [{ id: 7 }], sendMessage: async () => ({ ok: true }) },
+    tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: async () => ({ ok: true }) },
     runtime: { id: 'synthetic-extension', getURL: path => `chrome-extension://synthetic-extension/${path}`,
       onMessage: { addListener: fn => { listener = fn; } }, onStartup: { addListener: vi.fn() }, onInstalled: { addListener: vi.fn() } },
     storage: { session: { get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, values) } },

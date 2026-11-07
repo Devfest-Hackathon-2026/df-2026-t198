@@ -151,7 +151,8 @@ export function protectStudentNavigation(doc: Document, view: Window,
     };
     view.addEventListener('beforeunload', () => {
       depart();
-      // Downloads and cancelled navigation can leave this document in place.
+      // Request recovery if the document remains. The worker must still check
+      // the tab's navigation state before granting another collection lease.
       departureRecovery = setTimeout(resume, STUDENT_WAIT_MS);
     });
     view.addEventListener('pagehide', depart);

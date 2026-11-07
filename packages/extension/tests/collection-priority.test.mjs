@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { fakeLms } from './helpers/stateful-lms.mjs';
 import { CollectionLease } from '../src/collection-lease.js';
 import { collectionDisplay } from '../src/collection-display.js';
+import { protectStudentNavigation } from '../src/student-navigation.js';
 import { readFile } from 'node:fs/promises';
 import { URL } from 'node:url';
 
@@ -43,7 +44,7 @@ async function fixture({ pageRoute = false, hold = false, restoreLoggedOut = fal
     catch (error) { return { ok: false, code: error.message, diagnostic: error.diagnostic }; }
   });
   vi.stubGlobal('fetch', fetcher);
-  vi.stubGlobal('chrome', { tabs: { query: async () => [{ id: 7 }], sendMessage: pageReads }, action: {}, storage: { session: {
+  vi.stubGlobal('chrome', { tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: pageReads }, action: {}, storage: { session: {
     get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, globalThis.structuredClone(values)),
   } } });
   const realTimeout = globalThis.setTimeout;
@@ -151,6 +152,59 @@ it('does not start from a course screen or when multiple LMS tabs are open', asy
   expect(await f.worker.runCollection(url.replace('homeHoml/doIndex', 'corsColl/doIndex'), 7)).toEqual({ ok: false, code: 'not-idle' });
   globalThis.chrome.tabs.query = async () => [{ id: 7 }, { id: 8 }];
   expect(await f.worker.runCollection(url, 7)).toEqual({ ok: false, code: 'not-idle' });
+  expect(f.fetcher).not.toHaveBeenCalled();
+});
+
+for (const elapsed of [17_000, 32_000]) {
+  for (const tab of [
+    { status: 'loading', pendingUrl: 'https://lms.ynu.ac.jp/lms/studentCourse' },
+    { status: 'loading' },
+    { status: 'complete', pendingUrl: 'https://lms.ynu.ac.jp/lms/studentCourse' },
+    {},
+  ]) it(`does not claim or read a navigating/unknown tab after ${elapsed}ms: ${JSON.stringify(tab)}`, async () => {
+    const f = await fixture();
+    vi.useFakeTimers();
+    globalThis.chrome.tabs.get = vi.fn(async () => ({ id: 7, ...tab }));
+    // No successful receipt, or a yielded collection, must not mask the gate with cooldown.
+    f.state.ynuFetchStatus = 'yielded';
+    f.state.ynuFetchCompletedAt = Date.now();
+    await vi.advanceTimersByTimeAsync(elapsed);
+    const prior = globalThis.structuredClone(f.state);
+    const pending = f.worker.runCollection(url, 7);
+    await vi.runAllTimersAsync();
+    expect(await pending).toEqual({ ok: false, code: 'not-idle' });
+    expect(globalThis.chrome.tabs.get).toHaveBeenCalledExactlyOnceWith(7);
+    expect(f.pageReads).not.toHaveBeenCalled();
+    expect(f.fetcher).not.toHaveBeenCalled();
+    expect(f.state).toEqual(prior);
+  });
+}
+
+it('does not claim or read when the tab state cannot be inspected', async () => {
+  const f = await fixture();
+  globalThis.chrome.tabs.get = async () => { throw new Error('tab-unavailable'); };
+  expect(await f.worker.runCollection(url, 7)).toEqual({ ok: false, code: 'not-idle' });
+  expect(f.pageReads).not.toHaveBeenCalled();
+  expect(f.fetcher).not.toHaveBeenCalled();
+});
+
+for (const previous of ['first', 'yielded']) it(`rejects recovery during a slow navigation without cooldown (${previous})`, async () => {
+  const f = await fixture();
+  vi.useFakeTimers();
+  if (previous === 'yielded') Object.assign(f.state, { ynuFetchStatus: 'yielded', ynuFetchCompletedAt: Date.now() });
+  globalThis.chrome.tabs.get = async () => ({ id: 7, status: 'loading', pendingUrl: 'https://lms.ynu.ac.jp/lms/studentCourse' });
+  const events = {}, replies = [];
+  protectStudentNavigation({ addEventListener() {} },
+    { location: { href: url }, addEventListener: (name, fn) => { events[name] = fn; } },
+    async () => ({ ok: true }), async () => { const reply = await f.worker.runCollection(url, 7); replies.push(reply); return reply; });
+  events.beforeunload();
+  await vi.advanceTimersByTimeAsync(17_000);
+  expect(f.pageReads).not.toHaveBeenCalled();
+  expect(f.fetcher).not.toHaveBeenCalled();
+  expect(replies).toEqual([{ ok: false, code: 'not-idle' }]);
+  await vi.advanceTimersByTimeAsync(15_000);
+  expect(await f.worker.runCollection(url, 7)).toEqual({ ok: false, code: 'not-idle' });
+  expect(f.pageReads).not.toHaveBeenCalled();
   expect(f.fetcher).not.toHaveBeenCalled();
 });
 

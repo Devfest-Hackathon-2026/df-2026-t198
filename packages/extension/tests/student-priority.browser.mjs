@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout, clearTimeout } from 'node:timers';
 import process from 'node:process';
 import console from 'node:console';
+import { testTabNavigation } from './helpers/tab-navigation.browser.mjs';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session';
@@ -42,8 +43,13 @@ const worker = await bundle('service-worker', [{ name: 'no-external-accounts', s
       : `export const startDigest = () => {}; export const handleDigestMessage = () => undefined;` }));
 } }]);
 
-const browser = await chromium.launch({ headless: true });
+if (process.argv.includes('--tab-state')) {
+  const results = await testTabNavigation({ chromium, content, worker, home, list, detail, pageUrl });
+  console.log(`${results.length} real tab-state scenarios passed`);
+  process.exit(0);
+}
 const results = [];
+const browser = await chromium.launch({ headless: true });
 try {
   const lifecycleFailures = [];
   for (const action of ['back', 'reload', 'cancelled-reload']) {
@@ -143,7 +149,7 @@ try {
     });
     const chrome = { runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { listener = fn; } } }, action: {},
       storage: { session: { get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, globalThis.structuredClone(values)) } },
-      tabs: { query: async () => [{ id: 7 }], sendMessage: async (_id, message) => page.evaluate(message =>
+      tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: studentPending ? 'loading' : 'complete' }), sendMessage: async (_id, message) => page.evaluate(message =>
         new Promise(resolve => globalThis.contentListener(message, { id: 'synthetic-extension' }, resolve)), message) } };
     const fetcher = async (url, init) => {
       if (url.startsWith('https://lms.ynu.ac.jp/')) {
