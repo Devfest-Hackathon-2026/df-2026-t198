@@ -1,15 +1,17 @@
 import { actionMessage, performPlanAction, planActionErrorMessage, planProgress } from './plan-progress';
+import type { PlanActionResponse } from './plan-progress';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { preparationPeriodTimes } from '@kadai-hisho/core';
 import { useOperationMessage } from './operation-messages';
 import type { User } from 'firebase/auth';
 import type { LedgerAssignment, PreparationCandidate, PreparationPlan, PreparationPlanInput } from '../../core/src/types';
+import { preparationAfterDeadline } from '@kadai-hisho/core';
 import './preparation-plans.css';
 
 export interface PlanActions {
   add: (id: string, input: PreparationPlanInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
-  act?: (id: string, action: 'done' | 'later', revision: number) => Promise<{ outcome: string }>;
+  act?: (id: string, action: 'done' | 'later', revision: number) => Promise<PlanActionResponse>;
 }
 export function planActions(user: User, student: string): PlanActions {
   const request = async (id: string, input?: PreparationPlanInput) => {
@@ -18,7 +20,10 @@ export function planActions(user: User, student: string): PlanActions {
         Authorization: `Bearer ${await user.getIdToken()}`, ...(input ? { 'Content-Type': 'application/json' } : {}),
       }, ...(input ? { body: JSON.stringify(input) } : {}),
     });
-    if (!response.ok) throw new Error(response.status === 409 ? 'plan-conflict' : 'request-failed');
+    if (!response.ok) {
+      const value = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(value.error === 'plan-after-deadline' ? value.error : response.status === 409 ? 'plan-conflict' : 'request-failed');
+    }
   };
   return { add: request, remove: id => request(id), act: (id, action, revision) => performPlanAction(user, id, action, revision) };
 }
@@ -61,7 +66,9 @@ export function PlanForm({ assignments, candidate, actions, onSaved }: {
       element.reset(); setStart(''); setEnd(''); setPeriod(0); attempt.current = null;
       setMessage('準備の予定を入れました。'); onSaved?.();
     } catch (error) {
-      setMessage(error instanceof Error && error.message === 'plan-conflict'
+      setMessage(error instanceof Error && error.message === 'plan-after-deadline'
+        ? '締切より後の予定は入れられません。締切までの日時を選んでください。'
+        : error instanceof Error && error.message === 'plan-conflict'
         ? 'この準備の予定は入れられませんでした。授業のあるコマや過ぎた時刻でないか、予定を外していないか確かめてください。'
         : '保存を確認できませんでした。接続と共有の許可を確かめて、同じ内容でもう一度お試しください。');
     } finally { setBusy(false); }
@@ -82,20 +89,25 @@ export function PlanForm({ assignments, candidate, actions, onSaved }: {
     {message && <p role="status">{message}</p>}
   </form>;
 }
-export function PlanSummary({ plan }: { plan: PreparationPlan }) {
-  return <><strong>準備：{plan.title}</strong><time dateTime={plan.startsAt}>{plan.date.replaceAll('-', '/')}</time><span>{plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</span>
-    <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span><span>{planProgress(plan)}</span></>;
+export function PlanDeadlineWarning({ plan, assignments = [] }: { plan: PreparationPlan; assignments?: LedgerAssignment[] | undefined }) {
+  const assignment = assignments.find(row => row.key.system === plan.assignment.system && row.key.sourceId === plan.assignment.sourceId);
+  return preparationAfterDeadline(plan.startsAt, assignment?.officialDeadline?.deadline) ? <span className="review-tag">締切より後の予定です</span> : null;
 }
-export function PlanCell({ plan, selected, onSelect }: { plan: PreparationPlan; selected: boolean; onSelect: () => void }) {
+export function PlanSummary({ plan, assignments }: { plan: PreparationPlan; assignments?: LedgerAssignment[] | undefined }) {
+  return <><strong>準備：{plan.title}</strong><time dateTime={plan.startsAt}>{plan.date.replaceAll('-', '/')}</time><span>{plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</span>
+    <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span><span>{planProgress(plan)}</span><PlanDeadlineWarning plan={plan} assignments={assignments} /></>;
+}
+export function PlanCell({ plan, selected, onSelect, assignments }: { plan: PreparationPlan; selected: boolean; onSelect: () => void; assignments?: LedgerAssignment[] | undefined }) {
   return <button className="preparation-cell" title={`準備 ${plan.title}`} aria-pressed={selected} aria-controls="preparation-details" onClick={onSelect}>
     <strong>準備 {plan.title}</strong>
+    <PlanDeadlineWarning plan={plan} assignments={assignments} />
     {plan.createdByRole === 'supporter' && <small>支援担当が入れた</small>}
   </button>;
 }
 export function comparePreparationPlans(a: PreparationPlan, b: PreparationPlan) {
   return a.date.localeCompare(b.date) || Date.parse(a.startsAt) - Date.parse(b.startsAt) || a.planId.localeCompare(b.planId);
 }
-export function PlanList({ plans, actions, viewerUid, own }: { plans: PreparationPlan[]; actions?: PlanActions | undefined; viewerUid?: string | undefined; own: boolean }) {
+export function PlanList({ plans, actions, viewerUid, own, assignments }: { plans: PreparationPlan[]; actions?: PlanActions | undefined; viewerUid?: string | undefined; own: boolean; assignments?: LedgerAssignment[] | undefined }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useOperationMessage();
   const visible = plans.filter(plan => plan.status !== 'cancelled').sort(comparePreparationPlans);
@@ -103,7 +115,7 @@ export function PlanList({ plans, actions, viewerUid, own }: { plans: Preparatio
   async function act(plan: PreparationPlan, action: 'done' | 'later') {
     if (!actions?.act || busy) return;
     setBusy(plan.planId); setMessage('');
-    try { setMessage(actionMessage((await actions.act(plan.planId, action, plan.revision)).outcome)); }
+    try { const result = await actions.act(plan.planId, action, plan.revision); setMessage(actionMessage(result.outcome, result.plan, result.demo)); }
     catch (error) { setMessage(planActionErrorMessage(error, '変更を確認できませんでした。接続と予定を確かめて、もう一度お試しください。')); }
     finally { setBusy(null); }
   }
@@ -122,6 +134,7 @@ export function PlanList({ plans, actions, viewerUid, own }: { plans: Preparatio
       <span>{plan.period}限</span><strong>{plan.title}</strong>
       <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
       <span>{planProgress(plan)}</span>
+      <PlanDeadlineWarning plan={plan} assignments={assignments} />
       <div className="preparation-buttons">{own && actions?.act && plan.status === 'active' && <><button disabled={busy !== null} onClick={() => { void act(plan, 'done'); }}>終わった</button>
         {Date.parse(plan.startsAt) > Date.now() && <button disabled={busy !== null} onClick={() => { void act(plan, 'later'); }}>後回し</button>}</>}
       {actions && (own || plan.confirmedBy === viewerUid) && <button disabled={busy !== null}

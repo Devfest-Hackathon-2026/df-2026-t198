@@ -2,6 +2,14 @@ import { expect, it } from 'vitest';
 import { initialDemo } from '../src/demo-initial.js';
 
 it.each([
+  ['2026-11-07T07:41:00+09:00', '2026-10-30T06:00:00.000Z', '2026-11-13T06:00:00.000Z'],
+  ['2026-11-08T23:59:00+09:00', '2026-10-30T06:00:00.000Z', '2026-11-13T06:00:00.000Z'],
+  ['2026-11-09T00:01:00+09:00', '2026-11-02T06:00:00.000Z', '2026-11-16T06:00:00.000Z'],
+])('uses weekday 15:00 Japan appointments and a fictional name from %s', (at, lastSessionAt, nextSessionAt) => {
+  expect(initialDemo(Date.parse(at))).toMatchObject({ displayName: '架空の学生A', context: { lastSessionAt, nextSessionAt } });
+});
+
+it.each([
   ['2026-11-07T00:00:00+09:00', '2026-11-10T08:00:00.000Z'],
   ['2026-11-07T02:34:00+09:00', '2026-11-10T08:00:00.000Z'],
   ['2026-11-07T08:59:59.999+09:00', '2026-11-10T08:00:00.000Z'],
@@ -15,8 +23,13 @@ it.each([
   const { data, context } = initialDemo(now);
   expect(data.courses.flatMap(course => course.assignments.map(task => task.dueAt)))
     .toEqual([expectedDueAt, expectedDueAt]);
-  expect(context).toEqual({
-    lastSessionAt: new Date(now - 7 * 86400_000).toISOString(),
-    nextSessionAt: new Date(now + 7 * 86400_000).toISOString(),
-  });
+  expect(Date.parse(context.lastSessionAt)).toBeLessThan(now);
+  expect(Date.parse(context.nextSessionAt)).toBeGreaterThan(now);
+  for (const value of Object.values(context)) {
+    const at = new Date(value);
+    expect(at.getUTCHours()).toBe(6);
+    expect(at.getUTCMinutes()).toBe(0);
+    expect(at.getUTCDay()).toBeGreaterThan(0);
+    expect(at.getUTCDay()).toBeLessThan(6);
+  }
 });

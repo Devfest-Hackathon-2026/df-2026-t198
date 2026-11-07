@@ -126,7 +126,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
                   ? missingDeadlineText(next.row.latest.deadline) ?? '締切を確認できていません。' : next.row.reviewReasons[0] ? reviewReasonText(next.row.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
           })}{plans.filter(plan => (new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7) === d + 1 && plan.period === p + 1)
-            .map(plan => <PlanCell key={plan.planId} plan={plan} selected={plan.planId === selectedPlanId}
+            .map(plan => <PlanCell key={plan.planId} plan={plan} assignments={data.assignments} selected={plan.planId === selectedPlanId}
               onSelect={() => { setSelected(null); setSelectedPlanId(plan.planId); }} />)}</td>)}</tr>)}</tbody>
       </table></div>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
         <button className="plain-button" key={courseKey(c)} onClick={() => select(c)} aria-controls="course-assignments">{c.name}</button>)}</section>}</div>
@@ -146,12 +146,12 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
       </aside>}
       {selectedPlan && <aside ref={panel} tabIndex={-1} className="course-panel preparation-details" id="preparation-details" aria-label="準備の予定の詳細">
         <div className="panel-heading"><h2>準備の予定</h2><button onClick={() => setSelectedPlanId(null)}>閉じる</button></div>
-        <PlanSummary plan={selectedPlan} /><span>{selectedPlan.period}限（日本時間）</span>
+        <PlanSummary plan={selectedPlan} assignments={data.assignments} /><span>{selectedPlan.period}限（日本時間）</span>
       </aside>}
     </div>
     {actions && <details className="preparation-add"><summary>準備の予定を入れる</summary>
       <PlanForm assignments={data.assignments} actions={actions} /></details>}
-    <PlanList plans={data.plans} actions={actions} own />
+    <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own />
     <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own now={now} />
   </OperationMessages>;
 }

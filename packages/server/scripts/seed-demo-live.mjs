@@ -63,7 +63,8 @@ async function seed() {
       for (const { uid, email, password } of [student, supporter]) await auth.createUser({ uid, email, password });
       const batch = db.batch();
       for (const [account, role] of [[student, 'student'], [supporter, 'supporter']]) {
-        batch.create(db.doc(`demoAccounts/${account.uid}`), { role, studentId: student.uid });
+        batch.create(db.doc(`demoAccounts/${account.uid}`), { role, studentId: student.uid,
+          ...(role === 'student' ? { displayName: initial.displayName } : {}) });
       }
       batch.create(db.doc(`students/${student.uid}/demo/current`), initial.data);
       batch.create(db.doc(`students/${student.uid}/supporters/${supporter.uid}`), { scopes: ['all'], revokedAt: null });

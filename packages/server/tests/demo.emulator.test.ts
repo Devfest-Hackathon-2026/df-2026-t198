@@ -152,8 +152,14 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
     expect(initial['courses'][0].assignments[0].dueAt).toBe(due.toISOString());
     const contextRef = studentRef.collection('sessionContext').doc('current');
     const context = (await contextRef.get()).data()!;
-    expect(Date.parse(context['nextSessionAt']) - start).toBeGreaterThanOrEqual(7 * 86400_000);
-    expect(Date.parse(context['lastSessionAt']) - start).toBeLessThan(-6 * 86400_000);
+    expect(Date.parse(context['nextSessionAt'])).toBeGreaterThan(start);
+    expect(Date.parse(context['lastSessionAt'])).toBeLessThan(start);
+    for (const value of Object.values(context)) {
+      const at = new Date(value as string);
+      expect(at.getUTCHours()).toBe(6); expect(at.getUTCMinutes()).toBe(0);
+      expect(at.getUTCDay()).toBeGreaterThan(0); expect(at.getUTCDay()).toBeLessThan(6);
+    }
+    expect((await fixture.db.doc(`demoAccounts/${owner.uid}`).get()).data()!['displayName']).toBe('架空の学生A');
     // Re-login while fresh must preserve the ongoing scenario and its ledger.
     expect((await post('observations', sample, owner.token)).status).toBe(200);
     const changesBefore = (await studentRef.collection('changes').get()).docs.map(doc => doc.data());

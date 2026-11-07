@@ -16,6 +16,7 @@ const app = initializeApp({ projectId: 'demo-kadai-hisho' });
 const db = getFirestore(app);
 try {
   const auth = getAuth(app);
+  const initial = initialDemo(Date.now());
   const studentId = 'trial-student';
   for (const [uid, role] of [[studentId, 'student'], ['trial-supporter', 'supporter']]) {
     try { await auth.getUser(uid); }
@@ -25,13 +26,12 @@ try {
       if (error.code !== 'auth/user-not-found') throw new Error('demo-account-lookup-failed');
       await auth.createUser({ uid, email: `${uid}@example.invalid`, password: process.env.KADAI_DEMO_PASSWORD });
     }
-    await db.doc(`demoAccounts/${uid}`).set({ role, studentId });
+    await db.doc(`demoAccounts/${uid}`).set({ role, studentId, ...(role === 'student' ? { displayName: initial.displayName } : {}) });
   }
   const student = db.doc(`students/${studentId}`);
   const ref = student.collection('demo').doc('current');
   // Re-running the setup preserves changes made by the person trying the app.
   if (!(await ref.get()).exists) {
-    const initial = initialDemo(Date.now());
     await ref.set(initial.data);
     await student.collection('sessionContext').doc('current').set(initial.context);
   }

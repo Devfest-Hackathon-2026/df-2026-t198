@@ -56,7 +56,7 @@ function Login({ services }: { services: SessionServices }) {
   </form>;
 }
 function SessionWorkspace({ user, services, path }: { user: User; services: SessionServices; path: string }) {
-  const [students, setStudents] = useState<{ uid: string }[] | null>(null);
+  const [students, setStudents] = useState<{ uid: string; displayName?: string }[] | null>(null);
   const { uid: selected, planning } = sessionRoute(path);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -78,20 +78,21 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
   }, [user, services]);
   if (selected) return <div className="session-content">
     {selected !== user.uid && <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>}
-    <StudentSession key={selected} uid={selected} user={user} services={services} planning={planning} />
+    <StudentSession key={selected} uid={selected} user={user} services={services} planning={planning}
+      displayName={students === null ? '学生' : students.find(student => student.uid === selected)?.displayName} />
   </div>;
   return <section className="session-students">
     <h2>{students?.length === 0 ? '自分の面談' : '担当する学生'}</h2>
     {students?.length !== 0 && <p>学生が見せることにした授業と課題だけを出しています。</p>}
     <nav aria-label="担当する学生">
       {students?.map(student => <SessionLink key={student.uid} href={`/session/${encodeURIComponent(student.uid)}`}>
-        <strong>学生</strong>{' '}<span className="session-student-id">{student.uid}</span></SessionLink>)}
+        <strong>{student.displayName ?? '学生'}</strong>{!student.displayName && <>{' '}<span className="session-student-id">{student.uid}</span></>}</SessionLink>)}
     </nav>
     {students?.length === 0 && <SessionLink href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談を見る</SessionLink>}
     {error && <p role="alert">{error}</p>}
   </section>;
 }
-function StudentSession({ uid, user, services, planning }: { uid: string; user: User; services: SessionServices; planning: boolean }) {
+function StudentSession({ uid, user, services, planning, displayName }: { uid: string; user: User; services: SessionServices; planning: boolean; displayName?: string | undefined }) {
   const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
   const [now, setNow] = useState(() => new Date());
   useEffect(() => watchSession(services.source, uid, user.uid, state => {
@@ -106,11 +107,11 @@ function StudentSession({ uid, user, services, planning }: { uid: string; user: 
   if (state.status === 'denied') return <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>;
   if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。{uid === user.uid ? '接続を確かめて、画面を開き直してください。' : '学生を選び直してください。'}</p>;
   return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning}
-    actions={planActions(user, uid)} manualActions={manualAssignmentActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
+    displayName={displayName} actions={planActions(user, uid)} manualActions={manualAssignmentActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
 }
-export function SessionDetails({ data, now, own, save, uid, planning, actions, manualActions, viewerUid }: {
+export function SessionDetails({ data, now, own, save, uid, planning, actions, manualActions, viewerUid, displayName }: {
   data: SessionData; now: Date; own: boolean; uid: string; planning: boolean;
-  actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; viewerUid?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
+  actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; viewerUid?: string | undefined; displayName?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
   const view = buildSessionView(data, now);
   const deadlines = sessionDeadlineEntries(data, now);
   const promises = data.plans.filter(plan => plan.status !== 'cancelled' && data.context.lastSessionAt &&
@@ -122,8 +123,8 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
   const base = `/session/${encodeURIComponent(uid)}`;
   return <OperationMessages>
     <header className="session-heading">
-      <div><h1>{own ? '自分の面談' : '学生'}</h1>
-        {!own && <p className="session-student-id">{uid}</p>}</div>
+      <div><h1>{own ? '自分の面談' : displayName ?? '学生'}</h1>
+        {!own && !displayName && <p className="session-student-id">{uid}</p>}</div>
       <div className="session-dates">
         <p>前回 {data.context.lastSessionAt ? formatMoment(data.context.lastSessionAt) : '日時がまだありません'}</p>
         <p>次回 <strong>{data.context.nextSessionAt ? formatMoment(data.context.nextSessionAt) : '日時を決めてください'}</strong></p>
@@ -150,7 +151,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
           </p>;
         })}
       </div>
-      <PlanList plans={data.plans} own={own} />
+      <PlanList plans={data.plans} assignments={data.assignments} own={own} />
       <div className="session-check">
         {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>
           <ul className="panel session-rows">{promises.map(plan =>

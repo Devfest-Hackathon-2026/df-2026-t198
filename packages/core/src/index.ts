@@ -33,6 +33,6 @@ export type { DeadlineEvent, CalendarDesired, CalendarErrorCode, CalendarItem, C
 export { deadlineDesired, reconcileCalendarItem, acknowledgeCalendarItem } from './calendar.js';
 
 export { manualDeadline } from './manual-assignment.js';
-export { preparationSlots, preparationPeriodTimes, preparationSlotOccupied } from './preparation.js';
+export { preparationSlots, preparationPeriodTimes, preparationSlotOccupied, preparationAfterDeadline } from './preparation.js';
 export { isSafeMailText } from './mail-safety.js';
 export { assignmentDeadline } from './assignment-deadline.js';

@@ -3,6 +3,7 @@ import type { Submission } from './types.js';
 export interface DemoAccount {
   role: 'student' | 'supporter';
   studentId: string;
+  displayName?: string;
 }
 export interface DemoAssignment {
   sourceId: string;

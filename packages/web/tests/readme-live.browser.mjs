@@ -6,19 +6,29 @@ import { tmpdir } from 'node:os';
 import { log } from 'node:console';
 import { readFile, mkdtemp, writeFile, stat } from 'node:fs/promises';
 
-// Explicitly opt in: this test changes only the third demo pair and resets it afterwards.
-assert.deepEqual(process.argv.slice(2), ['--verify-live-readme']);
-const origin = 'https://project-00439085-4e2d-44c3-9a8.web.app';
-const credentials = process.env.KADAI_DEMO_ACCOUNTS_FILE ??
-  new URL('../../../fixtures-local/demo-accounts.local.json', import.meta.url);
-// Each run, including failures, keeps its own evidence without replacing past records.
+// Live verification changes only the third demo pair. Local verification needs no account file.
+const local = process.argv[2] === '--verify-local-readme';
+assert.deepEqual(process.argv.slice(2), [local ? '--verify-local-readme' : '--verify-live-readme']);
+const origin = local ? process.env.KADAI_WEB_ORIGIN : 'https://project-00439085-4e2d-44c3-9a8.web.app';
 const evidence = pathToFileURL(`${await mkdtemp(join(tmpdir(), 'kadai-i123-'))}/`);
-assert.equal((await stat(credentials)).mode & 0o777, 0o600);
-const accounts = JSON.parse(await readFile(credentials, 'utf8'));
-assert.equal(accounts.origin, origin);
-assert.ok(!process.env.FIRESTORE_EMULATOR_HOST && !process.env.FIREBASE_AUTH_EMULATOR_HOST);
-const pair = accounts.pairs[2];
-assert.equal(pair.pair, 'trial-3');
+let pair;
+if (local) {
+  assert.equal(process.env.GCLOUD_PROJECT, 'demo-kadai-hisho');
+  for (const key of ['FIRESTORE_EMULATOR_HOST', 'FIREBASE_AUTH_EMULATOR_HOST']) assert.match(process.env[key] ?? '', /^127\.0\.0\.1:\d+$/);
+  assert.match(origin ?? '', /^http:\/\/127\.0\.0\.1:\d+$/);
+  assert.ok(process.env.KADAI_DEMO_PASSWORD?.length >= 8);
+  pair = Object.fromEntries(['student', 'supporter'].map(role => [role, {
+    uid: `trial-${role}`, email: `trial-${role}@example.invalid`, password: process.env.KADAI_DEMO_PASSWORD,
+  }]));
+} else {
+  const credentials = process.env.KADAI_DEMO_ACCOUNTS_FILE ?? new URL('../../../fixtures-local/demo-accounts.local.json', import.meta.url);
+  assert.equal((await stat(credentials)).mode & 0o777, 0o600);
+  const accounts = JSON.parse(await readFile(credentials, 'utf8'));
+  assert.equal(accounts.origin, origin);
+  assert.ok(!process.env.FIRESTORE_EMULATOR_HOST && !process.env.FIREBASE_AUTH_EMULATOR_HOST);
+  pair = accounts.pairs[2];
+  assert.equal(pair.pair, 'trial-3');
+}
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const browser = await chromium.launch({ headless: true });
 const studentContext = await browser.newContext({ viewport: { width: 1280, height: 960 } });
@@ -97,7 +107,7 @@ try {
   phase = 'step-3-open-session';
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
   phase = 'step-3-choose-student';
-  await supporter.getByRole('link', { name: `学生 ${pair.student.uid}`, exact: true }).click();
+  await supporter.locator(`a[href="/session/${pair.student.uid}"]`).click();
   const deadlines = region(supporter, '次の面談までの締切');
   await deadlines.getByText('架空の観察ノート', { exact: true }).waitFor();
   const beforeSession = await deadlines.innerText();
@@ -164,16 +174,29 @@ try {
   await button(preview, '今日の準備の見本を用意する').click();
   await preview.getByRole('link', { name: '🕒 後回し', exact: true }).waitFor();
   await screenshot(preview, 'morning-mail.png');
+  const originalLaterUrl = await preview.getByRole('link', { name: '🕒 後回し', exact: true }).getAttribute('href');
+  const originalId = new URL(originalLaterUrl, origin).searchParams.get('id');
   await preview.getByRole('link', { name: '🕒 後回し', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
   for (const page of [timetable, supporter]) await plans(page).getByText('後回しにした', { exact: true }).waitFor();
   await screenshot(plans(timetable), 'preparation-later.png');
   await button(preview, '今日の準備の見本を用意する').click();
+  await student.waitForFunction(previousId => [...globalThis.document.querySelectorAll('a')].some(link =>
+    link.textContent === '✅ 終わった' && new URL(link.href).searchParams.get('id') !== previousId), originalId);
+  const doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
+  const newId = new URL(doneUrl, origin).searchParams.get('id');
+  assert.ok(originalId && newId);
+  assert.notEqual(newId, originalId);
+  assert.equal(new URL(doneUrl, origin).searchParams.get('rev'), '1');
   await preview.getByRole('link', { name: '✅ 終わった', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: 'LMSへの提出は別に行ってください' }).waitFor();
   for (const page of [timetable, supporter]) await plans(page).getByText('終わった（LMSへの提出は別）', { exact: true }).waitFor();
+  for (const page of [timetable, supporter]) {
+    await plans(page).getByText('後回しにした', { exact: true }).waitFor();
+    assert.equal(await plans(page).locator('li').count(), 2);
+  }
   await screenshot(plans(timetable), 'preparation-done.png');
-  operations.push('6: 再取得で予定・変更は増えず、メール見本の後回し・終わったが両画面へ反映');
+  operations.push('6: 再取得で予定・変更は増えず、後回しの記録を保ち新ID・版1の見本を作成、終わったが両画面へ反映');
 
   phase = 'step-6-announcement-publish';
   await button(student, 'お知らせを出す').click();

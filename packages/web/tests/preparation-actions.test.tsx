@@ -29,7 +29,7 @@ it('prefills known candidate periods but does not guess PandA times', () => {
   }
 });
 it('keeps the future later button after a move and sends the displayed revision', async () => {
-  const change = vi.fn(async () => ({ outcome: 'moved' }));
+  const change = vi.fn(async () => ({ outcome: 'moved' as const, plan, demo: true }));
   await act(async () => root.render(<PlanList plans={[plan]} own actions={{ add: vi.fn(), remove: vi.fn(), act: change }} />));
   const later = [...host.querySelectorAll('button')].find(button => button.textContent === '後回し');
   expect(later).toBeDefined();
@@ -39,7 +39,7 @@ it('keeps the future later button after a move and sends the displayed revision'
   expect([...host.querySelectorAll('button')].some(button => button.textContent === '後回し')).toBe(false);
 });
 it('carries the revision in a bodyless authenticated action request', async () => {
-  const request = vi.fn(async () => ({ ok: true, json: async () => ({ outcome: 'moved' }) }));
+  const request = vi.fn(async () => ({ ok: true, json: async () => ({ outcome: 'moved', plan, demo: true }) }));
   vi.stubGlobal('fetch', request);
   await performPlanAction({ getIdToken: async () => 'fictional' } as unknown as User, 'fictional', 'later', 2);
   expect(request.mock.calls[0]).toEqual(['/api/v1/plans/fictional/later?rev=2', expect.objectContaining({ method: 'POST' })]);

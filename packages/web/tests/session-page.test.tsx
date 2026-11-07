@@ -63,6 +63,25 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
 function RoutedSession() { const path = usePathname(); return <SessionPage path={path} />; }
 async function open() { await act(async () => { root.render(<RoutedSession />); }); }
+it('shows the fictional demo name in both the picker and heading without a visible internal id', async () => {
+  holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }];
+  await open();
+  expect(host.textContent).toContain('架空の学生A');
+  expect(host.textContent).not.toContain('student-a');
+  await click('架空の学生A');
+  expect(host.querySelector('h1')?.textContent).toBe('架空の学生A');
+  expect(host.querySelector('.session-heading .session-student-id')).toBeNull();
+});
+it('does not show an internal demo id while its name is loading on a direct session link', async () => {
+  let provideName!: (rows: { uid: string; displayName: string }[]) => void;
+  holder.services!.students = () => new Promise(resolve => { provideName = resolve; });
+  window.history.pushState(null, '', '/session/student-a');
+  await open();
+  expect(host.textContent).not.toContain('student-a');
+  await act(async () => provideName([{ uid: 'student-a', displayName: '架空の学生A' }]));
+  expect(host.querySelector('h1')?.textContent).toBe('架空の学生A');
+  expect(host.querySelector('.session-heading .session-student-id')).toBeNull();
+});
 async function click(text: string) {
   const button = [...host.querySelectorAll('button, a')].find(button => button.textContent?.trim() === text);
   expect(button, text).toBeDefined();

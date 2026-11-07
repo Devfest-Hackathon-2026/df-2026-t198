@@ -1,5 +1,7 @@
 import type { DemoData } from '@kadai-hisho/core/ledger';
 
+export const demoStudentDisplayName = '架空の学生A';
+
 /** The same fictional scenario as the demo account setup, dated from this run. */
 export function initialDemo(now: number) {
   // Shift to the Japanese calendar date before choosing 17:00 JST (08:00 UTC).
@@ -12,8 +14,13 @@ export function initialDemo(now: number) {
     ] },
     { courseId: 'DEMO202', name: '架空の表現演習', teacher: '架空の先生B', weekday: 4, period: 4, assignments: [] },
   ] };
-  return { data, context: {
-    lastSessionAt: new Date(now - 7 * 86400_000).toISOString(),
-    nextSessionAt: new Date(now + 7 * 86400_000).toISOString(),
+  const weekday = new Date(now + 9 * 3600_000);
+  // Use the preceding Friday for weekend runs, then one week either side at 15:00 JST.
+  const day = weekday.getUTCDay();
+  weekday.setUTCDate(weekday.getUTCDate() - (day === 6 ? 1 : day === 0 ? 2 : 0));
+  weekday.setUTCHours(6, 0, 0, 0);
+  return { data, displayName: demoStudentDisplayName, context: {
+    lastSessionAt: new Date(weekday.getTime() - 7 * 86400_000).toISOString(),
+    nextSessionAt: new Date(weekday.getTime() + 7 * 86400_000).toISOString(),
   } };
 }

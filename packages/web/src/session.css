@@ -75,6 +75,7 @@
 .session-timetable caption { text-align: left; font-weight: 600; padding-bottom: 12px; }
 .session-timetable th, .session-timetable td { border: 1px solid var(--line); padding: 8px; vertical-align: top; font-size: 13px; }
 .session-timetable th:first-child { width: 48px; }
+.session-deadline { display: block; margin-top: .4rem; padding: .3rem; border: 1px solid #b18b3b; background: #fff5db; color: #624b1e; }
 .session-timetable td { height: 72px; }
 .session-course, .session-candidate { display: block; padding: 8px; border-radius: 4px; overflow-wrap: anywhere; }
 .session-course { background: var(--side); }

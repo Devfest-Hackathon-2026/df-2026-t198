@@ -43,6 +43,7 @@ export function createDemoStore(db: Firestore, resetClock = Date.now): DemoStore
         tx.delete(calendar);
         tx.set(source, initial.data);
         tx.set(contextRef, initial.context);
+        tx.update(profile.ref, { displayName: initial.displayName });
         return { reset: true, data: initial.data };
       });
     },
