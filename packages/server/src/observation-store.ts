@@ -16,6 +16,7 @@ export function createObservationStore(db: Firestore) {
     const receiptRef = student.collection('observationReceipts').doc(observation.observationId);
     const stateRef = student.collection('fetchStates').doc(observation.system);
     const recordedAt = new Date().toISOString();
+    const timetableOnly = observation.system === 'kulasis' && observation.definitionId === 'kulasis-timetable';
     return db.runTransaction(async tx => {
       // Read alongside the receipt so changing the profile cannot race a write.
       const profile = await tx.get(db.doc(`demoAccounts/${uid}`));
@@ -46,11 +47,17 @@ export function createObservationStore(db: Firestore) {
         tx.set(student.collection('courses').doc(documentKey(observation.system, course.courseId)),
           { ...course, system: observation.system });
       }
-      const complete = observation.failures.length === 0 &&
+      if (timetableOnly && !observation.failures.length) {
+        const present = new Set(observation.catalogCourses.map(course => course.courseId));
+        for (const doc of storedCourses.docs) {
+          if (!present.has(doc.data()['courseId'] as string)) tx.update(doc.ref, { currentTerm: false });
+        }
+      }
+      const complete = observation.failures.length === 0 && (timetableOnly || (
         observation.catalogCourses.filter(course => course.currentTerm !== false).length === observation.courseResults.length &&
         observation.courseResults.every(result => result.listComplete) &&
         observation.courseResults.flatMap(result => result.seenSourceIds).length === observation.assignments.length +
-          observation.courseResults.reduce((count, result) => count + (result.endedSourceIds?.length ?? 0), 0);
+          observation.courseResults.reduce((count, result) => count + (result.endedSourceIds?.length ?? 0), 0)));
       const state: FetchState = {
         studentId: uid, system: observation.system, lastAttemptedAt: observation.fetchedAt,
         lastSucceededAt: complete ? observation.fetchedAt : priorState?.lastSucceededAt ?? null,

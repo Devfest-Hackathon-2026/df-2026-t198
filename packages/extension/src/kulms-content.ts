@@ -3,30 +3,31 @@ import { KULMS_ORIGIN } from '../../core/src/sakai-reader.js';
 import { showChangeNotice } from './change-notice.js';
 
 /** GETs never hold the student's navigation; activity aborts this read instead. */
-export function startKulmsContent(doc: Document, view: Window) {
-  if (view.location.origin !== KULMS_ORIGIN) return;
+export function startKyotoContent(doc: Document, view: Window, system: 'kulms' | 'kulasis', origin: string,
+  collect: typeof collectKulmsObservation = collectKulmsObservation) {
+  if (view.location.origin !== origin) return;
   let active: AbortController | undefined, departed = false, lastActivity = Date.now();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const schedule = () => {
     clearTimeout(timer);
     if (departed || doc.visibilityState === 'hidden') return;
     timer = setTimeout(() => {
-      void chrome.runtime.sendMessage({ type: 'kulms-page-ready' }).then(reply => {
+      void chrome.runtime.sendMessage({ type: `${system}-page-ready` }).then(reply => {
         showChangeNotice(reply);
         if (['busy', 'yielded'].includes(reply?.code)) schedule();
       }).catch(() => {});
     }, 2000);
   };
   chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
-    if (!message || typeof message !== 'object' || !('type' in message) || message.type !== 'kulms-collect') return false;
-    const request = message as { observationId?: unknown; fetchedAt?: unknown };
+    if (!message || typeof message !== 'object' || !('type' in message) || message.type !== `${system}-collect`) return false;
+    const request = message as { observationId?: unknown; fetchedAt?: unknown; prioritySiteIds?: string[] };
     if (sender.id !== chrome.runtime.id || departed || doc.visibilityState === 'hidden' || active || Date.now() - lastActivity < 2000
       || typeof request.observationId !== 'string' || typeof request.fetchedAt !== 'string') {
       respond({ ok: false, code: 'yielded' }); return false;
     }
     const controller = new AbortController(); active = controller;
-    void collectKulmsObservation({ fetcher: fetch, observationId: request.observationId, fetchedAt: request.fetchedAt,
-      signal: controller.signal }).then(observation => {
+    void collect({ fetcher: fetch, observationId: request.observationId, fetchedAt: request.fetchedAt,
+      signal: controller.signal, prioritySiteIds: request.prioritySiteIds ?? [] }).then(observation => {
       if (controller.signal.aborted) respond({ ok: false, code: 'yielded' });
       else respond({ ok: true, observation });
     }, () => respond({ ok: false, code: controller.signal.aborted ? 'yielded' : 'collection-unavailable' }))
@@ -40,5 +41,8 @@ export function startKulmsContent(doc: Document, view: Window) {
   view.addEventListener('pageshow', () => { departed = false; schedule(); });
   doc.addEventListener('visibilitychange', () => { active?.abort(); schedule(); });
   schedule();
+}
+export function startKulmsContent(doc: Document, view: Window) {
+  startKyotoContent(doc, view, 'kulms', KULMS_ORIGIN);
 }
 if (typeof window !== 'undefined') startKulmsContent(document, window);

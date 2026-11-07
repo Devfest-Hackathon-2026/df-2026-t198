@@ -7,6 +7,8 @@ import { createHttpServer } from '../src/http.js';
 import { firebaseDependencies } from '../src/firebase.js';
 import { documentKey } from '../src/observation-store.js';
 import { observation } from './observation-fixture.js';
+import kulasis from '../../../lms-definitions/kulasis/samples/observation.expected.json' with { type: 'json' };
+import kulms from '../../../lms-definitions/kulms/samples/observation.expected.json' with { type: 'json' };
 
 const enabled = process.env['RUN_OBSERVATION_EMULATOR_TESTS'] === '1';
 describe.skipIf(!enabled)('observation API with Auth and Firestore emulators', () => {
@@ -67,6 +69,33 @@ describe.skipIf(!enabled)('observation API with Auth and Firestore emulators', (
     }
     return data;
   }
+
+  it('stores timetable mappings separately without changing LMS courses, assignments or calendar identity', async () => {
+    const user = await account();
+    const lms = structuredClone(kulms) as Observation;
+    lms.observationId = '18000000-0000-4000-8000-000000000010';
+    const catalog = structuredClone(kulasis) as Observation;
+    catalog.catalogCourses[0]!.kulmsSiteId = lms.catalogCourses[0]!.courseId;
+    expect((await post(lms, user.token)).status).toBe(200);
+    const root = db.collection('students').doc(user.uid);
+    const take = async (name: string) => (await root.collection(name).get()).docs.map(doc => ({ id: doc.id, data: doc.data(), time: doc.updateTime.toMillis() }));
+    const tasks = await take('assignments'), calendar = await take('calendarItems');
+    const originalCourse = (await root.collection('courses').doc(documentKey('kulms', lms.catalogCourses[0]!.courseId)).get()).data();
+    for (const id of ['18000000-0000-4000-8000-000000000011', '18000000-0000-4000-8000-000000000012']) {
+      expect((await post({ ...catalog, observationId: id }, user.token)).status).toBe(200);
+    }
+    expect(await take('assignments')).toEqual(tasks); expect(await take('calendarItems')).toEqual(calendar);
+    expect((await root.collection('courses').doc(documentKey('kulms', lms.catalogCourses[0]!.courseId)).get()).data()).toEqual(originalCourse);
+    expect((await root.collection('courses').doc(documentKey('kulasis', catalog.catalogCourses[0]!.courseId)).get()).data()).toMatchObject({ kulmsSiteId: lms.catalogCourses[0]!.courseId });
+    expect((await root.collection('fetchStates').doc('kulasis').get()).data()).toMatchObject({ lastResult: 'success', lastSucceededAt: catalog.fetchedAt });
+    // A failed timetable is not evidence that its courses have disappeared.
+    await post({ ...catalog, observationId: '18000000-0000-4000-8000-000000000013', catalogCourses: [], failures: [{ courseId: null, kind: 'not-logged-in', detail: 'not-logged-in' }] }, user.token);
+    const courseRef = root.collection('courses').doc(documentKey('kulasis', catalog.catalogCourses[0]!.courseId));
+    expect((await courseRef.get()).data()?.['currentTerm']).toBe(true);
+    await post({ ...catalog, observationId: '18000000-0000-4000-8000-000000000014', catalogCourses: [] }, user.token);
+    expect((await courseRef.get()).data()).toMatchObject({ currentTerm: false, url: catalog.catalogCourses[0]!.url });
+    expect(await take('assignments')).toEqual(tasks);
+  });
 
   it('persists new, changed, missing, restored and detail-failed observations atomically', async () => {
     expect(await apply(observation(1))).toEqual({ status: 'applied', changed: true, changeCount: 1 });

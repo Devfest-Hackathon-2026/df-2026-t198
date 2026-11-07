@@ -4,6 +4,7 @@
   "definitionId": "sakai-direct",
   "version": 1,
   "site": { "collection": "site_collection", "id": "id", "name": "title" },
+  "siteFilter": { "type": "type", "excludedTypes": ["project", "workspace"], "published": "published" },
   "assignment": { "collection": "assignment_collection", "id": "id", "courseId": "context", "title": "title", "deadline": "dueTime", "deadlineText": "dueTimeString", "submissions": "submissions" },
   "instant": { "seconds": "epochSecond", "nanoseconds": "nano" }
 }

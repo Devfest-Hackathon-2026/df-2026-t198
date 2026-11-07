@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import expected from '../../../lms-definitions/kulms/samples/observation.expected.json' with { type: 'json' };
+import timetable from '../../../lms-definitions/kulasis/samples/observation.expected.json' with { type: 'json' };
+import { kulasisTerm } from '../../core/src/kulasis-reader.js';
 const identity = vi.hoisted(() => vi.fn());
 const sync = vi.hoisted(() => vi.fn());
 const display = vi.hoisted(() => vi.fn());
@@ -9,12 +11,13 @@ vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: sync })
 vi.mock('../src/collection-display.js', () => ({ showCollectionStatus: display }));
 let handler: typeof import('../src/kulms-worker.js').handleKulmsMessage;
 let storage: Record<string, unknown>;
+let local: Record<string, unknown>;
 const send = vi.fn(), post = vi.fn();
 const sender = { id: 'fictional-extension', frameId: 0, tab: { id: 7 }, documentId: 'fictional-doc',
   url: 'https://lms.gakusei.kyoto-u.ac.jp/portal' } as chrome.runtime.MessageSender;
 const run = () => new Promise<Record<string, unknown>>(resolve => handler({ type: 'kulms-page-ready' }, sender, resolve as (x: unknown) => void));
 beforeEach(async () => {
-  vi.resetModules(); storage = { ynuSessionId: 'fictional-ynu-value' };
+  vi.resetModules(); storage = { ynuSessionId: 'fictional-ynu-value' }; local = {};
   identity.mockReset().mockResolvedValue({ uid: 'fictional-user', token: 'fictional-api-token' });
   sync.mockReset(); display.mockReset().mockResolvedValue(undefined);
   send.mockReset().mockImplementation(async (_tab, request) => ({ ok: true, observation: { ...structuredClone(expected),
@@ -22,7 +25,7 @@ beforeEach(async () => {
   post.mockReset().mockResolvedValue(new Response(JSON.stringify({ status: 'applied', changed: false, changeCount: 0 })));
   vi.stubGlobal('fetch', post);
   vi.stubGlobal('chrome', { runtime: { id: 'fictional-extension' }, tabs: { sendMessage: send },
-    storage: { session: { get: async () => storage, set: async (value: object) => Object.assign(storage, value) } } });
+    storage: { local: { get: async () => local, set: async (value: object) => Object.assign(local, value) }, session: { get: async () => storage, set: async (value: object) => Object.assign(storage, value) } } });
   handler = (await import('../src/kulms-worker.js')).handleKulmsMessage;
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -77,4 +80,31 @@ it('blocks credential-bearing normalized text before delivery', async () => {
   send.mockImplementationOnce(async (_tab, request) => ({ ok: true, observation: { ...expected,
     observationId: request.observationId, fetchedAt: request.fetchedAt, definitionId: 'cookie=fictional' } }));
   expect((await run()).code).toBe('unsafe-observation'); expect(post).not.toHaveBeenCalled();
+});
+it('saves the explicit timetable mapping after receipt, with a separate source status and cooldown', async () => {
+  storage.kulmsFetchCompletedAt = Date.now(); storage.kulmsFetchOwnerUid = 'fictional-user';
+  send.mockImplementationOnce(async (_tab, request) => ({ ok: true, observation: { ...timetable,
+    observationId: request.observationId, fetchedAt: request.fetchedAt } }));
+  const reply = await new Promise<Record<string, unknown>>(resolve => handler({ type: 'kulasis-page-ready' },
+    { ...sender, url: 'https://www.k.kyoto-u.ac.jp/student/la/top' }, resolve as (x: unknown) => void, 'kulasis'));
+  expect(reply.ok).toBe(true);
+  expect(storage.kulasisFetchStatus).toBe('success'); expect(storage.kulmsFetchCompletedAt).toBe(0);
+  expect(local.kulasisMapping).toEqual({ uid: 'fictional-user', term: kulasisTerm(new Date().toISOString()), siteIds: ['fictional-site'] });
+  const prior = structuredClone(local);
+  await run();
+  expect(send.mock.calls.at(-1)?.[1]).toMatchObject({ type: 'kulms-collect', prioritySiteIds: ['fictional-site'] });
+  expect(local).toEqual(prior);
+});
+it.each(['another-owner', 'old-term'])('does not reuse a mapping for %s', async kind => {
+  local.kulasisMapping = { uid: kind === 'another-owner' ? 'fictional-other' : 'fictional-user',
+    term: kind === 'old-term' ? '1990-spring' : kulasisTerm(new Date().toISOString()), siteIds: ['fictional-site'] };
+  await run(); expect(send.mock.calls[0]?.[1]).toMatchObject({ prioritySiteIds: [] });
+});
+it('does not replace a confirmed mapping after a failed observation delivery', async () => {
+  local.kulasisMapping = { uid: 'fictional-user', siteIds: ['fictional-old'] };
+  send.mockImplementationOnce(async (_tab, request) => ({ ok: true, observation: { ...timetable,
+    observationId: request.observationId, fetchedAt: request.fetchedAt } }));
+  post.mockResolvedValue(new Response(null, { status: 400 }));
+  await new Promise(resolve => handler({ type: 'kulasis-page-ready' }, { ...sender, url: 'https://www.k.kyoto-u.ac.jp/student/la/top' }, resolve, 'kulasis'));
+  expect(local.kulasisMapping).toEqual({ uid: 'fictional-user', siteIds: ['fictional-old'] });
 });
