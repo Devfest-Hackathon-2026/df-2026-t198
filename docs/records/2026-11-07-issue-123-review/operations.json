@@ -1,0 +1,22 @@
+{
+  "status": "pass",
+  "phase": "step-6-announcement-deadline",
+  "operations": [
+    "1: 初期状態に戻し、LMSを開いて課題を受領",
+    "2: 別タブの授業・締切と体験用カレンダーを表示",
+    "3: 別ブラウザの支援担当が学生の次の締切を表示",
+    "4: 先生の締切変更だけでは学生・カレンダー・面談の締切は変わらない",
+    "5: 再取得で両画面とカレンダーが更新、支援担当の準備を保存・再読込で保持、学生が取消",
+    "6: 再取得で予定・変更は増えず、メール見本の後回し・終わったが両画面へ反映",
+    "6追加: お知らせを出してLMSを開くと両画面に要確認、公式締切・カレンダーの日付と変更件数は維持"
+  ],
+  "reset": true,
+  "loggedOut": true,
+  "cleanupPhase": "done",
+  "cleanupFailures": [],
+  "browserErrors": 0,
+  "announcementStatus": {
+    "http": 200,
+    "status": "proposal"
+  }
+}

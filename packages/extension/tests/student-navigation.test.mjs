@@ -47,6 +47,31 @@ it('does not start or claim on a course page, regardless of idle time', async ()
   expect(f.collect).not.toHaveBeenCalled(); expect(f.guard.claim()).toBe(false);
 });
 
+it('retries not-idle after two seconds and stops retrying after success', async () => {
+  const f = fixture();
+  f.collect.mockResolvedValueOnce({ ok: false, code: 'not-idle' });
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1999);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(f.collect).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(120_000);
+  expect(f.collect).toHaveBeenCalledTimes(2);
+});
+
+it('re-arms the remaining idle wait if the wall clock moved backward', async () => {
+  const f = fixture();
+  vi.setSystemTime(Date.now() - 5);
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(f.collect).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(4);
+  expect(f.collect).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(1);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(true);
+});
+
 for (const reply of ['resolve', 'reject', 'throw', 'never']) it(`replays every held click once when the worker will ${reply}`, async () => {
   let respond;
   const yieldSession = vi.fn(() => {
@@ -180,12 +205,72 @@ for (const name of ['beforeunload', 'pagehide']) it(`aborts page reads and infor
   expect(f.guard.signal.aborted).toBe(true);
   expect(f.guard.canRead(true)).toBe(false);
   expect(f.yieldSession).toHaveBeenCalledWith(true);
-  await vi.advanceTimersByTimeAsync(60_000);
+  await vi.advanceTimersByTimeAsync(14_999);
   expect(f.collect).toHaveBeenCalledTimes(1);
   expect(f.guard.claim()).toBe(false);
   f.windowEvents.pageshow({ persisted: true });
   await vi.advanceTimersByTimeAsync(2000);
   expect(f.guard.claim()).toBe(true);
+});
+
+for (const name of ['beforeunload', 'pagehide']) {
+  for (const reply of ['resolve', 'reject', 'never']) it(`discards held actions on ${name} despite a worker that will ${reply}`, async () => {
+    let resolve, reject;
+    const f = fixture({ yieldSession: gone => gone ? Promise.resolve({ ok: true }) : new Promise((yes, no) => {
+      resolve = yes; reject = no;
+    }) });
+    await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+    f.click(); f.click();
+    f.windowEvents[name]();
+    if (reply === 'resolve') resolve({ ok: true });
+    if (reply === 'reject') reject(new Error('worker-unavailable'));
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(f.clickTarget.dispatchEvent).not.toHaveBeenCalled();
+  });
+}
+
+it('resumes collection after 15 seconds without pagehide and the normal idle interval', async () => {
+  const f = fixture();
+  await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+  const oldSignal = f.guard.signal;
+  f.windowEvents.beforeunload();
+  await vi.advanceTimersByTimeAsync(14_999);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(false);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(f.guard.claim()).toBe(false);
+  await vi.advanceTimersByTimeAsync(1999);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(f.collect).toHaveBeenCalledTimes(2);
+  expect(f.guard.claim()).toBe(true);
+  expect(oldSignal.aborted).toBe(true);
+  expect(f.guard.signal.aborted).toBe(false);
+  expect(f.guard.canRead(false)).toBe(true);
+});
+
+it('cancels the departure recovery on pagehide, even if it arrives near the deadline', async () => {
+  const f = fixture();
+  await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+  f.windowEvents.beforeunload();
+  await vi.advanceTimersByTimeAsync(14_999);
+  f.windowEvents.pagehide();
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(f.collect).toHaveBeenCalledTimes(1);
+  expect(f.guard.claim()).toBe(false);
+});
+
+it('cancels the old recovery timer on pageshow without resetting a new lease', async () => {
+  const f = fixture();
+  await vi.advanceTimersByTimeAsync(2000); f.guard.claim();
+  f.windowEvents.beforeunload();
+  await vi.advanceTimersByTimeAsync(1000);
+  f.windowEvents.pageshow({ persisted: true });
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(f.guard.claim()).toBe(true);
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(f.collect).toHaveBeenCalledTimes(2);
+  expect(f.guard.canRead(false)).toBe(true);
 });
 
 it('aborts an unanswered page read when the worker releases its lease', async () => {

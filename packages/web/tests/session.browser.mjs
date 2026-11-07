@@ -80,7 +80,7 @@ try {
   page.on('request', request => {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method()) && /\/api\//.test(request.url())) writes.push(new URL(request.url()).pathname);
   });
-  await page.goto('http://127.0.0.1:5177/session');
+  await page.goto(`${process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5177'}/session`);
   await page.getByLabel('メールアドレス').fill('demo-supporter@example.invalid');
   await page.getByLabel('パスワード').fill(process.env.SESSION_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();

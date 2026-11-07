@@ -1,0 +1,12 @@
+{
+  "status": "fail",
+  "phase": "step-3-open-session",
+  "operations": [
+    "1: 初期状態に戻し、LMSを開いて課題を受領",
+    "2: 別タブの授業・締切と体験用カレンダーを表示"
+  ],
+  "reset": false,
+  "loggedOut": false,
+  "cleanupPhase": "logout-supporter",
+  "browserErrors": 0
+}

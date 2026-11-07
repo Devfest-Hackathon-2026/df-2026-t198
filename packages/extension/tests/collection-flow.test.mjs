@@ -122,7 +122,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
     identity: { getAuthToken },
     runtime: { id: 'synthetic-extension', onStartup: { addListener: vi.fn() }, onInstalled: { addListener: vi.fn() }, onMessage: { addListener: fn => { workerListener = fn; } } },
     storage: { session: { set: async values => Object.assign(state, globalThis.structuredClone(values)), get: async () => globalThis.structuredClone(state) } },
-    tabs: { query: async () => [{ id: 7 }], sendMessage: async (tabId, message, target) => {
+    tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: async (tabId, message, target) => {
       expect(tabId).toBe(7); expect(target).toEqual({ frameId: 0, documentId: 'synthetic-document' });
       return call(contentListener, message, { id: 'synthetic-extension' });
     } },

@@ -36,6 +36,7 @@ beforeEach(async () => {
   vi.stubGlobal('fetch', fetcher);
   vi.stubGlobal('chrome', { action: { setBadgeText: badge, setTitle: title, setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined) }, runtime: { id: 'synthetic-extension' }, tabs: {
     query: async () => [{ id: 7 }],
+    get: async () => ({ id: 7, status: 'complete' }),
     sendMessage: async (tab: number, message: { type: string; restore?: boolean }, target: unknown) => {
       if (message.type !== 'ynu-read-page') return { ok: true };
       if (message.restore) return { ok: true, page: { html: 'home', url: 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex' } };

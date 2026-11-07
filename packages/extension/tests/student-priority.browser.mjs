@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout, clearTimeout } from 'node:timers';
 import process from 'node:process';
 import console from 'node:console';
+import { testTabNavigation } from './helpers/tab-navigation.browser.mjs';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session';
@@ -42,16 +43,80 @@ const worker = await bundle('service-worker', [{ name: 'no-external-accounts', s
       : `export const startDigest = () => {}; export const handleDigestMessage = () => undefined;` }));
 } }]);
 
-const browser = await chromium.launch({ headless: true });
+if (process.argv.includes('--tab-state')) {
+  const results = await testTabNavigation({ chromium, content, worker, home, list, detail, pageUrl });
+  console.log(`${results.length} real tab-state scenarios passed`);
+  process.exit(0);
+}
 const results = [];
+const browser = await chromium.launch({ headless: true });
 try {
+  const lifecycleFailures = [];
+  for (const action of ['back', 'reload', 'cancelled-reload']) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    let collections = 0;
+    await context.route('**/*', route => {
+      assert.equal(new URL(route.request().url()).origin, 'https://lms.ynu.ac.jp');
+      return route.fulfill({ contentType: 'text/html; charset=utf-8', body: home + studentControls });
+    });
+    await page.exposeFunction('recordCollection', () => { collections++; });
+    await page.addInitScript(() => {
+      globalThis.chrome = { runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { globalThis.contentListener = fn; } },
+        sendMessage: message => {
+          if (message.type === 'ynu-session-found') return globalThis.recordCollection().then(() => ({ ok: true }));
+          return message.departed ? Promise.resolve({ ok: true }) : new Promise(() => {});
+        } } };
+    });
+    await page.clock.install({ time: new Date('2098-11-07T00:00:00Z') });
+    await page.clock.pauseAt(new Date('2098-11-07T00:00:01Z'));
+    const claim = () => page.evaluate(() => new Promise(resolve => globalThis.contentListener(
+      { type: 'ynu-collection-claim', sid: 'synthetic-session' }, { id: 'synthetic-extension' }, resolve))).then(reply => reply.ok);
+    try {
+      await page.goto('https://lms.ynu.ac.jp/previous');
+      await page.goto(pageUrl); await page.addScriptTag({ content });
+      // Give the page user activation so Chromium permits an unload confirmation.
+      await page.keyboard.press('Shift');
+      await page.clock.runFor(2000);
+      assert.equal(await claim(), true);
+      await page.locator('#student-count').evaluate(button => {
+        button.onclick = () => globalThis.sessionStorage.setItem('held-actions', String(Number(globalThis.sessionStorage.getItem('held-actions')) + 1));
+      });
+      await page.locator('#student-count').click();
+      assert.equal(await page.evaluate(() => globalThis.sessionStorage.getItem('held-actions')), null);
+      if (action === 'cancelled-reload') {
+        await page.evaluate(() => globalThis.addEventListener('beforeunload', event => { event.preventDefault(); event.returnValue = ''; }));
+        const dialog = page.waitForEvent('dialog');
+        const reload = page.evaluate(() => globalThis.location.reload());
+        await (await dialog).dismiss();
+        await reload;
+        await page.clock.runFor(14_999);
+        assert.equal(collections, 1);
+        assert.equal(await claim(), false);
+        await page.clock.runFor(1 + 1999);
+        assert.equal(collections, 1);
+        await page.clock.runFor(1);
+        await assertEventually(() => collections === 2);
+        assert.equal(await claim(), true);
+      } else {
+        if (action === 'back') await page.goBack(); else await page.reload();
+        await page.clock.runFor(60_000);
+      }
+      assert.equal(await page.evaluate(() => globalThis.sessionStorage.getItem('held-actions')), null, 'a different navigation must discard the held action');
+      results.push(`${action}, held action discarded${action === 'cancelled-reload' ? ', collection resumed' : ''}: PASS`);
+      console.log(results.at(-1));
+    } catch (error) { lifecycleFailures.push(new Error(`${action}: ${error.message}`, { cause: error })); }
+    finally { await context.close(); }
+  }
+  if (lifecycleFailures.length) throw new AggregateError(lifecycleFailures, 'student navigation lifecycle regressions');
+
   for (const pageRoute of [false, true]) for (const scenario of ['complete', 'yield', 'state-error', 'slow-link', 'slow-submit', 'slow-enter']) {
     const context = await browser.newContext();
     const page = await context.newPage();
     const state = {}, actions = [];
     const slow = scenario.startsWith('slow-'), yielding = scenario === 'yield' || slow;
     let screen = 'home', release, held = false, listener, studentErrors = 0, uploads = 0;
-    let studentPending = false, releaseStudent, sessionNotifications = 0;
+    let studentPending = false, releaseStudent, sessionNotifications = 0, lastCollectionReply;
     const lms = async (url, init = {}, student = false) => {
       const path = new URL(url).pathname.replace(/;[^/]*/g, '');
       const kind = path.includes('studentCourse') ? 'student' : path.includes('linkKyozaiTitle') ? 'detail'
@@ -84,7 +149,7 @@ try {
     });
     const chrome = { runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { listener = fn; } } }, action: {},
       storage: { session: { get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, globalThis.structuredClone(values)) } },
-      tabs: { query: async () => [{ id: 7 }], sendMessage: async (_id, message) => page.evaluate(message =>
+      tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: studentPending ? 'loading' : 'complete' }), sendMessage: async (_id, message) => page.evaluate(message =>
         new Promise(resolve => globalThis.contentListener(message, { id: 'synthetic-extension' }, resolve)), message) } };
     const fetcher = async (url, init) => {
       if (url.startsWith('https://lms.ynu.ac.jp/')) {
@@ -100,7 +165,10 @@ try {
     await page.exposeFunction('sendToWorker', message => {
       if (message.type === 'ynu-session-found') sessionNotifications++;
       return new Promise(resolve => listener(message,
-        { id: 'synthetic-extension', frameId: 0, url: page.url(), tab: { id: 7 }, documentId: 'synthetic-document' }, resolve));
+        { id: 'synthetic-extension', frameId: 0, url: page.url(), tab: { id: 7 }, documentId: 'synthetic-document' }, resolve)).then(reply => {
+        if (message.type === 'ynu-session-found') lastCollectionReply = reply;
+        return reply;
+      });
     });
     await page.addInitScript(() => {
       const originalTimeout = globalThis.setTimeout;
@@ -113,7 +181,8 @@ try {
     });
     await page.goto(pageUrl); await page.addScriptTag({ content });
     if (yielding) {
-      await assertEventually(() => held, () => ({ pageRoute, scenario, status: state.ynuFetchStatus, reads: actions.length }));
+      await assertEventually(() => held, () => ({ pageRoute, scenario, status: state.ynuFetchStatus, reads: actions.length,
+        notifications: sessionNotifications, lastCollectionReply }));
       const navigation = page.waitForURL('**/lms/studentCourse*');
       if (scenario === 'slow-submit') await page.evaluate(() => globalThis.document.querySelector('#student-form')
         .requestSubmit(globalThis.document.querySelector('#student-submit')));
@@ -187,7 +256,7 @@ try {
       .requestSubmit(globalThis.document.querySelector('#student-submit')));
     if (action === 'enter') {
       await page.locator('#student-input').evaluate(input => input.addEventListener('keydown', event => {
-        globalThis.enterReplayCode = event.keyCode;
+        globalThis.sessionStorage.setItem('enterReplayCode', String(event.keyCode));
       }));
       await page.locator('#student-input').focus(); await page.keyboard.press('Enter');
     }
@@ -195,10 +264,15 @@ try {
     await page.clock.runFor(14_999);
     assert.equal(studentRequests, 0);
     if (action === 'two-clicks') assert.equal(await page.evaluate(() => globalThis.replayedCount || 0), 0);
+    const navigation = action === 'two-clicks' ? undefined : page.waitForURL('**/lms/studentCourse*');
     await page.clock.runFor(1);
-    if (action === 'enter') assert.equal(await page.evaluate(() => globalThis.enterReplayCode), 13);
     if (action === 'two-clicks') assert.equal(await page.evaluate(() => globalThis.replayedCount), 2);
-    else { await page.getByRole('heading', { name: '学生の授業' }).waitFor(); assert.equal(studentRequests, 1); }
+    else {
+      await navigation;
+      await page.getByRole('heading', { name: '学生の授業' }).waitFor();
+      assert.equal(studentRequests, 1);
+      if (action === 'enter') assert.equal(await page.evaluate(() => globalThis.sessionStorage.getItem('enterReplayCode')), '13');
+    }
     results.push(`no reply, ${action}, local 15s deadline: PASS`);
     console.log(results.at(-1));
     await context.close();
