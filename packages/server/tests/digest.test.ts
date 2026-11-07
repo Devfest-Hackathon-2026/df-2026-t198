@@ -36,7 +36,7 @@ describe('today digest content contract', () => {
     expect(data.plans[0]!.laterUrl).toBe('https://study.example.invalid/student/plan?id=p1&do=later&rev=1');
     expect(data.html).toContain('&lt;課題&amp;ノート&gt;'); expect(data.html).not.toContain('<課題');
     for (const content of [data.text, data.html, data.plans[0]!.text, data.plans[0]!.html]) {
-      expect(content).toContain('「終わった」は準備が終わったときに押してください。LMSへの提出は別に行ってください。');
+      expect(content).toContain('「終わった」は準備の完了で、LMSへの提出の記録とは別です。提出はLMSで行ってください。');
       expect(content).not.toContain('準備の記録');
     }
     expect(JSON.stringify(data)).not.toMatch(/DO NOT COPY|PRIVATE ANNOUNCEMENT|private-id|confirmedBy|dueText/);
@@ -116,4 +116,53 @@ it('renders the done and later links as Sora\'s mail buttons, with the no-reply 
   expect(html).toContain('background:#edf1f6;color:#263746">🕒 後回し</a>');
   expect(html).toContain('返信の入力は不要です。リンク先で1回押すと記録されます。');
   expect(html.indexOf('✅ 終わった')).toBeLessThan(html.indexOf('🕒 後回し'));
+});
+
+it('groups task headings with preparation and deadline lines and puts the note once at the end', () => {
+  const data = digest([plan(), plan('second')], [row('task')]);
+  for (const body of [data.text, data.html]) {
+    expect(body).toContain('今日の準備は2つです。');
+    expect(body).toContain('架空の授業：');
+    expect(body).toContain('今日 13:00〜14:30 に準備');
+    expect(body).toContain('締切 11/13 00:30');
+    expect(body.match(/返信の入力は不要です/g)).toHaveLength(1);
+    expect(body.lastIndexOf('返信の入力は不要です')).toBeGreaterThan(body.lastIndexOf('🕒 後回し'));
+  }
+  expect(data.html).toContain('<h3');
+});
+it('lists completed preparation awaiting submission once, in deadline order, without action buttons', () => {
+  const rows = ['later', 'first', 'submitted', 'cancelled', 'ended', 'past'].map(id => row(id));
+  rows.forEach(task => { task.latest.title = task.key.sourceId; });
+  rows[0]!.officialDeadline!.deadline = { kind: 'date', date: '2030-11-20', dueText: '', timeZone: 'Asia/Tokyo' };
+  rows[2]!.submission = 'submitted'; rows[3]!.presenceState = 'cancelled'; rows[4]!.presenceState = 'ended';
+  rows[5]!.officialDeadline!.deadline = { kind: 'date', date: '2030-11-10', dueText: '', timeZone: 'Asia/Tokyo' };
+  const plans = [...rows, rows[0]!].map((task, i) => ({ ...plan(`done-${i}`), assignment: task.key, status: 'done' as const }));
+  const data = digest(plans, rows);
+  expect(data.readyToSubmit.map(task => task.title)).toEqual(['first', 'later']);
+  for (const body of [data.text, data.html]) {
+    expect(body).toContain('次は提出'); expect(body).toContain('次にLMSを開いたとき');
+    expect(body).not.toContain('✅ 終わった'); expect(body).not.toContain('🕒 後回し');
+  }
+  expect(digest([plans[0]!], [rows[0]!]).empty).toBe(false);
+});
+it('uses home plus a route for stateful LMS and preserves direct demo links', () => {
+  const task = row('task');
+  const data = digest([plan()], [task]);
+  expect(data.plans[0]).toMatchObject({ url: 'https://lms.example.invalid/lms/homeHoml/doIndex', route: 'ホーム › 架空の授業 › <課題&ノート>' });
+  for (const body of [data.text, data.html]) { expect(body).toContain('LMSを開く'); expect(body).toContain('道順'); }
+  task.key.system = 'demo-lms';
+  const demo = buildDigest('self@example.invalid', [], [task], [], 'https://study.example.invalid', now);
+  expect(demo.assignments[0]).toMatchObject({ url: task.latest.url, route: null });
+});
+
+it('keeps submission deadlines at this instant or today, but excludes expired instants and cancelled preparation', () => {
+  const atNow = row('at-now', now.toISOString());
+  const past = row('past', new Date(now.getTime() - 1).toISOString());
+  const today = row('today'); today.officialDeadline!.deadline = { kind: 'date', date: '2030-11-11', dueText: '', timeZone: 'Asia/Tokyo' };
+  const unprepared = row('cancelled-preparation');
+  const rows = [atNow, past, today, unprepared];
+  rows.forEach(task => { task.latest.title = task.key.sourceId; });
+  const plans = rows.map(task => ({ ...plan(task.key.sourceId, '2030-11-10'), assignment: task.key,
+    status: task === unprepared ? 'cancelled' as const : 'done' as const }));
+  expect(digest(plans, rows).readyToSubmit.map(task => task.title).sort()).toEqual(['at-now', 'today']);
 });

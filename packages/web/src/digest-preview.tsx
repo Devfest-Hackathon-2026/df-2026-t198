@@ -58,11 +58,11 @@ export function DigestPreview({ user }: { user: User }) {
     finally { setBusy(false); }
   }
   return <section className="digest-preview" aria-label="今日やることのメール"><h2>今日やることのメール</h2>
-    <p>今日の準備と締切の近い課題を知らせるメールの見本です。ここからメールは送りません。</p>
+    <p>今日の準備と次に提出する課題、締切の近い課題を知らせるメールの見本です。ここからメールは送りません。</p>
     <button disabled={busy} onClick={() => { void prepare(); }}>今日の準備の見本を用意する</button>
     {digest && !digest.empty && <><h3>{digest.subject}</h3>
       <div aria-busy={busy} onClick={event => { void click(event); }} dangerouslySetInnerHTML={{ __html: digest.html }} /></>}
-    {digest?.empty && <p>今日の準備や近い締切がない日は、メールを送りません。</p>}
+    {digest?.empty && <p>今日の準備や次に提出する課題、近い締切がない日は、メールを送りません。</p>}
     {message && <p role="status">{message}</p>}
   </section>;
 }
