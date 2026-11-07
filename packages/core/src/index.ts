@@ -36,3 +36,4 @@ export { manualDeadline } from './manual-assignment.js';
 export { preparationSlots, preparationPeriodTimes, preparationSlotOccupied, preparationAfterDeadline } from './preparation.js';
 export { isSafeMailText } from './mail-safety.js';
 export { assignmentDeadline } from './assignment-deadline.js';
+export { assignmentLmsLink } from './lms-link.js';
