@@ -61,12 +61,18 @@ try {
     await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
     await check(`${width}: submitted deadlines, scroll hints and date navigation`, async () => {
       const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
-      await calendar.locator('.calendar-event.submitted').getByText('出せました', { exact: true }).waitFor();
-      await calendar.getByRole('button', { name: /の締切へ/ }).first().click();
-      assert.equal(await calendar.locator('.calendar-event.submitted').evaluate(element => {
-        const box = element.getBoundingClientRect(); const parent = element.closest('.calendar-scroll').getBoundingClientRect();
-        return box.left >= parent.left && box.right <= parent.right;
-      }), true, 'the selected deadline is horizontally visible');
+      // #177 added a second submitted task; both badges and their date navigation must work.
+      for (const title of ['第3回 ふりかえり', '日替わり定食の値段しらべ']) {
+        const submitted = calendar.locator('.calendar-event.submitted').filter({ has: student.getByText(title, { exact: true }) });
+        await submitted.getByText('出せました', { exact: true }).waitFor();
+        const day = await submitted.evaluate(element => element.closest('[data-date]').dataset.date);
+        await calendar.getByRole('button', { name: `${Number(day.slice(5, 7))}/${Number(day.slice(8))}の締切へ`, exact: true }).click();
+        assert.equal(await submitted.evaluate(element => {
+          const box = element.getBoundingClientRect(); const parent = element.closest('.calendar-scroll').getBoundingClientRect();
+          return box.left >= parent.left && box.right <= parent.right;
+        }), true, 'the selected deadline is horizontally visible');
+      }
+      assert.equal(await calendar.locator('.calendar-event.submitted').count(), 2);
       await calendar.getByRole('button', { name: '今日へ', exact: true }).click();
       assert.equal(await calendar.locator('.calendar-scroll').evaluate(element => Math.round(element.scrollLeft)), 0);
       assert.equal(await student.locator('.scroll-hint').first().isVisible(), width <= 850);
@@ -172,7 +178,9 @@ try {
     await student.getByRole('button', { name: /の締切を1日延ばす/ }).first().click();
     await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
     await check(`${width}: next LMS operation clears the email action notice`, async () => {
-      assert.equal(await preview.getByRole('status').count(), 0);
+      assert.equal(await preview.getByText('準備が終わりました。LMSへの提出は別に行ってください。', { exact: true }).count(), 0);
+      // Only operation notices are replaced; the confirmation's current plan state stays readable.
+      assert.deepEqual(await preview.getByRole('status').allTextContents(), ['今の状態：終わった（LMSへの提出は別）']);
     });
     await studentContext.close(); await supporterContext.close();
   }
