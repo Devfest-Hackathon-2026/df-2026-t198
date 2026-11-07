@@ -484,3 +484,14 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 - 台帳は予約・開始・結果を分け、結果不明を再送しない。朝の補送は07:30〜08:00未満。準備前は日付をまたいで選ぶ。未受理のfailedも今回は自動再試行せず、未着の可能性を残して重複抑止を優先する。既存の拡張の同日補送と切替は変更しない。
 - 対象は上限付きcollection group読取と厳密なパス確認で列挙する。上限超過は固定エラーで止め、student親文書の存在や新しいindexを前提にしない。大量配信の仕組みは今回作らない。
 - OIDCは[Googleの検証要件](https://developers.google.com/identity/openid-connect/openid-connect#validatinganidtoken)と[SchedulerのHTTP認証](https://docs.cloud.google.com/scheduler/docs/http-target-auth)を参照。既存OSSのgoogle-auth-libraryも確認したが、直接依存の追加はorangeの追加合意が必要なため今回は追加せず、Node標準cryptoで固定Google公開鍵のRS256だけを検証する。汎用JWT実装やtokeninfoへの毎回問い合わせは採らない。署名とclaimは合成鍵で試験し、実Cloudのtoken/IAMは未確認。
+
+## D36案. 専用Gmailから本人へ通知する（2026-11-08、orangeが確定する）
+
+- 状態：Issue #162に従ったSoraのA1仮採用。Codexは実装・手順を用意し、**orangeが確定する**。Cloud資源・secret・送信の準備は未実行。凍結条件はD35、今日の順序と切替の打ち切りは #152。
+- A1：専用Gmailのgmail.sendだけを同意し、そのrefresh tokenをSecret Managerの数字の版でCloud Runへ渡す。固定Fromから、Firebase Authで確認できた本人だけへTo 1件、CC/BCCなしで送る。多数の学生それぞれのOAuthを預からず、送信元1つの認可で準備できるため仮採用する。
+- B（本人Gmailから本人へサーバー送信）は、利用者ごとのoffline同意・秘密の保存・失効/取消の管理と画面が必要なので今回は採らない。A2（専用ドメインとメール配信サービス）は、ドメイン・送信者検証・費用の判断が増えるので今回は採らない。長期運用なら再検討する。
+- 既存の公式Nodeクライアント [googleapis](https://github.com/googleapis/google-api-nodejs-client) も候補。今回は #162 の指定どおりNode標準fetchでtoken更新とGmail送信の2経路に限定し、依存を増やさない。一般的なOAuth登録フローやメール受信機能は作らない。
+- Testingの同意は7日で失効する。11/8の同意日時+7日が11/15 00:00 JSTを越えることを計算し、必要な稼働終了時刻まで足りるかorangeが確認する。11/10締切後〜11/14に手動更新する案は採らない。足りなければ凍結前に再同意か切替中止。[準備手順](deploy.md#専用gmailの通知準備issue-162実行はorange)を正本にする。
+- 毎分tickの読取は、利用者1人につきsnapshotの計画・課題・授業等だけで最大約500件×1,440回＝約72万件/人日。設定列挙、回収、送信直前の再読取・transaction再実行は別途加算される。これは実測や課金上限ではない。少人数のまま毎分で進めるか、時間外の読取削減か5分間隔にするかをorangeが確定する。今回のPRは#159の選別・時刻窓を変えない。
+- 宛先が取れないときは送信しない。既存の予約はleaseで回収し、窓内に再確認する。設定APIにはrecipient-unavailableを返すが、個別台帳に宛先や取得失敗の詳細は足さない。本人確認のない宛先への代替送信はしない。この扱いの確定もorangeに残す。
+- 二重送信を避けるため設定APIではdeliveryOwner/migrationStateを変えない。移行済み・送信元利用可能・本人宛先確認済みの場合だけ本人が有効化できる。停止は送信元の失効中も受け付ける。failed/unknownの自動再送は追加せず、API受理と本人の受信を分ける。
