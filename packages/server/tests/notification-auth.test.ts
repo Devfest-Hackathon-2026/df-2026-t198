@@ -5,19 +5,21 @@ import { createHttpServer } from '../src/http.js';
 
 const pair = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const key = { ...pair.publicKey.export({ format: 'jwk' }), kid: 'synthetic-key', alg: 'RS256', use: 'sig' };
+const rotatedPair = generateKeyPairSync('rsa', { modulusLength: 2048 });
+const rotatedKey = { ...rotatedPair.publicKey.export({ format: 'jwk' }), kid: 'rotated-key', alg: 'RS256', use: 'sig' };
 const audience = 'https://notifications.example.invalid/api/internal/notifications/tick';
 const serviceAccount = ['scheduler', 'fictional.iam.gserviceaccount.com'].join('@');
 const now = new Date('2030-11-11T00:00:00Z'), seconds = now.getTime() / 1000;
-function token(patch: Record<string, unknown> = {}, header: Record<string, unknown> = {}) {
+function token(patch: Record<string, unknown> = {}, header: Record<string, unknown> = {}, privateKey = pair.privateKey) {
   const encoded = [ { alg: 'RS256', kid: key.kid, ...header },
     { iss: 'https://accounts.google.com', aud: audience, sub: '123456789', email: serviceAccount,
       email_verified: true, exp: seconds + 3600, iat: seconds, ...patch } ].map(x => Buffer.from(JSON.stringify(x)).toString('base64url'));
   const input = encoded.join('.');
-  return `${input}.${sign('RSA-SHA256', Buffer.from(input), pair.privateKey).toString('base64url')}`;
+  return `${input}.${sign('RSA-SHA256', Buffer.from(input), privateKey).toString('base64url')}`;
 }
 describe('Scheduler OIDC signature and claims', () => {
   const keys = vi.fn<typeof fetch>();
-  beforeEach(() => { keys.mockReset(); keys.mockResolvedValue(new Response(JSON.stringify({ keys: [key] }), { headers: { 'cache-control': 'max-age=300' } })); });
+  beforeEach(() => { keys.mockReset(); keys.mockImplementation(async () => new Response(JSON.stringify({ keys: [key] }), { headers: { 'cache-control': 'max-age=300' } })); });
   const verifier = () => createSchedulerVerifier(audience, serviceAccount, keys, () => now);
   it('verifies a signed allowed identity, caches Google keys, and rejects a forged signature', async () => {
     const verify = verifier(); await verify(token()); await verify(token());
@@ -29,9 +31,70 @@ describe('Scheduler OIDC signature and claims', () => {
   it.each([
     { iss: 'https://securetoken.google.com/fictional-project' }, { iss: 'https://attacker.example.invalid' },
     { aud: 'other-audience' }, { aud: [audience] }, { email: 'other-service-account' },
-    { email_verified: false }, { sub: '' }, { exp: seconds }, { iat: seconds + 1 }, { exp: seconds + 7200 },
+    { email_verified: false }, { sub: '' }, { exp: seconds }, { iat: seconds + 600 }, { exp: seconds + 7200 },
   ])('rejects disallowed claims (%#)', async patch => {
     await expect(verifier()(token(patch))).rejects.toThrow();
+  });
+  it.each([30, 60])('allows iat %i seconds ahead without extending exp', async ahead => {
+    const verify = verifier();
+    await expect(verify(token({ iat: seconds + ahead }))).resolves.toBeUndefined();
+    await expect(verify(token({ iat: seconds - 3600, exp: seconds }))).rejects.toThrow();
+  });
+  it('rejects iat beyond the 60-second tolerance', async () => {
+    await expect(verifier()(token({ iat: seconds + 61 }))).rejects.toThrow();
+  });
+  it('refreshes a cached key set when Google rotates to a new kid', async () => {
+    const verify = verifier();
+    await verify(token());
+    keys.mockResolvedValueOnce(new Response(JSON.stringify({ keys: [rotatedKey] }),
+      { headers: { 'cache-control': 'max-age=300' } }));
+    await expect(verify(token({}, { kid: rotatedKey.kid }, rotatedPair.privateKey))).resolves.toBeUndefined();
+    await verify(token({}, { kid: rotatedKey.kid }, rotatedPair.privateKey));
+    expect(keys).toHaveBeenCalledTimes(2);
+  });
+  it('limits unknown-kid refreshes to once per minute across different kids', async () => {
+    let time = now.getTime();
+    const verify = createSchedulerVerifier(audience, serviceAccount, keys, () => new Date(time));
+    await verify(token());
+    for (const kid of ['missing-a', 'missing-b', 'missing-c']) {
+      await expect(verify(token({}, { kid }))).rejects.toThrow();
+    }
+    expect(keys).toHaveBeenCalledTimes(2);
+    time += 59_999;
+    await expect(verify(token({}, { kid: 'missing-d' }))).rejects.toThrow();
+    expect(keys).toHaveBeenCalledTimes(2);
+    time += 1;
+    await expect(verify(token({}, { kid: 'missing-e' }))).rejects.toThrow();
+    expect(keys).toHaveBeenCalledTimes(3);
+    await verify(token());
+  });
+  it('shares an in-flight rotation refresh across concurrent verification requests', async () => {
+    const verify = verifier();
+    await verify(token());
+    let finish!: (response: Response) => void;
+    keys.mockImplementationOnce(() => new Promise<Response>(resolve => { finish = resolve; }));
+    const rotated = token({}, { kid: rotatedKey.kid }, rotatedPair.privateKey);
+    const pending = Promise.allSettled([verify(rotated), verify(rotated), verify(rotated)]);
+    expect(keys).toHaveBeenCalledTimes(2);
+    finish(new Response(JSON.stringify({ keys: [rotatedKey] }),
+      { headers: { 'cache-control': 'max-age=300' } }));
+    expect(await pending).toEqual(Array.from({ length: 3 }, () => ({ status: 'fulfilled', value: undefined })));
+    expect(keys).toHaveBeenCalledTimes(2);
+  });
+  it('rate-limits failed refreshes while retaining trusted cached keys and allowing later recovery', async () => {
+    let time = now.getTime();
+    const verify = createSchedulerVerifier(audience, serviceAccount, keys, () => new Date(time));
+    await verify(token());
+    keys.mockRejectedValueOnce(new Error('synthetic-network-failure'));
+    await expect(verify(token({}, { kid: 'rotated-key' }))).rejects.toThrow();
+    await expect(verify(token({}, { kid: 'other-missing-key' }))).rejects.toThrow();
+    await verify(token());
+    expect(keys).toHaveBeenCalledTimes(2);
+    time += 60_000;
+    keys.mockResolvedValueOnce(new Response(JSON.stringify({ keys: [rotatedKey] }),
+      { headers: { 'cache-control': 'max-age=300' } }));
+    await expect(verify(token({}, { kid: rotatedKey.kid }, rotatedPair.privateKey))).resolves.toBeUndefined();
+    expect(keys).toHaveBeenCalledTimes(3);
   });
   it('rejects alg confusion, missing key IDs and inaccessible or untrusted keys', async () => {
     for (const header of [{ alg: 'none' }, { alg: 'HS256' }, { kid: 'not-google-key' }, { crit: ['unhandled'] }]) {
