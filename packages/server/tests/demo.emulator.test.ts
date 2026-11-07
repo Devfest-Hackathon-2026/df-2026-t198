@@ -161,7 +161,7 @@ describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with r
       expect(at.getUTCHours()).toBe(6); expect(at.getUTCMinutes()).toBe(0);
       expect(at.getUTCDay()).toBeGreaterThan(0); expect(at.getUTCDay()).toBeLessThan(6);
     }
-    expect((await fixture.db.doc(`demoAccounts/${owner.uid}`).get()).data()!['displayName']).toBe('戸田 ひなた');
+    expect((await fixture.db.doc(`demoAccounts/${owner.uid}`).get()).data()!['displayName']).toBe('田中 太郎');
     // Re-login while fresh must preserve the ongoing scenario and its ledger.
     expect((await post('observations', sample, owner.token)).status).toBe(200);
     const changesBefore = (await studentRef.collection('changes').get()).docs.map(doc => doc.data());

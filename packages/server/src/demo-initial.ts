@@ -1,6 +1,6 @@
 import type { DemoData } from '@kadai-hisho/core/ledger';
 
-export const demoStudentDisplayName = '戸田 ひなた';
+export const demoStudentDisplayName = '田中 太郎';
 
 /** The same fictional scenario as the demo account setup, dated from this run. */
 export function initialDemo(now: number) {
@@ -13,7 +13,7 @@ export function initialDemo(now: number) {
       { sourceId: 'DEMO101_TASK2', title: '第3回 ふりかえり', dueAt: due.toISOString(), submission: 'submitted' },
     ] },
     { courseId: 'DEMO202', name: 'キャンパス植物図鑑演習', teacher: '草野 先生', weekday: 4, period: 4, assignments: [] },
-    { courseId: 'DEMO303', name: '線形代数（再）', teacher: '安藤 先生', weekday: 2, period: 1, assignments: [
+    { courseId: 'DEMO303', name: 'Re:線形代数', teacher: '安藤 先生', weekday: 2, period: 1, assignments: [
       { sourceId: 'DEMO303_TASK1', title: '第5回 小テスト', dueAt: new Date(due.getTime() + 7 * 86400_000).toISOString(), submission: 'not-submitted' },
     ] },
     { courseId: 'DEMO404', name: '学食経済学', teacher: '大盛 先生', weekday: 3, period: 3, assignments: [

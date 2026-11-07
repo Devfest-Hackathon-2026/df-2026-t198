@@ -57,7 +57,7 @@ try {
   const dueDate = new Date(Date.now() + 2 * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
   await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
   await login(supporter, 'supporter'); await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '戸田 ひなた', exact: true }).click();
+  await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
   const validationForm = await form(student, '  　 ', dueDate, null);
   let validationRequests = 0;
   await student.route('**/api/v1/students/trial-student/manual-assignments/*', async route => {

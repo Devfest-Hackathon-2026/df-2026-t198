@@ -66,22 +66,29 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
   });
   afterAll(async () => { if (server) await new Promise<void>(resolve => server.close(() => resolve())); await fixture?.close(); });
   afterEach(() => vi.restoreAllMocks());
-  it('keeps DEMO101 as the mail sample when the six-course seed adds unfinished assignments', async () => {
+  it.each([
+    { name: 'the seed deadline', earlier: [], expected: 'DEMO101_TASK1', title: '書き方を書くレポート' },
+    { name: 'an earlier deadline on another course', earlier: ['DEMO303_TASK1'], expected: 'DEMO303_TASK1', title: '第5回 小テスト' },
+    { name: 'sourceId order for equal deadlines', earlier: ['DEMO303_TASK1', 'DEMO505_TASK1'], expected: 'DEMO303_TASK1', title: '第5回 小テスト' },
+  ])('selects $name for the mail sample independently of document order', async ({ earlier, expected, title }) => {
     const baseTask = (await assignmentRef().get()).data() as LedgerAssignment;
     const { data } = initialDemo(now.getTime());
     for (const course of data.courses) for (const task of course.assignments) {
+      const dueAt = earlier.includes(task.sourceId) ? '2030-11-12T08:00:00.000Z' : task.dueAt;
       await student().collection('assignments').doc(documentKey('demo-lms', task.sourceId)).set({
         ...baseTask, key: { system: 'demo-lms', sourceId: task.sourceId }, submission: task.submission,
         latest: { ...baseTask.latest, sourceId: task.sourceId, courseId: course.courseId, title: task.title },
         officialDeadline: { ...baseTask.officialDeadline, deadline: {
-          kind: 'datetime', dueAt: task.dueAt, dueText: task.dueAt, timeZone: 'Asia/Tokyo',
+          kind: 'datetime', dueAt, dueText: dueAt, timeZone: 'Asia/Tokyo',
         } },
       });
     }
     try {
+      const saved = (await student().collection('assignments').get()).docs.map(doc => doc.data() as LedgerAssignment);
+      expect(saved.filter(task => task.submission !== 'submitted')[0]!.key.sourceId).not.toBe(expected);
       const sample = await store.prepareDemo(owner);
-      expect(sample.assignment).toEqual({ system: 'demo-lms', sourceId: 'DEMO101_TASK1' });
-      expect(sample.title).toBe('書き方を書くレポート');
+      expect(sample.assignment).toEqual({ system: 'demo-lms', sourceId: expected });
+      expect(sample.title).toBe(title);
     } finally {
       for (const course of data.courses) for (const task of course.assignments) {
         await student().collection('assignments').doc(documentKey('demo-lms', task.sourceId)).delete();
@@ -146,7 +153,7 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
   });
   it('reads the demo display name from the profile and falls back only for legacy profiles', async () => {
     const sessions = createSessionStore(fixture.db);
-    expect(await sessions.listStudents(supporter)).toEqual([{ uid: owner, displayName: '戸田 ひなた' }]);
+    expect(await sessions.listStudents(supporter)).toEqual([{ uid: owner, displayName: '田中 太郎' }]);
     const profile = fixture.db.doc(`demoAccounts/${owner}`);
     try {
       await profile.update({ displayName: '架空の学生B' });

@@ -71,9 +71,9 @@ try {
   await studentScreen.goto(`${base}/student`); await studentScreen.locator('.timetable').waitFor();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '戸田 ひなた', exact: true }).click();
+  await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
   await supporter.locator('.session-heading').waitFor();
-  assert.equal(await supporter.locator('.session-heading h1').innerText(), '戸田 ひなた');
+  assert.equal(await supporter.locator('.session-heading h1').innerText(), '田中 太郎');
   assert.equal(await supporter.locator('.session-student-id').count(), 0);
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
   await preview.getByRole('link', { name: '🕒 後回し', exact: true }).waitFor();

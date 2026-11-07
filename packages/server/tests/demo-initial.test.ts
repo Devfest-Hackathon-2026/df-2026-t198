@@ -6,7 +6,7 @@ it.each([
   ['2026-11-08T23:59:00+09:00', '2026-10-30T06:00:00.000Z', '2026-11-13T06:00:00.000Z'],
   ['2026-11-09T00:01:00+09:00', '2026-11-02T06:00:00.000Z', '2026-11-16T06:00:00.000Z'],
 ])('uses weekday 15:00 Japan appointments and a fictional name from %s', (at, lastSessionAt, nextSessionAt) => {
-  expect(initialDemo(Date.parse(at))).toMatchObject({ displayName: '戸田 ひなた', context: { lastSessionAt, nextSessionAt } });
+  expect(initialDemo(Date.parse(at))).toMatchObject({ displayName: '田中 太郎', context: { lastSessionAt, nextSessionAt } });
 });
 
 it.each([
@@ -36,12 +36,12 @@ it.each([
 
 it('provides six fictional courses while keeping DEMO101 the first unfinished deadline after a one-day extension', () => {
   const { data, displayName } = initialDemo(Date.parse('2026-11-08T09:00:00+09:00'));
-  expect(displayName).toBe('戸田 ひなた');
+  expect(displayName).toBe('田中 太郎');
   expect(data.courses.map(({ name, teacher, weekday, period }) => ({ name, teacher, weekday, period })))
     .toEqual([
       { name: 'レポートの書き方の書き方', teacher: '森 先生', weekday: 1, period: 2 },
       { name: 'キャンパス植物図鑑演習', teacher: '草野 先生', weekday: 4, period: 4 },
-      { name: '線形代数（再）', teacher: '安藤 先生', weekday: 2, period: 1 },
+      { name: 'Re:線形代数', teacher: '安藤 先生', weekday: 2, period: 1 },
       { name: '学食経済学', teacher: '大盛 先生', weekday: 3, period: 3 },
       { name: '自転車置き場の社会学', teacher: '半田 先生', weekday: 3, period: 1 },
       { name: '90分の数理', teacher: '時田 先生', weekday: 5, period: 2 },

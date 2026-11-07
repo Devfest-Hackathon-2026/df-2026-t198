@@ -71,7 +71,7 @@ try {
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
   await login(supporter, 'supporter'); await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '戸田 ひなた', exact: true }).click();
+  await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
   await supporter.getByRole('link', { name: '② 相談する', exact: true }).click();
   assert.equal(await supporter.getByRole('button', { name: '学生に確認を頼む', exact: true }).count(), 0);
   await supporter.locator('.session-candidate button').first().click();

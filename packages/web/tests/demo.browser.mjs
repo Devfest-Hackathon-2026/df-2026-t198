@@ -82,7 +82,7 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
-  await supporter.getByRole('link', { name: '戸田 ひなた', exact: true }).click();
+  await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
   pass(0);
   const deadlines = supporter.getByRole('region', { name: '次の面談までの締切' });
   assert.equal((await ledger()).size, 0);
@@ -99,10 +99,10 @@ try {
   assert.equal(await timetable.title(), 'ToDoku');
   await timetable.locator('.timetable').waitFor();
   assert.deepEqual((await timetable.locator('.course-cell strong').allTextContents()).sort(), [
-    'レポートの書き方の書き方', 'キャンパス植物図鑑演習', '線形代数（再）', '学食経済学', '自転車置き場の社会学', '90分の数理',
+    'レポートの書き方の書き方', 'キャンパス植物図鑑演習', 'Re:線形代数', '学食経済学', '自転車置き場の社会学', '90分の数理',
   ].sort());
   for (const [name, weekday, period] of [
-    ['レポートの書き方の書き方', 1, 2], ['キャンパス植物図鑑演習', 4, 4], ['線形代数（再）', 2, 1],
+    ['レポートの書き方の書き方', 1, 2], ['キャンパス植物図鑑演習', 4, 4], ['Re:線形代数', 2, 1],
     ['学食経済学', 3, 3], ['自転車置き場の社会学', 3, 1], ['90分の数理', 5, 2],
   ]) {
     await timetable.locator(`.timetable tbody tr:nth-child(${period}) td:nth-of-type(${weekday})`)
