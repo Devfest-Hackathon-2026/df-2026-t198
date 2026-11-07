@@ -176,6 +176,50 @@ export interface FetchState {
   lastAppliedObservationId: string;
 }
 
+/** Missing settings mean OFF. Only the server may bind a recipient or finish migration. */
+export interface NotificationSettings {
+  enabled: boolean;
+  deliveryOwner: 'none' | 'extension' | 'cloud';
+  version: number;
+  timeZone: 'Asia/Tokyo';
+  morningTime: '07:30';
+  recipientUid: string;
+  migrationState: 'not-started' | 'ready';
+  updatedAt: IsoDateTime;
+}
+export type NotificationDeliveryState = 'pending' | 'reserved' | 'sending' | 'accepted' |
+  'failed' | 'unknown' | 'skipped' | 'expired';
+export type NotificationErrorCode = 'authorization-required' | 'not-accepted' | 'outcome-unknown' |
+  'target-changed' | 'settings-changed' | 'window-closed';
+/** API acceptance is not evidence of inbox delivery. No address, body or credential reference. */
+export interface NotificationStatus {
+  state: NotificationDeliveryState;
+  settingsVersion: number;
+  updatedAt: IsoDateTime;
+  lastAcceptedAt: IsoDateTime | null;
+  errorCode: NotificationErrorCode | null;
+}
+export interface NotificationTarget {
+  key: string;
+  kind: 'morning' | 'reminder';
+  scheduledAt: IsoDateTime;
+  expiresAt: IsoDateTime;
+  planId: string | null;
+  startsAt: IsoDateTime | null;
+  planRevision: number | null;
+}
+/** Server-only durable record, separate from preparation action receipts. */
+export interface NotificationDelivery extends NotificationTarget {
+  settingsVersion: number;
+  state: NotificationDeliveryState;
+  attemptId: string | null;
+  reservedAt: IsoDateTime | null;
+  leaseUntil: IsoDateTime | null;
+  startedAt: IsoDateTime | null;
+  respondedAt: IsoDateTime | null;
+  errorCode: NotificationErrorCode | null;
+}
+
 /** Calendar API fields owned by the application; no assignment body. */
 export interface DeadlineEvent {
   summary: string;

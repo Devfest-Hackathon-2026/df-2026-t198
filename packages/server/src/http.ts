@@ -15,6 +15,7 @@ import { receiveDemoRequest } from './demo-http.js';
 import { DemoForbidden, type DemoStore } from './demo-store.js';
 import { receiveAnnouncement } from './announcements/http.js';
 import type { createAnnouncementStore } from './announcements/store.js';
+import { receiveNotificationTick, type NotificationHttpDependencies } from './notification-http.js';
 
 export interface ObservationDependencies {
   verifyToken: (token: string) => Promise<string>;
@@ -27,6 +28,7 @@ export interface ObservationDependencies {
   calendar?: CalendarStore;
   demo?: DemoStore;
   announcements?: ReturnType<typeof createAnnouncementStore>;
+  notifications?: NotificationHttpDependencies;
 }
 const MAX_BODY = 512 * 1024;
 function json(response: ServerResponse, status: number, body: unknown) {
@@ -69,6 +71,9 @@ async function receiveObservation(request: IncomingMessage, response: ServerResp
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
+    if (path === '/api/internal/notifications/tick' && request.method === 'POST') {
+      void receiveNotificationTick(request, response, dependencies?.notifications); return;
+    }
     if ((request.method === 'PUT' || request.method === 'DELETE') && /^\/api\/v1\/students\/[^/]+\/manual-assignments\/[^/]+$/.test(path ?? '')) {
       void receiveManualAssignmentRequest(request, response, dependencies); return;
     }
