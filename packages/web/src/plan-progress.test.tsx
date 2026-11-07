@@ -3,13 +3,24 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { User } from 'firebase/auth';
 import type { PreparationPlan } from '../../core/src/types';
 import { PlanList } from './preparation-plans';
-import { actionMessage, performPlanAction, planActionErrorMessage, planProgress } from './plan-progress';
+import { actionMessage, performPlanAction, planActionErrorMessage, planProgress, NextSubmission } from './plan-progress';
 import { assignment, dated } from './student-fixture';
 afterEach(() => vi.unstubAllGlobals());
 const plan: PreparationPlan = { planId: 'fictional', assignment: { system: 'demo-lms', sourceId: 'task' }, title: '架空のレポート',
   date: '2030-11-11', period: 3, startsAt: '2030-11-11T13:00:00+09:00', endsAt: '2030-11-11T14:30:00+09:00',
   timeZone: 'Asia/Tokyo', decidedOn: '2030-11-11', confirmedBy: 'supporter', createdByRole: 'supporter',
   confirmedAt: '2030-11-10T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'key' };
+it('after preparation shows the current deadline, LMS home and route, then hides after submission', () => {
+  const task = assignment('架空のレポート', dated('2030-11-12'));
+  task.key = { system: 'ynu-lms', sourceId: 'task' };
+  const finished = { ...plan, assignment: task.key, status: 'done' as const };
+  const render = () => renderToStaticMarkup(<NextSubmission plan={finished} assignments={[task]}
+    courses={[{ system: 'ynu-lms', courseId: task.latest.courseId, name: '架空の授業', slots: [] }]} />);
+  expect(render()).toContain('次は提出'); expect(render()).toContain('11/12（日付のみ）');
+  expect(render()).toContain('ホーム › 架空の授業 › 架空のレポート');
+  expect(render()).toContain('href="https://example.invalid/lms/homeHoml/doIndex"');
+  task.submission = 'submitted'; expect(render()).toBe('');
+});
 describe('preparation progress belongs to the plan, not LMS submission', () => {
   it('does not describe a replay without a current plan as a missing slot', () => {
     expect(actionMessage('unchanged')).toBe('予定が変わりました。学生の画面で確かめてください。');

@@ -54,6 +54,12 @@ service cloud.firestore {
       match /observationReceipts/{observationId} {
         allow read: if isOwner(uid);
       }
+      match /notificationSettings/current {
+        allow read: if isOwner(uid);
+      }
+      match /notificationStatus/current {
+        allow read: if isOwner(uid);
+      }
       match /supporters/{supporterUid} {
         allow read: if isOwner(uid)
           || (request.auth != null && request.auth.uid == supporterUid);

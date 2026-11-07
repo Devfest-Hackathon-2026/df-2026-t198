@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-11-07T17:51:33.623979+00:00",
+  "readyRevision": "kadai-hisho-api-00018-vfq",
+  "traffic": [
+    {
+      "revision": "kadai-hisho-api-00018-vfq",
+      "percent": 100
+    }
+  ],
+  "image": "asia-northeast1-docker.pkg.dev/project-00439085-4e2d-44c3-9a8/cloud-run-source-deploy/kadai-hisho-api@sha256:c4d420022e616ba4e559b4c2dae96fcc682c8d39a4452a7f778cb199c50a95e8",
+  "env": {
+    "NODE_ENV": "production",
+    "ENABLE_DEMO_ANNOUNCEMENTS": "true",
+    "GOOGLE_CLOUD_PROJECT": "project-00439085-4e2d-44c3-9a8",
+    "PUBLIC_WEB_ORIGIN": "https://project-00439085-4e2d-44c3-9a8.web.app"
+  },
+  "otherEnvNames": [],
+  "buildId": "af687282-aa1d-44f5-a88f-bc5a4ae394b4",
+  "buildStatus": "SUCCESS",
+  "buildDigest": "sha256:c4d420022e616ba4e559b4c2dae96fcc682c8d39a4452a7f778cb199c50a95e8",
+  "sourceGeneration": "1794031126204985",
+  "sourceFiles": [
+    {
+      "file": "packages/server/src/index.ts",
+      "sha256": "0a08e3df8b62485bbefe495460980c438bd43211c374069cce6c9defdf9df60b",
+      "matchesCheckout": true
+    },
+    {
+      "file": "packages/server/src/firebase.ts",
+      "sha256": "0e9acc228229efe8ea76310b13b833560979d4feba9596bc8a96ea80a830987d",
+      "matchesCheckout": true
+    },
+    {
+      "file": "packages/server/src/announcements/gemini.ts",
+      "sha256": "ea3f8bdfbc3bdb2da574a4089768d0da9010f9c02a428cfca503bcf65047bcd9",
+      "matchesCheckout": true
+    },
+    {
+      "file": "packages/server/src/announcements/store.ts",
+      "sha256": "4203eaa867fed25731b5c3064777f6bcd0bb253d2d42d36b3a9ecfb0f50008f4",
+      "matchesCheckout": true
+    },
+    {
+      "file": "packages/server/src/announcements/runtime-budget.ts",
+      "sha256": "ca82b6b6d9fa222f7ec6c5a39f399b8798a57fa44b5439057657775569cb3298",
+      "matchesCheckout": true
+    }
+  ]
+}

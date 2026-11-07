@@ -29,8 +29,18 @@ async function fixture({ enabled = true, now = '2026-11-07T07:29:00+09:00' } = {
     } } };
   const digest = { ...mail, date: '2026-11-07', empty: false, plans: [] };
   const sent = []; let sendStatus = 200; let dropResponse = false;
+  const delivery = { enabled: true, deliveryOwner: 'extension' };
+  let deliveryFailure = false;
+  let onDelivery = () => {};
   const fetch = vi.fn(async (url, options) => {
     expect(options.credentials).toBe('omit'); expect(options.redirect).toBe('error'); expect(options.referrerPolicy).toBe('no-referrer');
+    if (url === `${config.apiOrigin}/api/v1/digest/delivery`) {
+      expect(options.method).toBe('GET'); expect(options.headers.Authorization).toBe('Bearer synthetic-firebase-token');
+      expect(options.cache).toBe('no-store');
+      await onDelivery();
+      if (deliveryFailure) throw new Error('synthetic-private-settings-error');
+      return { ok: true, json: async () => globalThis.structuredClone(delivery) };
+    }
     if (url === `${config.apiOrigin}/api/v1/digest`) {
       expect(options.method).toBe('GET'); expect(options.headers.Authorization).toBe('Bearer synthetic-firebase-token');
       return { ok: true, json: async () => globalThis.structuredClone(digest) };
@@ -48,7 +58,9 @@ async function fixture({ enabled = true, now = '2026-11-07T07:29:00+09:00' } = {
   async function message(message, from = sender) {
     return new Promise(resolve => module.handleDigestMessage(message, from, resolve));
   }
-  return { ...module, chrome, data, digest, sent, fetch, alarms, message, startup: () => startup(), installed: () => installed(), alarm: name => onAlarm({ name }),
+  return { ...module, chrome, data, digest, delivery, sent, fetch, alarms, message,
+    failDelivery: () => { deliveryFailure = true; }, onDelivery: fn => { onDelivery = fn; },
+    digestRequests: () => fetch.mock.calls.filter(([url]) => url.endsWith('/api/v1/digest')).length, startup: () => startup(), installed: () => installed(), alarm: name => onAlarm({ name }),
     failSend: (status = 503) => { sendStatus = status; }, loseResponse: () => { dropResponse = true; } };
 }
 const plan = { planId: '11111111-1111-4111-8111-111111111111', date: '2026-11-07', startsAt: '2026-11-07T13:00:00+09:00', status: 'active',
@@ -245,9 +257,73 @@ it('uses only cached IDs and times between refreshes, then revalidates a cancell
   expect(cache.plans).toEqual([{ planId: plan.planId, startsAt: plan.startsAt }]);
   f.digest.plans = [];
   vi.setSystemTime(new Date('2026-11-07T12:30:00+09:00')); await f.runDigest();
-  expect(f.sent).toHaveLength(0); expect(f.fetch).toHaveBeenCalledTimes(2);
+  expect(f.sent).toHaveLength(0); expect(f.digestRequests()).toBe(2);
   vi.setSystemTime(new Date('2026-11-07T12:44:00+09:00')); await f.runDigest();
-  expect(f.fetch).toHaveBeenCalledTimes(2);
+  expect(f.digestRequests()).toBe(2);
   vi.setSystemTime(new Date('2026-11-07T12:45:00+09:00')); await f.runDigest();
-  expect(f.fetch).toHaveBeenCalledTimes(3);
+  expect(f.digestRequests()).toBe(3);
+});
+
+// Issue #163: server ownership must be confirmed separately for every outgoing mail.
+it.each([
+  ['no-record', { enabled: false, deliveryOwner: 'none' }, 2],
+  ['none', { enabled: false, deliveryOwner: 'none' }, 2],
+  ['extension', { enabled: true, deliveryOwner: 'extension' }, 2],
+  ['cloud', { enabled: true, deliveryOwner: 'cloud' }, 0],
+  ['invalid', { enabled: 'true', deliveryOwner: 'extension' }, 0],
+  ['network-failure', undefined, 0],
+])('respects local consent and delivery ownership for %s', async (kind, delivery, count) => {
+  const f = await fixture({ now: '2026-11-07T12:30:00+09:00' }); f.digest.plans = [{ ...plan }];
+  if (delivery) Object.assign(f.delivery, delivery); else f.failDelivery();
+  await f.runDigest(); expect(f.sent).toHaveLength(count);
+  expect(f.data[receipts]).toEqual(count ? { date: '2026-11-07', planIds: ['morning', plan.planId] } : undefined);
+  expect(JSON.stringify(f.data)).not.toContain('synthetic-private-settings-error');
+});
+it.each(['none', 'extension', 'cloud'])('uses local consent when server delivery is disabled with owner %s', async owner => {
+  const f = await fixture({ now: '2026-11-07T10:00:00+09:00' });
+  f.delivery.enabled = false; f.delivery.deliveryOwner = owner;
+  await f.runDigest(); expect(f.sent).toHaveLength(owner === 'cloud' ? 0 : 1);
+  const stopped = await fixture({ enabled: false, now: '2026-11-07T10:00:00+09:00' });
+  stopped.delivery.enabled = false; stopped.delivery.deliveryOwner = owner;
+  await stopped.runDigest(); expect(stopped.sent).toHaveLength(0); expect(stopped.fetch).not.toHaveBeenCalled();
+});
+it.each(['missing', 'unknown', 'invalid', 'http-error'])('does not send or reserve when delivery is %s', async kind => {
+  const f = await fixture({ now: '2026-11-07T12:30:00+09:00' }); f.digest.plans = [{ ...plan }];
+  if (kind === 'missing') delete f.delivery.deliveryOwner;
+  if (kind === 'unknown') f.delivery.deliveryOwner = 'unexpected';
+  if (kind === 'invalid') f.delivery.enabled = 'true';
+  if (kind === 'http-error') {
+    const fetch = f.fetch.getMockImplementation();
+    f.fetch.mockImplementation((url, options) => url.endsWith('/delivery') ? { ok: false } : fetch(url, options));
+  }
+  await f.runDigest(); expect(f.sent).toHaveLength(0); expect(f.data[receipts]).toBeUndefined();
+  expect(JSON.stringify(f.data)).not.toContain('synthetic-private-settings-error');
+});
+it('rechecks ownership between morning and preparation instead of reusing permission', async () => {
+  const f = await fixture({ now: '2026-11-07T12:30:00+09:00' }); f.digest.plans = [{ ...plan }];
+  const fetch = f.fetch.getMockImplementation();
+  f.fetch.mockImplementation(async (url, options) => {
+    const response = await fetch(url, options);
+    if (url.includes('/messages/send')) f.delivery.deliveryOwner = 'cloud';
+    return response;
+  });
+  await f.runDigest(); expect(f.sent).toHaveLength(1); expect(f.data[receipts].planIds).toEqual(['morning']);
+});
+it.each(['off', 'logout', 'midnight'])('stops if %s happens while server ownership is being checked', async change => {
+  const f = await fixture({ now: '2026-11-07T23:59:00+09:00' });
+  f.onDelivery(async () => {
+    if (change === 'off') await f.message({ type: 'digest-setting', enabled: false });
+    if (change === 'logout') state.user = undefined;
+    if (change === 'midnight') vi.setSystemTime(new Date('2026-11-08T00:00:00+09:00'));
+  });
+  await f.runDigest(); expect(f.sent).toHaveLength(0); expect(f.data[receipts]).toBeUndefined();
+});
+it('stops two devices independently when cloud owns delivery, including after restart and the next day', async () => {
+  for (let device = 0; device < 2; device++) {
+    const f = await fixture({ now: '2026-11-07T10:00:00+09:00' }); f.delivery.deliveryOwner = 'cloud';
+    await f.runDigest(); expect(f.sent).toHaveLength(0);
+    vi.resetModules(); const restarted = await import('../src/digest-browser.js');
+    vi.setSystemTime(new Date('2026-11-08T07:30:00+09:00')); f.digest.date = '2026-11-08';
+    await restarted.runDigest(); expect(f.sent).toHaveLength(0); expect(f.data[receipts]).toBeUndefined();
+  }
 });

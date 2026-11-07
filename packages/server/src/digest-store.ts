@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { preparationAfterDeadline, preparationSlots, preparationPeriodTimes, preparationSlotOccupied, type Course, type LedgerAssignment, type LmsSystem, type PreparationPlan } from '@kadai-hisho/core';
+import { preparationAfterDeadline, preparationSlots, preparationPeriodTimes, preparationSlotOccupied, type Course, type LedgerAssignment, type LmsSystem, type NotificationSettings, type PreparationPlan } from '@kadai-hisho/core';
 import { preparationDesired, reconcileDesiredCalendarItem, type CalendarIntegration, type CalendarItem } from '@kadai-hisho/core/calendar';
 import type { Firestore } from 'firebase-admin/firestore';
 import { buildDigest, japanDay, type Digest } from './digest.js';
@@ -17,7 +17,8 @@ export class PlanActionConflict extends PlanConflict {
 }
 export class DigestUnavailable extends Error {}
 export interface DigestStore {
-  read(uid: string, email: string): Promise<Digest>;
+  delivery(uid: string): Promise<Pick<NotificationSettings, 'enabled' | 'deliveryOwner'>>;
+  read(uid: string, email: string, demoPreview?: boolean): Promise<Digest>;
   prepareDemo(uid: string): Promise<PreparationPlan>;
   act(uid: string, planId: string, action: 'done' | 'later', revision: number): Promise<PlanActionResult>;
 }
@@ -29,6 +30,21 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
     if (trusted.origin !== origin || (trusted.protocol !== 'https:' && !(trusted.protocol === 'http:' && trusted.hostname === '127.0.0.1' && process.env['FIRESTORE_EMULATOR_HOST']))) throw new Error('invalid-web-origin');
   }
   return {
+    async delivery(uid) {
+      return db.runTransaction(async tx => {
+        const profile = (await tx.get(db.doc(`demoAccounts/${uid}`))).data();
+        if (profile && !isDemoStudent(profile, uid)) throw new SessionForbidden();
+        const settings = (await tx.get(db.doc(`students/${uid}/notificationSettings/current`))).data() as NotificationSettings | undefined;
+        if (profile) throw new DigestUnavailable();
+        if (!settings) return { enabled: false, deliveryOwner: 'none' };
+        if (typeof settings.enabled !== 'boolean' ||
+          !['none', 'extension', 'cloud'].includes(settings.deliveryOwner) || settings.recipientUid !== uid ||
+          !Number.isSafeInteger(settings.version) || settings.version < 1 ||
+          settings.timeZone !== 'Asia/Tokyo' || settings.morningTime !== '07:30' ||
+          !['not-started', 'ready'].includes(settings.migrationState)) throw new DigestUnavailable();
+        return { enabled: settings.enabled, deliveryOwner: settings.deliveryOwner };
+      });
+    },
     async prepareDemo(uid) {
       const planId = demoPlanPrefix + randomUUID().slice(demoPlanPrefix.length);
       const plan = await db.runTransaction(async tx => {
@@ -41,7 +57,12 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         const current = savedPlans.docs.find(doc => doc.id.startsWith(demoPlanPrefix) && doc.data()['date'] === date && doc.data()['status'] === 'active');
         if (current) return current.data() as PreparationPlan;
         const assignments = (await tx.get(student.collection('assignments'))).docs.map(doc => doc.data() as LedgerAssignment);
-        const task = assignments.find(row => row.key.system === 'demo-lms' && row.submission !== 'submitted' && row.presenceState !== 'cancelled' && row.presenceState !== 'ended');
+        const unfinished = assignments.filter(row => row.key.system === 'demo-lms' && row.submission !== 'submitted' && row.presenceState !== 'cancelled' && row.presenceState !== 'ended');
+        const dueAt = (row: LedgerAssignment) => {
+          const deadline = row.officialDeadline?.deadline;
+          return deadline?.kind === 'datetime' ? Date.parse(deadline.dueAt) : Infinity;
+        };
+        const task = unfinished.sort((a, b) => dueAt(a) - dueAt(b) || a.key.sourceId.localeCompare(b.key.sourceId))[0];
         if (!task) throw new PlanConflict();
         const courses = (await tx.get(student.collection('courses'))).docs.map(doc => doc.data() as Course).filter(course => course.currentTerm !== false);
         const periods = preparationPeriodTimes['demo-lms']!;
@@ -69,13 +90,15 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
       });
       await syncDemo(uid); return plan;
     },
-    async read(uid, email) {
+    async read(uid, email, demoPreview = false) {
       if (!origin) throw new DigestUnavailable();
       const webOrigin = origin;
       return db.runTransaction(async tx => {
         const profile = (await tx.get(db.doc(`demoAccounts/${uid}`))).data();
         if (profile && !isDemoStudent(profile, uid)) throw new SessionForbidden();
         const student = db.collection('students').doc(uid);
+        const settings = (await tx.get(student.collection('notificationSettings').doc('current'))).data();
+        if (demoPreview ? !isDemoStudent(profile, uid) : settings?.['deliveryOwner'] === 'cloud') throw new SessionForbidden();
         const plans = await tx.get(student.collection('plans'));
         const assignments = await tx.get(student.collection('assignments'));
         const courses = await tx.get(student.collection('courses'));

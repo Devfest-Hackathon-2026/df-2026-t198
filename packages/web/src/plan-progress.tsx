@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useOperationMessage } from './operation-messages';
 import type { User } from 'firebase/auth';
 import type { PreparationPlan } from '../../core/src/types';
+import type { StudentData } from './student-data';
+import { formatDeadline } from './session-model';
+import { LmsSourceLink } from './lms-link';
 
 export interface PlanActionResponse {
   outcome: 'done' | 'moved' | 'no-slot' | 'unchanged';
@@ -38,24 +41,68 @@ export async function performPlanAction(user: User, id: string, action: 'done' |
   }
   return await response.json() as PlanActionResponse;
 }
-export function PlanLinkAction({ user }: { user: User }) {
-  const query = new URLSearchParams(window.location.search);
-  const id = query.get('id'); const action = query.get('do');
-  const rev = query.get('rev') ?? '';
+export function NextSubmission({ plan, assignments, courses }: Pick<StudentData, 'assignments' | 'courses'> & { plan?: PreparationPlan | undefined }) {
+  if (plan?.status !== 'done') return null;
+  const task = assignments.find(row => row.key.system === plan.assignment.system && row.key.sourceId === plan.assignment.sourceId);
+  if (!task || task.submission === 'submitted' || task.presenceState === 'cancelled' || task.presenceState === 'ended') return null;
+  const courseName = courses.find(course => course.system === task.key.system && course.courseId === task.latest.courseId)?.name ?? '授業';
+  return <section aria-label="次は提出"><h2>次は提出</h2><h3>{courseName}：{task.latest.title}</h3>
+    <p>締切 {task.officialDeadline ? formatDeadline(task.officialDeadline.deadline) : 'LMSで確かめてください'}</p>
+    <LmsSourceLink item={task} courseName={courseName} label="LMSを開く" />
+    <p>提出済みかどうかは、次にLMSを開いたときに確かめます。提出済みと分かると「次は提出」から消えます。</p></section>;
+}
+type PlanLinkData = Pick<StudentData, 'assignments' | 'courses' | 'plans'>;
+export function PlanLinkAction({ user, data, link }: { user: User; data: PlanLinkData; link?: string }) {
+  const query = new URLSearchParams(link ? new URL(link, window.location.href).search : window.location.search);
+  const id = query.get('id'); const action = query.get('do'); const rev = query.get('rev') ?? '';
+  if (!id || !/^[a-f0-9-]{36}$/.test(id) || (action !== 'done' && action !== 'later') ||
+    !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) {
+    return <section className="notice" aria-label="準備の予定の操作"><p role="status">準備の予定のリンクを確かめてください。</p><a href="/student">時間割を見る</a></section>;
+  }
+  return <PlanConfirmation key={`${user.uid}-${id}-${action}-${rev}`} user={user} data={data} id={id} action={action} revision={Number(rev)} />;
+}
+function PlanConfirmation({ user, data, id, action, revision }: {
+  user: User; data: PlanLinkData; id: string; action: 'done' | 'later'; revision: number;
+}) {
   const [message, setMessage] = useOperationMessage();
-  const [retry, setRetry] = useState(0); const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    if (!id || !/^[a-f0-9-]{36}$/.test(id) || (action !== 'done' && action !== 'later') ||
-      !/^[1-9]\d*$/.test(rev) || !Number.isSafeInteger(Number(rev))) { setMessage('準備の予定のリンクを確かめてください。'); return; }
-    let active = true; setFailed(false); setMessage('準備の予定を確かめています…');
-    void performPlanAction(user, id, action, Number(rev)).then(result => { if (active) setMessage(actionMessage(result.outcome, result.plan, result.demo)); })
-      .catch((error: unknown) => { if (active) {
-        setMessage(planActionErrorMessage(error, 'この予定を変更できませんでした。本人のアカウントか、接続と予定の状態を確かめてください。'));
-        setFailed(!(error instanceof Error && error.message === 'plan-conflict'));
-      } });
-    return () => { active = false; };
-  }, [user, id, action, rev, retry]);
-  if (!message) return null;
-  return <section className="notice" aria-label="準備の予定の操作"><p role="status">{message}</p>
-    {failed && <button onClick={() => setRetry(retry + 1)}>もう一度試す</button>}<a href="/student">時間割を見る</a></section>;
+  const [state, setState] = useState<'idle' | 'busy' | 'retry' | 'finished'>('idle');
+  const [responsePlan, setResponsePlan] = useState<PreparationPlan>();
+  const inFlight = useRef(false); const active = useRef(true);
+  useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
+  const livePlan = data.plans.find(plan => plan.planId === id);
+  const plan = responsePlan && (!livePlan || responsePlan.revision >= livePlan.revision) ? responsePlan : livePlan;
+  const task = data.assignments.find(row => row.key.system === plan?.assignment.system && row.key.sourceId === plan?.assignment.sourceId);
+  const course = data.courses.find(row => row.system === task?.key.system && row.courseId === task?.latest.courseId);
+  const stale = plan && plan.revision !== revision;
+  const canConfirm = plan?.status === 'active' && !stale && state === 'idle';
+  async function confirm() {
+    if (inFlight.current || (!canConfirm && state !== 'retry')) return;
+    inFlight.current = true; setState('busy'); setMessage('準備の記録を確認しています…');
+    try {
+      // A retry must use the original link, even if the live plan has moved after a lost response.
+      const result = await performPlanAction(user, id, action, revision);
+      if (active.current) {
+        setResponsePlan(result.plan); setState(result.outcome === 'no-slot' ? 'retry' : 'finished');
+        setMessage(actionMessage(result.outcome, result.plan, result.demo));
+      }
+    } catch (error) {
+      if (active.current) {
+        if (error instanceof PlanActionError && error.plan) setResponsePlan(error.plan);
+        setState(error instanceof Error && error.message === 'plan-conflict' ? 'finished' : 'retry');
+        setMessage(planActionErrorMessage(error, '準備の記録を確認できませんでした。接続と本人のアカウントを確かめてから、同じ操作をもう一度試してください。'));
+      }
+    } finally { inFlight.current = false; }
+  }
+  return <section className="notice" aria-label="準備の予定の操作"><h2>準備の記録を確認</h2>
+    {plan ? <><h3>{course ? `${course.name}：` : ''}{task?.latest.title ?? plan.title}</h3>
+      <p>準備の日時：{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}（日本時間）</p>
+      <p role={message ? undefined : 'status'}>{state === 'idle' ? currentPlanMessage(plan) : `今の状態：${plan.status === 'cancelled' ? '予定を外した' : planProgress(plan) || 'まだ'}`}</p>
+      {stale && state === 'idle' && <p>このリンクが作られた後に予定が変わっています。変更していません。時間割で確かめてください。</p>}</> :
+      <p role="status">本人の準備の予定を見つけられませんでした。本人のアカウントと時間割を確かめてください。</p>}
+    {canConfirm && <p>「{action === 'done' ? '終わった' : '後回し'}」を押すと記録します。LMSへの提出は別に行ってください。</p>}
+    {(canConfirm || state === 'busy' || state === 'retry') && <button disabled={state === 'busy'} onClick={() => { void confirm(); }}>
+      {state === 'busy' ? '確認中…' : state === 'retry' ? 'もう一度試す' : action === 'done' ? '終わった' : '後回し'}</button>}
+    {message && <p role="status">{message}</p>}
+    <NextSubmission plan={plan} assignments={data.assignments} courses={data.courses} />
+    <a href="/student">時間割を見る</a></section>;
 }

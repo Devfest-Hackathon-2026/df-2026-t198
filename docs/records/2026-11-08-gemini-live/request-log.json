@@ -1,0 +1,41 @@
+[
+  {
+    "httpRequest": {
+      "latency": "7.516395173s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "revision_name": "kadai-hisho-api-00018-vfq"
+      }
+    },
+    "timestamp": "2026-11-07T17:49:10.597570Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "2.966881097s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "revision_name": "kadai-hisho-api-00018-vfq"
+      }
+    },
+    "timestamp": "2026-11-07T17:50:44.788387Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.331963061s",
+      "requestMethod": "POST",
+      "status": 200
+    },
+    "resource": {
+      "labels": {
+        "revision_name": "kadai-hisho-api-00018-vfq"
+      }
+    },
+    "timestamp": "2026-11-07T17:50:48.759110Z"
+  }
+]

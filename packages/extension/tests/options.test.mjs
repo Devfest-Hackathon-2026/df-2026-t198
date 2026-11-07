@@ -20,7 +20,7 @@ it('renders missing settings, success and duplicate results, and hides transport
   const fullUid = 'abcdefgh-private-uid';
   const response = {
     steps: [{ stage: 'テストの予定', status: 'ok', code: 'created', message: 'テストの予定を1つ作りました。' }],
-    uidPrefix: fullUid.slice(0, 8), calendarName: '課題の秘書・接続テスト', eventId: '0123456789abcdef',
+    uidPrefix: fullUid.slice(0, 8), calendarName: 'ToDoku・接続テスト', eventId: '0123456789abcdef',
   };
   const sendMessage = vi.fn()
     .mockResolvedValueOnce({ steps: [{ stage: '設定', status: 'error', message: '設定が足りません：oauthClientId、firebase.apiKey。' }] })

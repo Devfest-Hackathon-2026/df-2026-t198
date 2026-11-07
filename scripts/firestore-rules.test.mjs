@@ -13,7 +13,8 @@ import {
 const student = 'student-a';
 const sharedCollections = ['courses', 'assignments', 'changes', 'fetchStates', 'plans', 'manualAssignments'];
 const sharedPaths = [...sharedCollections.map((name) => `${name}/sample`), 'sessionContext/current'];
-const privatePaths = ['calendarItems/sample', 'integrations/calendar', 'observationReceipts/sample'];
+const privatePaths = ['calendarItems/sample', 'integrations/calendar', 'observationReceipts/sample',
+  'notificationSettings/current', 'notificationStatus/current'];
 const roles = [
   { name: 'owner', uid: student, shared: true, private: true },
   { name: 'allowed supporter', uid: 'allowed-supporter', shared: true, private: false },
@@ -34,6 +35,10 @@ const deniedPaths = [
   `students/${student}/planActionReceipts/sample`,
   `students/${student}/sessionContext/other`,
   `students/${student}/integrations/other`,
+  `students/${student}/notificationSettings/other`,
+  `students/${student}/notificationStatus/other`,
+  `students/${student}/notificationDeliveries/sample`,
+  'notificationCredentials/student-a',
   ...[...sharedPaths, ...privatePaths, 'supporters/allowed-supporter']
     .map((path) => `students/${student}/${path}/nested/sample`),
   'invites/sample-hash',
@@ -118,6 +123,12 @@ for (const role of roles) {
     }
     await expectRead(getDocsFromServer(query(collection(db, studentPath('integrations')),
       where(documentId(), '==', 'calendar'))), role.private);
+    for (const name of ['notificationSettings', 'notificationStatus']) {
+      await expectRead(getDocsFromServer(query(collection(db, studentPath(name)),
+        where(documentId(), '==', 'current'))), role.private);
+      await assertFails(getDocsFromServer(collectionGroup(db, name)));
+    }
+    await assertFails(getDocsFromServer(collection(db, studentPath('notificationDeliveries'))));
   });
 
   test(`${role.name}: grants are visible only to the owner and the named supporter`, async () => {

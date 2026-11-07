@@ -20,3 +20,6 @@
 !packages/server/src/*.ts
 !packages/server/src/announcements/
 !packages/server/src/announcements/*.ts
+!lms-definitions/
+!lms-definitions/coursepower/
+!lms-definitions/coursepower/navigation.json

@@ -58,6 +58,15 @@ async function requestDigest(user: Identity, date: string) {
   if (!response.ok) throw new Error('digest-unavailable');
   return parseDigest(await response.json(), date);
 }
+async function extensionDelivery(user: Identity): Promise<boolean> {
+  const response = await fetch(`${probeConfig.apiOrigin}/api/v1/digest/delivery`, { method: 'GET',
+    headers: { Authorization: `Bearer ${user.token}` }, credentials: 'omit', redirect: 'error', cache: 'no-store',
+    referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15_000) });
+  if (!response.ok) throw new Error('digest-unavailable');
+  const setting = await response.json() as { enabled?: unknown; deliveryOwner?: unknown } | null;
+  return typeof setting?.enabled === 'boolean' &&
+    (setting.deliveryOwner === 'none' || setting.deliveryOwner === 'extension');
+}
 async function updateProblem(user: Identity, version: number, problem?: string) {
   const saved = await preference();
   if (!matches(saved, user) || version !== preferenceVersion) return;
@@ -118,6 +127,7 @@ async function tick() {
   const secrets = [user.token, token, typeof session['ynuSessionId'] === 'string' ? session['ynuSessionId'] : ''];
   for (const item of due) {
     try {
+      if (!await extensionDelivery(await identity())) return;
       // Complete asynchronous identity/consent checks before reserving a send.
       const current = await identity();
       const consent = await preference();

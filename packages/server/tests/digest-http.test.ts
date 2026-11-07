@@ -4,7 +4,7 @@ import { createHttpServer, type ObservationDependencies } from '../src/http.js';
 const servers: ReturnType<typeof createHttpServer>[] = [];
 afterEach(async () => { await Promise.all(servers.splice(0).map(server => new Promise<void>(resolve => server.close(() => resolve())))); });
 async function start() {
-  const digest = { read: vi.fn(async () => ({ empty: true })), act: vi.fn(async () => ({ outcome: 'done' })) };
+  const digest = { read: vi.fn(async () => ({ empty: true })), delivery: vi.fn(async () => ({ enabled: false, deliveryOwner: 'none' })), act: vi.fn(async () => ({ outcome: 'done' })) };
   const deps = { verifyToken: async () => 'student-a', verifyDigestToken: async (token: string) => {
     if (token === 'invalid') throw new Error('never-echo-this');
     return { uid: 'student-a', email: token === 'no-email' ? undefined : 'student@example.invalid' };
@@ -40,4 +40,19 @@ describe('self-only digest and plan actions', () => {
     }
     expect(digest.act).toHaveBeenCalledTimes(1);
   });
+});
+
+it('authenticates delivery checks and demo previews and ignores a requested owner', async () => {
+  const { base, digest } = await start();
+  for (const route of ['delivery', 'demo-preview']) {
+    for (const token of [undefined, 'invalid']) {
+      const response = await fetch(`${base}/api/v1/digest/${route}`, token ? { headers: { Authorization: `Bearer ${token}` } } : {});
+      expect(response.status).toBe(401);
+    }
+    const response = await fetch(`${base}/api/v1/digest/${route}?uid=other`, { headers: { Authorization: 'Bearer valid' } });
+    expect(response.status).toBe(200); expect(response.headers.get('cache-control')).toBe('no-store');
+  }
+  expect(digest.delivery).toHaveBeenCalledExactlyOnceWith('student-a');
+  expect(digest.read).toHaveBeenCalledExactlyOnceWith('student-a', 'student@example.invalid', true);
+  expect(digest.act).not.toHaveBeenCalled();
 });

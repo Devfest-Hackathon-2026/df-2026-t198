@@ -23,6 +23,12 @@ export type {
   PreparationPlanInput,
   Submission,
   SessionContext,
+  NotificationSettings,
+  NotificationStatus,
+  NotificationTarget,
+  NotificationDelivery,
+  NotificationDeliveryState,
+  NotificationErrorCode,
 } from './types.js';
 export { applyObservation } from './ledger.js';
 export { READER_VERSION, validateDefinition } from './definition.js';
@@ -36,3 +42,4 @@ export { manualDeadline } from './manual-assignment.js';
 export { preparationSlots, preparationPeriodTimes, preparationSlotOccupied, preparationAfterDeadline } from './preparation.js';
 export { isSafeMailText } from './mail-safety.js';
 export { assignmentDeadline } from './assignment-deadline.js';
+export { assignmentLmsLink } from './lms-link.js';

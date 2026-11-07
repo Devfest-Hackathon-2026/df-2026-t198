@@ -13,7 +13,7 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     const extensionDir = join(dir, 'packages/extension');
     await mkdir(extensionDir, { recursive: true });
     // Never read the user's real config or key. Build an isolated copy with dummy values.
-    for (const path of ['src', 'package.json', 'build.mjs', 'build-config.mjs', 'bundle-audit.mjs', 'manifest.json', 'options.html', 'options.css', 'popup.html', 'popup.css']) {
+    for (const path of ['icons', 'src', 'package.json', 'build.mjs', 'build-config.mjs', 'bundle-audit.mjs', 'manifest.json', 'options.html', 'options.css', 'popup.html', 'popup.css']) {
       await cp(new URL(`../${path}`, import.meta.url), join(extensionDir, path), { recursive: true });
     }
     await cp(new URL('../../core/src', import.meta.url), join(dir, 'packages/core/src'), { recursive: true });
@@ -31,7 +31,21 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     await promisify(execFile)(process.execPath, ['build.mjs'], { cwd: extensionDir });
     const manifest = JSON.parse(await readFile(join(extensionDir, 'dist/manifest.json'), 'utf8'));
     const original = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
-    expect(manifest.action).toEqual({ default_popup: 'popup.html' });
+    expect(manifest.name).toBe('ToDoku');
+    expect(manifest.description).toContain('ToDoku');
+    const popup = await readFile(join(extensionDir, 'dist/popup.html'), 'utf8');
+    expect(popup).toContain('<title>ToDoku</title>');
+    expect(popup).toContain('<h1>ToDoku</h1>');
+    const icons = { 16: 'icons/todoku-icon-16.png', 48: 'icons/todoku-icon-48.png', 128: 'icons/todoku-icon-128.png' };
+    expect(manifest.icons).toEqual(icons);
+    expect(manifest.action).toEqual({ default_popup: 'popup.html', default_icon: icons });
+    for (const [size, path] of Object.entries(icons)) {
+      const built = await readFile(join(extensionDir, 'dist', path));
+      expect(built).toEqual(await readFile(new URL(`../${path}`, import.meta.url)));
+      expect(built.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+      expect(built.readUInt32BE(16)).toBe(Number(size));
+      expect(built.readUInt32BE(20)).toBe(Number(size));
+    }
     expect(await readFile(join(extensionDir, 'dist/popup.html'), 'utf8')).toContain('src="popup.js"');
     expect(await readFile(join(extensionDir, 'dist/popup.js'), 'utf8')).toContain('chrome.tabs.create');
     expect(await readFile(join(extensionDir, 'dist/popup.css'), 'utf8')).toContain('button');
@@ -45,6 +59,8 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     const source = await readFile(join(extensionDir, 'dist/service-worker.js'), 'utf8');
     expect(source).toContain(config.firebase.apiKey);
     const html = await readFile(join(extensionDir, 'dist/options.html'), 'utf8');
+    expect(html).toContain('<title>ToDokuの設定</title>');
+    expect(html).toContain('<h1>ToDokuの設定</h1>');
     expect(html).toContain('src="options.js"');
     expect(html).not.toMatch(/<script[^>]+src=['"]https?:/);
     await expect(readFile(join(extensionDir, 'dist/config.local.json'))).rejects.toMatchObject({ code: 'ENOENT' });

@@ -1,6 +1,7 @@
 import { manualAssignmentActions, ManualAssignments, ManualAssignmentForm, ManualAssignmentRow, manualAuthor, type ManualAssignmentActions } from './manual-assignments';
 import { deadlineEntries, entryBelongsTo, entryDeadline, entryDisplayDeadline, entryId, entryTitle, deadlineValue, manualAssignmentEnded } from './deadline-entries';
 import { PlanLinkAction } from './plan-progress';
+import { LmsSourceLink } from './lms-link';
 import { fetchStatus } from './fetch-status';
 import { missingDeadlineText, reviewReasonText } from './review-reason';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -12,6 +13,7 @@ import { DemoLogin } from './demo-login';
 import { OperationMessages } from './operation-messages';
 import { firebase } from './firebase';
 import { watchAccount, type StudentCourse, type StudentData, type StudentState } from './student-data';
+import { NotificationSettingsPanel } from './notification-settings';
 
 export const courseKey = (course: StudentCourse) => JSON.stringify([course.system, course.courseId]);
 const belongsTo = (item: LedgerAssignment, course: StudentCourse) =>
@@ -42,7 +44,7 @@ function Review({ item }: { item: LedgerAssignment }) {
       : reviewReasonText(reason)}</p>)}{item.presenceState === 'cancellation-candidate' &&
       <p className="review"><span className="badge">要確認</span> LMSの一覧で見つかりませんでした。LMSで確かめてください。</p>}</>;
 }
-function AssignmentRow({ item }: { item: LedgerAssignment }) {
+function AssignmentRow({ item, courseName }: { item: LedgerAssignment; courseName: string }) {
   return <li className="assignment">
     <h3>{item.latest.title}</h3>
     <p><ChangedDeadline value={deadlineText(displayDeadlineOf(item))} /> {item.submission === 'submitted' && <span className="badge done">出せました</span>}
@@ -51,7 +53,7 @@ function AssignmentRow({ item }: { item: LedgerAssignment }) {
     {item.presenceState !== 'ended' && <Review item={item} />}
     <details><summary>LMSの課題ページに書いてあったこと</summary><p>{deadlineOf(item)?.dueText ?? item.latest.deadline.dueText}</p>
       <p className="muted">{new Date(item.officialDeadline?.fetchedAt ?? item.lastSeenAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} 時点</p></details>
-    <a href={item.latest.url} target="_blank" rel="noreferrer">LMSで見る ›</a>
+    <LmsSourceLink item={item} courseName={courseName} />
   </li>;
 }
 export function StudentView({ data, now = Date.now(), calendar = false, actions, manualActions, planLink }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode }) {
@@ -135,12 +137,12 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
         {!!course.slots.length && <p>{course.slots.map(slot => `${'月火水木金土日'[slot.weekday - 1]}曜${slot.period}限`).join('・')}</p>}
         {course.url && <a href={course.url} target="_blank" rel="noreferrer">LMSで授業を開く</a>}
         <ul>{courseEntries(course).map(entry => entry.kind === 'lms'
-          ? <AssignmentRow key={entryId(entry)} item={entry.row} />
+          ? <AssignmentRow key={entryId(entry)} item={entry.row} courseName={course.name} />
           : <ManualAssignmentRow key={entryId(entry)} row={entry.row} actions={manualActions} own />)}</ul>
         {manualActions && <details><summary>この授業の課題を手で入れる</summary>
           <ManualAssignmentForm key={courseKey(course)} courses={data.courses} course={course} actions={manualActions} /></details>}
         {(!!finished.length || !!finishedManual.length) && <details className="finished-assignments"><summary>終了した課題</summary>
-          <ul>{finished.map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} />)}
+          <ul>{finished.map(item => <AssignmentRow key={JSON.stringify(item.key)} item={item} courseName={course.name} />)}
             {finishedManual.map(row => <ManualAssignmentRow key={row.manualAssignmentId} row={row} actions={manualActions} own />)}</ul></details>}
         {!courseItems.length && !courseEntries(course).length && !finishedManual.length && <p>この授業の課題はまだありません。</p>}
       </aside>}
@@ -170,10 +172,11 @@ export function StudentPage() {
       <button className="plain-button" disabled={authBusy} onClick={() => accountAction(client.login)}>{authBusy ? 'ログイン中…' : 'Googleでログイン'}</button></> :
       <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
         {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
-          planLink={window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} />}
+          planLink={window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} data={state} />}
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
-          {client.auth.currentUser && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</> : <p role="status">{state.status === 'error'
+          {client.auth.currentUser && <><NotificationSettingsPanel key={client.auth.currentUser.uid} user={client.auth.currentUser} />
+            <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a></>}</> : <p role="status">{state.status === 'error'
           ? '課題を開けませんでした。接続を確かめて、画面を開き直してください。' : '課題を開いています…'}</p>}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;

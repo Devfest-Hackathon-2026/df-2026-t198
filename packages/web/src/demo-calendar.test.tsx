@@ -63,9 +63,9 @@ describe('体験用カレンダーの保存済み予定', () => {
   it('準備の予定は準備の表示と課題名を分ける', () => {
     const base = integration.mockEvents!.abcde!;
     const html = render({ ...integration, mockEvents: {
-      preparation: { ...base, event: { ...base.event, summary: '準備：架空の観察ノート' } },
+      preparation: { ...base, event: { ...base.event, summary: '準備：書き方を書くレポート' } },
     } });
-    expect(cell(html, '2026-11-12')).toContain('<strong>架空の観察ノート</strong><span class="muted">準備</span>');
+    expect(cell(html, '2026-11-12')).toContain('<strong>書き方を書くレポート</strong><span class="muted">準備</span>');
   });
   it('7日の外の予定を畳み、予定が無ければ空の案内を出さない', () => {
     const html = renderToStaticMarkup(<DemoCalendarView integration={integration} pending={false} now={Date.parse('2026-11-13T00:00:00Z')} />);

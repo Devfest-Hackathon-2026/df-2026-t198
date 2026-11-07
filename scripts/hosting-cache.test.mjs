@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 import { URL } from 'node:url';
 
@@ -33,4 +34,13 @@ test('fingerprinted JavaScript and CSS remain cacheable for a year', async () =>
     assert.match(response.headers.get('cache-control'), /(?:^|,\s*)immutable(?:,|$)/);
     assert.doesNotMatch(response.headers.get('content-type'), /text\/html/);
   }
+});
+
+test('built HTML links to the bundled ToDoku SVG favicon', async () => {
+  const html = await (await fetch(new URL('/', origin))).text();
+  assert.match(html, /<link rel="icon" type="image\/svg\+xml" href="\/favicon.svg"\s*\/?>/);
+  const response = await fetch(new URL('/favicon.svg', origin));
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type'), /image\/svg\+xml/);
+  assert.equal(await response.text(), await readFile(new URL('../packages/web/public/favicon.svg', import.meta.url), 'utf8'));
 });
