@@ -8,15 +8,24 @@ import { DemoPages, demoDueText } from './demo-pages';
 import { readDemoAnnouncements, readDemoObservation } from './demo-reader';
 import './demo.css';
 import { OperationMessages, useOperationMessage } from './operation-messages';
+import { PublicDemoEntry } from './public-demo-entry';
 
 class DemoRequestError extends Error {
-  constructor(readonly status: number) { super('demo-request-failed'); }
+  constructor(readonly status: number, readonly code = 'demo-request-failed') { super(code); }
 }
 async function post(user: User, path: string, body: unknown) {
   const response = await fetch(path, { method: 'POST', cache: 'no-store', headers: {
     Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json',
   }, body: JSON.stringify(body) });
-  if (!response.ok) throw new DemoRequestError(response.status);
+  if (!response.ok) {
+    if (response.status === 429) {
+      const body: unknown = await response.json().catch(() => null);
+      if (body && typeof body === 'object' && 'error' in body && body.error === 'public-demo-limit') {
+        throw new DemoRequestError(429, 'public-demo-limit');
+      }
+    }
+    throw new DemoRequestError(response.status);
+  }
   return response;
 }
 export function DemoPage() {
@@ -51,11 +60,11 @@ export function DemoPage() {
     <p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>
     {user === undefined ? <p role="status">ログインを確かめています…</p> : user ? <>
       <DemoWorkspace key={user.uid} user={user} />
-    </> : <form className="session-login" onSubmit={event => { void login(event); }}>
+    </> : <><PublicDemoEntry /><form className="session-login" onSubmit={event => { void login(event); }}>
       <label>メールアドレス<input name="email" type="email" autoComplete="username" required /></label>
       <label>パスワード<input name="password" type="password" autoComplete="current-password" required /></label>
       <button disabled={loginBusy}>{loginBusy ? 'ログイン中…' : 'ログイン'}</button>
-    </form>}
+    </form></>}
     {error && <p role="alert">{error}</p>}
   </div>;
 }
@@ -141,6 +150,8 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       const response = await post(user, '/api/v1/announcements', notice);
       return (await response.json() as { status: string }).status;
     }));
+    if (results.some(result => result.status === 'rejected' && result.reason instanceof DemoRequestError &&
+      result.reason.code === 'public-demo-limit')) return '今日の共用の体験では、お知らせの読み取りを使い切りました';
     if (results.some(result => result.status === 'rejected' ||
       !['proposal', 'duplicate', 'abstained'].includes(result.value))) {
       return '課題を確認しました。お知らせの確認は終わりませんでした。LMSのお知らせと課題ページの締切を見比べてください。';

@@ -6,7 +6,7 @@ Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](
 
 Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用の型は [`demo.ts`](../packages/core/src/demo.ts)。
 
-- `demoAccounts/{uid}`：`role`（`student` / `supporter`）と、対応する学生の`studentId`。体験学生には任意の `displayName`（架空の名前）があり、seedとリセットは `initialDemo` の同じ名前を使う。学生は`studentId === uid`。サーバー管理で、本人だけ読み取り可。
+- `demoAccounts/{uid}`：`role`（`student` / `supporter`）と、対応する学生の`studentId`。体験学生には任意の `displayName`（架空の名前）があり、seedとリセットは `initialDemo` の同じ名前を使う。学生は`studentId === uid`。サーバー管理で、本人だけ読み取り可。任意の `public: true` は誰でも入れる共用の組（`public-1`）だけの目印。学生・支援担当の両方に付け、既存の `trial-*` には付けない。
 - `students/{uid}/demo/current`：`courses`配列。授業は`courseId`・`name`・`teacher`・`weekday`（月1〜日7）・`period`・`assignments`。課題は`sourceId`・`title`・`dueAt`（UTC、ミリ秒付きのISO日時）・`submission`。本人だけ読み取り可、支援担当にも直接見せない。台帳は従来の共有許可で見せる。
 - `POST /api/v1/demo/extend`：Firebase ID tokenで認証し、`sourceId`と`expectedDueAt`だけを受け取る（上限2 KiB）。本人の学生プロフィールと一致する課題を確認し、期待した締切と等しい場合だけ1日延長。プロフィール・データの読み取りと更新を同じトランザクションで行う。成功は200で`{ sourceId, dueAt }`、不一致409、体験学生でない／課題がない場合403。未認証401、不正な本文400、サイズ超過413、JSON以外415、内部エラー500。すべて`Cache-Control: no-store`、エラーは固定コードのみ。
 - `POST /api/v1/demo/announce`（Issue #84）：延長APIと同じ認証・本文・上限・エラー形式。本人の体験学生の未提出課題と期待する締切を同じトランザクションで確認し、サーバーが架空の締切延長文を作る。日時は操作時刻+4日と課題の締切+1日の遅い側の日本時間17時。成功は200で `{ announcementId }`。課題の締切と台帳は変えない。
@@ -16,6 +16,8 @@ Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用
 - やり直すと `announcements` も空に戻る。解析の受領記録と全体の費用予約は消さない。新しい投稿IDにより、やり直し後も新しい架空のお知らせを処理できる。同じ体験アカウントでの並行操作は従来どおり同じ体験を共有する。
 - 体験UIDの観測は`system: demo-lms`・`definitionId: demo-lms`だけを認める。支援担当や不正なプロフィールも403。プロフィール判定を台帳の保存トランザクション内で行い、再送でも判定する。プロフィールのない既存の利用者の観測契約は変えない。
 - カレンダーAPI（`GET/POST /api/v1/calendar-sync`）は`demoAccounts/{uid}`のある利用者を403で拒否する。接続・同期対象の取得・結果報告の各トランザクションの先頭で確認する。画面のボタンを隠すだけにはしない。
+
+共用の組のお知らせ解析（Issue #178）：`POST /api/v1/demo/announce` は架空のお知らせを出すだけで、Geminiを呼ばない。その後の「LMSを開く」による `POST /api/v1/announcements` では、サーバーのプロフィールが `public: true` なら共用専用の `publicAnnouncementUsage/{日本時間の日付}`、それ以外なら既存の `announcementUsage/{日本時間の日付}` を使う。枠の上限と予約・精算は下の「お知らせの受信と要確認」の契約を参照。回数制限は置かず、共用の枠を使い切っても審査用の `trial-*` と通常の利用者の枠を消費・停止しない。共用の予約が上限を超えると429と `{ error: 'public-demo-limit' }`（no-store）を返し、画面には「今日の共用の体験では、お知らせの読み取りを使い切りました」と出す。この拒否ではGeminiを呼ばず受領記録を取り消し、翌日に同じお知らせを再び解析できる。同じお知らせの処理済みの版の再送・不正な入力は予約しない。延長・やり直しは制限せず、やり直しで予算の文書を消さない。両方の予算の文書はクライアントから読み書きできない。
 
 体験用の文書へのクライアント書き込みは禁止。先生役の延長APIは体験データだけを変え、描いたDOMのouterHTMLを既存のreaderで読んだ観測が届くまで台帳は変わらない。ブラウザ内の送信再試行は通信失敗と5xxに限り、同じ観測IDを使う。4xxでは送信待ちを破棄してアカウントの設定確認を促す。延長は応答の締切が購読で画面に届くまで次の読み取りを止める。再読み込み後の送信待ちは保持しない。初期設定と操作は [demo.md](demo.md) を参照。
 
@@ -177,7 +179,7 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 
 200の応答も `{ status, changed }` だけ。statusは `proposal`・`abstained`・`invalid-output`・`invalid-input`・`model-error`・`duplicate`・`budget-limit`。候補なし・50件超など解析の上限外は `invalid-input` でGeminiを呼ばない。未認証401、受信書式不正400、サイズ超過413、JSON以外415、保存失敗500。すべて `Cache-Control: no-store`、エラーは固定コードのみ。モデル失敗・待機は別リクエストの観測処理を止めない。
 
-APIのGemini費用はサーバー専用の `announcementUsage/{日本時間の日付}` で全インスタンス共通に予約・精算する。初回M3測定19,410トークンの3倍以内、呼び出し1回・再試行なし。既存の入力16,000バイト相当と出力4,096トークンの上限も適用する。1日推定3,000円を超える予約を拒否し、失敗・usage不明では予約を残す。単価と換算は `announcements/budget.ts`。ローカルM3評価の別予算や他のAPI利用を合算した実請求額ではないため、それらを並行して回す運用にはしない。
+APIのGemini利用はサーバー専用の `announcementUsage/{日本時間の日付}`（審査用・通常の利用者、1日推定10,000円）と `publicAnnouncementUsage/{日本時間の日付}`（`public: true` の共用の組、別枠で1日推定3,000円）で、全インスタンス共通に予約・精算する。どちらも費用のためではなく、暴走などの事故を止める上限（[loop.md §8](loop.md#8-geminiの費用)、Issue #178のSoraの追加決定）。初回M3測定19,410トークンの3倍以内、呼び出し1回・再試行なし。既存の入力16,000バイト相当と出力4,096トークンの上限も適用する。送信前のトランザクションでその枠の上限を超える予約を拒否し、応答のusageで同じ日付・枠に精算する。失敗・usage不明では予約を残す。日本時間の日付が変われば新しい文書を使う。単価と換算は `announcements/budget.ts`。ローカルM3評価の別予算や他のAPI利用を合算した実請求額ではないため、それらを並行して回す運用にはしない。
 
 検証は `pnpm test:announcements:emulator`（Auth・Firestore、架空データと代替モデルだけ）。実物のGeminiへの新たな送信・保持条件の確認・デプロイはこの検証に含まない。模擬LMS画面を通す試験は `pnpm test:demo-announcements:emulator`（Playwrightの指定は [demo.md](demo.md)）。
 

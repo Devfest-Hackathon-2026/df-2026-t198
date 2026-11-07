@@ -4,6 +4,7 @@ export interface DemoAccount {
   role: 'student' | 'supporter';
   studentId: string;
   displayName?: string;
+  public?: boolean;
 }
 export interface DemoAssignment {
   sourceId: string;
