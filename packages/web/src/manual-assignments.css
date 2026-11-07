@@ -1,10 +1,10 @@
-.manual-assignment-form { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; padding: 1rem; margin: 1rem 0; border: 1px solid #c5cfc7; border-radius: .6rem; }
+.manual-assignment-form { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; padding: 1rem; margin: 1rem 0; border: 1px solid var(--line); border-radius: 0; }
 .manual-assignment-form label { display: grid; gap: .3rem; min-width: 0; max-width: 100%; }
 .manual-assignment-form input, .manual-assignment-form select { font: inherit; padding: .5rem; min-width: 0; max-width: 100%; box-sizing: border-box; }
 .manual-assignment-form p { flex-basis: 100%; }
 .manual-assignments { margin: 1.5rem 0; }
 .manual-assignments ul { list-style: none; padding: 0; }
-.manual-assignment { border-left: 3px solid #54765e; padding: .7rem 1rem; margin: .6rem 0; background: #f2f5ef; overflow-wrap: anywhere; }
+.manual-assignment { border-left: 3px solid var(--ink); padding: .7rem 1rem; margin: .6rem 0; background: var(--paper); overflow-wrap: anywhere; }
 .manual-assignment h3, .manual-assignment p { margin: .3rem 0; }
 .manual-author { font-size: .85rem; color: var(--muted); }
 .manual-assignment button { margin-top: .4rem; }

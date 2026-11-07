@@ -1,5 +1,7 @@
-.digest-preview { margin: 1.5rem 0; padding: 1rem; border: 1px solid #c5cfc7; border-radius: .6rem; background: #f6f8f2; overflow-wrap: anywhere; }
-.digest-preview article { background: white; padding: 1rem; margin: .8rem 0; border-radius: .4rem; }
+.digest-preview { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: 0; background: var(--paper); overflow-wrap: anywhere; }
+.digest-preview article { background: var(--white); padding: 1rem; margin: .8rem 0; border-radius: 0; }
 .digest-preview article a { display: inline-block; margin: .3rem .6rem .3rem 0; }
-.digest-preview a[href*="/student/plan"] { padding: .6rem .9rem; border: 1px solid #54765e; border-radius: .4rem; }
+.digest-preview a[href*="/student/plan"] { padding: .6rem .9rem; border: 1.5px solid var(--ink); background: transparent !important; color: var(--ink) !important; border-radius: 0 !important; }
 .digest-preview [aria-busy="true"] { opacity: .65; pointer-events: none; }
+/* The preview keeps the server's mail content; only its on-page presentation changes. */
+.digest-preview a[href*="do=done"] { background: var(--ink) !important; color: var(--white) !important; }

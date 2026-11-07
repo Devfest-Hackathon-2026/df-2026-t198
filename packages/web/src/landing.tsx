@@ -122,7 +122,7 @@ export function LandingPage() {
       </div>
       <div className="who">
         <h3 className="st">支援担当（カウンセラーなど）</h3>
-        <p className="sd">学生が見せると決めた授業だけが、面談画面に出ます。面談の前に、何が変わったかを確かめられます。</p>
+        <p className="sd">共有の許可がある学生の授業と課題が、面談画面に出ます。面談の前に、何が変わったかを確かめられます。</p>
         <a className="shot-link" href="/landing/session.png"><img className="shot" src="/landing/session.png" alt="田中太郎さんの架空の締切の変更と次回面談までの課題" width="1072" height="1005" /></a>
       </div>
     </div>
@@ -166,7 +166,7 @@ export function LandingPage() {
       <div className="sf">LMS のパスワードを預かりません</div>
       <div className="sf">LMS に提出や書き込みをしません</div>
       <div className="sf">メールは本人にだけ届きます</div>
-      <div className="sf">支援担当に見えるのは、学生が見せると決めた授業だけです</div>
+      <div className="sf">支援担当が見られるのは、共有の許可がある学生だけです</div>
     </div>
   </section>
 

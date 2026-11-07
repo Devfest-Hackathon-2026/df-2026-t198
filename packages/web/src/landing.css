@@ -1,4 +1,4 @@
-.landing{--bg:#F3F0E8;--bg2:#EAE5D8;--ink:#16150F;--muted:#5F5B50;--line:#D3CCBB;--accent:#D9402B;--accent-text:#C43A26;--sans:"Space Grotesk","BIZ UDPGothic",sans-serif;--jp:"BIZ UDPGothic",sans-serif;--mono:"JetBrains Mono","BIZ UDPGothic",monospace;width:100%;max-width:1600px;margin:0 auto;background:var(--bg);color:var(--ink);font-family:var(--jp)}
+.landing{--bg:var(--paper);--bg2:var(--surface);width:100%;max-width:1600px;margin:0 auto;background:var(--bg);color:var(--ink);font-family:var(--jp)}
 .landing .mono{font-family:var(--mono)}
 .landing .top{display:flex;align-items:center;justify-content:space-between;padding:22px 72px;border-bottom:1px solid var(--line)}
 .landing .brand{display:flex;align-items:center;gap:12px;font-family:var(--sans);font-weight:700;font-size:26px;letter-spacing:-.02em}
@@ -13,7 +13,7 @@
 .landing .lead{font-size:18px;line-height:1.8;margin:22px 0 0}
 .landing .btns{display:flex;gap:14px;margin-top:30px}
 .landing .btn{font-size:17px;font-weight:700;padding:14px 22px;border:1.5px solid var(--ink);background:transparent}
-.landing .btn.on{background:var(--ink);color:#fff}
+.landing .btn.on{background:var(--ink);color:var(--white)}
 .landing .btn.sm{font-size:14px;padding:10px 14px}
 .landing .undo{align-self:center;font-size:14px;text-decoration:underline;color:var(--muted)}
 .landing .grid{position:absolute;left:640px;top:56px;width:720px;display:grid;grid-template-columns:44px repeat(5,minmax(0,1fr));border-top:1.5px solid var(--ink)}
@@ -23,15 +23,15 @@
 .landing .cell{height:100%;box-sizing:border-box;padding:9px 10px;background:var(--bg2);display:flex;flex-direction:column}
 .landing .cn{font-size:13px;font-weight:700;line-height:1.4}
 .landing .nx{margin-top:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
-.landing .cell.hot{background:var(--accent);color:#fff}.landing .cell.hot .nx{color:#fff;font-weight:600}
+.landing .cell.hot{background:var(--accent);color:var(--white)}.landing .cell.hot .nx{color:var(--white);font-weight:600}
 .landing .wire{position:absolute;left:747px;top:330px;width:3px;height:110px;background:var(--accent)}
-.landing .mail{position:absolute;left:600px;top:440px;width:430px;box-sizing:border-box;padding:16px 20px 18px;background:#fff;border:1.5px solid var(--ink)}
+.landing .mail{position:absolute;left:600px;top:440px;width:430px;box-sizing:border-box;padding:16px 20px 18px;background:var(--white);border:1.5px solid var(--ink)}
 .landing .mh{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted)}
 .landing .ms{font-weight:700;font-size:19px;margin:8px 0 0}
 .landing .mi{font-size:15px;margin:6px 0 0}
 .landing .mb{display:flex;gap:8px;margin-top:12px}
 .landing .mb span{font-size:13px;font-weight:700;padding:6px 14px;border:1.5px solid var(--ink)}
-.landing .mb .on{background:var(--ink);color:#fff}
+.landing .mb .on{background:var(--ink);color:var(--white)}
 .landing .sec{padding:80px 72px 8px}
 .landing .sh{font-size:34px;font-weight:700;margin:14px 0 0;line-height:1.4}
 .landing .bar{width:56px;height:4px;background:var(--accent);margin-top:16px}
@@ -43,7 +43,7 @@
 .landing .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px;margin-top:36px}
 .landing .who{border-top:1.5px solid var(--ink);padding-top:18px}
 .landing .try{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:40px;margin-top:36px}
-.landing .panel{border:1.5px solid var(--ink);background:#fff;padding:24px 26px}
+.landing .panel{border:1.5px solid var(--ink);background:var(--white);padding:24px 26px}
 .landing .pt{font-size:22px;font-weight:700;margin:6px 0 0}
 .landing .pd{font-size:15px;line-height:1.75;margin:10px 0 0}
 .landing .mini{display:flex;gap:20px;align-items:stretch;margin-top:18px}
@@ -80,7 +80,7 @@
 .landing .demo-login { border: 0; padding: 0; margin: 14px 0 0; border-radius: 0; background: none; }
 .landing .demo-login p { font-size: 15px; line-height: 1.75; }
 .landing .demo-login button { border: 1.5px solid var(--ink); padding: 14px 18px; margin-top: 20px; min-height: 44px; background: transparent; font-weight: 700; border-radius: 0; }
-.landing .demo-login button:first-of-type { background: var(--ink); color: white; }
+.landing .demo-login button:first-of-type { background: var(--ink); color: var(--white); }
 .landing .demo-login button:disabled { opacity: .5; cursor: default; }
 .landing .demo-lms-link, .landing .sd a { text-decoration: underline; }
 .landing :is(a, button):focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }

@@ -5,7 +5,7 @@
 .demo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin: 1rem 0; }
 .demo-teacher-action { margin: 1rem 0; }
 .demo-teacher-option { margin: .8rem 0; }
-.demo-shell section, .demo-shell article { margin: 1.5rem 0; padding: 1rem; background: var(--paper, #fff); border: 1px solid #ddd; border-radius: .5rem; }
+.demo-shell section, .demo-shell article { margin: 1.5rem 0; padding: 1rem; background: var(--paper); border: 1px solid var(--line); border-radius: 0; }
 .demo-pages .demo-course { display: inline-block; vertical-align: top; margin-right: 1rem; }
 .demo-pages .demo-status, .demo-pages .demo-availability { margin-left: 1rem; }
 .demo-pages h1 { font-size: 1.3rem; }
@@ -16,7 +16,7 @@
 .demo-steps { list-style: none; padding: 0; }
 .demo-steps > li { margin: 1.5rem 0; }
 .demo-steps h2 { font-size: 1.2rem; }
-.demo-lms { margin-top: 2rem; padding: 1rem; background: #f5f5f2; border-radius: .5rem; }
-.demo-pages [data-demo-page="materials"], .demo-pages [data-demo-page="detail"] { background: #fafaf8; border-color: #ddd; }
+.demo-lms { margin-top: 2rem; padding: 1rem; background: var(--paper); border-radius: 0; }
+.demo-pages [data-demo-page="materials"], .demo-pages [data-demo-page="detail"] { background: var(--white); border-color: var(--line); }
 .demo-pages [data-demo-page="detail"] { margin-top: .5rem; }
 .demo-list-end, .demo-availability { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

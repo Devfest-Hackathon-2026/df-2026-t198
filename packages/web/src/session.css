@@ -1,38 +1,38 @@
 .session-page button, .session-page input { font: inherit; }
-.session-page button { cursor: pointer; color: var(--green); background: var(--white); border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; }
+.session-page button { cursor: pointer; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 0; padding: 8px 14px; }
 .session-page button:disabled { cursor: wait; opacity: .65; }
-.session-page button:focus-visible, .session-page input:focus-visible, .session-page summary:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
-.session-page input { display: block; border: 1px solid var(--line); border-radius: 4px; padding: 8px; color: var(--ink); background: var(--white); max-width: 100%; }
+.session-page button:focus-visible, .session-page input:focus-visible, .session-page summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.session-page input { display: block; border: 1px solid var(--line); border-radius: 0; padding: 8px; color: var(--ink); background: var(--white); max-width: 100%; }
 .session-account { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 24px; color: var(--muted); }
 .session-shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 32px; }
-.session-sidebar { background: var(--side); padding: 20px 16px; border-radius: 8px; align-self: start; overflow-wrap: anywhere; }
+.session-sidebar { background: var(--paper); padding: 20px 16px; border-radius: 0; align-self: start; overflow-wrap: anywhere; }
 .session-sidebar h2 { font: 600 14px var(--sans); margin: 0 0 16px; }
 .session-sidebar nav { display: flex; flex-direction: column; gap: 8px; }
 .session-sidebar button { text-align: left; overflow-wrap: anywhere; width: 100%; }
-.session-sidebar button[aria-pressed='true'] { background: var(--soft); border-color: var(--green); font-weight: 700; }
+.session-sidebar button[aria-pressed='true'] { background: var(--surface); border-color: var(--ink); font-weight: 700; }
 .session-sidebar .quiet { margin-top: 16px; background: transparent; font-size: 12px; }
 .session-content { min-width: 0; }
 .session-heading { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-.session-heading h1 { margin: 0; font: 600 28px var(--serif); color: var(--ink); }
+.session-heading h1 { margin: 0; font: 700 28px var(--sans); color: var(--ink); }
 .session-page .eyebrow { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
 .session-dates p { margin: 0; }
 .session-dates strong { display: inline; font-size: 17px; color: var(--ink); }
-.session-editor { margin-bottom: 20px; color: var(--green); }
+.session-editor { margin-bottom: 20px; color: var(--ink); }
 .session-editor form { padding: 16px 0; display: grid; gap: 12px; }
 .session-updates { border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); margin-bottom: 24px; }
 .session-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; }
 .session-grid section { margin-bottom: 32px; }
 .session-grid h2 { font-size: 17px; margin: 0 0 14px; font-weight: 600; color: var(--ink); }
-.session-page .panel { background: var(--white); border: 1px solid var(--line); border-radius: 8px; }
+.session-page .panel { background: var(--white); border: 1px solid var(--line); border-radius: 0; }
 .session-rows { list-style: none; padding: 0 18px; margin: 0; }
 .session-rows li { padding: 20px 0; overflow-wrap: anywhere; }
-.session-rows li + li { border-top: 1px solid var(--line-soft); }
+.session-rows li + li { border-top: 1px solid var(--line); }
 .session-rows h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; color: var(--ink); }
 .session-rows p { margin: 5px 0; }
 .session-rows a { font-size: 12px; text-decoration: none; }
 .session-rows time, .session-page .muted { font-size: 12px; color: var(--muted); }
-.session-page .deadline { color: var(--green); font-weight: 600; }
-.session-page .review-tag { display: inline-block; font-size: 11px; padding: 1px 5px; border-radius: 4px; background: var(--gold-bg); color: var(--gold-ink); border: 1px solid var(--gold-line); }
+.session-page .deadline { color: var(--ink); font-weight: 600; }
+.session-page .review-tag { display: inline-block; font-size: 11px; padding: 1px 5px; border-radius: 0; background: transparent; color: var(--accent-text); border: 1px solid var(--accent-text); }
 .session-login { max-width: 420px; padding: 24px; display: grid; gap: 16px; }
 .session-login h2 { margin: 0; font-size: 20px; }
 @media (max-width: 900px) { .session-grid { grid-template-columns: minmax(0, 1fr); } }
@@ -42,12 +42,12 @@
 .session-back { display: inline-block; margin-bottom: 24px; font-size: 13px; }
 .session-students { max-width: 600px; }
 .session-students nav { display: grid; gap: 12px; margin: 24px 0; }
-.session-students nav a { background: var(--white); border: 1px solid var(--line); padding: 16px; border-radius: 8px; overflow-wrap: anywhere; }
+.session-students nav a { background: var(--white); border: 1px solid var(--line); padding: 16px; border-radius: 0; overflow-wrap: anywhere; }
 .session-page .session-student-id { display: block; margin: 4px 0 0; font-size: 12px; font-weight: 400; color: var(--muted); overflow-wrap: anywhere; }
 .session-heading h1 { overflow-wrap: anywhere; }
 .session-steps { display: flex; gap: 16px; align-items: center; border-block: 1px solid var(--line); padding: 16px 0; margin: 20px 0; }
-.session-steps a { text-decoration: none; padding: 8px; border-radius: 6px; }
-.session-steps [aria-current='step'] { background: var(--soft); font-weight: 700; }
+.session-steps a { text-decoration: none; padding: 8px; border-radius: 0; }
+.session-steps [aria-current='step'] { background: var(--surface); font-weight: 700; }
 .session-check section { margin-bottom: 28px; }
 .session-check h2, .session-planning h2 { font-size: 17px; color: var(--ink); }
 .session-brief li { padding: 12px 0; }
@@ -59,14 +59,14 @@
 .session-task summary > div { min-width: 0; }
 .session-task summary .eyebrow, .session-review { display: block; }
 .session-task h3 { display: block; }
-.session-review { margin-top: 8px; font-size: 13px; color: var(--gold-ink); }
+.session-review { margin-top: 8px; font-size: 13px; color: var(--accent-text); }
 .session-task-detail { padding: 18px 0 0 16px; }
 .session-task-detail h4 { font-size: 13px; margin: 16px 0 4px; }
 .session-task-detail ul { padding-left: 18px; }
 .session-task-detail li { padding: 8px 0; }
-.session-next { display: inline-block; padding: 12px 18px; background: var(--green); color: var(--white); border-radius: 6px; text-decoration: none; }
+.session-next { display: inline-block; padding: 12px 18px; background: var(--ink); color: var(--white); border-radius: 0; text-decoration: none; }
 .session-topic { display: flex; gap: 12px; align-items: center; margin: 24px 0; }
-.session-topic select { min-width: 0; max-width: 100%; font: inherit; color: var(--ink); padding: 8px; background: var(--white); border: 1px solid var(--line); border-radius: 6px; }
+.session-topic select { min-width: 0; max-width: 100%; font: inherit; color: var(--ink); padding: 8px; background: var(--white); border: 1px solid var(--line); border-radius: 0; }
 .session-decisions { font-size: 13px; margin-bottom: 24px; }
 .session-decisions ul { list-style: none; padding: 0; }
 .session-decisions li { margin-bottom: 8px; }
@@ -75,12 +75,12 @@
 .session-timetable caption { text-align: left; font-weight: 600; padding-bottom: 12px; }
 .session-timetable th, .session-timetable td { border: 1px solid var(--line); padding: 8px; vertical-align: top; font-size: 13px; }
 .session-timetable th:first-child { width: 48px; }
-.session-deadline { display: block; margin-top: .4rem; padding: .3rem; border: 1px solid #b18b3b; background: #fff5db; color: #624b1e; }
+.session-deadline { display: block; margin-top: .4rem; padding: .3rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 .session-timetable td { height: 72px; }
-.session-course, .session-candidate { display: block; padding: 8px; border-radius: 4px; overflow-wrap: anywhere; }
-.session-course { background: var(--side); }
+.session-course, .session-candidate { display: block; padding: 8px; border-radius: 0; overflow-wrap: anywhere; }
+.session-course { background: var(--surface); }
 .session-course small { display: block; margin-top: 4px; }
-.session-candidate { border: 2px dashed var(--green); color: var(--green); }
+.session-candidate { border: 2px dashed var(--ink); color: var(--ink); }
 .session-candidate strong { display: block; font-size: 11px; }
 .session-confirm { margin-top: 24px; }
 .session-confirm p { margin-top: 8px; font-size: 13px; }
@@ -92,3 +92,5 @@
 .session-dates strong { font-size: inherit; }
 .session-dates .muted { flex-basis: 100%; }
 .session-other-review { margin-bottom: 24px; }
+
+.session-dates, .session-updates, .session-page .eyebrow, .session-rows time { font-family: var(--mono); }
