@@ -1,10 +1,12 @@
+import { manualAssignmentActions, ManualAssignments, ManualAssignmentRow, type ManualAssignmentActions } from './manual-assignments';
+import { entryId } from './deadline-entries';
 import { planProgress } from './plan-progress';
 import { fetchStatus } from './fetch-status';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { AssignmentChange, LedgerAssignment, SessionContext } from '../../core/src/types';
 import { getSessionServices, type SessionServices } from './session-firebase';
-import { buildSessionView, changeDescription, dayInZone, emptySession, formatDeadline, formatMoment,
+import { sessionDeadlineEntries, buildSessionView, changeDescription, dayInZone, emptySession, formatDeadline, formatMoment,
   reviewDescription, type SessionData } from './session-model';
 import { watchSession, type SessionState } from './session-watch';
 import { SessionLink, sessionRoute } from './session-route';
@@ -103,12 +105,13 @@ function StudentSession({ uid, user, services, planning }: { uid: string; user: 
   if (state.status === 'denied') return <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>;
   if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。学生を選び直してください。</p>;
   return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning}
-    actions={planActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
+    actions={planActions(user, uid)} manualActions={manualAssignmentActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
 }
-export function SessionDetails({ data, now, own, save, uid, planning, actions, viewerUid }: {
+export function SessionDetails({ data, now, own, save, uid, planning, actions, manualActions, viewerUid }: {
   data: SessionData; now: Date; own: boolean; uid: string; planning: boolean;
-  actions?: PlanActions | undefined; viewerUid?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
+  actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; viewerUid?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
   const view = buildSessionView(data, now);
+  const deadlines = sessionDeadlineEntries(data, now);
   const promises = data.plans.filter(plan => plan.status !== 'cancelled' && data.context.lastSessionAt &&
     plan.decidedOn === dayInZone(new Date(data.context.lastSessionAt), 'Asia/Tokyo'));
   const changeLine = (change: AssignmentChange) => <>
@@ -163,8 +166,9 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
         </section>
         <section aria-labelledby="session-deadlines"><h2 id="session-deadlines">次の面談までの締切</h2>
           {!data.context.nextSessionAt && <p>次の面談日時を決めると、この期間の締切が出ます。</p>}
-          {!!view.deadlines.length && <ul className="panel session-rows">{view.deadlines.map(row =>
-            <SessionAssignment key={JSON.stringify(row.key)} row={row} data={data} />)}</ul>}
+          {!!deadlines.length && <ul className="panel session-rows">{deadlines.map(entry => entry.kind === 'lms'
+            ? <SessionAssignment key={entryId(entry)} row={entry.row} data={data} />
+            : <ManualAssignmentRow key={entryId(entry)} row={entry.row} actions={manualActions} own={own} viewerUid={viewerUid} />)}</ul>}
         </section>
         {!!view.review.filter(row => !view.deadlines.includes(row)).length && <ul className="panel session-rows session-other-review"
           aria-label="締切を確かめる課題">
@@ -174,6 +178,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, v
         <SessionLink className="session-next" href={`${base}/plan`}>準備する時間を相談する →</SessionLink>
       </div>
     </>}
+    <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own={own} viewerUid={viewerUid} />
   </>;
 }
 function sameAssignment(row: LedgerAssignment, key: LedgerAssignment['key']) {

@@ -1,7 +1,7 @@
 import { emptySession, type SessionData } from './session-model';
 
 export type SessionState = { status: 'loading' | 'ready' | 'denied' | 'error'; data: SessionData };
-export type SessionCollection = 'courses' | 'assignments' | 'changes' | 'fetchStates' | 'context' | 'plans';
+export type SessionCollection = 'courses' | 'assignments' | 'changes' | 'fetchStates' | 'context' | 'plans' | 'manualAssignments';
 export interface SessionSource {
   grant: (student: string, supporter: string, next: (allowed: boolean) => void, fail: () => void) => () => void;
   watch: <K extends SessionCollection>(student: string, collection: K, next: (value: SessionData[K]) => void,
@@ -22,7 +22,7 @@ export function watchSession(source: SessionSource, student: string, viewer: str
   const start = () => {
     if (!active || started) return;
     started = true;
-    const collections = ['courses', 'assignments', 'changes', 'fetchStates', 'context', 'plans'] as const;
+    const collections = ['courses', 'assignments', 'changes', 'fetchStates', 'context', 'plans', 'manualAssignments'] as const;
     for (const collection of collections) {
       const unsubscribe = source.watch(student, collection, value => {
         if (!active) return;

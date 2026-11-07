@@ -6,6 +6,7 @@ import { firebase } from './firebase';
 import { useDeadlineChanges } from './deadline-change';
 import { dayInZone } from './session-model';
 import type { ReactNode } from 'react';
+import type { StudentCourse } from './student-data';
 
 function eventDay(event: DeadlineEvent) {
   return 'date' in event.start ? event.start.date : dayInZone(new Date(event.start.dateTime), 'Asia/Tokyo');
@@ -15,14 +16,15 @@ function eventTime(event: DeadlineEvent) {
     timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).format(new Date(event.start.dateTime));
 }
-export function DemoCalendarView({ integration, pending, now = Date.now() }: {
-  integration: CalendarIntegration; pending: boolean; now?: number;
+export function DemoCalendarView({ integration, pending, now = Date.now(), courses = [] }: {
+  integration: CalendarIntegration; pending: boolean; now?: number; courses?: Pick<StudentCourse, 'name'>[];
 }) {
   const today = dayInZone(new Date(now), 'Asia/Tokyo');
   const days = Array.from({ length: 7 }, (_, i) => new Date(Date.parse(`${today}T00:00:00Z`) + i * 86400000).toISOString().slice(0, 10));
   const events = Object.entries(integration.mockEvents ?? {}).sort(([, a], [, b]) => {
-    const start = (event: DeadlineEvent) => 'date' in event.start ? event.start.date : event.start.dateTime;
-    return start(a.event).localeCompare(start(b.event));
+    const start = (event: DeadlineEvent) => Date.parse('date' in event.start
+      ? `${event.start.date}T00:00:00+09:00` : event.start.dateTime);
+    return start(a.event) - start(b.event);
   });
   const changed = useDeadlineChanges(new Map(events.map(([id, { event }]) => [id, `${eventDay(event)} ${eventTime(event)}`])));
   const outside = events.filter(([, { event }]) => !days.includes(eventDay(event)));
@@ -35,8 +37,9 @@ export function DemoCalendarView({ integration, pending, now = Date.now() }: {
       </th>)}</tr></thead><tbody><tr>{days.map((day, i) => <td key={day} data-date={day} className={i === 0 ? 'calendar-today' : undefined}>
         <ul>{events.filter(([, { event }]) => eventDay(event) === day).map(([id, { event }]) => {
           const separator = event.summary.indexOf('：');
-          const course = separator < 0 ? null : event.summary.slice(0, separator);
-          const title = separator < 0 ? event.summary : event.summary.slice(separator + 1);
+          const prefix = separator < 0 ? null : event.summary.slice(0, separator);
+          const course = prefix === '準備' || courses.some(c => c.name === prefix || `【要確認】${c.name}` === prefix) ? prefix : null;
+          const title = course ? event.summary.slice(separator + 1) : event.summary;
           return <li key={id} className={`calendar-event${changed.has(id) ? ' changed' : ''}`}>
             <time>{eventTime(event)}</time> <strong>{title}</strong>{course && <span className="muted">{course}</span>}
           </li>;
@@ -50,14 +53,14 @@ export function DemoCalendarView({ integration, pending, now = Date.now() }: {
 }
 export function GoogleCalendarStatus({ integration, pending }: { integration: CalendarIntegration | null; pending: boolean }) {
   return <section aria-label="Googleカレンダー"><h2>Googleカレンダー</h2>
-    <p>{!integration ? '準備の予定は保存されています。拡張機能でカレンダーを接続すると、予定が入ります。'
-      : integration.connectionState === 'reauthorization-required' ? 'カレンダーをもう一度接続してください。準備の予定は保存されています。'
-        : integration.connectionState === 'recovery-required' ? 'カレンダーの接続を確かめてください。準備の予定は保存されています。'
+    <p>{!integration ? '予定は保存されています。拡張機能でカレンダーを接続すると、予定が入ります。'
+      : integration.connectionState === 'reauthorization-required' ? 'カレンダーをもう一度接続してください。予定は保存されています。'
+        : integration.connectionState === 'recovery-required' ? 'カレンダーの接続を確かめてください。予定は保存されています。'
           : pending ? '予定は保存されています。カレンダーへの変更を待っています。PCのChromeで拡張機能を起動すると、更新を試みます。'
             : 'カレンダーへの変更が済んでいます。'}</p>
   </section>;
 }
-export function DemoCalendar({ fallback, now }: { fallback?: ReactNode; now?: number }) {
+export function DemoCalendar({ fallback, now, courses }: { fallback?: ReactNode; now?: number; courses: StudentCourse[] }) {
   const [value, setValue] = useState<{ integration: CalendarIntegration | null; pending: boolean } | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -72,7 +75,7 @@ export function DemoCalendar({ fallback, now }: { fallback?: ReactNode; now?: nu
       let integrationReceived = false;
       const publish = () => {
         if (!active) return;
-        setValue(integrationReceived && items && (integration || items.some(item => item.kind === 'preparation')) ? {
+        setValue(integrationReceived && items && (integration || items.some(item => item.kind === 'preparation' || item.kind === 'manual-deadline')) ? {
           integration: integration ?? null, pending: items.some(item => item.appliedRevision !== item.desiredRevision),
         } : null);
       };
@@ -96,6 +99,6 @@ export function DemoCalendar({ fallback, now }: { fallback?: ReactNode; now?: nu
   }, []);
   if (failed) return <>{fallback}<p role="alert">カレンダーを開けませんでした。接続を確かめてください。</p></>;
   return value ? value.integration?.mode === 'mock'
-    ? <DemoCalendarView integration={value.integration} pending={value.pending} now={now ?? Date.now()} />
+    ? <DemoCalendarView integration={value.integration} pending={value.pending} now={now ?? Date.now()} courses={courses} />
       : <>{fallback}<GoogleCalendarStatus {...value} /></> : fallback;
 }
