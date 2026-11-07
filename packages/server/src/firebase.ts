@@ -16,6 +16,8 @@ import type { ObservationDependencies } from './http.js';
 import { createNotificationStore } from './notification-store.js';
 import { createNotificationDispatch } from './notification-dispatch.js';
 import { createSchedulerVerifier } from './notification-auth.js';
+import { mailSenderFromEnvironment } from './mail-sender.js';
+import { createNotificationSettingsStore } from './notification-settings.js';
 
 export function firebaseDependencies() {
   const app = getApps()[0] ?? initializeApp();
@@ -23,7 +25,18 @@ export function firebaseDependencies() {
   const saveObservation = createObservationStore(db);
   const syncDemoCalendar = createDemoCalendarSync(db);
   const project = app.options.projectId ?? process.env['GOOGLE_CLOUD_PROJECT'] ?? process.env['GCLOUD_PROJECT'];
+  const sender = mailSenderFromEnvironment();
+  const resolveRecipient = async (uid: string) => {
+    try {
+      const user = await getAuth(app).getUser(uid);
+      return !user.disabled && user.emailVerified ? user.email ?? null : null;
+    } catch { return null; }
+  };
   const dependencies: ObservationDependencies = {
+    notificationSettings: createNotificationSettingsStore(db, {
+      checkSender: () => sender && process.env['NOTIFICATION_SEND_ENABLED'] === 'true' ? sender.check() : Promise.resolve('preparing'),
+      resolveRecipient,
+    }),
     verifyDigestToken: async token => {
       const identity = await getAuth(app).verifyIdToken(token, true);
       return { uid: identity.uid, email: identity.email };
@@ -54,11 +67,7 @@ export function firebaseDependencies() {
       verify: createSchedulerVerifier(audience, serviceAccount),
       tick: createNotificationDispatch(createNotificationStore(db, origin), {
         origin, enabled: process.env['NOTIFICATION_SEND_ENABLED'] === 'true',
-        // No real sender is connected in Issue #156: even an enabled deployment stays dry-run.
-        resolveRecipient: async uid => {
-          const user = await getAuth(app).getUser(uid);
-          return !user.disabled && user.emailVerified ? user.email ?? null : null;
-        },
+        ...(sender ? { sender } : {}), resolveRecipient,
       }),
     };
   }
