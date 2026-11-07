@@ -70,7 +70,7 @@ YNUでは一覧の「公開終了」は詳細を開かず終了とする。詳�
 - 本文は512 KiBまで。授業と授業ごとの結果は各100件、課題と失敗は各200件、一覧のIDは1授業1,000件まで。文字列の長さも検査する。上限は分割受領の契約ではないため、超える場合は取得の契約を別途見直す。
 - 日付の実在、日時のタイムゾーン、締切の種類と必要項目、曜日・時限（1〜24）を検査する。
 - 未知の項目は入れ子も拒否する。SID等のパラメーター、認証用query、資格情報を含む文字列も拒否する。
-- `failures.detail` は `not-logged-in`、`http-error`、`parse-error`、`list-incomplete`、`detail-unavailable` のいずれか。HTTP応答や例外の本文を転記しない。
+- `failures.detail` は `not-logged-in`、`http-error`、`parse-error`、`list-incomplete`、`detail-unavailable`、KULMS専用の `course-limit` のいずれか。`course-limit` は `kind: parse` と組み合わせ、送信しなかった授業のIDも指定できる。それ以外の失敗の授業IDは送信した授業に限る。HTTP応答や例外の本文を転記しない。
 - 任意の文章に紛れた未知の秘密の値を完全に識別できるものではない。取得側でも、SIDを含まない参照URLと許可した項目だけを組み立てる必要がある。
 
 ### 応答と再送
@@ -129,11 +129,24 @@ HTML読み取り部品の中間結果 `ReadAssignment` は観測の送信形と�
 
 `lms-definitions/kulms/definition.json` は `format: sakai-json` の専用定義。HTML向けの定義を流用せず、コレクション名・ID・題名・締切・提出記録と秒/nanoのフィールド名を持つ。任意のコード・URL・HTTPメソッドは指定できない。変換は `packages/core/src/sakai-reader.ts`、取得は拡張のKULMS専用content scriptで行う。
 
-- `panda` は未実装だった接続先名を `kulms` に置き換える。`kulasis` は次のIssueのために型と入力検査だけを用意する（Issue #2のorangeの合意）。
-- `slots: []`。時間割が未確認のKULMS/KULASISには空きコマ候補を出さない。学期を確定できる項目が調査で確認されていないので `currentTerm` を省略する。D28の未知の学期の扱いで取得するが、今の学期への限定は実物で確認待ち。授業名・作成日から推測しない。
+- `panda` は未実装だった接続先名を `kulms` に置き換える。`kulasis` は別の情報源として時間割を送る（下記、Issue #2のorangeの合意）。
+- KULMS単独では `slots: []`。時間割が未確認の授業には空きコマ候補を出さない。学期を確定できる項目が調査で確認されていないので、現在のKULASIS時間割との対応がないサイトでは `currentTerm` を省略する。D28の未知の学期の扱いで取得するが、今の学期への限定は実物で確認待ち。授業名・作成日から推測しない。
 - `dueTime.epochSecond` と `nano` を日時へ変換する。`dueTimeString` は根拠の文字列。null・欠損・不正値は `unreadable`。`closeTime`・カレンダーのミリ秒は締切に使わない。確定した締切が取得時刻より前の課題は `endedSourceIds` に入れる。
 - 現在の利用者IDと `submissions[].submitters[].id` が一致する唯一の記録で、booleanの `submitted` を読む。trueとdraftの矛盾、欠損・曖昧な複数記録は `unknown`。提出日時は提出済みで秒値を検証できたときだけ送る。利用者IDは観測に含めない。
 - 授業一覧は空の終端ページまで取得する。課題の授業別custom actionは全件応答（上流の公開実装に基づく。KULMS実物では未確認）。壊れた応答・上限超過・HTTP失敗の授業は `listComplete: false` と固定の失敗だけを送る。
+
+Issue #180：`siteFilter` に既知の授業以外の種別（`project`・`workspace`）と公開状態のフィールド名を置く。既知の種別またはbooleanの `published: false` だけを除外し、欠損・未知の値では除外しない。KULMS実物の値との一致は未確認。現在の時間割との対応がある場合、または候補が100件を超える場合、対応するサイトを先に残し、未対応は観測時刻以降の締切のある課題を持つサイトを残す。課題取得に失敗したサイトも失敗の記録のため対象に残す。時間割との対応がなく100件以下なら、従来どおり学期不明として取得する。100件を超える対象は完読結果を送らず `course-limit` にする。失敗が200件を超える場合は先頭199件と全体の `course-limit`（最終の全体ログイン失敗等があればそれを優先）を送る。課題200件を超える分は詳細を省略し、その授業を不完全にする。省略した授業について取消回数を進めない。
+
+## KULASISの時間割と授業の対応（Issue #180）
+
+`lms-definitions/kulasis/definition.json` は `format: kulasis-html`。同一originのcontent scriptが、所属のパスから現在の学期（日本時間4〜9月は `zenki`、10〜3月は `kouki`）の時間割をGETし、`TextDecoder('shift_jis')` でCP932を復号する。表の見出しの曜日・時限を使い、縦横の入れ替え・結合セルを扱う。実物のDOMとの一致はorangeの確認待ち。遅延meta refreshは追わず、即時refresh・HTTPの認証遷移・パスワード欄はログイン切れとする。読めない表を空の時間割として送らない。
+
+- `system: kulasis`・`definitionId: kulasis-timetable` の観測は `catalogCourses` だけを持ち、`courseResults` と `assignments` は常に空。サーバーもこの定義で課題の完読結果を送ることを拒否する。既存の汎用観測APIの、ほかの定義への受信契約は変えない。取得失敗は `failures` に残す。課題を持たない時間割の成功は `fetchStates/kulasis` の成功として記録する。
+- KULASISの `Course` にだけ、任意の `kulmsSiteId`（200文字以内）を保存する。`courseId`（KULASISの `no`）とこの値が明示の対応表となる。授業サポートに唯一の `/direct/courselink/_kcd=…` がある場合、workerが固定したKULMSのGETを行い、最終URLが同じKULMS originの `/portal/site/{siteId}` の場合だけ採用する。認証画面・不明の形式・複数候補は結び付けない。授業名や `_kcd` からsiteIdを推測しない。
+- 保存先のキーは従来どおり `system` と `courseId`。別の情報源の文書を上書きしない。同一情報源では観測した授業を置き換える。KULASISが完全に成功した回に限り、見当たらない以前のKULASIS授業を `currentTerm: false` にする。失敗した回は以前の時間割を保持する。KULMSのURL・今学期かどうかの値には書き込まない。
+- 表示用の `linkedCourses` は今学期の明示の対応があるKULASIS授業とKULMS授業を1つにする。名前・URL・課題キーはKULMS、曜日・時限はKULASISを優先する。現在の時間割で確認できた対応は表示上の `currentTerm: true` とする。複数のKULASIS授業が同じサイトを指す場合はコマを重複なく合わせる。取れない対応は別々に出す。元データは変えない。
+- 学生・面談画面は同じ関数を使う。締切のカレンダーはKULMSの課題キーと授業名を引き続き使い、KULASISの観測では予定を追加・変更しない。京大の時限の実時刻は未確認なので補わない。
+- 取得の優先順位用に、観測の受領後に対応先siteIdだけを `chrome.storage.local.kulasisMapping` に保存する（Firebase uid・学期付き）。同じ本人・同じ学期の場合だけKULMSの取得へ渡す。対応が変わったらKULMSの取得後の待ち時間を解除し、次にKULMSを開くと新しい優先順位を使う。時間割の保存の正本はサーバーの授業文書で、このキャッシュは別の端末へ同期しない。拡張を入れ直した端末では、KULASISを先に開く。
 - 参照URLは認証情報のない授業ページを組み立てる。採点・提出本文・添付・お知らせは送らない。KULMSのAPIから取った生のJSONやCookieをservice workerへ渡さない。
 
 ## 面談日時と担当する学生（Issue #21）

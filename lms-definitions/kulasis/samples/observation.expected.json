@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "observationId": "18000000-0000-4000-8000-000000000001",
+  "system": "kulasis",
+  "definitionId": "kulasis-timetable",
+  "definitionVersion": 1,
+  "fetchedAt": "2030-11-08T00:00:00Z",
+  "catalogCourses": [
+    { "courseId": "fictional-no-1", "name": "架空の授業", "slots": [{ "weekday": 1, "period": 1 }, { "weekday": 1, "period": 3 }], "url": "https://www.k.kyoto-u.ac.jp/student/la/support/top?no=fictional-no-1", "currentTerm": true, "kulmsSiteId": "fictional-site" },
+    { "courseId": "fictional-no-2", "name": "架空の授業", "slots": [{ "weekday": 2, "period": 2 }], "url": "https://www.k.kyoto-u.ac.jp/student/la/support/top?no=fictional-no-2", "currentTerm": true }
+  ],
+  "courseResults": [],
+  "assignments": [],
+  "failures": []
+}

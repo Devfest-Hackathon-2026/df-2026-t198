@@ -1,4 +1,5 @@
 export { stripSessionId } from './strip-session-id.js';
+export { linkedCourses } from './course-links.js';
 export type { DemoAccount, DemoAnnouncement, DemoAssignment, DemoCourse, DemoData } from './demo.js';
 export type {
   Assignment,
