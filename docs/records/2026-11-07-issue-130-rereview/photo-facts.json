@@ -1,0 +1,50 @@
+[
+  {
+    "name": "student-1280.png",
+    "width": 1280,
+    "height": 1815,
+    "sha256": "a8532dac3cd258757e4ba6ea28fdfc41aa36f9b99d67550e733a7cac4bfead23"
+  },
+  {
+    "name": "student-390.png",
+    "width": 390,
+    "height": 2494,
+    "sha256": "89db46047e6dd2430db71c2feda2b4c293a724f3c8e0e5462f90369b7bb110fe"
+  },
+  {
+    "name": "supporter-1280.png",
+    "width": 1280,
+    "height": 1604,
+    "sha256": "ab0a608c97bdfe1ba8f38eba74fbaa8a8f5b4716b78de804e6283ae454c2809e"
+  },
+  {
+    "name": "supporter-390.png",
+    "width": 390,
+    "height": 2295,
+    "sha256": "da36a6b9c262b4af301d033f5304f84f92562d4e90048f835674866abe060915"
+  },
+  {
+    "name": "candidate-1280.png",
+    "width": 1280,
+    "height": 1433,
+    "sha256": "a341678b6a624a64d89ce2d99d8f618d4e7d367c97c024e470411a3764a1f7cf"
+  },
+  {
+    "name": "candidate-390.png",
+    "width": 390,
+    "height": 1750,
+    "sha256": "1f5e99e3f2aaf5d4bc3eebf381addb7412c342280ca56a67b53bd83fb6f586be"
+  },
+  {
+    "name": "demo-lms-1280.png",
+    "width": 1280,
+    "height": 2526,
+    "sha256": "49df27bd6d89bf79f5a45c1633ec40b95e998fce6484d2175486c87861f537c5"
+  },
+  {
+    "name": "demo-lms-390.png",
+    "width": 390,
+    "height": 2914,
+    "sha256": "a150deaab1d75d1baf623324b4aa23bce21f1e3b31663c397c62b7de2af3bcae"
+  }
+]
