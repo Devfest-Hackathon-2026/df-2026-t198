@@ -179,24 +179,47 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect((await request('/api/v1/digest/demo-preview', supporter, 'GET')).status).toBe(403);
     expect((await request('/api/v1/digest/demo-preview', stranger, 'GET')).status).toBe(403);
   });
-  it('allows extension delivery only for a valid enabled setting belonging to the authenticated non-demo student', async () => {
+  it.each(['no-record', 'none', 'extension', 'cloud'])('reports %s without overriding local extension consent', async kind => {
+    const settings = student(real).collection('notificationSettings').doc('current');
+    for (const enabled of [false, true]) {
+      if (kind !== 'no-record') await settings.set({ enabled, deliveryOwner: kind, recipientUid: real, version: 1,
+        timeZone: 'Asia/Tokyo', morningTime: '07:30', migrationState: 'not-started', updatedAt: now.toISOString() });
+      const before = await settings.get();
+      const response = await request(`/api/v1/digest/delivery?uid=${owner}`, real, 'GET');
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual(kind === 'no-record' ? { enabled: false, deliveryOwner: 'none' } : { enabled, deliveryOwner: kind });
+      expect((await settings.get()).updateTime).toEqual(before.updateTime);
+      expect((await request('/api/v1/digest', real, 'GET')).status).toBe(kind === 'cloud' ? 403 : 200);
+    }
+  });
+  it('cannot confirm invalid records or demo delivery and never replaces them with none', async () => {
     const settings = student(real).collection('notificationSettings').doc('current');
     const valid = { enabled: true, deliveryOwner: 'extension', recipientUid: real, version: 1,
       timeZone: 'Asia/Tokyo', morningTime: '07:30', migrationState: 'not-started', updatedAt: now.toISOString() };
-    for (const patch of [null, { enabled: false }, { deliveryOwner: 'none' }, { deliveryOwner: 'cloud' },
-      { recipientUid: owner }, { version: 0 }, { deliveryOwner: 'unexpected' }, { timeZone: 'UTC' }]) {
-      if (patch === null) await settings.delete(); else await settings.set({ ...valid, ...patch });
+    for (const patch of [{ enabled: 'true' }, { recipientUid: owner }, { version: 0 },
+      { deliveryOwner: 'unexpected' }, { timeZone: 'UTC' }, { morningTime: '08:00' }, { migrationState: 'unexpected' }]) {
+      await settings.set({ ...valid, ...patch });
+      const before = await settings.get();
       const response = await request(`/api/v1/digest/delivery?uid=${owner}`, real, 'GET');
-      expect(response.status).toBe(200); expect(await response.json()).not.toMatchObject({ enabled: true, deliveryOwner: 'extension' });
+      expect(response.status).toBe(503); expect(await response.json()).toEqual({ error: 'unavailable' });
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect((await settings.get()).updateTime).toEqual(before.updateTime);
+      expect((await request('/api/v1/digest', real, 'GET')).status).toBe(200);
     }
     await settings.set(valid);
     const before = await settings.get();
     expect(await (await request('/api/v1/digest/delivery', real, 'GET')).json()).toEqual({ enabled: true, deliveryOwner: 'extension' });
     expect((await request('/api/v1/digest', real, 'GET')).status).toBe(200);
     await student().collection('notificationSettings').doc('current').set({ ...valid, recipientUid: owner });
-    expect(await (await request('/api/v1/digest/delivery', owner, 'GET')).json()).not.toMatchObject({ enabled: true, deliveryOwner: 'extension' });
+    expect((await request('/api/v1/digest/delivery', owner, 'GET')).status).toBe(503);
     expect((await request('/api/v1/digest/delivery', supporter, 'GET')).status).toBe(403);
     expect((await settings.get()).updateTime).toEqual(before.updateTime);
+  });
+  it('cannot confirm delivery when reading settings fails and exposes no underlying error', async () => {
+    vi.spyOn(fixture.db, 'runTransaction').mockRejectedValueOnce(new Error('synthetic-private-settings-error'));
+    const response = await request('/api/v1/digest/delivery', real, 'GET');
+    expect(response.status).toBe(500); expect(await response.json()).toEqual({ error: 'internal-error' });
+    expect(response.headers.get('cache-control')).toBe('no-store');
   });
   it('rejects outsiders and even shared supporters; no GET can mutate a plan', async () => {
     for (const uid of [stranger, supporter]) expect((await act('done', uid)).status).toBe(403);

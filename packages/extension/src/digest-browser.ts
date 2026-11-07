@@ -64,7 +64,8 @@ async function extensionDelivery(user: Identity): Promise<boolean> {
     referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15_000) });
   if (!response.ok) throw new Error('digest-unavailable');
   const setting = await response.json() as { enabled?: unknown; deliveryOwner?: unknown } | null;
-  return setting?.enabled === true && setting.deliveryOwner === 'extension';
+  return typeof setting?.enabled === 'boolean' &&
+    (setting.deliveryOwner === 'none' || setting.deliveryOwner === 'extension');
 }
 async function updateProblem(user: Identity, version: number, problem?: string) {
   const saved = await preference();

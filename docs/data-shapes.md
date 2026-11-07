@@ -273,8 +273,8 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 
 ## 拡張送信の切替確認（Issue #163）
 
-- `GET /api/v1/digest/delivery`：失効確認付きFirebase認証の本人だけについて `{ enabled: boolean, deliveryOwner: none/extension/cloud }` を返す。UID・宛先を入力から選べない。設定欠損・不正な設定・体験学生は `{ enabled: false, deliveryOwner: none }`。体験支援担当は403。本文や送信記録は返さず、設定や記録を書き換えない。#162の設定保存APIとは別の読み取り専用経路。
-- 拡張は各Gmail POST前にこのGETで `enabled: true, deliveryOwner: extension` を確認する。確認失敗・未知の値・OFFなら送らない。確認後も本人・ローカルの同意・日付・準備の期限を再確認してから既存の予約とPOSTへ進む。
+- `GET /api/v1/digest/delivery`：失効確認付きFirebase認証の本人だけについて `{ enabled: boolean, deliveryOwner: none/extension/cloud }` を返す。UID・宛先を入力から選べない。設定欠損は `{ enabled: false, deliveryOwner: none }`。不正な設定・体験学生は503（`unavailable`）で確認不可とし、体験支援担当は403。本文や送信記録は返さず、設定や記録を書き換えない。#162の設定保存APIとは別の読み取り専用経路。
+- 拡張は各Gmail POST前にこのGETを確認する。`cloud`・確認失敗・不正な応答なら送らない。記録なし・`none`・`extension` はサーバーの `enabled` にかかわらず、拡張の本人の同意に従う。確認後も本人・ローカルの同意・日付・準備の期限を再確認してから既存の予約とPOSTへ進む。
 - 旧 `GET /api/v1/digest` は、同じtransactionで通知設定を読み、`deliveryOwner: cloud` ならenabledにかかわらず403で本文を返さない。その他の既存の読み取り条件は維持する。
 - `GET /api/v1/digest/demo-preview` は、同じtransactionで本人に一致する体験学生プロフィールを必須とするメール見本。cloud設定でも表示できるが、実物の利用者・支援担当は403。`/demo-lms` はこの専用経路を使う。旧GETのqueryで見本の判定を切り替えられない。
 - いずれもno-store、未認証401、依存未設定503、内部失敗500、固定エラーのみ。送信や切替は行わない。端末停止・当日記録の引継ぎ・戻し方は [デプロイ手順](deploy.md#拡張のメールからクラウド通知へ移すissue-163) を正本とする。

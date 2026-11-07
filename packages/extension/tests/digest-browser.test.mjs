@@ -265,13 +265,33 @@ it('uses only cached IDs and times between refreshes, then revalidates a cancell
 });
 
 // Issue #163: server ownership must be confirmed separately for every outgoing mail.
-it.each(['cloud', 'none', 'off', 'missing', 'invalid', 'unavailable', 'http-error'])('does not send or reserve when delivery is %s', async kind => {
+it.each([
+  ['no-record', { enabled: false, deliveryOwner: 'none' }, 2],
+  ['none', { enabled: false, deliveryOwner: 'none' }, 2],
+  ['extension', { enabled: true, deliveryOwner: 'extension' }, 2],
+  ['cloud', { enabled: true, deliveryOwner: 'cloud' }, 0],
+  ['invalid', { enabled: 'true', deliveryOwner: 'extension' }, 0],
+  ['network-failure', undefined, 0],
+])('respects local consent and delivery ownership for %s', async (kind, delivery, count) => {
   const f = await fixture({ now: '2026-11-07T12:30:00+09:00' }); f.digest.plans = [{ ...plan }];
-  if (['cloud', 'none'].includes(kind)) f.delivery.deliveryOwner = kind;
-  if (kind === 'off') f.delivery.enabled = false;
+  if (delivery) Object.assign(f.delivery, delivery); else f.failDelivery();
+  await f.runDigest(); expect(f.sent).toHaveLength(count);
+  expect(f.data[receipts]).toEqual(count ? { date: '2026-11-07', planIds: ['morning', plan.planId] } : undefined);
+  expect(JSON.stringify(f.data)).not.toContain('synthetic-private-settings-error');
+});
+it.each(['none', 'extension', 'cloud'])('uses local consent when server delivery is disabled with owner %s', async owner => {
+  const f = await fixture({ now: '2026-11-07T10:00:00+09:00' });
+  f.delivery.enabled = false; f.delivery.deliveryOwner = owner;
+  await f.runDigest(); expect(f.sent).toHaveLength(owner === 'cloud' ? 0 : 1);
+  const stopped = await fixture({ enabled: false, now: '2026-11-07T10:00:00+09:00' });
+  stopped.delivery.enabled = false; stopped.delivery.deliveryOwner = owner;
+  await stopped.runDigest(); expect(stopped.sent).toHaveLength(0); expect(stopped.fetch).not.toHaveBeenCalled();
+});
+it.each(['missing', 'unknown', 'invalid', 'http-error'])('does not send or reserve when delivery is %s', async kind => {
+  const f = await fixture({ now: '2026-11-07T12:30:00+09:00' }); f.digest.plans = [{ ...plan }];
   if (kind === 'missing') delete f.delivery.deliveryOwner;
+  if (kind === 'unknown') f.delivery.deliveryOwner = 'unexpected';
   if (kind === 'invalid') f.delivery.enabled = 'true';
-  if (kind === 'unavailable') f.failDelivery();
   if (kind === 'http-error') {
     const fetch = f.fetch.getMockImplementation();
     f.fetch.mockImplementation((url, options) => url.endsWith('/delivery') ? { ok: false } : fetch(url, options));

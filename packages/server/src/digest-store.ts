@@ -35,11 +35,13 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         const profile = (await tx.get(db.doc(`demoAccounts/${uid}`))).data();
         if (profile && !isDemoStudent(profile, uid)) throw new SessionForbidden();
         const settings = (await tx.get(db.doc(`students/${uid}/notificationSettings/current`))).data() as NotificationSettings | undefined;
-        if (profile || !settings || typeof settings.enabled !== 'boolean' ||
+        if (profile) throw new DigestUnavailable();
+        if (!settings) return { enabled: false, deliveryOwner: 'none' };
+        if (typeof settings.enabled !== 'boolean' ||
           !['none', 'extension', 'cloud'].includes(settings.deliveryOwner) || settings.recipientUid !== uid ||
           !Number.isSafeInteger(settings.version) || settings.version < 1 ||
           settings.timeZone !== 'Asia/Tokyo' || settings.morningTime !== '07:30' ||
-          !['not-started', 'ready'].includes(settings.migrationState)) return { enabled: false, deliveryOwner: 'none' };
+          !['not-started', 'ready'].includes(settings.migrationState)) throw new DigestUnavailable();
         return { enabled: settings.enabled, deliveryOwner: settings.deliveryOwner };
       });
     },
