@@ -13,6 +13,9 @@ import { createAnnouncementStore } from './announcements/store.js';
 import { createGeminiModel } from './announcements/gemini.js';
 import { createRuntimeBudget } from './announcements/runtime-budget.js';
 import type { ObservationDependencies } from './http.js';
+import { createNotificationStore } from './notification-store.js';
+import { createNotificationDispatch } from './notification-dispatch.js';
+import { createSchedulerVerifier } from './notification-auth.js';
 
 export function firebaseDependencies() {
   const app = getApps()[0] ?? initializeApp();
@@ -42,6 +45,22 @@ export function firebaseDependencies() {
     dependencies.announcements = createAnnouncementStore(db, {
       generate: (announcement, candidates) => createGeminiModel(project, createRuntimeBudget(db)).generate(announcement, candidates),
     });
+  }
+  const audience = process.env['NOTIFICATION_OIDC_AUDIENCE'];
+  const serviceAccount = process.env['NOTIFICATION_SCHEDULER_SERVICE_ACCOUNT'];
+  const origin = process.env['PUBLIC_WEB_ORIGIN']?.replace(/\/+$/, '');
+  if (audience && serviceAccount && origin) {
+    dependencies.notifications = {
+      verify: createSchedulerVerifier(audience, serviceAccount),
+      tick: createNotificationDispatch(createNotificationStore(db, origin), {
+        origin, enabled: process.env['NOTIFICATION_SEND_ENABLED'] === 'true',
+        // No real sender is connected in Issue #156: even an enabled deployment stays dry-run.
+        resolveRecipient: async uid => {
+          const user = await getAuth(app).getUser(uid);
+          return !user.disabled && user.emailVerified ? user.email ?? null : null;
+        },
+      }),
+    };
   }
   return dependencies;
 }

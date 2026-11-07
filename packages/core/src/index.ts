@@ -23,6 +23,12 @@ export type {
   PreparationPlanInput,
   Submission,
   SessionContext,
+  NotificationSettings,
+  NotificationStatus,
+  NotificationTarget,
+  NotificationDelivery,
+  NotificationDeliveryState,
+  NotificationErrorCode,
 } from './types.js';
 export { applyObservation } from './ledger.js';
 export { READER_VERSION, validateDefinition } from './definition.js';
