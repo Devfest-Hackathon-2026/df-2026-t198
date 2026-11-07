@@ -1,7 +1,7 @@
 # 計画と進捗
 
 <!-- progress:start -->
-完成条件：全体 34/43（79%）、必須 32/39（82%）
+完成条件：全体 36/43（83%）、必須 32/39（82%）
 <!-- progress:end -->
 
 上の数字は `pnpm progress --write` で書き換える。手で直さない。CIは数字と一覧が食い違うと落ちる。
@@ -39,10 +39,10 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 - [x] C06 〈Sora〉 ログインが切れていたら `not-logged-in` の失敗として送る。ログインを促す画面は出さない。確かめ方：試験 → `packages/core/tests/login-state.test.mjs`、`packages/extension/tests/html-reader-worker.test.mjs`（固定の失敗コード。ログイン前・認証エラーの保存見本で確認）
 - [x] C07 〈Sora〉 YNUの読み取り方を `lms-definitions/` にデータとして置き、取得部品がそれを読んで動く。確かめ方：試験 → `lms-definitions/coursepower/definition.json` を読んで動く（`packages/core/tests/html-reader.test.mjs` の「reads selectors from data」ほか、`packages/core/tests/definition.test.ts`）。Issue #10で製品固有のパターンを引数付きに移行し、別製品の読み取り・不正な引数の拒否を `packages/core/tests/parameterized-patterns.test.mjs` で確認
 
-### 取得：PandA（Sakai）
+### 取得：KULMS（Sakai）
 
-- [ ] C08 〈orange〉 PandAの課題の一覧を取り、同じ形の観測を作る（Issue #2）。〔削れる〕
-- [ ] C09 〈orange〉 PandAの読み取り方を `lms-definitions/` に置く。〔削れる〕
+- [x] C08 〈エージェント〉 KULMSの課題の一覧を取り、同じ形の観測を作る（Issue #2・#179）。〔削れる〕 → `packages/extension/tests/kulms-collection.test.ts`・`kulms-worker.test.ts`・`kulms-content.test.ts`（架空JSON→観測・送信・ログイン切れ・学生優先・YNUとの同居）。実物・Cookieの持ち・今の学期への限定はorangeの確認待ち（[手順](docs/records/2026-11-08-issue-179.md)）。
+- [x] C09 〈エージェント〉 KULMSの読み取り方を `lms-definitions/` に置く。〔削れる〕 → `lms-definitions/kulms/definition.json`、`packages/core/tests/sakai-reader.test.ts`、固定した架空JSON・正解観測（Issue #179）。
 
 ### 観測の送信と台帳
 
@@ -106,7 +106,7 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 | ID | 指標 | 今の値 | 目標 | 測り方 |
 |---|---|---|---|---|
 | M1 | YNUの見本で、題名・締切・提出の状態を正しく読めた項目の割合 | 30/30（100%、`pnpm metrics:m1`、2026-11-06） | 100% | 見本と手で作った正解を比べる試験 |
-| M2 | PandAの見本で、同じく正しく読めた割合 | 未測定 | 100% | 同上（orange） |
+| M2 | KULMSの見本で、同じく正しく読めた割合 | 15/15（100%、2026-11-08、Issue #179、初回・比較元なし） | 100% | `pnpm --filter extension exec vitest run tests/kulms-collection.test.ts --silent=false`。固定した架空の正解と題名・締切・提出状態を比較（エージェント）。実物の正確さは未測定 |
 | M3 | お知らせから締切の変更を拾えた割合（再現率）と、拾ったうち正しかった割合（適合率） | 作成者既知の30件で再現率100%（18/18）・適合率100%（18/18）（[記録](docs/records/2026-11-06-m3.md)、2026-11-06）。作成者に未知の確認用10件で再現率100%・適合率100%。通信の失敗の後に1日1回の制限の例外として1回だけやり直した値で、人の合意までは参考値（[記録](docs/records/2026-11-07-m3-blind.md)、2026-11-07）。同じ確認用10件を通常の1回で測定：再現率100%・適合率100%、10件完了、7,983トークン（[記録](docs/records/2026-11-08-m3.md)、2026-11-08、再実行なし） | 再現率90%以上、適合率95%以上 | 架空のお知らせ30件 |
 | M4 | LMSを開いた回数のうち、裏の取得が最後まで済んだ割合 | 未測定 | 95%以上 | 拡張機能が手元で数える（回数と成否だけ。SIDや課題の中身は残さない） |
 | M5 | LMSを開いてから、学生の画面とカレンダーに変化が出るまでの時間（中央値） | 未測定 | 30秒以内 | M4と同じ記録の時刻から |
