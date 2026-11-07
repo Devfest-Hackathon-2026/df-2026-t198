@@ -13,7 +13,8 @@
     "https://www.googleapis.com/*",
     "https://gmail.googleapis.com/*",
     "https://identitytoolkit.googleapis.com/*",
-    "https://securetoken.googleapis.com/*"
+    "https://securetoken.googleapis.com/*",
+    "https://lms.gakusei.kyoto-u.ac.jp/*"
   ],
   "options_ui": {
     "page": "options.html",
@@ -45,6 +46,15 @@
       ],
       "js": [
         "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://lms.gakusei.kyoto-u.ac.jp/*"
+      ],
+      "js": [
+        "kulms-content.js"
       ],
       "run_at": "document_idle"
     }

@@ -5,7 +5,7 @@ import { collectKulmsObservation } from '../src/kulms-collection.js';
 import { parseObservation } from '../../server/src/observation-input.js';
 
 const origin = 'https://lms.gakusei.kyoto-u.ac.jp';
-let requests: { url: string; init?: RequestInit }[];
+let requests: { url: string; init: RequestInit | undefined }[];
 let replies: Record<string, unknown>;
 const fetcher = vi.fn<typeof fetch>();
 const options = () => ({ fetcher, observationId: expected.observationId, fetchedAt: expected.fetchedAt,
@@ -74,4 +74,36 @@ it('aborts on student departure without returning a partial observation', async 
   const controller = new AbortController(); controller.abort();
   await expect(collectKulmsObservation({ ...options(), signal: controller.signal })).rejects.toThrow('yielded');
   expect(fetcher).not.toHaveBeenCalled();
+});
+it('preserves partial courses on a bad row, without certifying their completeness', async () => {
+  replies['/direct/assignment/site/fictional-course.json'] = { assignment_collection: [
+    input.assignments.assignment_collection[0], { id: 'fictional-broken', context: 'fictional-course' }] };
+  const result = await collectKulmsObservation(options());
+  expect(result.courseResults[0]?.listComplete).toBe(false);
+  expect(result.assignments).toHaveLength(1); expect(result.failures[0]?.kind).toBe('parse');
+  expect(parseObservation(result)).toEqual(result);
+});
+it('accepts explicit empty lists only while authenticated', async () => {
+  replies['/direct/assignment/site/fictional-course.json'] = { assignment_collection: [] };
+  const result = await collectKulmsObservation(options());
+  expect(result.failures).toEqual([]); expect(result.courseResults[0]?.listComplete).toBe(true);
+});
+it('collects subsequent site pages even when the server returns fewer than the limit', async () => {
+  replies['/direct/site.json?_limit=200&_start=1'] = { site_collection: [{ id: 'fictional-second', title: '架空の次の授業' }] };
+  replies['/direct/site.json?_limit=200&_start=2'] = { site_collection: [] };
+  replies['/direct/assignment/site/fictional-second.json'] = { assignment_collection: [] };
+  expect((await collectKulmsObservation(options())).courseResults.map(r => r.listComplete)).toEqual([true, true]);
+});
+it('does not mix students if another tab changes the LMS login during collection', async () => {
+  const original = fetcher.getMockImplementation()!;
+  let probes = 0;
+  fetcher.mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/user/current.json') && ++probes === 2) return new Response(JSON.stringify({ id: 'fictional-other' }));
+    return original(url, init);
+  });
+  await expect(collectKulmsObservation(options())).rejects.toThrow('account-changed');
+});
+it('keeps the deadline equality boundary active instead of ending it', async () => {
+  const equal = { ...options(), fetchedAt: '2030-11-10T15:00:00.000Z' };
+  expect((await collectKulmsObservation(equal)).assignments.map(a => a.sourceId)).toContain('fictional-a');
 });
