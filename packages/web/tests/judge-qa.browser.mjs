@@ -70,7 +70,7 @@ try {
       await calendar.getByRole('button', { name: '今日へ', exact: true }).click();
       assert.equal(await calendar.locator('.calendar-scroll').evaluate(element => Math.round(element.scrollLeft)), 0);
       assert.equal(await student.locator('.scroll-hint').first().isVisible(), width <= 850);
-      assert.equal(await student.getByText('黄色は、今変わった締切の目印です。しばらくすると元の色に戻ります。', { exact: true }).count(), 0);
+      assert.equal(await student.getByText('朱色は、今変わった締切の目印です。しばらくすると元の色に戻ります。', { exact: true }).count(), 0);
     });
     await check(`${width}: period labels stay visible after horizontal scrolling`, async () => {
       const region = student.locator('.timetable-scroll');
