@@ -19,8 +19,18 @@
     "page": "options.html",
     "open_in_tab": true
   },
+  "icons": {
+    "16": "icons/todoku-icon-16.png",
+    "48": "icons/todoku-icon-48.png",
+    "128": "icons/todoku-icon-128.png"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/todoku-icon-16.png",
+      "48": "icons/todoku-icon-48.png",
+      "128": "icons/todoku-icon-128.png"
+    }
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'; connect-src https://www.googleapis.com https://gmail.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com"
