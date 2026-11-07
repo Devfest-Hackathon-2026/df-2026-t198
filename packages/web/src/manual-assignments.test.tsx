@@ -31,7 +31,7 @@ it('offers addition even before any LMS courses or assignments exist', () => {
 });
 it('puts manual deadlines alongside LMS tasks in upcoming order and in the correct timetable course', () => {
   const data = { ...studentFixture(), manualAssignments: [row] };
-  const html = renderToStaticMarkup(<StudentView data={data} />);
+  const html = renderToStaticMarkup(<StudentView data={data} now={Date.parse('2026-11-08T10:00:00+09:00')} />);
   const upcoming = html.match(/<section class="upcoming"[^>]*>(.*?)<\/section>/)![1]!;
   expect(upcoming.indexOf('架空の紙の課題')).toBeLessThan(upcoming.indexOf('レポートA'));
   expect(html.match(/<small>手で入れた課題<\/small>/g)).toHaveLength(2);
@@ -55,11 +55,11 @@ it('distinguishes invalid input from retryable request failures', async () => {
   await expect(api.add('fictional-id', input)).rejects.toThrow('request-failed');
 });
 
-it('excludes ended LMS tasks from both deadline lists while keeping overdue manual tasks in the student list', () => {
+it('excludes ended LMS and overdue manual tasks from deadline lists while retaining manual tasks for inspection', () => {
   const ended = assignment('架空の終了したLMS課題', dated('2026-11-09'), { presenceState: 'ended' });
   const overdue = { ...row, date: '2026-11-06' };
   const data = { ...studentFixture(), assignments: [ended], manualAssignments: [overdue] };
-  expect(deadlineEntries(data.assignments, data.manualAssignments).map(entryTitle)).toEqual([row.title]);
+  expect(deadlineEntries(data.assignments, data.manualAssignments, Date.parse('2026-11-08T10:00:00+09:00')).map(entryTitle)).toEqual([]);
   const html = renderToStaticMarkup(<StudentView data={data} now={Date.parse('2026-11-08T10:00:00+09:00')} />);
   expect(html).toContain(row.title);
   expect(html).not.toContain(ended.latest.title);
