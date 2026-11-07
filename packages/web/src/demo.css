@@ -4,6 +4,7 @@
 .demo-shell input { display: block; max-width: 100%; padding: .6rem; }
 .demo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin: 1rem 0; }
 .demo-teacher-action { margin: 1rem 0; }
+.demo-teacher-option { margin: .8rem 0; }
 .demo-shell section, .demo-shell article { margin: 1.5rem 0; padding: 1rem; background: var(--paper, #fff); border: 1px solid #ddd; border-radius: .5rem; }
 .demo-pages .demo-course { display: inline-block; vertical-align: top; margin-right: 1rem; }
 .demo-pages .demo-status, .demo-pages .demo-availability { margin-left: 1rem; }

@@ -14,6 +14,8 @@ export const dated = (date: string): Deadline => ({ kind: 'date', date, dueText:
 export function studentFixture(): StudentData {
   return {
     online: true,
+    plans: [],
+    manualAssignments: [],
     courses: [
       { system: 'demo-lms', courseId: 'math', name: '架空の線形代数', url: 'https://example.invalid/course?id=math', slots: [{ weekday: 1, period: 2 }, { weekday: 3, period: 2 }] },
       { system: 'panda', courseId: 'math', name: '架空の別大学の授業', slots: [{ weekday: 7, period: 6 }] },

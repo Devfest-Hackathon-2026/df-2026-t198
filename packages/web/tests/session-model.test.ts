@@ -13,6 +13,23 @@ function row(id: string, deadline: LedgerAssignment['latest']['deadline'], extra
 }
 const date = (value: string) => ({ kind: 'date' as const, date: value, dueText: value, timeZone: 'Asia/Tokyo' });
 const instant = (value: string) => ({ kind: 'datetime' as const, dueAt: value, dueText: value, timeZone: 'Asia/Tokyo' });
+it('excludes ended tasks from session deadlines, review and preparation candidates', async () => {
+  const { emptySession, preparationCandidates } = await import('../src/session-model');
+  const data = { ...emptySession(), context, assignments: [row('ended', date('2026-11-11'), {
+    presenceState: 'ended', reviewReasons: [{ kind: 'unreadable-deadline', detail: 'unreadable' }],
+  })] };
+  expect(buildSessionView(data, now).deadlines).toEqual([]);
+  expect(buildSessionView(data, now).review).toEqual([]);
+  expect(preparationCandidates(data, now)).toEqual([]);
+});
+
+it('does not reserve out-of-term classes when suggesting preparation slots', async () => {
+  const { emptySession, preparationCandidates } = await import('../src/session-model');
+  const data = { ...emptySession(), context, assignments: [row('next-week', date('2026-11-11'))],
+    courses: [{ courseId: 'old', name: '春の授業', system: 'demo-lms' as const, currentTerm: false,
+      slots: [{ weekday: 1 as const, period: 1 }] }] };
+  expect(preparationCandidates(data, now)[0]!.period).toBe(1);
+});
 it('shows remaining deadlines through the next session, preserving date-only precision', () => {
   const assignments = [row('yesterday', date('2026-11-05')), row('today', date('2026-11-06')),
     row('session-date', date('2026-11-13')), row('at-session', instant('2026-11-13T11:00:00+09:00')),
@@ -81,6 +98,8 @@ it('formats deadlines without timezone identifiers and describes extensions in a
   expect(formatDeadline(date('2026-11-12'))).toBe('2026/11/12（日付のみ）');
   expect(formatDeadline({ kind: 'none', dueText: 'なし', timeZone: 'Asia/Tokyo' })).toBe('締切なし');
   expect(formatDeadline({ kind: 'unreadable', dueText: '', timeZone: 'Asia/Tokyo' })).toBe('締切を確認できませんでした');
+  expect(formatDeadline({ kind: 'unreadable', dueText: ' - ', timeZone: 'Asia/Tokyo' }))
+    .toBe('LMSに締切日時の記載がありません（表示「-」）');
   const change: AssignmentChange = { changeId: 'extension', recordedAt: now.toISOString(),
     assignmentKey: { system: 'demo-lms', sourceId: 'task' }, kind: 'deadline-changed',
     before, after, observationId: 'fictional' };

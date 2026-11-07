@@ -105,6 +105,20 @@ function readCourses(root: TreeElement, d: ReadingDefinition): PageReading {
   }
   return { pageType: 'home', courses: [...courses.values()], assignments: [] };
 }
+
+/** Optional metadata, separate from the stable page-reading/sample contract. */
+export function readCourseTerms(definition: unknown, html: string): Map<string, string[]> {
+  const d = validateDefinition(definition);
+  const terms = new Map<string, string[]>();
+  if (!d.courses.term) return terms;
+  if (typeof html !== 'string' || html.length > 5_000_000) throw new Error('invalid-html');
+  const { document } = parseHtmlTree(html);
+  for (const row of document.querySelectorAll(d.courses.rows)) {
+    const id = required(row, d.courses.courseId);
+    terms.set(id, [...(terms.get(id) ?? []), value(row, d.courses.term) ?? '']);
+  }
+  return terms;
+}
 function submission(status: string, d: ReadingDefinition): ReadAssignment['submission'] {
   return Object.hasOwn(d.transforms.submission, status) ? d.transforms.submission[status]! : 'unknown';
 }

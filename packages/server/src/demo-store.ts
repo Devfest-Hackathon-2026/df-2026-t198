@@ -17,7 +17,7 @@ export interface DemoStore {
 export function isDemoStudent(data: Partial<DemoAccount> | undefined, uid: string) {
   return data?.role === 'student' && data.studentId === uid;
 }
-export function createDemoStore(db: Firestore): DemoStore {
+export function createDemoStore(db: Firestore, resetClock = Date.now): DemoStore {
   return {
     async reset(uid, onlyIfStale) {
       return db.runTransaction(async tx => {
@@ -29,13 +29,13 @@ export function createDemoStore(db: Firestore): DemoStore {
         if (!current) throw new DemoForbidden();
         const contextRef = student.collection('sessionContext').doc('current');
         const context = (await tx.get(contextRef)).data();
-        const now = Date.now();
+        const now = resetClock();
         const dates = [context?.['nextSessionAt'], ...current.courses.flatMap(course => course.assignments.map(task => task.dueAt))];
         if (onlyIfStale && dates.every(date => typeof date === 'string' && Date.parse(date) > now)) return { reset: false, data: current };
         const calendar = student.collection('integrations').doc('calendar');
         const integration = (await tx.get(calendar)).data();
         if (integration && (integration['mode'] !== 'mock' || integration['executor'] !== 'demo')) throw new DemoForbidden();
-        const collections = ['assignments', 'courses', 'changes', 'fetchStates', 'observationReceipts', 'calendarItems'];
+        const collections = ['assignments', 'courses', 'changes', 'fetchStates', 'observationReceipts', 'calendarItems', 'plans', 'manualAssignments', 'planActionReceipts'];
         const rows = [];
         for (const name of collections) rows.push(await tx.get(student.collection(name)));
         const initial = initialDemo(now);
@@ -43,6 +43,7 @@ export function createDemoStore(db: Firestore): DemoStore {
         tx.delete(calendar);
         tx.set(source, initial.data);
         tx.set(contextRef, initial.context);
+        tx.update(profile.ref, { displayName: initial.displayName });
         return { reset: true, data: initial.data };
       });
     },

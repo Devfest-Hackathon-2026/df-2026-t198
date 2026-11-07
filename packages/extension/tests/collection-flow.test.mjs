@@ -4,8 +4,10 @@ import { createRequire } from 'node:module';
 import { createContext, runInContext } from 'node:vm';
 import { fileURLToPath, URL, URLSearchParams } from 'node:url';
 import { expect, it, vi } from 'vitest';
+import { setTimeout, clearTimeout, setImmediate } from 'node:timers';
 import { parseObservation } from '../../server/src/observation-input.js';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomUUID, webcrypto } from 'node:crypto';
+import { TextEncoder } from 'node:util';
 import { applyObservation } from '../../core/src/ledger.js';
 import { acknowledgeCalendarItem, reconcileCalendarItem } from '../../core/src/calendar.js';
 
@@ -45,17 +47,19 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   } }, probe: connected ? { uid: 'synthetic-user', namespace: `${config.firebase.projectId}:${config.oauthClientId}`,
     calendar: { status: 'ready', id: calendarId } } : undefined };
   const items = new Map(), events = new Map(), googleCalls = [], reports = [];
-  let ledger = [], changes = [], extended = false;
+  let ledger = [], changes = [], extended = false, ended = false;
   const reply = (status, data) => ({ status, ok: status >= 200 && status < 300, json: async () => globalThis.structuredClone(data) });
   let workerListener, contentListener, trigger;
   // Existing sample data stays untouched. The fake server adds synthetic forms and
-  // accessible links for the three closed rows to exercise the complete-list path.
+  // open availability and accessible links for all rows to exercise creation/move.
   const lmsFetch = (calls) => vi.fn(async (url, init) => {
     calls.push({ url, init });
     const fields = new URLSearchParams(String(init.body ?? ''));
-    const list = materials.replace(/(<td class="kyozaititleCell" id="(REP\d+)">)([\s\S]*?)(<\/td>)/g,
+    let list = materials.replaceAll('公開終了', '公開中').replace(/(<td class="kyozaititleCell" id="(REP\d+)">)([\s\S]*?)(<\/td>)/g,
       (whole, open, id, inner, close) => inner.includes('onclick=') ? whole
         : `${open}${inner}<a onclick="kyozaiTitleLink('${id}','02')"></a>${close}`);
+    if (ended) list = list.replace(/(<td class="kyozaititleCell" id="REP\d+">[\s\S]*?<\/td>\s*<td class="jyugyeditCell">)[\s\S]*?(<\/td>)/g,
+      '$1公開終了$2');
     const html = url.includes('linkKougi') ? list + '<form id="main_form" name="corsCollActionForm"><input name="jyugyoHiddenId" value="synthetic-folder"></form>'
       : url.includes('linkKyozaiTitle') ? detail.replaceAll('架空課題04', `架空課題${fields.get('kyozaiId')}`)
         .replaceAll('2098/11/13 (木)', extended ? '2098/11/14 (金)' : '2098/11/13 (木)')
@@ -76,6 +80,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
       const path = new URL(url).pathname;
       const eventId = path.split('/').at(-1);
       if (init.method === 'GET') return events.has(eventId) ? reply(200, events.get(eventId)) : reply(404);
+      if (init.method === 'DELETE') { events.delete(eventId); return reply(204); }
       expect(['POST', 'PUT']).toContain(init.method);
       expect(path).toBe(`/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events${init.method === 'PUT' ? `/${eventId}` : ''}`);
       const event = JSON.parse(init.body);
@@ -109,21 +114,22 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
     }
     return reply(200, applied.result);
   });
-  const common = { URL, URLSearchParams, AbortSignal: globalThis.AbortSignal, crypto: { randomUUID },
-    setTimeout: (fn) => { globalThis.queueMicrotask(fn); return 0; }, console: { warn: vi.fn() } };
+  let elapsed = 0;
+  const common = { Date: class extends Date { static now() { return Date.now() + elapsed; } }, URL, URLSearchParams, TextEncoder, AbortSignal: globalThis.AbortSignal, AbortController: globalThis.AbortController, crypto: { randomUUID, subtle: webcrypto.subtle },
+    clearTimeout, setTimeout: (fn, ms) => { if (ms >= 4000) return setTimeout(fn, ms); if (ms === 2000) elapsed += ms; globalThis.queueMicrotask(fn); return 0; }, console: { warn: vi.fn() } };
   const call = (listener, message, sender) => new Promise(resolve => listener(message, sender, resolve));
   const getAuthToken = vi.fn(async options => { expect(options.interactive).toBe(false); return { token: 'synthetic-google-token' }; });
   const workerContext = createContext({ ...common, sdk, fetch: fetcher, chrome: {
     identity: { getAuthToken },
-    runtime: { id: 'synthetic-extension', onStartup: { addListener: vi.fn() }, onMessage: { addListener: fn => { workerListener = fn; } } },
+    runtime: { id: 'synthetic-extension', onStartup: { addListener: vi.fn() }, onInstalled: { addListener: vi.fn() }, onMessage: { addListener: fn => { workerListener = fn; } } },
     storage: { session: { set: async values => Object.assign(state, globalThis.structuredClone(values)), get: async () => globalThis.structuredClone(state) } },
-    tabs: { sendMessage: async (tabId, message, target) => {
+    tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: async (tabId, message, target) => {
       expect(tabId).toBe(7); expect(target).toEqual({ frameId: 0, documentId: 'synthetic-document' });
       return call(contentListener, message, { id: 'synthetic-extension' });
     } },
   } }, { codeGeneration: { strings: false, wasm: false } });
   const { document } = parseHTML('<html><body><main>架空のLMS</main></body></html>');
-  const contentContext = createContext({ ...common, document, fetch: pageFetch, window: { location: { href: pageUrl } }, chrome: {
+  const contentContext = createContext({ ...common, document, fetch: pageFetch, window: { location: { href: pageUrl }, addEventListener: () => {} }, chrome: {
     runtime: { id: 'synthetic-extension', onMessage: { addListener: fn => { contentListener = fn; } },
       sendMessage: message => {
         trigger = call(workerListener, message, { id: 'synthetic-extension', frameId: 0, url: pageUrl, tab: { id: 7 }, documentId: 'synthetic-document' });
@@ -131,8 +137,11 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
       } },
   } }, { codeGeneration: { strings: false, wasm: false } });
   runInContext(worker.outputFiles[0].text, workerContext);
+  trigger = undefined;
   runInContext(content.outputFiles[0].text, contentContext);
+  await new Promise(resolve => setImmediate(resolve));
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
+  await vi.waitFor(() => expect([...document.body.children].some(node => node.shadowRoot)).toBe(true));
   const notice = [...document.body.children].find(node => node.shadowRoot).shadowRoot.querySelector('a');
   expect(notice.textContent).toBe('課題の変更が198件あります。学生の画面を開く');
   expect(notice.href).toBe('https://synthetic.web.app/student');
@@ -169,8 +178,11 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   const originalIds = [...events.keys()];
   expect([...events.values()].every(event => event.start.dateTime === '2098-11-13T11:53:00+09:00')).toBe(true);
   extended = true;
+  elapsed += 10 * 60_000;
   // Reopen the page, using the same worker and saved calendar, after the LMS changes.
+  trigger = undefined;
   runInContext(content.outputFiles[0].text, contentContext);
+  await new Promise(resolve => setImmediate(resolve));
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
   expect(apiBodies).toHaveLength(2);
   expect(apiBodies[1].observationId).not.toBe(apiBodies[0].observationId);
@@ -183,5 +195,19 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   expect(changes.filter(change => change.kind === 'deadline-changed')).toHaveLength(198);
   expect(ledger.every(item => item.officialDeadline.deadline.dueAt === '2098-11-14T11:53:00+09:00')).toBe(true);
   expect([...items.values()].every(item => item.appliedRevision === item.desiredRevision && item.desiredRevision === 2)).toBe(true);
+  ended = true;
+  elapsed += 10 * 60_000;
+  const priorDetailCount = calls.filter(c => c.url.includes('linkKyozaiTitle')).length;
+  trigger = undefined;
+  runInContext(content.outputFiles[0].text, contentContext);
+  await new Promise(resolve => setImmediate(resolve));
+  expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
+  await vi.waitFor(() => expect(reports).toHaveLength(594), { timeout: 10_000 });
+  expect(events.size).toBe(0);
+  expect(googleCalls.filter(([, method]) => method === 'DELETE')).toHaveLength(198);
+  expect(ledger.every(item => item.presenceState === 'ended' && item.consecutiveMissingCount === 0)).toBe(true);
+  expect(calls.filter(c => c.url.includes('linkKyozaiTitle'))).toHaveLength(priorDetailCount);
+  expect(state.ynuFetchStatus).toBe('success');
+  expect([...items.values()].every(item => item.desired.state === 'deleted' && item.appliedRevision === item.desiredRevision)).toBe(true);
   expect(JSON.stringify([apiBodies, reports, [...events.values()]])).not.toMatch(/synthetic-session|synthetic-id-token|synthetic-google-token|SID=|Cookie/i);
 });

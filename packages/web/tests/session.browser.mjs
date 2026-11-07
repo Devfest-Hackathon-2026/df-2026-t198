@@ -74,13 +74,13 @@ try {
   // Six days leave at least two free weekday periods; Monday period 2 contains a class.
   await task.ref.update({ 'officialDeadline.deadline.date': dayInJapan(new Date(now.getTime() + 6 * 86400_000)) });
   await student.collection('plans').doc('fictional-promise').set({ assignment: originalTask.key,
-    date: '2026-11-10', period: 3, decidedOn: originalContext.lastSessionAt.slice(0, 10), calendarEventId: 'fictional' });
+    date: '2026-11-10', period: 3, decidedOn: dayInJapan(new Date(originalContext.lastSessionAt)), planId: 'fictional-promise', title: '架空の数学レポート', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'demo-supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' });
   const plansBefore = (await student.collection('plans').get()).size;
   const writes = [];
   page.on('request', request => {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method()) && /\/api\//.test(request.url())) writes.push(new URL(request.url()).pathname);
   });
-  await page.goto('http://127.0.0.1:5177/session');
+  await page.goto(`${process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5177'}/session`);
   await page.getByLabel('メールアドレス').fill('demo-supporter@example.invalid');
   await page.getByLabel('パスワード').fill(process.env.SESSION_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
@@ -96,6 +96,27 @@ try {
   assert.doesNotMatch(await page.locator('.session-heading').textContent(), /今回|日本時間|Asia\/Tokyo/);
   assert.doesNotMatch(await page.locator('main').textContent(), /面談日時は日本時間|Asia\/Tokyo|模擬LMS/);
   assert.match(await page.locator('.session-updates').innerText(), /体験用LMS/);
+  const fetchRef = student.collection('fetchStates').doc('fictional-ynu-i94');
+  const last = new Date(now.getTime() - 3 * 86400_000).toISOString();
+  const lastDay = new Date(last).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' });
+  const notice = page.locator('.session-updates .notice');
+  await fetchRef.set({ studentId: 'demo-student-a', system: 'ynu-lms', lastSucceededAt: last,
+    lastAttemptedAt: last, lastResult: 'success', lastFailureKind: null, lastAppliedObservationId: 'fictional-i94' });
+  await notice.getByText(`YNU LMS：${lastDay}から更新がありません。学生がLMSを開くと新しくなります。`, { exact: true }).waitFor();
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: width === 1280 ? 960 : 844 });
+    assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+    const box = await notice.boundingBox();
+    assert.ok(box && box.width > 0 && box.x >= 0 && box.x + box.width <= width);
+    await page.screenshot({ path: `${dir}/stale-${width}.png`, fullPage: true });
+  }
+  await page.setViewportSize({ width: 1280, height: 960 });
+  await fetchRef.update({ lastSucceededAt: now.toISOString(), lastResult: 'failed', lastFailureKind: 'http' });
+  await notice.getByText('YNU LMS：課題をすべて確認できていません。LMSを一緒に開いて確かめてください。', { exact: true }).waitFor();
+  await fetchRef.update({ lastResult: 'success', lastFailureKind: null });
+  await notice.waitFor({ state: 'detached' });
+  assert.match(await page.locator('.session-updates').innerText(), /YNU.*時点の情報/);
+  await fetchRef.delete();
   const logoutStyle = await page.locator('.session-account .logout').evaluate(node => {
     const style = globalThis.getComputedStyle(node);
     return { decoration: style.textDecorationLine, border: style.borderWidth, background: style.backgroundColor };
@@ -133,8 +154,8 @@ try {
   // Monday period 2 contains a class and must never contain a suggestion.
   assert.equal(await page.locator('tbody tr').nth(1).locator('td').first().locator('.session-candidate').count(), 0);
   await page.getByRole('region', { name: '今日決めること' }).getByText('要確認', { exact: true }).waitFor();
-  assert.equal(await page.getByRole('button', { name: '学生に確認を頼む', exact: true }).isDisabled(), true);
-  await page.getByText('確定は学生の画面で行います。確認の依頼は準備中です。').waitFor();
+  assert.equal(await page.getByRole('button', { name: '学生に確認を頼む', exact: true }).count(), 0);
+  assert.equal(await page.locator('.session-candidate button').first().isEnabled(), true);
   assert.equal((await student.collection('plans').get()).size, plansBefore);
   assert.deepEqual(writes, []);
   assert.doesNotMatch(await page.locator('main').innerText(), removedCopy);
@@ -218,11 +239,12 @@ try {
   assert.deepEqual(errors, []);
   await task.ref.set(originalTask);
   const operations = [
+    'stale notice at 72 hours at 1280px and 390px', 'failed fetch notice and live recovery',
     'secondary student IDs and no redundant selector actions', 'own session only without assigned students',
     'no internal timezone labels and trial LMS wording', 'link-style logout', 'deadline extension sentence after live update',
     'aligned disclosure and Enter/Space at 1280px and 390px', 'student selector only sharing notice', 'checking without timetable or decisions', 'row-only source details',
     'previous promises', 'planning without full deadline/change list', 'two free weekday suggestions',
-    'disabled unsent confirmation and zero candidate writes', 'both step links', 'browser back', 'direct URL reload',
+    'available add buttons and no writes before choosing', 'both step links', 'browser back', 'direct URL reload',
     '390px checking and planning', 'student switch', 'session time edit and unset', 'live assignment update',
     'revocation clears planning and promises', 'revoked student removed', 'shared login across routes', 'logout clears data',
   ];
@@ -230,8 +252,9 @@ try {
     viewport: [1280, 960, 390, 844] }, null, 2));
   log(JSON.stringify({ observations: [{ requirement_id: 'browser-operations', status: 'pass',
     observed: { operations: operations.length, browserErrors: errors.length },
-    evidence_files: ['operations.json', 'students-wide.png', 'deadline-changed-wide.png', 'check-wide.png', 'check-narrow.png', 'plan-wide.png', 'plan-narrow.png'] }] }));
+    evidence_files: ['operations.json', 'stale-1280.png', 'stale-390.png', 'students-wide.png', 'deadline-changed-wide.png', 'check-wide.png', 'check-narrow.png', 'plan-wide.png', 'plan-narrow.png'] }] }));
 } finally {
+  await student.collection('fetchStates').doc('fictional-ynu-i94').delete();
   await grant.set({ scopes: ['all'], revokedAt: null });
   await db.doc('students/demo-student-b/supporters/demo-supporter').set({ scopes: ['all'], revokedAt: null });
   await student.collection('changes').doc('fictional-extension-i67').delete();

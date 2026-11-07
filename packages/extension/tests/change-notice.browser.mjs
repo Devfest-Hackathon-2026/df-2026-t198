@@ -45,9 +45,10 @@ try {
       sendMessage: () => new Promise(resolve => { globalThis.finishCollection = resolve; }) } };
   });
   const openLms = async () => {
-    await page.goto('https://lms.ynu.ac.jp/lms/home;SID=synthetic-session');
+    await page.goto('https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session');
     await page.addScriptTag({ content });
     await page.getByRole('textbox').fill('入力途中の文字');
+    await page.waitForFunction(() => typeof globalThis.finishCollection === 'function');
   };
   for (const response of [{ ok: true, changed: false, changeCount: 0 }, { ok: false, code: 'not-logged-in' }]) {
     await openLms();
@@ -76,23 +77,54 @@ try {
   await link.click();
   const student = await opened;
   await student.waitForURL('https://synthetic-project.web.app/student');
-  assert.equal(page.url(), 'https://lms.ynu.ac.jp/lms/home;SID=synthetic-session');
+  assert.equal(page.url(), 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session');
   await student.close();
 
   const popupPage = await context.newPage();
   await popupPage.addInitScript(() => {
-    globalThis.chrome = { tabs: { create: async ({ url }) => { globalThis.open(url, '_blank', 'noreferrer'); return {}; } } };
+    let display;
+    let listener;
+    globalThis.setCollectionDisplay = value => { display = value; listener({ ynuCollectionDisplay: {} }, 'session'); };
+    globalThis.chrome = { storage: {
+      session: { get: async () => ({ ynuCollectionDisplay: display }) },
+      onChanged: { addListener: fn => { listener = fn; } },
+    }, tabs: { create: async ({ url }) => { globalThis.open(url, '_blank', 'noreferrer'); return {}; } } };
   });
   await popupPage.goto('https://extension.example.test/popup.html');
   assert.equal(await popupPage.getByRole('button').count(), 1);
   assert.equal(await popupPage.getByRole('link').count(), 0);
   await popupPage.setViewportSize({ width: 260, height: 90 });
   await popupPage.screenshot({ path: `${evidenceDir}/popup.png` });
+  await popupPage.setViewportSize({ width: 300, height: 220 });
+  for (const [status, expected] of [
+    ['running', 'LMSの課題を更新しています'],
+    ['yielded', 'LMSの操作を優先して更新を中断しました'],
+    ['success', 'LMSの課題を更新しました'],
+    ['partial', '一部の課題を更新できませんでした。LMSを開き直してください'],
+    ['collection-unavailable', '一部の課題を更新できませんでした。LMSを開き直してください'],
+    ['sign-in-required', '拡張機能の設定からGoogleにログインしてください'],
+    ['api-not-configured', '拡張機能の接続先の設定が必要です'],
+  ]) {
+    await popupPage.evaluate(status => globalThis.setCollectionDisplay({ status, finishedAt: new Date(2098, 10, 7, 4, 12).getTime() }), status);
+    const statusLine = popupPage.getByRole('status');
+    await statusLine.getByText(expected, { exact: false }).waitFor();
+    assert.equal(await popupPage.getByRole('button').count(), 1);
+    assert.equal(await popupPage.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+    await popupPage.screenshot({ path: `${evidenceDir}/popup-${status}.png` });
+    if (status === 'success' || status === 'partial') {
+      for (const width of [1280, 390]) {
+        await popupPage.setViewportSize({ width, height: 844 });
+        assert.equal(await popupPage.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+        await popupPage.screenshot({ path: `${evidenceDir}/popup-${status}-${width}.png` });
+      }
+      await popupPage.setViewportSize({ width: 300, height: 220 });
+    }
+  }
   const openedFromPopup = context.waitForEvent('page');
   await popupPage.getByRole('button', { name: '学生の画面を開く' }).click();
   await (await openedFromPopup).waitForURL('https://synthetic-project.web.app/student');
   assert.deepEqual(errors, []);
-  console.log('PASS: changed/unchanged/failed, student links, one-button popup, input/focus/layout, CSS isolation, 390px, no referrer');
+  console.log('PASS: changed/unchanged/failed, student links, one-button popup with seven live collection states, input/focus/layout, CSS isolation, 390px, no referrer');
 } finally {
   await browser.close();
 }

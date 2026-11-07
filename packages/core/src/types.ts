@@ -25,6 +25,8 @@ export interface Course {
   slots: CourseSlot[];
   /** Optional course page; session parameters must be removed before sending. */
   url?: string;
+  /** Omitted by older collectors; only explicit false excludes a course. */
+  currentTerm?: boolean;
 }
 
 export type Deadline = { dueText: string; timeZone: string } & (
@@ -60,7 +62,7 @@ export interface Observation {
   definitionVersion: number;
   fetchedAt: IsoDateTime;
   catalogCourses: Course[];
-  courseResults: { courseId: string; listComplete: boolean; seenSourceIds: string[] }[];
+  courseResults: { courseId: string; listComplete: boolean; seenSourceIds: string[]; endedSourceIds?: string[] }[];
   assignments: Assignment[];
   failures: FetchFailure[];
 }
@@ -74,7 +76,7 @@ export interface AssignmentChange {
   changeId: string;
   assignmentKey: AssignmentKey;
   kind: 'new' | 'title-changed' | 'deadline-changed' | 'submitted' |
-    'cancellation-candidate' | 'cancelled' | 'restored';
+    'cancellation-candidate' | 'cancelled' | 'restored' | 'ended';
   before: string | Deadline | null;
   after: string | Deadline | null;
   observationId: string;
@@ -93,7 +95,7 @@ export interface LedgerAssignment {
   preparationStartsAt: IsoDateTime | null;
   submission: Submission;
   submittedAt: IsoDateTime | null;
-  presenceState: 'active' | 'cancellation-candidate' | 'cancelled';
+  presenceState: 'active' | 'cancellation-candidate' | 'cancelled' | 'ended';
   consecutiveMissingCount: number;
   lastSeenObservationId: string;
   lastSeenAt: IsoDateTime;
@@ -115,13 +117,22 @@ export interface ObservationReceipt {
   result: ObservationResult;
 }
 
-/** Only a preparation slot agreed during a session is stored. */
-export interface PreparationPlan {
-  assignment: AssignmentKey;
-  date: IsoDate;
-  period: number;
+/** Saved by the API; removing a plan leaves a tombstone for delayed retries. */
+export interface PreparationPlan extends PreparationPlanInput {
+  planId: string;
+  title: string;
   decidedOn: IsoDate;
-  calendarEventId: string;
+  timeZone: 'Asia/Tokyo';
+  confirmedBy: string;
+  createdByRole: 'student' | 'supporter';
+  confirmedAt: IsoDateTime;
+  status: 'active' | 'done' | 'cancelled';
+  /** Absent on plans created before Issue #112; means no action yet. */
+  changedBy?: string;
+  changedAt?: IsoDateTime;
+  laterResult?: 'moved' | 'no-slot';
+  revision: number;
+  calendarItemKey: string;
 }
 
 /** Ephemeral suggestion, never a confirmed plan or a calendar event. */
@@ -130,10 +141,29 @@ export interface PreparationCandidate {
   date: IsoDate;
   period: number;
 }
+export interface PreparationPlanInput extends PreparationCandidate {
+  startsAt: IsoDateTime;
+  endsAt: IsoDateTime;
+}
 
-/** Request body shape only; delivery and student confirmation are not implemented. */
-export interface PreparationConfirmationRequest {
-  candidates: PreparationCandidate[];
+/** A hand-entered deadline, stored separately from all LMS observations. */
+export interface ManualAssignmentInput {
+  title: string;
+  date: IsoDate;
+  /** Japan time HH:mm; null preserves date-only precision. */
+  time: string | null;
+  course: { system: LmsSystem; courseId: string } | null;
+  memo: string;
+}
+export interface ManualAssignment extends ManualAssignmentInput {
+  manualAssignmentId: string;
+  courseName: string | null;
+  createdBy: string;
+  createdByRole: 'student' | 'supporter';
+  createdAt: IsoDateTime;
+  status: 'active' | 'cancelled';
+  revision: number;
+  calendarItemKey: string;
 }
 
 export interface FetchState {
@@ -159,8 +189,8 @@ export type CalendarDesired = { state: 'present'; event: DeadlineEvent } | { sta
 export type CalendarErrorCode = 'authorization-required' | 'calendar-unavailable' | 'event-conflict' | 'network-error';
 export interface CalendarItem {
   itemKey: string;
-  kind: 'deadline';
-  sourceKey: AssignmentKey;
+  kind: 'deadline' | 'preparation' | 'manual-deadline';
+  sourceKey: AssignmentKey | { system: 'manual'; sourceId: string };
   calendarId: string | null;
   eventId: string;
   generation: number;

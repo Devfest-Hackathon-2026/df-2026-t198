@@ -33,7 +33,7 @@ export interface SessionServices {
   observeUser: (next: (user: User | null) => void) => () => void;
   login: (email: string, password: string) => Promise<unknown>;
   logout: () => Promise<void>;
-  students: (user: User) => Promise<{ uid: string }[]>;
+  students: (user: User) => Promise<{ uid: string; displayName?: string }[]>;
   saveContext: (user: User, student: string, context: SessionContext) => Promise<void>;
 }
 let services: SessionServices | null | undefined;
@@ -60,7 +60,7 @@ export function getSessionServices(): SessionServices | null {
       return local ? signInWithEmailAndPassword(auth, email, password) : connection.login();
     },
     logout: connection.logout,
-    students: async user => (await api(user, '/api/v1/supporter/students') as { students: { uid: string }[] }).students,
+    students: async user => (await api(user, '/api/v1/supporter/students') as { students: { uid: string; displayName?: string }[] }).students,
     saveContext: async (user, student, context) => { await api(user,
       `/api/v1/students/${encodeURIComponent(student)}/session-context`, context); },
   };

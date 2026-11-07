@@ -57,7 +57,8 @@ function fixture(storage = {}, persistedUid = null, workerId = '01234567-89ab-cd
   const listeners = [];
   const chrome = {
     runtime: { id: sender.id, getURL: (path) => `chrome-extension://${sender.id}/${path}`, onMessage: { addListener: (fn) => listeners.push(fn) } },
-    identity: { getAuthToken: vi.fn(async (options) => { order.push('token'); expect(options.interactive).toBe(true); return { token }; }) },
+    identity: { getAuthToken: vi.fn(async (options) => { order.push('token'); expect(options).toEqual({ interactive: true,
+      scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created'] }); return { token }; }) },
     storage: { local, session: { set: vi.fn() } },
   };
   const fetch = vi.fn(async (url, options) => {

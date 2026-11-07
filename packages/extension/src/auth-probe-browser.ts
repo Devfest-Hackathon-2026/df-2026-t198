@@ -4,6 +4,7 @@ import type { Auth, AuthCredential } from 'firebase/auth/web-extension';
 import { createProbe } from './auth-probe.js';
 import type { ProbeState } from './auth-probe.js';
 import { missingConfig, probeConfig } from './probe-config.js';
+import { calendarScopes } from './oauth-scopes.js';
 
 const stateKey = 'authProbeState';
 let auth: Auth | undefined;
@@ -44,7 +45,7 @@ export function browserProbe() {
         return current.currentUser?.uid ?? null;
       },
       async getToken() {
-        const result = await chrome.identity.getAuthToken({ interactive: true });
+        const result = await chrome.identity.getAuthToken({ interactive: true, scopes: calendarScopes });
         return result.token ?? '';
       },
       credential: (idToken, token) => GoogleAuthProvider.credential(idToken, token),

@@ -6,7 +6,8 @@ import { createServer } from 'node:net';
 if (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||
   process.env.FIRESTORE_EMULATOR_HOST !== '127.0.0.1:8085' ||
   process.env.FIREBASE_AUTH_EMULATOR_HOST !== '127.0.0.1:9099') throw new Error('local-emulators-required');
-const env = { ...process.env, KADAI_DEMO_PASSWORD: randomUUID(), VITE_USE_FIREBASE_EMULATORS: 'true' };
+const env = { ...process.env, KADAI_DEMO_PASSWORD: randomUUID(), VITE_USE_FIREBASE_EMULATORS: 'true',
+  PUBLIC_WEB_ORIGIN: 'http://127.0.0.1:5177' };
 const children = [];
 function start(command, args, quiet = false) {
   const child = spawn(command, args, { env, stdio: quiet ? 'ignore' : 'inherit' });

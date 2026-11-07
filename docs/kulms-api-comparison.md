@@ -119,3 +119,11 @@ KULMS の EntityBroker は自己記述 API（[`/direct/describe`](https://lms.ga
 
 - 本書の KULMS API に関する結果は同セッションにおける先行調査の記録であり、本書追記時点での追加 API 実行および Chrome 拡張への統合試験は未実施（`NOT_RUN`）である。
 - YNU LMS（CoursePower）および模擬 LMS（`demo-lms`）に関する記述は、比較対象コミット（`2732f359218a8167dd5264a48e36f0e74e0ec9e2`）のコードおよび既存の検証記録に基づく。
+
+---
+
+## 追記（2026-11-07）: KULASIS 調査および現行実装との最新比較について
+
+- **本文書の位置づけ**: 上記の本文・比較表は 2026-11-06 時点（コミット `2732f359218a8167dd5264a48e36f0e74e0ec9e2`）における KULMS（Sakai REST API）単体の調査スナップショットとしてそのまま維持しています。KULMS 単体の調査で曜日・時限等の時間割項目が未確認であった点に変更はありません。
+- **KULASIS を含めた最新比較**: 2026-11-07 に実施した京都大学教務情報システム（KULASIS）の取得先・フィールド調査、および `origin/main`（[`00c0bf771a9f909a4aa4d87d035e930b9144c7ee`](https://github.com/shieikan/kadai-hisho/tree/00c0bf771a9f909a4aa4d87d035e930b9144c7ee/)）時点の YNU / CoursePower・ダミー LMS との 4 方式比較については、[**docs/kulasis-data-comparison.md**](./kulasis-data-comparison.md) を参照してください。
+- **現行実装の進捗に関する補足**: 本文書内の「未実装」等の記述は 2026-11-06 時点のものです。2026-11-07 時点の現行 `main` では、YNU / CoursePower の今学期判定・公開終了課題（`endedSourceIds`）の扱い・空教材一覧や `24:00` 読取の修正および実機検証（[2026-11-07 実機記録](https://github.com/shieikan/kadai-hisho/blob/00c0bf771a9f909a4aa4d87d035e930b9144c7ee/docs/records/2026-11-07-integrated-live-verification.md)）、ならびに準備予定の保存や手入力課題といった共通機能の実装が進んでいます（KULMS および KULASIS の接続アダプターは引き続き未実装です）。

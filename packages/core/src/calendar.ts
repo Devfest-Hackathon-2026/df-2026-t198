@@ -1,8 +1,9 @@
-import type { CalendarDesired, CalendarItem, CalendarReport, DeadlineEvent, LedgerAssignment } from './types.js';
+import { manualDeadline } from './manual-assignment.js';
+import type { CalendarDesired, CalendarItem, CalendarReport, DeadlineEvent, LedgerAssignment, PreparationPlan, ManualAssignment } from './types.js';
 
 export function deadlineDesired(assignment: LedgerAssignment, courseName: string): CalendarDesired {
   const deadline = assignment.officialDeadline?.deadline;
-  if (assignment.presenceState === 'cancelled' || !deadline || (deadline.kind !== 'date' && deadline.kind !== 'datetime')) {
+  if (assignment.presenceState === 'cancelled' || assignment.presenceState === 'ended' || !deadline || (deadline.kind !== 'date' && deadline.kind !== 'datetime')) {
     return { state: 'deleted' };
   }
   const lines = [`締切：${deadline.dueText}`, `LMSで開く：${assignment.latest.url}`];
@@ -22,6 +23,23 @@ export function deadlineDesired(assignment: LedgerAssignment, courseName: string
   } };
 }
 
+export function manualDeadlineDesired(assignment: ManualAssignment): CalendarDesired {
+  if (assignment.status === 'cancelled') return { state: 'deleted' };
+  const deadline = manualDeadline(assignment);
+  const end = new Date(`${assignment.date}T00:00:00Z`);
+  end.setUTCDate(end.getUTCDate() + 1);
+  const description = `手で入れた課題（${assignment.createdByRole === 'student' ? '学生' : '支援担当'}が入れました）\n締切：${deadline.dueText}`;
+  return { state: 'present', event: {
+    summary: `${assignment.courseName ? `${assignment.courseName}：` : ''}${assignment.title}`,
+    description: (description + (deadline.kind === 'datetime' ? '\n予定は5分間の目印です。締切が5分延びる意味ではありません。' : ''))
+      .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'),
+    start: deadline.kind === 'datetime' ? { dateTime: deadline.dueAt, timeZone: deadline.timeZone } : { date: assignment.date },
+    end: deadline.kind === 'datetime' ? { dateTime: new Date(Date.parse(deadline.dueAt) + 300_000).toISOString(), timeZone: deadline.timeZone }
+      : { date: end.toISOString().slice(0, 10) },
+    transparency: 'transparent', reminders: { useDefault: true },
+  } };
+}
+
 function desiredSignature(desired: CalendarDesired): string {
   if (desired.state === 'deleted') return 'deleted';
   const time = (value: DeadlineEvent['start']) => 'date' in value
@@ -33,14 +51,29 @@ function desiredSignature(desired: CalendarDesired): string {
 
 export function reconcileCalendarItem(previous: CalendarItem | undefined, itemKey: string,
   assignment: LedgerAssignment, courseName: string, calendarId: string | null, newEventId: () => string): CalendarItem | undefined {
-  const desired = deadlineDesired(assignment, courseName);
+  return reconcileDesiredCalendarItem(previous, { itemKey, kind: 'deadline', sourceKey: assignment.key },
+    deadlineDesired(assignment, courseName), calendarId, newEventId);
+}
+
+export function preparationDesired(plan: PreparationPlan): CalendarDesired {
+  if (plan.status !== 'active') return { state: 'deleted' };
+  return { state: 'present', event: {
+    summary: `準備：${plan.title}`, description: `${plan.createdByRole === 'student' ? '学生' : '支援担当'}が入れた準備の予定です。`,
+    start: { dateTime: plan.startsAt, timeZone: plan.timeZone }, end: { dateTime: plan.endsAt, timeZone: plan.timeZone },
+    transparency: 'transparent', reminders: { useDefault: true },
+  } };
+}
+
+export function reconcileDesiredCalendarItem(previous: CalendarItem | undefined,
+  source: Pick<CalendarItem, 'itemKey' | 'kind' | 'sourceKey'>, desired: CalendarDesired,
+  calendarId: string | null, newEventId: () => string): CalendarItem | undefined {
   if (!previous && desired.state === 'deleted') return undefined;
   // Finish an uncertain deletion before giving a restored assignment a new ID.
   if (previous?.desired.state === 'deleted' && previous.appliedRevision !== previous.desiredRevision) return previous;
   if (previous && desiredSignature(previous.desired) === desiredSignature(desired) && previous.calendarId === calendarId) return previous;
   const regenerate = !previous || (previous.desired.state === 'deleted' && desired.state === 'present');
   return {
-    itemKey, kind: 'deadline', sourceKey: assignment.key, calendarId,
+    ...source, calendarId,
     eventId: regenerate ? newEventId() : previous.eventId,
     generation: (previous?.generation ?? 0) + (regenerate ? 1 : 0),
     desiredRevision: (previous?.desiredRevision ?? 0) + 1, desired,
@@ -56,4 +89,4 @@ export function acknowledgeCalendarItem(item: CalendarItem, report: CalendarRepo
     ...(report.errorCode === null ? { appliedRevision: report.revision, appliedAt: now } : {}) };
 }
 
-export type { CalendarDesired, CalendarItem, CalendarReport, CalendarIntegration, Course, LedgerAssignment } from './types.js';
+export type { CalendarDesired, CalendarItem, CalendarReport, CalendarIntegration, Course, LedgerAssignment, PreparationPlan, ManualAssignment } from './types.js';

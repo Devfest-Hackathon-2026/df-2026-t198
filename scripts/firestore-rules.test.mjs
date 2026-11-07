@@ -11,7 +11,7 @@ import {
 
 // The access matrix comes from docs/design.md sections 1 and 2, not the rules.
 const student = 'student-a';
-const sharedCollections = ['courses', 'assignments', 'changes', 'fetchStates', 'plans'];
+const sharedCollections = ['courses', 'assignments', 'changes', 'fetchStates', 'plans', 'manualAssignments'];
 const sharedPaths = [...sharedCollections.map((name) => `${name}/sample`), 'sessionContext/current'];
 const privatePaths = ['calendarItems/sample', 'integrations/calendar', 'observationReceipts/sample'];
 const roles = [
@@ -31,6 +31,7 @@ const grants = {
 const deniedPaths = [
   `students/${student}`,
   `students/${student}/futurePrivate/sample`,
+  `students/${student}/planActionReceipts/sample`,
   `students/${student}/sessionContext/other`,
   `students/${student}/integrations/other`,
   ...[...sharedPaths, ...privatePaths, 'supporters/allowed-supporter']
@@ -204,5 +205,23 @@ for (const role of roles) {
       await assertFails(updateDoc(doc(db, path), { value: 'client update' }));
       await assertFails(deleteDoc(doc(db, path)));
     }
+  });
+}
+
+// Issue #112: sharing includes the student's preparation progress, never write authority.
+for (const role of roles) {
+  test(`${role.name}: preparation actions remain server-only and progress follows sharing`, async () => {
+    const db = databases.get(role.uid);
+    const path = studentPath('plans/progress');
+    await env.withSecurityRulesDisabled(context => setDoc(doc(context.firestore(), path), {
+      status: 'done', changedBy: student, changedAt: '2030-11-11T00:00:00Z', laterResult: 'moved',
+    }));
+    await expectRead(getDocFromServer(doc(db, path)), role.shared);
+    if (role.shared) {
+      const value = (await getDocFromServer(doc(db, path))).data();
+      assert.equal(value.status, 'done'); assert.equal(value.changedBy, student);
+    }
+    await assertFails(updateDoc(doc(db, path), { status: 'done', changedBy: role.uid }));
+    await assertFails(updateDoc(doc(db, path), { laterResult: 'moved', startsAt: '2030-11-12T13:00:00+09:00' }));
   });
 }

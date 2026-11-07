@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { User } from 'firebase/auth';
 import { applyObservation } from '../../core/src/ledger';
 import { observation } from '../../server/tests/observation-fixture';
-import { emptySession, type SessionData } from '../src/session-model';
+import { emptySession, formatDeadline, type SessionData } from '../src/session-model';
 import type { SessionServices } from '../src/session-firebase';
 import { SessionPage } from '../src/session-page';
 import { usePathname } from '../src/session-route';
@@ -63,6 +63,25 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
 function RoutedSession() { const path = usePathname(); return <SessionPage path={path} />; }
 async function open() { await act(async () => { root.render(<RoutedSession />); }); }
+it('shows the fictional demo name in both the picker and heading without a visible internal id', async () => {
+  holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }];
+  await open();
+  expect(host.textContent).toContain('架空の学生A');
+  expect(host.textContent).not.toContain('student-a');
+  await click('架空の学生A');
+  expect(host.querySelector('h1')?.textContent).toBe('架空の学生A');
+  expect(host.querySelector('.session-heading .session-student-id')).toBeNull();
+});
+it('does not show an internal demo id while its name is loading on a direct session link', async () => {
+  let provideName!: (rows: { uid: string; displayName: string }[]) => void;
+  holder.services!.students = () => new Promise(resolve => { provideName = resolve; });
+  window.history.pushState(null, '', '/session/student-a');
+  await open();
+  expect(host.textContent).not.toContain('student-a');
+  await act(async () => provideName([{ uid: 'student-a', displayName: '架空の学生A' }]));
+  expect(host.querySelector('h1')?.textContent).toBe('架空の学生A');
+  expect(host.querySelector('.session-heading .session-student-id')).toBeNull();
+});
 async function click(text: string) {
   const button = [...host.querySelectorAll('button, a')].find(button => button.textContent?.trim() === text);
   expect(button, text).toBeDefined();
@@ -87,8 +106,8 @@ it('separates checking from planning and opens source details only inside the as
   expect(host.querySelector('#session-deadlines')).toBeNull();
   expect(host.querySelector('#session-changes')).toBeNull();
   expect(host.querySelectorAll('#session-decisions')).toHaveLength(1);
-  expect(host.querySelector('button[aria-describedby="session-confirm-help"]')?.hasAttribute('disabled')).toBe(true);
-  expect(host.textContent).toContain('確認の依頼は準備中');
+  expect(host.textContent).not.toContain('学生に確認を頼む');
+  expect(host.textContent).not.toContain('確認の依頼は準備中');
   expect(save).not.toHaveBeenCalled();
   await click('① 確かめる');
   await click('学生を選び直す'); await click('学生 student-b');
@@ -107,6 +126,21 @@ it('shows a newly received change without waiting for the minute timer', async (
     expect(host.querySelector('#session-changes')?.parentElement?.textContent).toContain('題名が変わりました：前の題名 → 新しい題名');
   } finally { vi.useRealTimers(); vi.restoreAllMocks(); }
 });
+it.each([false, true])('explains a literal missing LMS date and preserves the previous deadline: %s', async known => {
+  const row = data['student-a']!.assignments[0]!;
+  const official = row.officialDeadline!;
+  row.latest.deadline = { kind: 'unreadable', dueText: ' - ', timeZone: 'Asia/Tokyo' };
+  if (!known) row.officialDeadline = null;
+  const before = JSON.stringify(row);
+  await open(); await click('学生 student-a');
+  const summary = host.querySelector('.session-task summary')?.textContent;
+  expect(summary).toContain('LMSに締切日時の記載がありません（表示「-」）');
+  expect(summary).toContain('要確認');
+  expect(summary).not.toContain('締切を確認できていません');
+  expect(summary).not.toContain('締切なし');
+  if (known) expect(summary).toContain(formatDeadline(official.deadline));
+  expect(JSON.stringify(row)).toBe(before);
+});
 it('removes all displayed student data on revocation and on logout', async () => {
   await open(); await click('学生 student-a'); await click('② 相談する');
   await act(async () => { grants.get('student-a')!(false); });
@@ -119,11 +153,11 @@ it('removes all displayed student data on revocation and on logout', async () =>
   expect(host.textContent).not.toContain('物理の演習');
   expect(host.textContent).not.toContain('学生 student-a');
 });
-it('lets students read their own session without displaying the supporter date editor', async () => {
+it('lets students read their own session and edit their session dates', async () => {
   holder.services!.students = async () => [];
   await open(); await click('自分の面談を見る');
   expect(host.textContent).toContain('次の面談日時を決めると');
-  expect(host.textContent).not.toContain('面談日時を変える');
+  expect(host.textContent).toContain('面談日時を変える');
 });
 
 it('saves entered session times with an explicit timezone and allows unset dates', async () => {
@@ -139,10 +173,14 @@ it('saves entered session times with an explicit timezone and allows unset dates
   expect(host.textContent).toContain('面談日時を保存しました');
 });
 
-it('loads the planning URL directly and shows saved promises without creating plans', async () => {
+it.each([
+  ['2026-11-05T03:00:00Z', '2026-11-05'],
+  ['2026-11-05T17:00:00Z', '2026-11-06'],
+])('loads the planning URL and shows saved promises for the Tokyo session date: %s', async (lastSessionAt, decidedOn) => {
   window.location.pathname = '/session/student-a/plan';
+  data['student-a']!.context.lastSessionAt = lastSessionAt;
   data['student-a']!.plans = [{ assignment: data['student-a']!.assignments[0]!.key,
-    date: '2026-11-10', period: 3, decidedOn: data['student-a']!.context.lastSessionAt!.slice(0, 10), calendarEventId: 'fictional' }];
+    date: '2026-11-10', period: 3, decidedOn, planId: 'fictional', title: '数学のレポート', timeZone: 'Asia/Tokyo', startsAt: '2026-11-10T13:00:00+09:00', endsAt: '2026-11-10T14:30:00+09:00', confirmedBy: 'supporter', createdByRole: 'supporter', confirmedAt: '2026-11-01T00:00:00Z', status: 'active', revision: 1, calendarItemKey: 'fictional' }];
   await open();
   expect(host.querySelector('table')).not.toBeNull();
   await click('① 確かめる');
@@ -184,4 +222,34 @@ it('does not treat a pending or failed student list as an empty list', async () 
   await act(async () => { failList(new Error('fictional-offline')); });
   expect(host.textContent).toContain('担当する学生を開けませんでした');
   expect(host.textContent).not.toContain('自分の面談を見る');
+});
+
+it.each([
+  ['2026-11-06T15:29:59.999Z', false],
+  ['2026-11-06T15:30:00Z', true],
+])('shows a stale notice at 72 hours: %s', async (now, stale) => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date(now));
+  try {
+    data['student-a']!.fetchStates = [{ studentId: 'student-a', system: 'ynu-lms',
+      lastAttemptedAt: '2026-11-03T15:30:00Z', lastSucceededAt: '2026-11-03T15:30:00Z',
+      lastResult: 'success', lastFailureKind: null, lastAppliedObservationId: 'fictional' }];
+    await open(); await click('学生 student-a');
+    const notice = host.querySelector('.session-updates .notice');
+    if (stale) expect(notice?.textContent).toBe('YNU LMS：11/4から更新がありません。学生がLMSを開くと新しくなります。');
+    else {
+      expect(notice).toBeNull();
+      expect(host.querySelector('.session-updates')?.textContent).toContain('11/4(水) 00:30 時点の情報');
+    }
+    await click('② 相談する');
+    expect(host.querySelector('.session-updates')).toBeNull();
+  } finally { vi.useRealTimers(); }
+});
+
+it.each(['partial', 'failed'] as const)('shows incomplete fetching in a notice: %s', async lastResult => {
+  data['student-a']!.fetchStates = [{ studentId: 'student-a', system: 'ynu-lms',
+    lastAttemptedAt: new Date().toISOString(), lastSucceededAt: null,
+    lastResult, lastFailureKind: 'http', lastAppliedObservationId: 'fictional' }];
+  await open(); await click('学生 student-a');
+  expect(host.querySelector('.session-updates .notice')?.textContent).toBe(
+    'YNU LMS：課題をすべて確認できていません。LMSを一緒に開いて確かめてください。');
 });

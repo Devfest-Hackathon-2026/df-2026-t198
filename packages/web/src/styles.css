@@ -9,7 +9,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-variant-numeric: tabular-nums;
 }
-a { color: var(--green); }
+a { color: var(--green); display: inline-flex; align-items: center; min-height: 44px; }
 a:focus-visible, button:focus-visible, summary:focus-visible {
   outline: 3px solid var(--green);
   outline-offset: 4px;
@@ -54,13 +54,13 @@ ul { list-style: none; padding: 0; margin: 0; }
 .upcoming button { border: 0; background: transparent; text-align: left; width: 100%; }
 .upcoming strong { color: var(--green); margin-right: 12px; }
 .upcoming .muted { display: block; }
-.student-layout { display: grid; gap: 24px; align-items: start; }
+.student-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
 .student-layout.with-course { grid-template-columns: minmax(0, 1fr) 300px; }
 .timetable-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 9px; background: var(--white); }
 .timetable { width: 100%; min-width: 590px; border-spacing: 0; table-layout: fixed; }
 .timetable caption { padding: 14px; font-weight: 700; text-align: left; }
 .timetable th { background: var(--side); font-size: 12px; padding: 10px 4px; }
-.timetable th:first-child { width: 44px; }
+.timetable th:first-child { width: 44px; position: sticky; left: 0; z-index: 1; background: var(--side); }
 .timetable td { height: 108px; vertical-align: top; border-top: 1px solid var(--line-soft); border-left: 1px solid var(--line-soft); padding: 4px; }
 .course-cell { width: 100%; min-height: 100px; border: 1px solid transparent; border-radius: 6px; background: var(--soft); text-align: left; padding: 9px; overflow-wrap: anywhere; }
 .course-cell[aria-pressed='true'] { border-color: var(--green); background: #dce7da; }
@@ -92,6 +92,11 @@ summary { cursor: pointer; color: var(--muted); }
 .deadline-week .calendar-today { background: var(--soft); }
 .calendar-event { padding: 8px; margin-bottom: 5px; border: 1px solid var(--line); border-radius: 5px; background: var(--white); overflow-wrap: anywhere; font-size: 12px; }
 .calendar-event .muted { display: block; }
+.calendar-event.submitted { background: var(--soft); border-style: dashed; }
+.calendar-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.calendar-navigation button { min-height: 44px; }
+.scroll-hint { display: none; color: var(--muted); font-size: 12px; margin: 8px 0; }
+@media (max-width: 850px) { .scroll-hint { display: block; } }
 .calendar-outside { margin-top: 8px; font-size: 12px; }
 .course-cell, .deadline, .calendar-event { transition: background-color 1s; }
 .course-cell.changed, .deadline.changed, .calendar-event.changed { background: var(--gold-bg); transition: none; }
