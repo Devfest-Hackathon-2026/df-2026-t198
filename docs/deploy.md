@@ -72,19 +72,24 @@ WebのFirebase接続用3変数は [READMEの画面設定](../README.md#画面) �
 node --input-type=module <<'NODE'
 import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
-const data = JSON.parse(await readFile('fixtures-local/public-demo-accounts.local.json', 'utf8'));
-const pair = data.pairs.find(pair => pair.pair === 'public-1');
-if (!pair || data.projectId !== process.env.VITE_FIREBASE_PROJECT_ID ||
-    !process.env.VITE_FIREBASE_API_KEY || !process.env.VITE_FIREBASE_AUTH_DOMAIN) {
-  throw new Error('public-demo-build-configuration-required');
+try {
+  const data = JSON.parse(await readFile('fixtures-local/public-demo-accounts.local.json', 'utf8'));
+  const pair = data.pairs.find(pair => pair.pair === 'public-1');
+  if (!pair || data.projectId !== process.env.VITE_FIREBASE_PROJECT_ID ||
+      !process.env.VITE_FIREBASE_API_KEY || !process.env.VITE_FIREBASE_AUTH_DOMAIN) {
+    throw new Error('public-demo-build-configuration-required');
+  }
+  const env = { ...process.env };
+  for (const role of ['student', 'supporter']) {
+    env[`VITE_PUBLIC_DEMO_${role.toUpperCase()}_EMAIL`] = pair[role].email;
+    env[`VITE_PUBLIC_DEMO_${role.toUpperCase()}_PASSWORD`] = pair[role].password;
+  }
+  const result = spawnSync('pnpm', ['--filter', 'web', 'build'], { env, stdio: 'inherit' });
+  process.exitCode = result.status ?? 1;
+} catch {
+  process.stderr.write('public-demo-build-failed\n');
+  process.exitCode = 1;
 }
-const env = { ...process.env };
-for (const role of ['student', 'supporter']) {
-  env[`VITE_PUBLIC_DEMO_${role.toUpperCase()}_EMAIL`] = pair[role].email;
-  env[`VITE_PUBLIC_DEMO_${role.toUpperCase()}_PASSWORD`] = pair[role].password;
-}
-const result = spawnSync('pnpm', ['--filter', 'web', 'build'], { env, stdio: 'inherit' });
-process.exitCode = result.status ?? 1;
 NODE
 ```
 
