@@ -1,3 +1,4 @@
+import { linkedCourses } from '../../core/src/course-links';
 import { manualAssignmentActions, ManualAssignments, ManualAssignmentForm, ManualAssignmentRow, manualAuthor, type ManualAssignmentActions } from './manual-assignments';
 import { deadlineEntries, entryBelongsTo, entryDeadline, entryDisplayDeadline, entryId, entryTitle, deadlineValue, manualAssignmentEnded } from './deadline-entries';
 import { PlanLinkAction } from './plan-progress';
@@ -57,6 +58,7 @@ function AssignmentRow({ item, courseName }: { item: LedgerAssignment; courseNam
   </li>;
 }
 export function StudentView({ data, now = Date.now(), calendar = false, actions, manualActions, planLink }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode }) {
+  data = { ...data, courses: linkedCourses(data.courses) };
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
