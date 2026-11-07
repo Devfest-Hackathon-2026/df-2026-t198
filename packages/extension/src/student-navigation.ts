@@ -143,7 +143,7 @@ export function protectStudentNavigation(doc: Document, view: Window,
     doc.addEventListener('auxclick', click, true);
     doc.addEventListener('submit', submit, true);
     for (const event of ['keydown', 'keypress', 'keyup']) doc.addEventListener(event, enter as EventListener, true);
-    for (const event of ['pointerdown', 'pointermove', 'input', 'scroll']) doc.addEventListener(event, activity, { capture: true, passive: true });
+    for (const event of ['pointerdown', 'input', 'scroll']) doc.addEventListener(event, activity, { capture: true, passive: true });
     const depart = () => {
       departed = true; borrowed = false; controller.abort(); clearTimeout(idle);
       clearTimeout(departureRecovery);

@@ -8,6 +8,7 @@ import { observationSummary } from './collection-summary.js';
 import { executeLmsRequest, navigation, type LmsOperation, type LmsPage } from './lms-request.js';
 import { sessionFromUrl } from './session.js';
 import { CollectionLease } from './collection-lease.js';
+import { reusableCheckpoint, sessionHash, type CollectionCheckpoint } from './collection-checkpoint.js';
 import definition from '../../../lms-definitions/coursepower/definition.json' with { type: 'json' };
 import { readPage } from '../../core/src/html-reader.js';
 
@@ -38,6 +39,7 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
     return { ok: false, code: 'busy' };
   }
   running = true;
+  const fetchedAt = new Date().toISOString();
   let started = false;
   let stats: Stats | undefined;
   let route: 'background' | 'page' = 'background';
@@ -47,7 +49,10 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
   let claimed = false;
   let sid: string | null = null;
   let summary: ReturnType<typeof observationSummary> | undefined;
-  let recovered = 0, lmsStateErrors = 0;
+  let recovered = 0, lmsStateErrors = 0, reusedCourses = 0;
+  let checkpoint: CollectionCheckpoint | undefined;
+  let loggedOut = false;
+  const clearCheckpoint = () => chrome.storage.session.set({ ynuFetchCheckpoint: null });
   const countedStateErrors = new WeakSet<Error>();
   let firstFailure: (PageDiagnostic & { stage: LmsOperation['kind']; route: 'background' | 'page' }) | null = null;
   const target = { frameId: 0, ...(documentId ? { documentId } : {}) };
@@ -62,12 +67,18 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
   };
   const fail = (code: string) => { outcome = code; return { ok: false, code }; };
   try {
-    const last = await chrome.storage.session.get(['ynuFetchCompletedAt', 'ynuFetchStatus']);
+    const last = await chrome.storage.session.get(['ynuFetchCompletedAt', 'ynuFetchStatus', 'ynuFetchCheckpoint', 'ynuSessionId']);
+    sid = sessionFromUrl(pageUrl);
+    checkpoint = last['ynuFetchCheckpoint'] as CollectionCheckpoint | undefined;
+    const hash = checkpoint && sid ? await sessionHash(sid) : '';
+    if (checkpoint && (last['ynuSessionId'] !== sid || !reusableCheckpoint(checkpoint, hash, last['ynuFetchCompletedAt']))) {
+      checkpoint = undefined;
+      await clearCheckpoint();
+    }
     const completedAt = last['ynuFetchCompletedAt'];
     if (last['ynuFetchStatus'] !== 'yielded' && typeof completedAt === 'number' && Number.isFinite(completedAt) && Date.now() - completedAt < 10 * 60_000 && Date.now() >= completedAt) {
       return { ok: false, code: 'cooldown' };
     }
-    sid = sessionFromUrl(pageUrl);
     if (!sid) return fail('session-changed');
     lease = new CollectionLease(navigation.statefulSession, async () => {
       if (navigation.restore !== 'home') throw new Error('not-logged-in');
@@ -94,6 +105,14 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
     if (!api) return fail('api-not-configured');
     const identity = await observationIdentity();
     if (!identity) return fail('sign-in-required');
+    if (checkpoint && checkpoint.uid !== identity.uid) { checkpoint = undefined; await clearCheckpoint(); }
+    checkpoint ??= { sessionHash: hash || await sessionHash(sid), uid: identity.uid, courses: [] };
+    const saveCheckpoint = async () => {
+      if ((await chrome.storage.session.get('ynuSessionId'))['ynuSessionId'] !== sid) return;
+      if (credentialFree(JSON.stringify(checkpoint), sid!)) {
+        await chrome.storage.session.set({ ynuFetchCheckpoint: checkpoint!.courses.length ? checkpoint : null }).catch(() => {});
+      }
+    };
     const saved = await chrome.storage.session.get(['ynuSessionId', 'ynuFetchStats']);
     if (saved['ynuSessionId'] !== sid) return fail('session-changed');
     const prior = saved['ynuFetchStats'] as Stats | undefined;
@@ -102,6 +121,7 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
     await chrome.storage.session.set({ ynuFetchStats: stats, ynuFetchStatus: 'running' });
     let consecutivePageFailures = 0;
     const onFailure = (stage: LmsOperation['kind'], error: unknown) => {
+      if (error instanceof Error && error.message === 'not-logged-in') loggedOut = true;
       if (error instanceof Error && error.message === 'lms-state' && !countedStateErrors.has(error)) {
         countedStateErrors.add(error); lmsStateErrors++;
       }
@@ -139,13 +159,23 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       }
     };
     const request = (operation: LmsOperation) => lease!.read(() => perform(operation));
-    const observation = await collectObservation({ request, observationId: crypto.randomUUID(), fetchedAt: new Date().toISOString(),
+    const observation = await collectObservation({ request, observationId: crypto.randomUUID(), fetchedAt,
       onFailure, onRecovered: () => { recovered++; },
+      completedCourses: checkpoint.courses, onReusedCourse: () => { reusedCourses++; },
+      onCatalog: async ids => {
+        checkpoint!.courses = checkpoint!.courses.filter(c => ids.includes(c.result.courseId));
+        await saveCheckpoint();
+      },
+      onCompletedCourse: async course => {
+        checkpoint!.courses.push(course);
+        await saveCheckpoint();
+      },
       onCourseResult: (complete, failureKind) => {
         if (route === 'page') consecutivePageFailures = !complete && failureKind === 'http' ? consecutivePageFailures + 1 : 0;
       },
     });
     summary = observationSummary(observation);
+    loggedOut ||= observation.failures.some(f => f.kind === 'not-logged-in');
     const restored = await finishLease();
     if (lease.stopped) return fail('yielded');
     if (!restored) return fail('not-logged-in');
@@ -154,6 +184,8 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
     const current = await observationIdentity();
     if (!current || current.uid !== identity.uid) return fail('account-changed');
     if ((await chrome.storage.session.get('ynuSessionId'))['ynuSessionId'] !== sid) return fail('session-changed');
+    // Once sending begins, an ambiguous response must not replay old courses with a new observation ID.
+    await clearCheckpoint();
     const response = await fetch(`${api}/api/v1/observations`, { method: 'POST',
       headers: { Authorization: `Bearer ${current.token}`, 'Content-Type': 'application/json' },
       body, credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15_000) });
@@ -179,6 +211,9 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
   }
   finally {
     await finishLease();
+    if (loggedOut || ['not-logged-in', 'session-changed', 'account-changed', 'unsafe-observation'].includes(outcome)) {
+      await clearCheckpoint().catch(() => {});
+    }
     if (started) {
       if (stats) {
         if (success) { if (route === 'background') stats.backgroundSucceeded++; else stats.pageSucceeded++; }
@@ -186,7 +221,7 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       }
       await chrome.storage.session.set({ ynuFetchSummary: { ...summary,
         failures: { ...summary?.failures, ...(lmsStateErrors ? { 'lms-state': lmsStateErrors } : {}) }, firstFailure, recovered,
-        yielded: outcome === 'yielded' ? 1 : 0, lmsStateErrors,
+        yielded: outcome === 'yielded' ? 1 : 0, lmsStateErrors, reusedCourses,
         restoreSucceeded: lease?.restoreSucceeded ?? 0, restoreFailed: lease?.restoreFailed ?? 0 } }).catch(() => {});
       await chrome.storage.session.set({ ...(stats ? { ynuFetchStats: stats } : {}), ynuFetchStatus: outcome }).catch(() => {});
       await showCollectionStatus(outcome);

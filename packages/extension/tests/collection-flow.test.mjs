@@ -6,7 +6,8 @@ import { fileURLToPath, URL, URLSearchParams } from 'node:url';
 import { expect, it, vi } from 'vitest';
 import { setTimeout, clearTimeout, setImmediate } from 'node:timers';
 import { parseObservation } from '../../server/src/observation-input.js';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomUUID, webcrypto } from 'node:crypto';
+import { TextEncoder } from 'node:util';
 import { applyObservation } from '../../core/src/ledger.js';
 import { acknowledgeCalendarItem, reconcileCalendarItem } from '../../core/src/calendar.js';
 
@@ -114,7 +115,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
     return reply(200, applied.result);
   });
   let elapsed = 0;
-  const common = { Date: class extends Date { static now() { return Date.now() + elapsed; } }, URL, URLSearchParams, AbortSignal: globalThis.AbortSignal, AbortController: globalThis.AbortController, crypto: { randomUUID },
+  const common = { Date: class extends Date { static now() { return Date.now() + elapsed; } }, URL, URLSearchParams, TextEncoder, AbortSignal: globalThis.AbortSignal, AbortController: globalThis.AbortController, crypto: { randomUUID, subtle: webcrypto.subtle },
     clearTimeout, setTimeout: (fn, ms) => { if (ms >= 4000) return setTimeout(fn, ms); if (ms === 2000) elapsed += ms; globalThis.queueMicrotask(fn); return 0; }, console: { warn: vi.fn() } };
   const call = (listener, message, sender) => new Promise(resolve => listener(message, sender, resolve));
   const getAuthToken = vi.fn(async options => { expect(options.interactive).toBe(false); return { token: 'synthetic-google-token' }; });
@@ -140,6 +141,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   runInContext(content.outputFiles[0].text, contentContext);
   await new Promise(resolve => setImmediate(resolve));
   expect(await trigger).toEqual({ ok: true, changed: true, changeCount: 198 });
+  await vi.waitFor(() => expect([...document.body.children].some(node => node.shadowRoot)).toBe(true));
   const notice = [...document.body.children].find(node => node.shadowRoot).shadowRoot.querySelector('a');
   expect(notice.textContent).toBe('課題の変更が198件あります。学生の画面を開く');
   expect(notice.href).toBe('https://synthetic.web.app/student');

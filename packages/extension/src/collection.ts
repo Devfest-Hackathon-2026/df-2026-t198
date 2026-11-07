@@ -4,6 +4,7 @@ import { readFormFields, readHtmlAttribute } from '../../core/src/html-navigatio
 import type { Observation, FetchFailure, CourseSlot } from '../../core/src/types.js';
 import { LmsReadError, isStateError, loggedOut, pageDiagnostic, stopsCollection } from './collection-diagnostics.js';
 import { navigation, type LmsOperation, type LmsPage } from './lms-request.js';
+import type { CompletedCourse } from './collection-checkpoint.js';
 
 export interface CollectionOptions {
   request: (operation: LmsOperation) => Promise<LmsPage>;
@@ -12,6 +13,10 @@ export interface CollectionOptions {
   onFailure?: (stage: LmsOperation['kind'], error: unknown) => void;
   onRecovered?: () => void;
   onCourseResult?: (complete: boolean, failureKind?: FetchFailure['kind']) => void;
+  completedCourses?: CompletedCourse[];
+  onCatalog?: (currentCourseIds: string[]) => Promise<void>;
+  onReusedCourse?: () => void;
+  onCompletedCourse?: (course: CompletedCourse) => Promise<void>;
 }
 const context = { utcOffset: '+09:00' };
 const sourceKey = (courseId: string, sourceId: string) => `${courseId}_${sourceId}`;
@@ -50,10 +55,20 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
     observation.catalogCourses = catalog.courses.map(c => ({ courseId: c.courseId, name: c.name,
       currentTerm: currentTerm(terms.get(c.courseId), options.fetchedAt),
       slots: c.slots.map(s => ({ weekday: s.dayOfWeek as CourseSlot['weekday'], period: s.period })) }));
+    await options.onCatalog?.(observation.catalogCourses.filter(c => c.currentTerm !== false).map(c => c.courseId));
     let homeFields = readFormFields(home.html, navigation.course.form, navigation.course.fields);
     for (const course of observation.catalogCourses) {
       if (course.currentTerm === false) continue;
       const courseId = course.courseId;
+      const completed = options.completedCourses?.find(c => c.result.courseId === courseId && c.result.listComplete);
+      if (completed) {
+        observation.courseResults.push(completed.result);
+        observation.assignments.push(...completed.assignments);
+        observation.failures.push(...completed.failures);
+        if (Date.parse(completed.fetchedAt) < Date.parse(observation.fetchedAt)) observation.fetchedAt = completed.fetchedAt;
+        options.onReusedCourse?.();
+        continue;
+      }
       const result = { courseId, listComplete: false, seenSourceIds: [] as string[], endedSourceIds: [] as string[] };
       observation.courseResults.push(result);
       let courseRetried = false;
@@ -126,6 +141,9 @@ export async function collectObservation(options: CollectionOptions): Promise<Ob
         if (courseFailure) observation.failures.push(courseFailure);
         options.onCourseResult?.(result.listComplete, courseFailure?.kind);
       }
+      if (result.listComplete) await options.onCompletedCourse?.({ result, fetchedAt: options.fetchedAt,
+        assignments: observation.assignments.filter(a => a.courseId === courseId),
+        failures: observation.failures.filter(f => f.courseId === courseId) });
       if (observation.failures.at(-1)?.kind === 'not-logged-in') break;
     }
   } catch (error) { if (stopsCollection(error)) throw error; observation.failures.push(failure(error, null)); }
