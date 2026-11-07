@@ -44,6 +44,19 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node packages/web/tests/demo-liv
 アカウントとデータの対応は [data-shapes.mdの体験用データ](data-shapes.md#体験用データissue-19)。実環境では `demoAccounts/{uid}`、学生の `demo/current`、共有許可、面談日時を同じ組のUIDで用意する。パスワードをrepo・Issue・PRに書かない。ログイン後の支援担当は `/demo-lms` から `/session` に進めば同じ認証状態を使う。体験UIDから実カレンダーAPIへの接続・同期の操作はサーバー側でも拒否する。
 
 
+## 説明資料なしで試す共用の体験（Issue #178）
+
+共用の入口は `/demo-lms` のログイン欄の上にある「学生として試す」「支援担当として試す」。同時に見るときは別のブラウザか端末を使う。全員が同じ体験を使うので、必要なら「体験を最初からやり直す」を押す。審査の方は説明資料のアカウントを使う。入口が表示されない場合やログインできない場合は、説明資料のアカウントか紹介ページの動く見本を使う。
+
+統合役が行う準備の入口 `--create-public-pair` とビルド時の4環境変数の渡し方は [共用の体験の準備](deploy.md#共用の体験の準備issue-178)。本番の準備・デプロイは実行前に人のOKを受ける。
+
+ローカルでの確認は次のとおり。新しい乱数パスワードはメモリだけに置き、既存の認証情報ファイルを読まない。Auth・Firestoreエミュレーターと試験用の偽モデルで、役割ごとの入口・固定の失敗案内・延長→LMS→面談の更新・上限の文・やり直しを確認する。M6は従来の試験で別に測る。
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm test:public-demo:browser
+PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm metrics:m6
+```
+
 ## M6の手順
 
 ローカルのAuth・FirestoreエミュレーターとChromium、および公開先で、次の8手順を固定して成否を記録する。画面の表示だけでなく、保存済み予定の日時・予定ID・反映済みの版を確かめる。ローカルと公開先は別々に集計し、実物のGoogleカレンダーの成績には混ぜない。

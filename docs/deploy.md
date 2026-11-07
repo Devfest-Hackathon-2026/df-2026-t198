@@ -56,6 +56,40 @@ pnpm exec firebase deploy --only hosting \
 
 WebのFirebase接続設定は [README](../README.md#画面) の3つの `VITE_FIREBASE_*` をビルド時に指定する。未指定でビルドした場合も公開できるが、学生・面談画面は準備中の案内になり、ログインや台帳の表示はできない。ログイン後の操作は、次節の体験手順で別に確かめる。
 
+## 共用の体験の準備（Issue #178）
+
+実行は人のOKを受けた統合役が行う。先に [Cloud Run](#cloud-run) のコマンドでこの版のAPIを反映し、共用のGemini上限を有効にする。Firebase・Google Cloudの設定や資源は追加しない。次の入口は固定プロジェクト・明示引数・エミュレーター設定なしを要求し、既存のアカウント・プロフィール・体験データ・共有許可・面談日時・保存ファイルがあれば停止する。
+
+```sh
+node packages/server/scripts/seed-demo-live.mjs --project project-00439085-4e2d-44c3-9a8 --create-public-pair
+```
+
+乱数パスワードを `fixtures-local/public-demo-accounts.local.json` に権限600で排他的に保存してから、`public-1` の学生・支援担当と文書を作る。既存の審査用3組のファイルもアカウントも触らない。途中失敗時は保存ファイルを消して再実行せず、作成状態を確認する。
+
+WebのFirebase接続用3変数は [READMEの画面設定](../README.md#画面) のとおり環境に用意する。共用の4変数は次のコマンドで上記のローカルファイルからビルドプロセスにだけ渡す。値を手入力したコマンド、ログ、Issue、PRに残さない。これら4変数は公開用の架空アカウント専用で、ビルドしたJavaScriptから見える。実物の利用者や管理権限の認証情報を渡さない。
+
+```sh
+node --input-type=module <<'NODE'
+import { readFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+const data = JSON.parse(await readFile('fixtures-local/public-demo-accounts.local.json', 'utf8'));
+const pair = data.pairs.find(pair => pair.pair === 'public-1');
+if (!pair || data.projectId !== process.env.VITE_FIREBASE_PROJECT_ID ||
+    !process.env.VITE_FIREBASE_API_KEY || !process.env.VITE_FIREBASE_AUTH_DOMAIN) {
+  throw new Error('public-demo-build-configuration-required');
+}
+const env = { ...process.env };
+for (const role of ['student', 'supporter']) {
+  env[`VITE_PUBLIC_DEMO_${role.toUpperCase()}_EMAIL`] = pair[role].email;
+  env[`VITE_PUBLIC_DEMO_${role.toUpperCase()}_PASSWORD`] = pair[role].password;
+}
+const result = spawnSync('pnpm', ['--filter', 'web', 'build'], { env, stdio: 'inherit' });
+process.exitCode = result.status ?? 1;
+NODE
+```
+
+4つの変数は `VITE_PUBLIC_DEMO_STUDENT_EMAIL`、`VITE_PUBLIC_DEMO_STUDENT_PASSWORD`、`VITE_PUBLIC_DEMO_SUPPORTER_EMAIL`、`VITE_PUBLIC_DEMO_SUPPORTER_PASSWORD`。1つでも欠ければ両方のボタンを出さない。ビルド成功後に [Hosting](#hosting) のコマンドを実行する。共用のボタンが `/demo-lms` のログイン欄の上にあり、学生は `/demo-lms`、支援担当は `/session` に入ることを別のブラウザで確認する。延長→LMSを開く→開いたままの面談画面の更新、やり直し、審査用3組へのログインも確認する。失敗時は審査用アカウントか紹介ページの動く見本へ案内し、締切後は共用の組を修復しない（[D38](decisions.md#d38-紹介ページから入れる共用の体験の組を足す2026-11-08issue-178)）。
+
 ## 動作確認
 
 ```sh
