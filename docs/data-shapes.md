@@ -212,6 +212,22 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 
 少量の架空の体験データ用であり、模擬予定は1文書に収まる範囲。実物のカレンダー同期、大量データ、デプロイ先での成功はこのローカル試験結果に含めない。準備の予定はIssue #49の試験で確認する。
 
+## 手で入れた課題（Issue #98）
+
+型の正本は `ManualAssignmentInput`・`ManualAssignment`（`types.ts`）。LMSの観測・台帳とは別の `students/{uid}/manualAssignments/{manualAssignmentId}` に保存する。LMSの取得はこのコレクションを変更しない。[D31](decisions.md#d31-lmsに出ない課題を学生と支援担当が手で入れる2026-11-07issue-98)のSoraの承認範囲で実装。合意方法はD29に従う。
+
+- `PUT /api/v1/students/{uid}/manual-assignments/{id}` の本文は `{ title, date, time, course, memo }` のみ。IDはクライアントが操作ごとに作る小文字UUID v4。同じ内容の再試行は同じIDを使う。
+- `title` は空白だけを除く1〜160文字、`memo` は0〜300文字。両方とも制御文字は不可。`date` は実在する `YYYY-MM-DD`、`time` は日本時間の `HH:mm` またはnull。時刻がnullなら日付だけの締切として扱い、23:59などを補わない。過去の課題も登録できる。
+- `course` は `{ system, courseId }` またはnull。選んだ授業はその学生の `courses` にあることを保存時に確かめ、表示用の `courseName` をサーバーで保存する。授業を選ばなくても保存できる。体験用は `demo-lms` の授業だけ。
+- 保存文書は入力に加えて、`manualAssignmentId`、`courseName`、`createdBy`、`createdByRole`（student/supporter）、サーバー時刻の `createdAt`、`status`（active/cancelled）、`revision`、`calendarItemKey` を持つ。登録者は認証から決め、本文での指定は拒否する。
+- Firebase ID tokenの本人、または `scopes` がリストで `all` を含み `revokedAt: null` の支援担当が追加できる。共有と体験プロフィールの確認・保存は同じトランザクション。体験用アカウントは自分の組以外を操作できない。
+- `DELETE` は本文なし。学生本人は登録者を問わず消せる。支援担当は共有中で、かつ自分が登録したものだけ消せる。取消の文書を残して版を1つ進め、同じ削除の再送は版を進めない。取消後の遅れたPUTは409で拒否する。編集は今回の範囲外で、入れ直すときは新IDを使う。
+- 同じID・登録者・内容の再送は保存文書を変更せず、カレンダーの再試行だけ進める。同じIDの別内容・別登録者は409。成功は200と保存文書。認証401、権限403、書式400、4 KiB超413、JSON以外415、保存・同期失敗500。未設定のAPIは503。エラーは固定コードだけ、成功も `Cache-Control: no-store`。
+- 本人と共有中の支援担当だけがFirestoreを読める。全員の直接書き込み・入れ子の読み取りは拒否する。共有取消・購読失敗・ログアウト・本人変更時は画面の内容と操作を消す。
+- 同期対象は手入力文書と同じトランザクションで保存。`kind: 'manual-deadline'`、`sourceKey: { system: 'manual', sourceId: id }` とし、既存の版・世代・予定ID・結果報告を使う。日付のみは終日、時刻ありは5分の目印。説明には手入力の登録者区分と締切を出し、メモや架空のLMSリンクは入れない。
+- 体験用は既存の保存済み模擬予定へ同期。実物は既存の拡張機能に渡し、未接続ならキューに残す。実際のGoogleカレンダーへの書き込みはローカル試験に含めない。
+- 既存の「体験を最初からやり直す」は本人のactive/cancelled両方の手入力文書と同期対象・模擬予定を消す。`onlyIfStale: true` で日付が新しい間は課題を残す。他の組は消さない。
+
 ## 今日やることと準備の記録（Issue #112）
 
 - `GET /api/v1/digest`：失効確認付きFirebase ID tokenの本人だけを読む。応答は `{ date, to, subject, text, html, empty, plans, assignments }`。`date` は日本時間の今日、`to` は検証済みtokenのメールだけ。メールが無ければ403。queryの学生ID・宛先は使わず、体験用の支援担当は403。送信は別のIssue #113で拡張から行う。

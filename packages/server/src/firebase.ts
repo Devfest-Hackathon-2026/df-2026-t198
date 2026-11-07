@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { createDemoCalendarSync } from './demo-calendar.js';
 import { createCalendarStore } from './calendar-store.js';
 import { createObservationStore } from './observation-store.js';
+import { createManualAssignmentStore } from './manual-assignment-store.js';
 import { createDigestStore } from './digest-store.js';
 import { createPlanStore } from './plan-store.js';
 import { createSessionStore } from './session-store.js';
@@ -34,6 +35,7 @@ export function firebaseDependencies() {
     calendar: createCalendarStore(db),
     session: createSessionStore(db),
     plans: createPlanStore(db, syncDemoCalendar),
+    manualAssignments: createManualAssignmentStore(db, syncDemoCalendar),
     demo: createDemoStore(db),
   };
   if (process.env['ENABLE_DEMO_ANNOUNCEMENTS'] === 'true' && project) {
