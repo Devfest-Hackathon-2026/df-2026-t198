@@ -52,6 +52,16 @@ it('does not treat an unrecognized page as proof of no classes', async () => {
   const opts = options(); opts.fetcher.mockResolvedValue(new Response('<html><table><tr><td>unknown</td></tr></table></html>'));
   expect((await collectKulasisObservation(opts)).failures).toEqual([{ courseId: null, kind: 'parse', detail: 'parse-error' }]);
 });
+it('normalizes decoded pages after checking the original login response', async () => {
+  const opts = { ...options(), normalizeHtml: vi.fn(html => html) };
+  expect((await collectKulasisObservation(opts)).catalogCourses).toHaveLength(2);
+  expect(opts.normalizeHtml).toHaveBeenCalledTimes(3);
+  expect(opts.normalizeHtml.mock.calls[0][0]).toContain('架空');
+  opts.fetcher.mockResolvedValue(new Response('<input type="password">'));
+  opts.normalizeHtml.mockClear();
+  expect((await collectKulasisObservation(opts)).failures[0].kind).toBe('not-logged-in');
+  expect(opts.normalizeHtml).not.toHaveBeenCalled();
+});
 it('keeps classes separate if the destination cannot be identified', async () => {
   const opts = options(); opts.resolveSite.mockResolvedValue(undefined);
   const result = await collectKulasisObservation(opts);

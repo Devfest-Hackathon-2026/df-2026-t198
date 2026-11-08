@@ -53,6 +53,11 @@ export function readKulasisTimetable(definition: KulasisDefinition, html: string
   let recognized = false;
   for (const table of document.querySelectorAll(definition.tables)) {
     const rows = Array.from(table.querySelectorAll(definition.rows)).filter(row => row.closest('table') === table);
+    while (rows[0]) {
+      const cells = Array.from(rows[0].querySelectorAll('th, td')).filter(cell => cell.closest('tr') === rows[0]);
+      if (cells.length !== 1 || Number(cells[0]!.getAttribute('colspan') ?? 1) <= 1) break;
+      rows.shift();
+    }
     const grid: (typeof rows[number])[][] = [];
     rows.forEach((row, y) => {
       grid[y] ??= [];
@@ -90,11 +95,12 @@ export function readKulasisTimetable(definition: KulasisDefinition, html: string
         let url: ReturnType<KulasisUrlParser>;
         try { url = parseUrl(link.getAttribute('href') ?? '', base + '/'); } catch { throw new Error('parse-error'); }
         if (!isKulasisOrigin(url.origin) || !url.pathname.endsWith('/support/top')) continue;
-        if (url.pathname !== parseUrl(base).pathname + '/support/top' || url.username || url.password) throw new Error('parse-error');
+        if (!/^\/student\/(?:[a-z]+\/)*[a-z]+\/support\/top$/.test(url.pathname) || url.username || url.password) throw new Error('parse-error');
         const id = url.searchParams.get('no'), name = (link.textContent ?? '').replace(/\s+/g, ' ').trim();
         if (!id || id.length > 200 || !/^[\w-]+$/.test(id) || !name || name.length > 1000 || !isSafeMailText(name)) throw new Error('parse-error');
-        const course: Course = courses.get(id) ?? { courseId: id, name, slots: [], url: `${base}/support/top?no=${encodeURIComponent(id)}`, currentTerm: true };
-        if (course.name !== name) throw new Error('parse-error');
+        const courseUrl = `${parseUrl(base).origin}${url.pathname}?no=${encodeURIComponent(id)}`;
+        const course: Course = courses.get(id) ?? { courseId: id, name, slots: [], url: courseUrl, currentTerm: true };
+        if (course.name !== name || course.url !== courseUrl) throw new Error('parse-error');
         if (!course.slots.some(s => s.weekday === day && s.period === p)) course.slots.push({ weekday: day, period: p } as CourseSlot);
         courses.set(id, course);
         foundCourse = true;
