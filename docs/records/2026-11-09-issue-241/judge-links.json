@@ -1,0 +1,23 @@
+{
+  "status": "pass",
+  "checks": [
+    "pair-1: three panes and no fragment",
+    "pair-1: matching account",
+    "back within LMS is clean",
+    "back returns to the preceding page",
+    "forward stays clean",
+    "pair-2: three panes and no fragment",
+    "pair-2: matching account",
+    "pair-3: three panes and no fragment",
+    "pair-3: matching account",
+    "switches from previous pair",
+    "failed link shows empty manual login",
+    "failed link shows empty manual login",
+    "failed link shows empty manual login",
+    "manual login recovers after failed link",
+    "no browser exceptions",
+    "no credential in console or errors",
+    "credentials only sent to Firebase sign-in",
+    "no credential in DOM"
+  ]
+}

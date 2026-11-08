@@ -21,6 +21,12 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm metrics:m6
 
 seedは台帳を直接作らない。既存の体験データは上書きせず、再実行で締切を戻さない。体験プロフィールと共有許可は設定する。実プロジェクトへの誤接続を拒否するため、この手順はエミュレーターでだけ動く。
 
+## 説明資料の審査用リンク（Issue #241）
+
+統合役は、開発用repoのルートで `node scripts/judge-links.mjs` を実行する。`fixtures-local/demo-accounts.local.json` の公開先 `origin` と `trial-1`〜`trial-3` の学生から、同じ順番のリンク3本を `fixtures-local/judge-links.local.txt` に権限600で保存する。既存の出力ファイルがある場合は上書きせず停止する。
+
+リンクは `/demo-lms#judge=<base64url(JSON)>`。JSONは `email` と `password` だけで、暗号化ではない。説明資料で組ごとに渡し、repo・Issue・PR・ログ・紹介ページには載せない。画面は認証を始める前にfragmentを履歴から消し、別の人でログイン中ならログアウトしてからリンクの学生で入る。失敗時は空のログイン欄に戻る。共用の組は対象外。このIssueでは本物のリンクの生成やデプロイを行わない。
+
 ## 公開する担当者へ
 
 Cloud Run・Hostingの反映は [deploy.md](deploy.md)。Issue #59では既存のFirestore規則の反映、メール／パスワード認証の有効化、`trial-1`〜`trial-3`の学生・支援担当の準備も許可されている。OAuthや新しい資源・APIの設定変更は含まない。
