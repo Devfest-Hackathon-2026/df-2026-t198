@@ -42,6 +42,7 @@ try {
   await mkdir(evidence, { recursive: true });
   await login(page, 'student');
   await open.waitFor();
+  await page.locator('.demo-more > summary').click();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
   await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
@@ -61,7 +62,7 @@ try {
   assert.deepEqual(payload, { system: 'demo-lms', ...announced.announcements[0] });
   assert.equal((await parsed).status(), 200);
   assert.equal((await (await parsed).json()).status, 'proposal');
-  await status('課題を確認しました。学生の画面');
+  await status('課題を確認しました。');
   const after = await task();
   assert.equal(Date.parse(after.officialDeadline.deadline.dueAt), Date.parse(original.courses[0].assignments[0].dueAt));
   assert.equal(after.reviewReasons.length, 1);
@@ -73,7 +74,7 @@ try {
   await timetable.locator('.course-panel').getByText(/お知らせでは締切が/).waitFor();
   await supporter.getByText(/お知らせでは締切が/).first().waitFor();
   const changes = (await student.collection('changes').get()).size;
-  await open.click(); await status('課題を確認しました。学生の画面');
+  await open.click(); await status('課題を確認しました。');
   assert.equal(await calls(), 1, 'same announcement is parsed once');
   assert.equal((await task()).reviewReasons.length, 1);
   assert.equal((await student.collection('changes').get()).size, changes);
@@ -86,17 +87,18 @@ try {
   // Unavailable parsing cannot roll back or hide the successful observation.
   await page.route('**/api/v1/announcements', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"unavailable"}' }), { times: 1 });
   await open.click(); await status('課題を確認しました。お知らせの確認は終わりませんでした');
+  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await status('体験を最初の状態に戻しました');
   assert.equal(await notices.count(), 0);
   assert.deepEqual((await source.get()).data().announcements, []);
   assert.equal((await tasks()).size, 0);
-  await open.click(); await status('課題を確認しました。学生の画面');
+  await open.click(); await status('課題を確認しました。');
   assert.deepEqual((await task()).reviewReasons, []);
   assert.equal(await calls(), 1);
   await publish.click(); await status('お知らせを出しました');
   assert.notEqual((await source.get()).data().announcements[0].announcement.announcementId, payload.announcement.announcementId);
-  await open.click(); await status('課題を確認しました。学生の画面');
+  await open.click(); await status('課題を確認しました。');
   assert.equal(await calls(), 2, 'fresh notice after reset is not mistaken for the old notice');
   assert.equal((await task()).reviewReasons.length, 1);
   assert.deepEqual(errors, []);

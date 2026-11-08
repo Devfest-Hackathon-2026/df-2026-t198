@@ -38,6 +38,7 @@ try {
   if (publicDemo) await finish(start('node', ['packages/web/tests/public-demo.browser.mjs']));
   else {
     await finish(start('node', ['packages/web/tests/demo-reset.browser.mjs']));
+    await finish(start('node', ['packages/web/tests/demo-flow.browser.mjs']));
     await finish(start('node', ['packages/web/tests/demo.browser.mjs']));
   }
 } finally {

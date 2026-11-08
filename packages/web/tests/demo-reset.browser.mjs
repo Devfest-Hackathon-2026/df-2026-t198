@@ -37,11 +37,13 @@ try {
   const current = (await source.get()).data();
   assert.ok(Date.parse(current.courses[0].assignments[0].dueAt) > Date.now());
   assert.ok(Date.parse((await student.collection('sessionContext').doc('current').get()).data().nextSessionAt) > Date.now());
-  const order = await page.locator('main').evaluate(main => Array.from(main.querySelectorAll('button, a')).map(el => el.textContent));
-  assert.ok(order.indexOf('LMSを開く') < order.indexOf('学生の画面を開く'));
-  assert.ok(order.indexOf('学生の画面を開く') < order.indexOf('「書き方を書くレポート」の締切を1日延ばす'));
-  assert.equal(await page.locator('.demo-steps > li').count(), 3);
-  await page.getByRole('heading', { name: 'LMSの画面（架空）', exact: true }).waitFor();
+  assert.deepEqual(await page.locator('.demo-steps > li').allTextContents(), [
+    '1LMSを開く', '2先生が締切を延ばす', '3学生と支援担当の画面', '4朝のメール',
+  ]);
+  assert.equal(await page.locator('.demo-command .td-btn-primary').count(), 1);
+  await page.getByRole('link', { name: '学生の画面を開く', exact: true }).waitFor();
+  await page.locator('.demo-more > summary').click();
+  await page.getByRole('heading', { name: 'LMS', exact: true }).waitFor();
   const markers = await page.locator('.demo-list-end, .demo-availability').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().width));
   assert.ok(markers.length > 0 && markers.every(width => width <= 1));
   assert.equal(await page.locator('[data-demo-page="materials"] [data-demo-page="detail"]').count(), 0);
@@ -58,6 +60,7 @@ try {
   assert.equal(await open.isEnabled(), true);
   // A fresh login preserves this extension rather than resetting every visit.
   await page.reload(); await open.waitFor();
+  await page.locator('.demo-more > summary').click();
   assert.equal((await source.get()).data().courses[0].assignments[0].dueAt, dueAt);
   let previousId;
   let previousRetryable = false;
@@ -70,7 +73,7 @@ try {
     }, { times: 1 });
     await open.click();
     await page.getByRole('alert').waitFor();
-    assert.equal(await open.evaluate(button => button.nextElementSibling.getAttribute('role')), 'alert');
+    assert.equal(await page.locator('.demo-command p[role]').getAttribute('role'), 'alert');
     if (previousId) assert.equal(sentId === previousId, previousRetryable);
     previousId = sentId; previousRetryable = failure === 500 || failure === 'network';
     assert.equal(await teacher.isDisabled(), previousRetryable);
@@ -80,11 +83,12 @@ try {
   await open.click();
   assert.equal((await retry).postDataJSON().observationId, previousId);
   await status('課題を確認しました');
-  assert.equal(await open.evaluate(button => button.nextElementSibling.getAttribute('role')), 'status');
+  assert.equal(await page.locator('.demo-command p[role]').getAttribute('role'), 'status');
   assert.equal((await student.collection('assignments').get()).size, 5);
   await mkdir(evidence, { recursive: true });
   await page.screenshot({ path: `${evidence}/issue-68-wide.png`, fullPage: true });
   // End with an explicit reset; the existing, unchanged M6 scenario runs next.
+  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await status('体験を最初の状態に戻しました');
   assert.equal(await page.locator('[data-demo-page="home"] .demo-course').count(), 6);
@@ -97,11 +101,11 @@ try {
   assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
   await page.screenshot({ path: `${evidence}/issue-68-narrow.png`, fullPage: true });
   await writeFile(`${evidence}/issue-68.json`, JSON.stringify({ status: 'pass', checks: [
-    'stale first login refreshes dates', 'fresh login preserves extension', 'three ordered steps and adjacent result',
+    'stale first login refreshes dates', 'fresh login preserves extension', 'four ordered stages, one main action and adjacent result',
     'hidden markers keep h1 and reader boundaries', 'extension waits for source snapshot',
     '400/403 discard pending; 500/network replay the same ID', 'reset clears derived data and leaves another pair unchanged', '390px layout',
   ] }, null, 2));
-  log('PASS Issue 68: reset, freshness, ordered steps, hidden markers, delayed snapshot, 4xx/5xx/network retries');
+  log('PASS Issue 68: reset, freshness, ordered stages, hidden markers, delayed snapshot, 4xx/5xx/network retries');
 } finally {
   await browser.close(); await db.terminate(); await deleteApp(app);
 }

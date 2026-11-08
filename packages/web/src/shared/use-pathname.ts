@@ -6,7 +6,9 @@ export function usePathname() {
   const [path, setPath] = useState(window.location.pathname);
   useEffect(() => {
     const changed = (event: PopStateEvent) => {
-      const update = () => setPath(window.location.pathname);
+      const next = window.location.pathname;
+      if (next === path) return;
+      const update = () => setPath(next);
       if (!document.startViewTransition || reducedMotion() || event.hasUAVisualTransition) { update(); return; }
       const transition = document.startViewTransition(() => flushSync(update));
       // A skipped animation must never interrupt navigation.
@@ -14,6 +16,6 @@ export function usePathname() {
     };
     window.addEventListener('popstate', changed);
     return () => window.removeEventListener('popstate', changed);
-  }, []);
+  }, [path]);
   return path;
 }

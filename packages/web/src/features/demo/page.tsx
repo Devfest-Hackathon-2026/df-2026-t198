@@ -7,7 +7,10 @@ import { onAuthStateChanged, signInWithEmailAndPassword, type User } from 'fireb
 import { doc, onSnapshot } from 'firebase/firestore';
 import type { DemoAccount, DemoData, Observation } from '@kadai-hisho/core';
 import { firebase } from '../../shared/firebase';
-import { DemoPages, demoDueText } from './pages';
+import { DemoPages } from './pages';
+import { DemoTriptych } from './triptych';
+import { DemoObserved, useDemoObserved } from './observed';
+import { Staged } from '../../shared/ui/motion';
 import { readDemoAnnouncements, readDemoObservation } from './reader';
 import './demo.css';
 import { OperationMessages, useOperationMessage } from '../../shared/ui/operation-messages';
@@ -60,11 +63,10 @@ export function DemoPage() {
   }
   return <div className="demo-shell"><header className="demo-header"><h1>ToDokuを試す</h1>
     {user && <Button className="demo-logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}</header>
-    <p>ここで扱う授業と課題は架空のものです。学生と支援担当は別のブラウザでログインしてください。</p>
-    <p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>
-    {user === undefined ? <p role="status">ログインを確かめています…</p> : user ? <>
+    <p>ここで扱う授業と課題は架空のものです。</p>
+    {user === undefined ? <Skeleton label="ログインを確かめています…" /> : user ? <>
       <DemoWorkspace key={user.uid} user={user} />
-    </> : <><PublicDemoEntry /><form className="session-login" onSubmit={event => { void login(event); }}>
+    </> : <><PublicDemoEntry showDescription={false} /><form className="session-login" onSubmit={event => { void login(event); }}>
       <label>メールアドレス<input name="email" type="email" autoComplete="username" required /></label>
       <label>パスワード<input name="password" type="password" autoComplete="current-password" required /></label>
       <Button type="submit" busy={loginBusy} busyLabel="ログイン中…">ログイン</Button>
@@ -111,14 +113,18 @@ function DemoWorkspace({ user }: { user: User }) {
   </div>;
   if (failure) return <p role="alert">体験用のデータを開けませんでした。体験用アカウントと接続を確かめてください。</p>;
   if (!account) return <Skeleton label="体験用のデータを開いています…" />;
-  if (account.role === 'supporter') return <><p>面談画面で、担当する学生を選んでください。</p><a href="/session">面談を開く</a></>;
+  if (account.role === 'supporter') return <a href="/session">面談を開く</a>;
   return data ? <OperationMessages><DemoStudent key={user.uid} user={user} data={data} /></OperationMessages> : <Skeleton label="授業を開いています…" />;
 }
 function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   const pages = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [operation, setOperation] = useState('open');
-  const [awaiting, setAwaiting] = useState<{ dates: { sourceId: string; dueAt: string }[]; announcementIds?: string[]; message: string } | null>(null);
+  const [stage, setStage] = useState(0);
+  const [autoRead, setAutoRead] = useState(false);
+  const [showMail, setShowMail] = useState(false);
+  const observed = useDemoObserved(user);
+  const [awaiting, setAwaiting] = useState<{ dates: { sourceId: string; dueAt: string }[]; announcementIds?: string[]; message: string; next?: 'read' | 'reset' } | null>(null);
   const [message, setMessage] = useOperationMessage();
   const [error, setError] = useOperationMessage();
   const pending = useRef<Observation | null>(null);
@@ -129,6 +135,8 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       JSON.stringify((data.announcements ?? []).map(item => item.announcement.announcementId)) === JSON.stringify(awaiting.announcementIds)) && awaiting.dates.every(expected => data.courses.some(course => course.assignments.some(task =>
       task.sourceId === expected.sourceId && task.dueAt === expected.dueAt)))) {
       setMessage(awaiting.message); setAwaiting(null);
+      if (awaiting.next === 'read') { setStage(2); setAutoRead(true); }
+      if (awaiting.next === 'reset') { setStage(0); setShowMail(false); }
     }
   }, [awaiting, data]);
   const blocked = busy || awaiting !== null;
@@ -143,72 +151,108 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         : '操作が終わりませんでした。接続を確かめて、もう一度お試しください。'); }
     finally { if (active.current) setBusy(false); }
   }
-  const open = () => action(async () => {
-    pending.current ??= readDemoObservation(pages.current!, window.location.origin, crypto.randomUUID(), new Date().toISOString());
-    try { await post(user, '/api/v1/observations', pending.current); }
-    catch (failure) {
-      if (failure instanceof DemoRequestError && failure.status < 500) pending.current = null;
-      throw failure;
-    }
-    pending.current = null;
-    const notices = readDemoAnnouncements(pages.current!);
-    const results = await Promise.allSettled(notices.map(async notice => {
-      const response = await post(user, '/api/v1/announcements', notice);
-      return (await response.json() as { status: string }).status;
-    }));
-    if (results.some(result => result.status === 'rejected' && result.reason instanceof DemoRequestError &&
-      result.reason.code === 'public-demo-limit')) return '今日の共用の体験では、お知らせの読み取りを使い切りました';
-    if (results.some(result => result.status === 'rejected' ||
-      !['proposal', 'duplicate', 'abstained'].includes(result.value))) {
-      return '課題を確認しました。お知らせの確認は終わりませんでした。LMSのお知らせと課題ページの締切を見比べてください。';
-    }
-    return '課題を確認しました。学生の画面と面談画面で今の締切を見られます。';
+  const open = () => {
+    setAutoRead(false);
+    return action(async () => {
+      pending.current ??= readDemoObservation(pages.current!, window.location.origin, crypto.randomUUID(), new Date().toISOString());
+      try { await post(user, '/api/v1/observations', pending.current); }
+      catch (failure) {
+        if (failure instanceof DemoRequestError && failure.status < 500) pending.current = null;
+        throw failure;
+      }
+      pending.current = null;
+      const notices = readDemoAnnouncements(pages.current!);
+      const results = await Promise.allSettled(notices.map(async notice => {
+        const response = await post(user, '/api/v1/announcements', notice);
+        return (await response.json() as { status: string }).status;
+      }));
+      if (results.some(result => result.status === 'rejected' && result.reason instanceof DemoRequestError &&
+        result.reason.code === 'public-demo-limit')) return '今日の共用の体験では、お知らせの読み取りを使い切りました';
+      if (results.some(result => result.status === 'rejected' ||
+        !['proposal', 'duplicate', 'abstained'].includes(result.value))) {
+        return '課題を確認しました。お知らせの確認は終わりませんでした。LMSのお知らせと課題ページの締切を見比べてください。';
+      }
+      setStage(stage >= 2 ? 3 : 1);
+      return '課題を確認しました。';
+    });
+  };
+  useEffect(() => {
+    if (!autoRead || blocked) return;
+    const timer = window.setTimeout(() => { void open(); }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [autoRead, blocked, data]);
+  const tasks = data.courses.flatMap(course => course.assignments).filter(task => task.submission !== 'submitted');
+  const hero = tasks[0];
+  const extend = (task: typeof tasks[number]) => action(async () => {
+    const response = await post(user, '/api/v1/demo/extend', { sourceId: task.sourceId, expectedDueAt: task.dueAt });
+    const expected = await response.json() as { sourceId: string; dueAt: string };
+    window.location.hash = `detail-${task.sourceId}`;
+    setAwaiting({ dates: [expected], next: 'read', message: 'LMSの締切を1日延ばしました。' });
+    return 'LMSの締切が変わるのを待っています…';
+  }, `extend:${task.sourceId}`);
+  const teacherButton = (task: typeof tasks[number], primary = false) => <Button variant={primary ? 'primary' : 'quiet'}
+    disabled={blocked || pending.current !== null} busy={blocked && operation === `extend:${task.sourceId}`} busyLabel="変更中…"
+    onClick={() => { void extend(task); }}>「{task.title}」の締切を1日延ばす</Button>;
+  const openButton = <Button variant={stage === 0 || stage === 2 ? 'primary' : 'quiet'} disabled={blocked}
+    busy={blocked && operation === 'open'} busyLabel="確認中…" onClick={() => { void open(); }}>LMSを開く</Button>;
+  const result = message ? <p role="status">{message}</p> : error ? <p role="alert">{error}</p> : null;
+  const sourceAhead = observed.status === 'ready' && observed.data.assignments.length > 0 && tasks.some(task => {
+    const due = observed.data.assignments.find(row => row.key.sourceId === task.sourceId)?.officialDeadline?.deadline;
+    return due?.kind === 'datetime' && Date.parse(due.dueAt) !== Date.parse(task.dueAt);
   });
-  return <>
-    <ol className="demo-steps">
-      <li><h2>1. LMSを開く</h2><p>学生としてLMSを開き、課題を読み込みます。</p>
-        <Button disabled={blocked} busy={blocked && operation === 'open'} busyLabel="確認中…" onClick={() => { void open(); }}>LMSを開く</Button>
-        <LongWait busy={blocked && operation === 'open'} afterThree="課題とお知らせを確認しています…" afterTen="お知らせの確認に時間がかかっています。操作が終わるまで、この画面でお待ちください。" />
-        {message ? <p role="status">{message}</p> : error ? <p role="alert">{error}</p> : null}
-      </li>
-      <li><h2>2. 学生の画面を開く</h2>
-        <p>時間割とカレンダーに締切が入ります。開いたままにしてください。</p>
-        <a href="/student" target="_blank" rel="noreferrer">学生の画面を開く</a>
-      </li>
-      <li><section aria-label="先生役の操作"><h2>3. 先生役で締切やお知らせを変える</h2>
-        <p>延ばしたら、もう一度 1 を押します。</p>
-        {data.courses.flatMap(course => course.assignments).filter(task => task.submission !== 'submitted').map(task =>
-          <div className="demo-teacher-action" key={task.sourceId}><p>{task.title}：{demoDueText(task.dueAt)}</p>
-            <div className="demo-teacher-option"><Button disabled={blocked || pending.current !== null} busy={blocked && operation === `extend:${task.sourceId}`} busyLabel="変更中…" onClick={() => { void action(async () => {
-              const response = await post(user, '/api/v1/demo/extend', { sourceId: task.sourceId, expectedDueAt: task.dueAt });
-              const expected = await response.json() as { sourceId: string; dueAt: string };
-              setAwaiting({ dates: [expected], message: 'LMSの締切を1日延ばしました。「LMSを開く」で課題を確かめてください。' });
-              return 'LMSの締切が変わるのを待っています…';
-            }, `extend:${task.sourceId}`); }}>「{task.title}」の締切を1日延ばす</Button></div>
-            <div className="demo-teacher-option"><Button disabled={blocked || pending.current !== null} busy={blocked && operation === `announce:${task.sourceId}`} busyLabel="投稿中…" onClick={() => { void action(async () => {
+  return <Staged>
+    <div className="demo-flow-header"><ol className="demo-steps" aria-label="体験の段階">
+      {['LMSを開く', '先生が締切を延ばす', '学生と支援担当の画面', '朝のメール'].map((label, index) =>
+        <li key={label} aria-current={index === stage ? 'step' : undefined} data-complete={index < stage}>
+          <span aria-hidden="true">{index < stage ? '✓' : index + 1}</span>{label}</li>)}
+    </ol><Button variant="quiet" disabled={blocked} busy={blocked && operation === 'reset'} busyLabel="やり直しています…" onClick={() => {
+      if (!window.confirm('体験を最初の状態に戻しますか？')) return;
+      setAutoRead(false);
+      void action(async () => {
+        const response = await post(user, '/api/v1/demo/reset', { onlyIfStale: false });
+        const result = await response.json() as { data: DemoData };
+        pending.current = null;
+        window.location.hash = 'courses';
+        setAwaiting({ announcementIds: [], dates: result.data.courses.flatMap(course => course.assignments),
+          next: 'reset', message: '体験を最初の状態に戻しました。' });
+        return '体験の画面を更新しています…';
+      }, 'reset');
+    }}>体験を最初からやり直す</Button></div>
+    <div className="demo-command" aria-label="今の操作">
+      {stage === 0 || stage === 2 ? <>{openButton}{result}</> : <>
+        {stage === 1 && hero ? teacherButton(hero, true) : <Button variant="primary" onClick={() => {
+          setShowMail(true); setStage(3);
+          window.setTimeout(() => document.getElementById('demo-morning-mail')?.scrollIntoView({ block: 'start' }), 0);
+        }}>朝のメールを見る</Button>}{result}
+      </>}
+      <LongWait busy={blocked} afterThree={operation === 'open' ? '課題とお知らせを確認しています…' : 'LMSの変更を待っています…'}
+        afterTen="まだ応答を待っています。接続を確かめて、この画面でお待ちください。" />
+    </div>
+    <DemoTriptych waiting={sourceAhead} lms={<div ref={pages}><DemoPages data={data} /></div>}
+      student={<DemoObserved state={observed} role="student" />} supporter={<DemoObserved state={observed} role="supporter" />} />
+    <div className="demo-secondary"><a href="/student" target="_blank" rel="noreferrer">学生の画面を開く</a>
+      <a href="/session">面談を開く</a>
+      {stage !== 0 && stage !== 2 && openButton}
+    </div>
+    <details className="demo-more"><summary>先生役の操作・メールの見本</summary>
+      <section aria-label="先生役の操作"><h2>先生役の操作</h2>
+        {tasks.map(task => <div className="demo-teacher-action" key={task.sourceId}>
+          {!(stage === 1 && task === hero) && teacherButton(task)}
+          <Button variant="quiet" disabled={blocked || pending.current !== null} busy={blocked && operation === `announce:${task.sourceId}`} busyLabel="投稿中…"
+            onClick={() => { setAutoRead(false); void action(async () => {
               const response = await post(user, '/api/v1/demo/announce', { sourceId: task.sourceId, expectedDueAt: task.dueAt });
               const result = await response.json() as { announcementId: string };
               setAwaiting({ dates: [], announcementIds: [...(data.announcements ?? [])
                 .filter(item => item.courseId !== data.courses.find(course => course.assignments.includes(task))?.courseId)
                 .map(item => item.announcement.announcementId), result.announcementId],
-                message: 'お知らせを出しました。「LMSを開く」で、課題の締切との違いを確かめてください。' });
+                message: 'お知らせを出しました。' });
               return 'お知らせが画面に出るのを待っています…';
             }, `announce:${task.sourceId}`); }}>お知らせを出す</Button>
-            <p>LMSの課題ページの締切はそのままに、延ばすお知らせを出します。もう一度 1 を押すと「要確認」が出ます。</p></div>
-          </div>)}
-      </section></li>
-    </ol>
-    <Button disabled={blocked} busy={blocked && operation === 'reset'} busyLabel="やり直しています…" onClick={() => { void action(async () => {
-      const response = await post(user, '/api/v1/demo/reset', { onlyIfStale: false });
-      const result = await response.json() as { data: DemoData };
-      pending.current = null;
-      setAwaiting({ announcementIds: [], dates: result.data.courses.flatMap(course => course.assignments),
-        message: '体験を最初の状態に戻しました。「LMSを開く」から始めてください。' });
-      return '体験の画面を更新しています…';
-    }, 'reset'); }}>体験を最初からやり直す</Button>
-    <DigestPreview user={user} />
-    <div className="demo-lms"><h2>LMSの画面（架空）</h2>
-      <div ref={pages}><DemoPages data={data} /></div>
-    </div>
-  </>;
+          <span>{task.title}</span>
+        </div>)}
+      </section>
+      {!showMail && <DigestPreview user={user} />}
+    </details>
+    {showMail && <div id="demo-morning-mail"><DigestPreview user={user} /></div>}
+  </Staged>;
 }
