@@ -612,24 +612,26 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 
 〔作品〕
 
-- 決めた人：Codex。Issue #156 が指定した送り方に依らないN1〜N4を実装する。D36の送信元・認証・Cloud構成はその後orangeがA1で確定した（D35時点では未確定）。契約は [data-shapes.md](data-shapes.md#クラウド通知の共通部分issue-156送り方と切替は未接続)。
+- 決めた人：Codex。Issue #156 が指定した送り方に依らないN1〜N4を実装する。D36の送信元・認証・Cloud構成の決定はorangeに残し、この記録では確定しない。契約は [data-shapes.md](data-shapes.md#クラウド通知の共通部分issue-156送り方と切替は未接続)。
+
+注記（2026-11-08追記）：その後、D36の送信元・認証・Cloud構成はorangeがA1（専用Gmailからの送信）で確定した（詳細はD36および [2026-11-08-issue-152.md](records/2026-11-08-issue-152.md) を参照）。
 - 台帳は予約・開始・結果を分け、結果不明を再送しない。朝の補送は07:30〜08:00未満。準備前は日付をまたいで選ぶ。未受理のfailedも今回は自動再試行せず、未着の可能性を残して重複抑止を優先する。既存の拡張の同日補送と切替は変更しない。
 - 対象は上限付きcollection group読取と厳密なパス確認で列挙する。上限超過は固定エラーで止め、student親文書の存在や新しいindexを前提にしない。大量配信の仕組みは今回作らない。
 - OIDCは[Googleの検証要件](https://developers.google.com/identity/openid-connect/openid-connect#validatinganidtoken)と[SchedulerのHTTP認証](https://docs.cloud.google.com/scheduler/docs/http-target-auth)を参照。既存OSSのgoogle-auth-libraryも確認したが、直接依存の追加はorangeの追加合意が必要なため今回は追加せず、Node標準cryptoで固定Google公開鍵のRS256だけを検証する。汎用JWT実装やtokeninfoへの毎回問い合わせは採らない。署名とclaimは合成鍵で試験し、実Cloudのtoken/IAMは未確認。
 
-## D36. 専用Gmailから本人へ通知する（2026-11-08、orangeが確定）
+## D36. 専用Gmailから本人へ通知する（2026-11-08、orange決定）
 
 〔作品〕
 
-注記：送信部品 [mail-sender.ts](../packages/server/src/notifications/mail-sender.ts) と設定APIの実装、および2026-11-08のCloud資源・Secret Manager・Cloud Schedulerの準備記録は [2026-11-08-issue-152.md](records/2026-11-08-issue-152.md) を参照。`sender.check` は `ready` だが、実メールの送信・API受理・本人の受信は未確認であり、この決定や準備は実受信の証拠ではない。
+注記：送信部品の実装は [mail-sender.ts](../packages/server/src/notifications/mail-sender.ts)、設定APIの実装は [settings.ts](../packages/server/src/notifications/settings.ts)、2026-11-08のCloud構成・Secret Manager・Cloud Schedulerの実行記録は [2026-11-08-issue-152.md](records/2026-11-08-issue-152.md) を参照。`sender.check` は `ready` だが、実メールの送信・API受理・本人の受信は未確認であり、この決定や準備は実受信の証拠ではない。
 
-- 状態：Issue #162のSoraのA1案を**orangeが確定**。専用Web OAuth・Secret Manager 3項目・専用SA・Cloud Scheduler 1件（毎分）は2026-11-08に構成済み（`NOTIFICATION_SEND_ENABLED=false` を維持）。凍結条件はD35、今日の順序と切替の打ち切りは #152。
-- A1：専用Gmailのgmail.sendだけを同意し、そのrefresh tokenをSecret Managerの数字の版でCloud Runへ渡す。固定Fromから、Firebase Authで確認できた本人だけへTo 1件、CC/BCCなしで送る。多数の学生それぞれのOAuthを預からず、送信元1つの認可で準備できるため採用する。
+- 状態：Issue #153（D-03・第8節によるインフラ・認証・Cloud判断の委任）およびIssue #152に基づき、Issue #162のSoraのA1案とCloud Schedulerの毎分実行を**orangeが決定**。専用Web OAuth・Secret Manager 3項目・専用SA・Cloud Scheduler 1件（毎分）は2026-11-08に構成済み（`NOTIFICATION_SEND_ENABLED=false` を維持）。凍結条件はD35、当日の順序と切替の打ち切りは #152。
+- A1：専用Gmailのgmail.sendだけを同意し、そのrefresh tokenをSecret Managerの数字の版でCloud Runへ渡す。固定Fromから、Firebase Authで確認できた本人だけへTo 1件、CC/BCCなしで送る。多数の学生それぞれのOAuthを預からず、送信元1つの認可で準備できるため採用する。Googleの最終同意画面のアカウントは専用送信元の設定済み `NOTIFICATION_FROM` と目視で一致していたが、実メールのFrom表示名やAPI受理・本人受信は未実施（NOT_RUN）。
 - B（本人Gmailから本人へサーバー送信）は、利用者ごとのoffline同意・秘密の保存・失効/取消の管理と画面が必要なので今回は採らない。A2（専用ドメインとメール配信サービス）は、ドメイン・送信者検証・費用の判断が増えるので今回は採らない。長期運用なら再検討する。
 - 既存の公式Nodeクライアント [googleapis](https://github.com/googleapis/google-api-nodejs-client) も候補。今回は #162 の指定どおりNode標準fetchでtoken更新とGmail送信の2経路に限定し、依存を増やさない。一般的なOAuth登録フローやメール受信機能は作らない。
 - Testingの同意は7日で失効する。2026-11-08 22:06:19 JSTに同意し、提供元の `refresh_token_expires_in`（604,799秒）による期限の目安は2026-11-15 22:06:18 JST。11/14の終了を越える目安だが継続の保証ではない。11/10締切後〜11/14に手動再認可する案は採らない。[準備手順](deploy.md#専用gmailの通知準備issue-162実行はorange)と[実行記録](records/2026-11-08-issue-152.md)を正本にする。
-- 毎分tickの読取は、利用者1人につきsnapshotの計画・課題・授業等だけで最大約500件×1,440回＝約72万件/人日。設定列挙、回収、送信直前の再読取・transaction再実行は別途加算される（`NOTIFICATION_SEND_ENABLED=false` のdry-runでも候補者のデータを読む実装であり、読み取りゼロではない）。これは実測や課金上限ではない。少人数の実証用として毎分実行を採用する。今回の構成は#159の選別・時刻窓を変えない。
-- 宛先が取れないときは送信しない方針を採用する。既存の予約はleaseで回収し、窓内に再確認する。設定APIにはrecipient-unavailableを返すが、個別台帳に宛先や取得失敗の詳細は足さない。本人確認のない宛先への代替送信はしない。
+- Cloud Schedulerは毎分実行で構成した。毎分tickの読取に関する試算・リスク見積りとして、利用者1人につきsnapshotの計画・課題・授業等だけで上限目安が最大約500件×1,440回＝約72万件/人日となり、設定列挙、回収、送信直前の再読取・transaction再実行が別途加算される（`NOTIFICATION_SEND_ENABLED=false` のdry-runでも候補者のデータを読む実装であり、読取ゼロではない。実測値や費用上限ではない）。今回の構成は#159の選別・時刻窓を変えない。
+- Issue #153 BE-02（信頼できる本人確認情報から宛先を解決し、任意の代替宛先へは送らない制約）のもと、宛先が取れないときに送信しない既存実装を維持する（既存の予約はleaseで回収し、窓内に再確認する。設定APIにはrecipient-unavailableを返すが、個別台帳に宛先や取得失敗の詳細は足さない）。
 - 二重送信を避けるため設定APIではdeliveryOwner/migrationStateを変えない。移行済み・送信元利用可能・本人宛先確認済みの場合だけ本人が有効化できる。停止は送信元の失効中も受け付ける。failed/unknownの自動再送は追加せず、API受理と本人の受信を分ける。
 
 ## D37. サービス名をToDokuにする（2026-11-08、Issue #176）
