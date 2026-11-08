@@ -16,6 +16,7 @@ html.landing-scroll { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
 .landing .hero-copy { position: relative; z-index: 1; width: 100%; }
 .landing .hero h1 { font-size: clamp(30px, 3.8vw, 60px); line-height: 1.65; letter-spacing: -.04em; }
 .landing .hero h1 span { display: block; }
+.landing .hero-mobile-break { display: none; }
 .landing .hero-mark { position: absolute; right: 12%; top: 8%; transform: rotate(-12deg); opacity: .13; pointer-events: none; }
 .landing .hero-mark .todoku-logo > span { display: none; }
 .landing .hero-mark svg { width: clamp(300px, 36vw, 560px); height: auto; color: var(--accent); }
@@ -78,7 +79,6 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 /* Keep the existing interactive example until issue 225 supplies the shared demo. */
 .landing .local-demo { padding: 28px; border: 1px solid var(--line-strong); background: var(--sheet); color: var(--ink); border-radius: var(--radius-md); }
 .landing .local-demo .lab { font: 13px var(--mono); color: var(--muted); }
-.landing .local-demo .pd { font-size: 14px; max-width: 40em; margin-top: 12px; }
 .landing .mini { display: flex; gap: 24px; margin-top: 24px; }
 .landing .mc { min-width: 150px; padding: 18px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
 .landing .mc.hot { background: var(--accent); color: var(--white); }
@@ -98,6 +98,7 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing-header nav { padding: 12px 18px; gap: 18px; flex-wrap: wrap; font-size: 12px; }
   .landing .chapter { padding: 64px 24px 40px; }
   .landing .hero { min-height: 100svh; padding: 210px 24px 130px; align-items: flex-start; }
+  .landing .hero-mobile-break { display: initial; }
   .landing .hero h1 { font-size: clamp(25px, 6.8vw, 42px); line-height: 1.8; letter-spacing: -.04em; }
   .landing .hero-mark { top: 200px; right: -40px; }
   .landing .hero-mark svg { width: 290px; }

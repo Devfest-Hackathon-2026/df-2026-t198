@@ -44,6 +44,10 @@ try {
   await student.unroute('**/accounts:signInWithPassword?*', rejectLogin);
   await entry.getByRole('button', { name: '学生として試す', exact: true }).click();
   await student.waitForURL(`${base}/demo-lms`);
+  await student.goBack();
+  const restoredEntry = student.getByRole('button', { name: '学生として試す', exact: true });
+  await restoredEntry.waitFor(); assert.equal(await restoredEntry.isEnabled(), true);
+  await restoredEntry.click(); await student.waitForURL(`${base}/demo-lms`);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   assert.equal(await student.getByRole('region', { name: '共用の体験', exact: true }).count(), 0);
   await supporter.goto(`${base}/`);

@@ -40,7 +40,7 @@ try {
     await noOverflow();
     for (const reveal of await page.locator('.td-reveal').all()) {
       await reveal.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(400);
+      await page.waitForFunction(el => globalThis.getComputedStyle(el).opacity === '1', await reveal.elementHandle());
       assert.equal(await reveal.evaluate(el => globalThis.getComputedStyle(el).opacity), '1');
     }
     const panels = page.locator('.entry-panel');
@@ -50,6 +50,7 @@ try {
     else assert(right.y >= left.y + left.height, 'mobile entries retain reading order');
     await page.evaluate(() => globalThis.scrollTo(0, 0));
     await page.waitForTimeout(600);
+    await page.waitForFunction(() => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === '#home');
     assert.equal(await page.locator('.landing-home').isVisible(), true);
     assert.equal(await page.locator('.landing-home').evaluate(el => el.getBoundingClientRect().top >= 0), true, 'home logo remains in the opening viewport');
     await page.screenshot({ path: `${evidence}/hero-${width}.png` });

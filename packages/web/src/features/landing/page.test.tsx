@@ -10,7 +10,7 @@ afterEach(() => vi.unstubAllEnvs());
 it('offers the local example and judge guidance without shared demo settings', () => {
   for (const key of keys) vi.stubEnv(key, '');
   const html = renderToStaticMarkup(<LandingPage />);
-  for (const section of ['しくみ', '使う人', '体験する', '使い始める', '預からないもの']) {
+  for (const section of ['しくみ', '使う人', '体験する', '使い始める', '情報の扱い']) {
     expect(html).toContain(section);
   }
   expect(html).toContain('ログインなし');
@@ -41,7 +41,7 @@ it('reuses both shared entry roles without exposing configured values as text', 
 
 it('uses the approved hero sentence and separate, equally placed entry roles', () => {
   const html = renderToStaticMarkup(<LandingPage />);
-  expect(html).toContain('<span>学生がすることは、</span><span>いつものLMSを<wbr/>開くことだけです</span>');
+  expect(html).toContain('<span>学生がすることは、</span><span>いつものLMSを<br class="hero-mobile-break"/>開くことだけです</span>');
   expect(html).toContain('lang="en">Your coursework, connected.');
   expect(html).toContain('aria-labelledby="judge-title"');
   expect(html).toContain('aria-labelledby="shared-title"');

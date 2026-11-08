@@ -8,7 +8,7 @@ const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
 const chapters = [
   { id: 'home', label: 'トップ' }, { id: 'how', label: 'しくみ' },
   { id: 'people', label: '使う人' }, { id: 'try', label: '体験する' },
-  { id: 'start', label: '使い始める' }, { id: 'privacy', label: '預からないもの' },
+  { id: 'start', label: '使い始める' }, { id: 'privacy', label: '情報の扱い' },
 ];
 
 function Screenshot({ name, alt, width, height }: { name: string; alt: string; width: number; height: number }) {
@@ -33,17 +33,16 @@ function LocalDemo() {
   const [step, setStep] = useState<'initial' | 'extended' | 'opened'>('initial');
   const opened = step === 'opened';
   return <section className="panel local-demo" aria-labelledby="local-demo-title">
-    <span className="lab">ログインなし</span>
+    <span className="lab">ログインなし・保存なし</span>
     <h3 className="pt" id="local-demo-title">動く見本</h3>
-    <p className="pd">先生が締切を延ばしてから、学生が LMS を開くまでの変化を、順に押して見られます。この画面の中だけで動き、何も保存しません。</p>
     <div className="mini" aria-live="polite" aria-atomic="true">
       <div className={`mc${opened ? ' hot' : ''}`}>
-        <span className="cn">レポートの書き方の書き方</span>
+        <span className="cn">レポート作成法</span>
         {opened && <s className="old">11/11</s>}
         <span className="new">締切 {opened ? '11/12' : '11/11'}</span>
       </div>
       <div className="mm"><span className="mono">面談画面 ・ 支援担当</span><br />
-        <b>書き方を書くレポート</b><br />
+        <b>第1回レポート</b><br />
         {opened ? '締切が 11/11 から 11/12 に変わりました' : '締切 11/11'}
       </div>
     </div>
@@ -79,8 +78,13 @@ export function LandingPage() {
   const [current, setCurrent] = useState('home');
   useEffect(() => {
     document.documentElement.classList.add('landing-scroll');
+    const visibleChapters = new Map<string, IntersectionObserverEntry>();
     const observer = new IntersectionObserver(entries => {
-      const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      for (const entry of entries) {
+        if (entry.isIntersecting) visibleChapters.set(entry.target.id, entry);
+        else visibleChapters.delete(entry.target.id);
+      }
+      const visible = [...visibleChapters.values()].sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
       if (visible) setCurrent(visible.target.id);
     }, { rootMargin: '-15% 0px -40% 0px', threshold: [0, .1, .3] });
     for (const chapter of chapters) { const section = document.getElementById(chapter.id); if (section) observer.observe(section); }
@@ -96,7 +100,7 @@ export function LandingPage() {
       <section className="hero chapter" id="home" aria-labelledby="landing-title">
         <div className="hero-mark" aria-hidden="true"><TodokuLogo /></div>
         <Staged className="hero-copy">
-          <h1 id="landing-title"><span>学生がすることは、</span><span>いつものLMSを<wbr />開くことだけです</span></h1>
+          <h1 id="landing-title"><span>学生がすることは、</span><span>いつものLMSを<br className="hero-mobile-break" />開くことだけです</span></h1>
           <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="pill" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
           <p className="hero-english" lang="en">Your coursework, connected.</p>
         </Staged>
@@ -134,13 +138,13 @@ export function LandingPage() {
         <Reveal><ol className="setup-steps">
           <li><span className="step-number">01</span><h3>Chrome 拡張</h3><a className="pill" href={`${repository}#手元で動かす`}>開発版の導入手順を開く <span aria-hidden="true">↗</span></a></li>
           <li><span className="step-number">02</span><h3>Google ログイン</h3><a className="pill" href="/student">学生画面を開く <span aria-hidden="true">↗</span></a></li>
-          <li><span className="step-number">03</span><h3>対応しているLMS</h3><p>横浜国立大学</p></li>
+          <li><span className="step-number">03</span><h3>対応しているLMS</h3><p>横浜国立大学のLMS</p></li>
         </ol></Reveal>
-        <a className="next-chapter" href="#privacy">預からないもの <span aria-hidden="true">↓</span></a>
+        <a className="next-chapter" href="#privacy">情報の扱い <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter privacy-section" id="privacy" aria-labelledby="privacy-title">
-        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Privacy</span><h2 id="privacy-title">預からないもの</h2></div>
+        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Privacy</span><h2 id="privacy-title">情報の扱い</h2></div>
           <ul className="privacy-list"><li>LMS のパスワードを預かりません</li><li>LMS に提出や書き込みをしません</li><li>メールは本人にだけ届きます</li><li>支援担当が見られるのは、共有の許可がある学生だけです</li></ul>
         </Reveal>
         <a className="pill" href="#home">トップに戻る <span aria-hidden="true">↑</span></a>
