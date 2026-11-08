@@ -17,6 +17,11 @@ it.each(['https://example.test/portal/site/fictional-site', 'https://lms.gakusei
   const response = new Response(''); Object.defineProperty(response, 'url', { value: url });
   expect(await resolveKulmsSite('fictional-code', async () => response)).toBeUndefined();
 });
+it.each(['tool', 'tool-reset'])('resolves an authenticated site %s redirect', async kind => {
+  const response = new Response('not returned');
+  Object.defineProperty(response, 'url', { value: `https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-site/${kind}/fictional-tool` });
+  expect(await resolveKulmsSite('fictional-code', async () => response)).toBe('fictional-site');
+});
 it('rejects foreign senders, subframes and KULMS pages before making a cross-origin request', () => {
   const fetcher = vi.fn(); vi.stubGlobal('fetch', fetcher); vi.stubGlobal('chrome', { runtime: { id: 'fictional-extension' } });
   const sender = { id: 'fictional-extension', frameId: 0, tab: { id: 1 }, url: 'https://www.k.kyoto-u.ac.jp/student/la/top' };
