@@ -1,3 +1,4 @@
+import { Button } from '../../shared/ui/button';
 import { useState, type FormEvent } from 'react';
 import type { SessionContext } from '../../../../core/src/types';
 import { dayInZone } from '../../shared/assignments/deadline-format';
@@ -21,7 +22,7 @@ export function ContextEditor({ context, save }: { context: SessionContext; save
       <label>前回の面談（日本時間）<input name="last" type="datetime-local" defaultValue={localInput(context.lastSessionAt)} /></label>
       <label>次の面談（日本時間）<input name="next" type="datetime-local" defaultValue={localInput(context.nextSessionAt)} /></label>
       <p className="muted">日時が決まっていない欄は空にできます。</p>
-      <button disabled={busy}>{busy ? '保存中…' : '面談日時を保存'}</button>
+      <Button type="submit" busy={busy} busyLabel="保存中…">面談日時を保存</Button>
       {message && <p role="status">{message}</p>}
     </form>
   </details>;

@@ -1,3 +1,4 @@
+import { serverFetch } from '../../shared/network';
 import type { User } from 'firebase/auth';
 import type { PreparationPlan, PreparationPlanInput } from '../../../../core/src/types';
 
@@ -10,7 +11,7 @@ export class PlanActionError extends Error {
   constructor(message: string, readonly plan?: PreparationPlan) { super(message); }
 }
 export async function performPlanAction(user: User, id: string, action: 'done' | 'later', revision: number) {
-  const response = await fetch(`/api/v1/plans/${encodeURIComponent(id)}/${action}?rev=${revision}`, { method: 'POST', cache: 'no-store',
+  const response = await serverFetch(`/api/v1/plans/${encodeURIComponent(id)}/${action}?rev=${revision}`, { method: 'POST', cache: 'no-store',
     headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
   if (!response.ok) {
     const value = await response.json().catch(() => ({})) as { plan?: PreparationPlan };
@@ -25,7 +26,7 @@ export interface PlanActions {
 }
 export function planActions(user: User, student: string): PlanActions {
   const request = async (id: string, input?: PreparationPlanInput) => {
-    const response = await fetch(`/api/v1/students/${encodeURIComponent(student)}/plans/${id}`, {
+    const response = await serverFetch(`/api/v1/students/${encodeURIComponent(student)}/plans/${id}`, {
       method: input ? 'PUT' : 'DELETE', cache: 'no-store', headers: {
         Authorization: `Bearer ${await user.getIdToken()}`, ...(input ? { 'Content-Type': 'application/json' } : {}),
       }, ...(input ? { body: JSON.stringify(input) } : {}),

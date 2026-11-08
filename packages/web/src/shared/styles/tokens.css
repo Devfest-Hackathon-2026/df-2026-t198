@@ -1,6 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Google+Sans+Code:wght@400;600&family=Google+Sans+Flex:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap');
 
-:root {
+/* Brand defaults also serve pages that have not adopted a theme class yet. */
+:root, .brand {
   --paper: #F3F0E8;
   --white: #FFFFFF;
   --ink: #16150F;
@@ -9,7 +10,92 @@
   --surface: #EAE5D8;
   --accent: #D9402B;
   --accent-text: #C43A26;
+  /* Existing deadline-change highlights keep their fixed browser acceptance colour. */
+  --change-text: #C43A26;
+  --sheet: var(--white);
+  --rule: var(--line);
+  --line-strong: #8b8371;
+  --ink-muted: var(--muted);
+  --on-ink: var(--paper);
+  --accent-soft: #f8e5dd;
+  --marker: #ffe14d;
+  --ink-on-marker: #18202e;
+  --marker-soft: #fff4b8;
+  --danger: #b42318;
+  --danger-soft: #fde8e6;
+  --done-soft: #edeff2;
+  --focus: var(--accent-text);
   --jp: "BIZ UDPGothic", sans-serif;
   --sans: "Space Grotesk", "BIZ UDPGothic", sans-serif;
   --mono: "JetBrains Mono", "BIZ UDPGothic", monospace;
+}
+
+:root {
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius-0: 0px;
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --target: 44px;
+  --measure: 36em;
+  --font-sans: "Google Sans Flex", "BIZ UDPGothic", system-ui, sans-serif;
+  --font-mono: "Google Sans Code", "BIZ UDPGothic", ui-monospace, monospace;
+}
+
+.app {
+  --paper: #f7f8f4;
+  --sheet: #ffffff;
+  --rule: #cbd7e6;
+  --line-strong: #7d8a9c;
+  --ink: #18202e;
+  --ink-muted: #4a5466;
+  --on-ink: #f7f8f4;
+  --accent: #2456b0;
+  --accent-soft: #e3ecfa;
+  --marker: #ffe14d;
+  --ink-on-marker: #18202e;
+  --marker-soft: #fff4b8;
+  --danger: #b42318;
+  --danger-soft: #fde8e6;
+  --done-soft: #edeff2;
+  --white: var(--sheet);
+  --muted: var(--ink-muted);
+  --line: var(--rule);
+  --surface: var(--done-soft);
+  --accent-text: var(--accent);
+  --sans: var(--font-sans);
+  --mono: var(--font-mono);
+  --focus: var(--accent);
+}
+
+.lms-skin {
+  --paper: #f5f6f8;
+  --sheet: #ffffff;
+  --rule: #d1d5db;
+  --line-strong: #747e8b;
+  --ink: #202a36;
+  --ink-muted: #505b68;
+  --on-ink: #ffffff;
+  --accent: #285785;
+  --accent-soft: #e7eef5;
+  --marker: #fff0b0;
+  --ink-on-marker: #202a36;
+  --marker-soft: #fff8db;
+  --danger: #b42318;
+  --danger-soft: #fde8e6;
+  --done-soft: #e9edf0;
+  --focus: var(--accent);
+  --white: var(--sheet);
+  --muted: var(--ink-muted);
+  --line: var(--rule);
+  --surface: var(--done-soft);
+  --accent-text: var(--accent);
+  --sans: var(--font-sans);
+  --mono: var(--font-mono);
 }

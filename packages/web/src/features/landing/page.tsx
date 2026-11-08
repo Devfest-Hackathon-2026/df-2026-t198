@@ -1,3 +1,4 @@
+import { Splash } from '../../shared/ui/motion';
 import { useState } from 'react';
 import { PublicDemoEntry } from '../../shared/auth/public-demo-entry';
 import { TodokuLogo } from '../../shared/ui/todoku-logo';
@@ -44,7 +45,7 @@ function SharedDemo() {
 }
 
 export function LandingPage() {
-  return <div className="landing">
+  return <div className="landing brand"><Splash />
   <header className="top">
     <a className="brand" href="/" aria-label="ToDoku ホーム"><TodokuLogo /></a>
     <a className="menu" href="#contents">目次</a>

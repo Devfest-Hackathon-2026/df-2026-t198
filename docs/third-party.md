@@ -132,3 +132,9 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 | [Firebase Hosting と Cloud Run の統合ガイド](https://firebase.google.com/docs/hosting/cloud-run) | Hosting 60秒上限 | 文書 CC BY 4.0（確認済）、サンプル複製なし |
 | [Google Gen AI SDK `HttpOptions` リファレンス](https://googleapis.github.io/js-genai/release_docs/interfaces/types.HttpOptions.html) | SDK通信timeout | 文書は参照のみ（文書ライセンスは未確認。既存依存 `@google/genai` 2.32.0 本体はApache 2.0として既存出典欄で確認済） |
 | [Google Cloud Node.js Buildpacks ドキュメント](https://docs.cloud.google.com/docs/buildpacks/nodejs) | Procfile直接起動とbuild挙動 | 文書 CC BY 4.0（確認済）、サンプル複製なし |
+
+## 共通UI（Issue #223、2026-11-09）
+
+- [提供されたToDokuデザインシステム](https://claude.ai/artifact/HpENnWNWCcXAxgPsG8RKRC)の明るいテーマのトークンと `components/bundle.css` を、Issue #223の指示で採用。React部品はTypeScriptで実装し直した。チームから提供された制作物であり、独立した再配布ライセンスの指定は確認できていない。外部の写真・ロゴ・アイコンは追加していない。
+- [Google Sans Flex](https://github.com/google/fonts/tree/main/ofl/googlesansflex)と[Google Sans Code](https://github.com/google/fonts/tree/main/ofl/googlesanscode)をGoogle Fontsから読み込む。両フォルダの `OFL.txt` でSIL Open Font License 1.1を確認（2026-11-09）。フォントファイル自体は同梱しない。既存のBIZ UDPゴシックと組み合わせる。
+- 画面の移動は、[Chrome公式のView Transitions APIの説明](https://developer.chrome.com/docs/web-platform/view-transitions/same-document)を参考に、ブラウザ標準APIと既存のReact DOMで実装した。ライブラリの追加はない。

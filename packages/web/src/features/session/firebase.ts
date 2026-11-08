@@ -1,3 +1,4 @@
+import { serverFetch } from '../../shared/network';
 import { onAuthStateChanged, signInWithEmailAndPassword, type User } from 'firebase/auth';
 import { collection, doc, onSnapshot, type Firestore } from 'firebase/firestore';
 import { firebase } from '../../shared/firebase';
@@ -44,7 +45,7 @@ export function getSessionServices(): SessionServices | null {
   const { auth, db } = connection;
   const local = Boolean(auth.emulatorConfig);
   async function api(user: User, path: string, context?: SessionContext) {
-    const response = await fetch(path, { method: context ? 'PUT' : 'GET', cache: 'no-store', headers: {
+    const response = await serverFetch(path, { method: context ? 'PUT' : 'GET', cache: 'no-store', headers: {
       Authorization: `Bearer ${await user.getIdToken()}`, ...(context ? { 'Content-Type': 'application/json' } : {}),
     }, ...(context ? { body: JSON.stringify(context) } : {}) });
     if (!response.ok) throw new Error(response.status === 403 ? 'forbidden' : 'request-failed');
