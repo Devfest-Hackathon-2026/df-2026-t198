@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
+import { Buffer } from 'node:buffer';
 import { expect, it, vi } from 'vitest';
 import expected from '../../../lms-definitions/kulasis/samples/observation.expected.json' with { type: 'json' };
 import { collectKulasisObservation } from '../src/kulasis-collection.js';
@@ -31,6 +32,15 @@ it('accepts a browser fetch function that rejects an unrelated receiver', async 
   });
   expect(await collectKulasisObservation(opts)).toEqual(expected);
 });
+it('sends current-host cross-department course URLs accepted by the server', async () => {
+  const opts = { ...options(), pageUrl: 'https://k.kyoto-u.ac.jp/student/la/top' };
+  const otherDepartment = Buffer.from(sample.toString('latin1').replaceAll('/student/la/support/top', '/student/other/support/top'), 'latin1');
+  opts.fetcher.mockImplementation(async url => new Response(String(url).includes('/entry/') ? otherDepartment : '<html></html>'));
+  const result = await collectKulasisObservation(opts);
+  expect(result.catalogCourses).toHaveLength(2);
+  expect(result.catalogCourses.every(course => course.url.startsWith('https://k.kyoto-u.ac.jp/student/other/support/top?no='))).toBe(true);
+  expect(parseObservation(result)).toEqual(result);
+});
 it('uses the current academic half in Japan, including January and the April boundary', async () => {
   for (const [at, path] of [['2031-01-01T00:00:00Z', 'kouki'], ['2031-03-31T15:00:00Z', 'zenki']]) {
     const opts = { ...options(), fetchedAt: at };
@@ -51,6 +61,16 @@ it.each([302, 401])('recognizes an HTTP login redirect: %s', async status => {
 it('does not treat an unrecognized page as proof of no classes', async () => {
   const opts = options(); opts.fetcher.mockResolvedValue(new Response('<html><table><tr><td>unknown</td></tr></table></html>'));
   expect((await collectKulasisObservation(opts)).failures).toEqual([{ courseId: null, kind: 'parse', detail: 'parse-error' }]);
+});
+it('normalizes decoded pages after checking the original login response', async () => {
+  const opts = { ...options(), normalizeHtml: vi.fn(html => html) };
+  expect((await collectKulasisObservation(opts)).catalogCourses).toHaveLength(2);
+  expect(opts.normalizeHtml).toHaveBeenCalledTimes(3);
+  expect(opts.normalizeHtml.mock.calls[0][0]).toContain('架空');
+  opts.fetcher.mockResolvedValue(new Response('<input type="password">'));
+  opts.normalizeHtml.mockClear();
+  expect((await collectKulasisObservation(opts)).failures[0].kind).toBe('not-logged-in');
+  expect(opts.normalizeHtml).not.toHaveBeenCalled();
 });
 it('keeps classes separate if the destination cannot be identified', async () => {
   const opts = options(); opts.resolveSite.mockResolvedValue(undefined);

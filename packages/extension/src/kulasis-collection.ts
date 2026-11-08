@@ -5,6 +5,7 @@ import type { Observation } from '../../core/src/types.js';
 interface Options {
   pageUrl: string; fetcher: typeof fetch; observationId: string; fetchedAt: string; signal: AbortSignal;
   resolveSite: (code: string) => Promise<string | undefined>;
+  normalizeHtml?: (html: string) => string;
 }
 export async function collectKulasisObservation(options: Options): Promise<Observation> {
   const { fetcher } = options;
@@ -30,7 +31,7 @@ export async function collectKulasisObservation(options: Options): Promise<Obser
       if (bytes.byteLength > 5_000_000) throw new Error('parse-error');
       const html = new TextDecoder('shift_jis', { fatal: true }).decode(bytes);
       checkKulasisLogin(html);
-      return html;
+      return options.normalizeHtml ? options.normalizeHtml(html) : html;
     } finally { clearTimeout(timeout); options.signal.removeEventListener('abort', abort); }
   };
   try {

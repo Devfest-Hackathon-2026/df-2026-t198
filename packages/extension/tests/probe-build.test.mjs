@@ -63,7 +63,8 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     expect(manifest.content_scripts).toContainEqual({ matches: ['https://lms.gakusei.kyoto-u.ac.jp/*'], js: ['kulms-content.js'], run_at: 'document_idle' });
     expect(await readFile(join(extensionDir, 'dist/kulms-content.js'), 'utf8')).toContain('same-origin');
     expect(manifest.host_permissions).toContain('https://www.k.kyoto-u.ac.jp/*');
-    expect(manifest.content_scripts).toContainEqual({ matches: ['https://www.k.kyoto-u.ac.jp/student/*'], js: ['kulasis-content.js'], run_at: 'document_idle' });
+    expect(manifest.host_permissions).toContain('https://k.kyoto-u.ac.jp/*');
+    expect(manifest.content_scripts).toContainEqual({ matches: ['https://www.k.kyoto-u.ac.jp/student/*', 'https://k.kyoto-u.ac.jp/student/*'], js: ['kulasis-content.js'], run_at: 'document_idle' });
     expect(await readFile(join(extensionDir, 'dist/kulasis-content.js'), 'utf8')).toContain('shift_jis');
     expect(manifest.content_security_policy.extension_pages.split(' ')).toContain('https://lms.gakusei.kyoto-u.ac.jp');
     expect(manifest.oauth2).toEqual({ client_id: config.oauthClientId, scopes: ['openid', 'email', 'https://www.googleapis.com/auth/calendar.app.created', 'https://www.googleapis.com/auth/gmail.send'] });

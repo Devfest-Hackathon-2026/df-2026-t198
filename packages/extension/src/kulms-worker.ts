@@ -1,4 +1,4 @@
-import { KULASIS_ORIGIN, kulasisTerm } from '../../core/src/kulasis-reader.js';
+import { isKulasisOrigin, kulasisTerm } from '../../core/src/kulasis-reader.js';
 import type { Observation } from '../../core/src/types.js';
 import { KULMS_ORIGIN } from '../../core/src/sakai-reader.js';
 import { isSafeMailText } from '../../core/src/mail-safety.js';
@@ -12,7 +12,7 @@ export function isKulmsPage(url: string): boolean {
   try { return new URL(url).origin === KULMS_ORIGIN; } catch { return false; }
 }
 function isKyotoPage(system: 'kulms' | 'kulasis', value: string): boolean {
-  try { return new URL(value).origin === (system === 'kulms' ? KULMS_ORIGIN : KULASIS_ORIGIN); }
+  try { const origin = new URL(value).origin; return system === 'kulms' ? origin === KULMS_ORIGIN : isKulasisOrigin(origin); }
   catch { return false; }
 }
 export function handleKulmsMessage(message: unknown, sender: chrome.runtime.MessageSender, respond: (value: unknown) => void, system: 'kulms' | 'kulasis' = 'kulms'): boolean | undefined {

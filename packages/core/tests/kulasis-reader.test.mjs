@@ -24,6 +24,26 @@ it('recognizes an explicit empty grid but rejects a login/error/unknown document
   expect(() => readKulasisTimetable(definition, '<html></html>', base, parseUrl)).toThrow('parse-error');
   expect(() => readKulasisTimetable(definition, '<table><tr><th></th><th>月</th></tr><tr><th>1限</th><td>架空の読めない授業</td></tr></table>', base, parseUrl)).toThrow('parse-error');
 });
+it('reads header labels after full-width notice and spacer rows', () => {
+  const banner = '<tr><td colspan="3">架空の案内</td></tr><tr><td colspan="3"></td></tr><tr><td colspan="3">架空の学期</td></tr>';
+  const normal = `<table>${banner}<tr><td></td><td>月</td><td>火</td></tr><tr><td>1</td><td>${link}</td><td></td></tr></table>`;
+  const transposed = `<table>${banner}<tr><td></td><td>1</td><td>2</td></tr><tr><td>月</td><td>${link}</td><td></td></tr></table>`;
+  const expected = [{ courseId: 'fictional-no', name: '架空の授業', slots: [{ weekday: 1, period: 1 }], url: base + '/support/top?no=fictional-no', currentTerm: true }];
+  expect(readKulasisTimetable(definition, normal, base, parseUrl)).toEqual(expected);
+  expect(readKulasisTimetable(definition, transposed, base, parseUrl)).toEqual(expected);
+  expect(() => readKulasisTimetable(definition, normal.replace('colspan="3"', 'colspan="unknown"'), base, parseUrl)).toThrow('parse-error');
+  expect(() => readKulasisTimetable(definition, normal.replace('colspan="3"', 'colspan="3" rowspan="2"'), base, parseUrl)).toThrow('parse-error');
+});
+it('keeps a course support path for a different department on the allowed host', () => {
+  const other = link.replace('/student/la/', '/student/other/');
+  const html = `<table><tr><th></th><th>月</th></tr><tr><th>1限</th><td>${other}</td></tr></table>`;
+  expect(readKulasisTimetable(definition, html, base, parseUrl)[0].url).toBe('https://www.k.kyoto-u.ac.jp/student/other/support/top?no=fictional-no');
+  for (const href of ['https://user@www.k.kyoto-u.ac.jp/student/other/support/top?no=fictional-no', '/other/support/top?no=fictional-no']) {
+    expect(() => readKulasisTimetable(definition, html.replace(/href="[^"]+"/, `href="${href}"`), base, parseUrl)).toThrow('parse-error');
+  }
+  const conflicting = html.replace('</table>', `<tr><th>2限</th><td>${link}</td></tr></table>`);
+  expect(() => readKulasisTimetable(definition, conflicting, base, parseUrl)).toThrow('parse-error');
+});
 it('preserves the approved support code and rejects ambiguous or credential-bearing links', () => {
   const html = readFileSync(new URL('../../../lms-definitions/kulasis/samples/support.html', import.meta.url), 'utf8');
   expect(readKulasisCourseCode(html, parseUrl)).toBe('fictional-code');
@@ -36,4 +56,16 @@ it('accepts department paths without deriving identifiers from names or login UR
   expect(kulasisBase('https://www.k.kyoto-u.ac.jp/student/logout', parseUrl)).toBeUndefined();
   expect(kulmsSiteFromUrl('https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-site', parseUrl)).toBe('fictional-site');
   for (const value of ['https://example.test/portal/site/fictional', 'https://lms.gakusei.kyoto-u.ac.jp/portal', 'https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional?sid=fictional']) expect(kulmsSiteFromUrl(value, parseUrl)).toBeUndefined();
+});
+it.each(['https://www.k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp'])('keeps timetable requests and support links on %s', origin => {
+  const department = origin + '/student/la';
+  expect(kulasisBase(department + '/top', parseUrl)).toBe(department);
+  const html = `<table><tr><th></th><th>月</th></tr><tr><th>1限</th><td>${link}</td></tr></table>`;
+  const courses = readKulasisTimetable(definition, html, department, parseUrl);
+  expect(courses).toMatchObject([{ courseId: 'fictional-no', slots: [{ weekday: 1, period: 1 }], url: department + '/support/top?no=fictional-no' }]);
+  const absolute = html.replace('href="/student/', 'href="https://www.k.kyoto-u.ac.jp/student/');
+  expect(readKulasisTimetable(definition, absolute, department, parseUrl)).toEqual(courses);
+});
+it.each(['http://k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp:444', 'https://k.kyoto-u.ac.jp.example.test', 'https://user@k.kyoto-u.ac.jp'])('rejects an unapproved KULASIS URL: %s', origin => {
+  expect(kulasisBase(origin + '/student/la/top', parseUrl)).toBeUndefined();
 });
