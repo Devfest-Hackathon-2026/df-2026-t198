@@ -19,8 +19,10 @@ const { outputFiles } = await build({
       builder.onResolve({ filter: /^firebase\// }, ({ path }) => ({ path, namespace: 'fake-firebase' }));
       builder.onLoad({ filter: /.*/, namespace: 'fake-firebase' }, ({ path }) => ({
         contents: path === 'firebase/app'
-          ? 'export const initializeApp = (...args) => globalThis.sdk.initializeApp(...args);'
+          ? `export const initializeApp = (...args) => globalThis.sdk.initializeApp(...args);
+             export const deleteApp = async () => {};`
           : `export const indexedDBLocalPersistence = { type: 'LOCAL' };
+             export const inMemoryPersistence = { type: 'NONE' };
              export const initializeAuth = (...args) => globalThis.sdk.initializeAuth(...args);
              export const GoogleAuthProvider = { credential: (...args) => globalThis.sdk.credential(...args) };
              export const signInWithCredential = (...args) => globalThis.sdk.signIn(...args);`,
@@ -37,6 +39,7 @@ function fixture(storage = {}, persistedUid = null, workerId = '01234567-89ab-cd
     setAccessLevel: vi.fn(async () => undefined),
     get: vi.fn(async () => globalThis.structuredClone(storage)),
     set: vi.fn(async (value) => { Object.assign(storage, globalThis.structuredClone(value)); }),
+    remove: vi.fn(async (key) => { delete storage[key]; }),
   };
   const firebaseAuth = {
     currentUser: persistedUid ? { uid: persistedUid } : null,
@@ -135,6 +138,35 @@ describe('service worker with fake Chrome and Firebase', () => {
     expect(result.steps.at(-1).message).toContain('HTTP 403');
     expect(json).not.toHaveBeenCalled();
     expect(JSON.stringify(result)).not.toContain(f.token);
+  });
+
+  it.each(['before-dispatch', 400, 401, 403])('retries calendar creation after definite non-creation: %s', async failure => {
+    const f = fixture();
+    if (failure === 'before-dispatch') f.fetch.mockImplementationOnce(() => { throw new Error(f.token); });
+    else f.fetch.mockResolvedValueOnce({ ok: false, status: failure });
+    const { result } = await f.send('auth-probe-run');
+    expect(result.steps.at(-1).status).toBe('error');
+    expect(JSON.stringify(result)).not.toContain(f.token);
+    expect(f.storage.authProbeState).toBeUndefined();
+    // Retry from persisted storage after a worker restart, not just the same object.
+    const resumed = fixture(f.storage, f.uid);
+    expect((await resumed.send('auth-probe-run')).result.steps.at(-1).status).toBe('ok');
+    expect(resumed.fetch.mock.calls.filter(([url]) => url.endsWith('/calendars'))).toHaveLength(1);
+  });
+
+  it.each(['lost-response', 'unreadable-success', 500])('does not retry an uncertain creation after worker restart: %s', async failure => {
+    const f = fixture();
+    if (failure === 'lost-response') f.fetch.mockRejectedValueOnce(new Error(f.token));
+    else if (failure === 'unreadable-success') f.fetch.mockResolvedValueOnce({ ok: true, status: 200,
+      json: async () => { throw new Error(f.token); } });
+    else f.fetch.mockResolvedValueOnce({ ok: false, status: failure });
+    const { result } = await f.send('auth-probe-run');
+    expect(result.steps.at(-1).status).toBe('error');
+    expect(JSON.stringify(result)).not.toContain(f.token);
+    expect(f.storage.authProbeState.calendar.status).toBe('creating');
+    const resumed = fixture(f.storage, f.uid);
+    expect((await resumed.send('auth-probe-run')).result.steps.at(-1).code).toBe('calendar-recovery-required');
+    expect(resumed.fetch).not.toHaveBeenCalled();
   });
 
   it('restores the same UID after starting a new worker without acquiring another token', async () => {

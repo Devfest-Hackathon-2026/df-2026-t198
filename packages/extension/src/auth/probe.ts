@@ -26,7 +26,7 @@ export interface ProbeDependencies {
     signIn(credential: unknown): Promise<string>;
   };
   read(): Promise<ProbeState | undefined>;
-  write(state: ProbeState): Promise<void>;
+  write(state: ProbeState | undefined): Promise<void>;
   newEventId(): string;
   now(): Date;
   request(path: string, token: string, body?: object): Promise<{ status: number; data?: unknown }>;
@@ -34,6 +34,9 @@ export interface ProbeDependencies {
 
 const calendarName = 'ToDoku・接続テスト';
 const eventName = 'ToDokuの接続テスト（架空の予定）';
+
+/** Only the transport adapter can establish that dispatch never started. */
+export class RequestNotSent extends Error {}
 
 class ProbeFailure extends Error {
   constructor(readonly code: string, message: string) { super(message); }
@@ -140,7 +143,15 @@ export function createProbe(deps: ProbeDependencies) {
           event: { id: deps.newEventId(), start: start.toISOString(), end: new Date(start.getTime() + 5 * 60 * 1000).toISOString() } };
         // Calendar creation has no client-chosen ID. Never repeat an uncertain POST.
         await deps.write(state);
-        const created = await deps.request('/calendars', token, { summary: calendarName, timeZone: 'Asia/Tokyo' });
+        let created;
+        try {
+          created = await deps.request('/calendars', token, { summary: calendarName, timeZone: 'Asia/Tokyo' });
+        } catch (error) {
+          if (error instanceof RequestNotSent) await deps.write(undefined);
+          throw error;
+        }
+        // These responses reject creation. Other failures may hide a completed POST.
+        if ([400, 401, 403].includes(created.status)) await deps.write(undefined);
         checkHttp(created.status);
         const id = record(created.data).id;
         if (typeof id !== 'string' || !id) throw new ProbeFailure('calendar-response', 'カレンダーの作成結果を確認できませんでした。再作成せず停止しました。');

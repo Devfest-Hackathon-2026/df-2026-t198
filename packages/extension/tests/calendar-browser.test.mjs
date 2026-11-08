@@ -12,8 +12,9 @@ const { outputFiles } = await build({
   plugins: [{ name: 'fake-firebase', setup(builder) {
     builder.onResolve({ filter: /^firebase\// }, ({ path }) => ({ path, namespace: 'fake' }));
     builder.onLoad({ filter: /.*/, namespace: 'fake' }, ({ path }) => ({ contents: path === 'firebase/app'
-      ? 'export const initializeApp = () => ({});'
-      : `export const indexedDBLocalPersistence = {}; export const initializeAuth = () => sdk.auth;
+      ? `export const initializeApp = (_settings, name) => ({ name }); export const deleteApp = async () => {};`
+      : `export const indexedDBLocalPersistence = {}; export const inMemoryPersistence = {};
+         export const initializeAuth = app => app.name ? { currentUser: null } : sdk.auth;
          export const GoogleAuthProvider = { credential: (_id, token) => token };
          export const signInWithCredential = (...args) => sdk.signIn(...args);` }));
   } }],
@@ -27,7 +28,10 @@ function fixture({ savedUid = 'owner', googleUid = 'owner', boot = true } = {}) 
   const reports = []; const apiBodies = []; const events = new Map(); const calls = [];
   const idToken = 'synthetic-firebase-token'; const googleToken = 'synthetic-google-token';
   const sdk = { auth: { currentUser: { uid: 'owner', getIdToken: async () => idToken }, authStateReady: async () => {} },
-    signIn: vi.fn(async () => ({ user: { uid: googleUid } })) };
+    signIn: vi.fn(async auth => {
+      auth.currentUser = { uid: googleUid, getIdToken: async () => 'synthetic-checked-user-token' };
+      return { user: auth.currentUser };
+    }) };
   const state = { namespace: `${config.firebase.projectId}:${config.oauthClientId}`, uid: savedUid,
     calendar: { status: 'ready', id: row.calendarId } };
   let onMessage; const startup = []; const installed = []; let onAlarm;
@@ -91,6 +95,7 @@ it('does not write Google events when Chrome and Firebase identify different acc
   await vi.waitFor(() => expect(f.reports).toHaveLength(1));
   expect(f.reports[0].errorCode).toBe('authorization-required'); expect(f.events.size).toBe(0);
   expect(f.calls.every(c => c[0].startsWith(config.apiOrigin))).toBe(true);
+  expect(f.sdk.auth.currentUser.uid).toBe('owner');
 });
 
 it('does not sync the calendar merely on worker load or a digest alarm, but syncs on install', async () => {
