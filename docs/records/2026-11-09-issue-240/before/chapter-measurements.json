@@ -1,0 +1,98 @@
+[
+  {
+    "width": 1280,
+    "id": "home",
+    "height": 800,
+    "viewport": 800,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 1280,
+    "id": "how",
+    "height": 1047.875,
+    "viewport": 800,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 1280,
+    "id": "people",
+    "height": 1075.328125,
+    "viewport": 800,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 1280,
+    "id": "try",
+    "height": 1145.3125,
+    "viewport": 800,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 1280,
+    "id": "start",
+    "height": 800,
+    "viewport": 800,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 1280,
+    "id": "privacy",
+    "height": 640,
+    "viewport": 800,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 390,
+    "id": "home",
+    "height": 844,
+    "viewport": 844,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 390,
+    "id": "how",
+    "height": 1102.828125,
+    "viewport": 844,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 390,
+    "id": "people",
+    "height": 1094.03125,
+    "viewport": 844,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 390,
+    "id": "try",
+    "height": 1406.765625,
+    "viewport": 844,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 390,
+    "id": "start",
+    "height": 934.453125,
+    "viewport": 844,
+    "contentFits": true,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 390,
+    "id": "privacy",
+    "height": 675.1875,
+    "viewport": 844,
+    "contentFits": true,
+    "horizontalOverflow": false
+  }
+]

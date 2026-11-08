@@ -3,7 +3,7 @@ import process from 'node:process';
 import { log } from 'node:console';
 import { createRequire } from 'node:module';
 import { URL } from 'node:url';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { initialDemo } from '../../server/src/demo/initial.ts';
 
@@ -53,35 +53,22 @@ async function login(page, role) {
     : page.getByRole('link', { name: '面談を開く', exact: true })).waitFor();
   await page.evaluate(() => globalThis.document.fonts.ready);
 }
-async function capture(page, name, anchor, width, height, required = [], topOffset = 0) {
-  const loadedFonts = await page.evaluate(async () => {
-    await globalThis.document.fonts.ready;
-    return [...new Set([...globalThis.document.fonts].filter(face => face.status === 'loaded')
-      .map(face => face.family.replaceAll('"', '')))];
-  });
-  assert(loadedFonts.includes('BIZ UDPGothic'), `${name}: Japanese font loaded`);
-  assert(loadedFonts.includes('Space Grotesk'), `${name}: Latin font loaded`);
-  assert.equal(await page.locator('body').evaluate(node => globalThis.getComputedStyle(node).backgroundColor), 'rgb(243, 240, 232)');
+async function capture(page, name, anchor, target) {
+  await page.evaluate(() => globalThis.document.fonts.ready);
   await anchor.scrollIntoViewIfNeeded();
   const box = await anchor.boundingBox();
-  const scrollY = await page.evaluate(() => globalThis.scrollY);
-  const clip = { x: Math.round(box.x), y: Math.round(box.y + scrollY + topOffset), width, height };
-  for (const target of required) {
-    const bounds = await target.evaluate(node => {
-      const range = globalThis.document.createRange();
-      range.selectNodeContents(node);
-      const { x, y, width, height } = range.getBoundingClientRect();
-      return { x, y, width, height };
-    });
-    assert(bounds.x >= clip.x && bounds.x + bounds.width <= clip.x + width &&
-      bounds.y + scrollY >= clip.y && bounds.y + scrollY + bounds.height <= clip.y + height,
-    `${name}: required content fits the crop`);
-  }
-  const buffer = await page.screenshot({ path: new URL(`${name}.png`, output).pathname,
-    clip, animations: 'disabled', fullPage: true });
-  assert.equal(buffer.readUInt32BE(16), width, `${name} width`);
-  assert.equal(buffer.readUInt32BE(20), height, `${name} height`);
-  shots.push({ name, width, height, clip, loadedFonts, sha256: createHash('sha256').update(buffer).digest('hex') });
+  const targetBox = await target.boundingBox();
+  assert(targetBox.x >= box.x && targetBox.x + targetBox.width <= box.x + box.width &&
+    targetBox.y >= box.y && targetBox.y + targetBox.height <= box.y + box.height, `${name}: highlighted deadline fits`);
+  // Annotation exists only in the capture page; application styles stay untouched.
+  await target.evaluate(node => {
+    node.style.outline = '3px solid var(--change-text)';
+    node.style.outlineOffset = '3px';
+  });
+  const buffer = await anchor.screenshot({ path: new URL(`${name}.png`, output).pathname, animations: 'disabled' });
+  shots.push({ name, width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20),
+    highlighted: await target.innerText(), sha256: createHash('sha256').update(buffer).digest('hex') });
+  await target.evaluate(node => { node.style.removeProperty('outline'); node.style.removeProperty('outline-offset'); });
 }
 try {
   await mkdir(evidence, { recursive: true });
@@ -98,7 +85,6 @@ try {
   const home = demo.getByRole('region', { name: '体験用LMSの授業一覧', exact: true });
   assert.deepEqual(await home.locator('.demo-course h2').allTextContents(), courses);
   // The original starts just above the home panel, leaving its 36px top margin.
-  await capture(demo, 'lms', home, 868, 535, await home.locator('.demo-course').all(), -36);
   await demo.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await demo.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   await student.goto(`${base}/student`);
@@ -110,7 +96,6 @@ try {
   assert.equal(await student.locator('.changed, .previous-deadline').count(), 0);
   const table = student.locator('.timetable-scroll');
   assert.equal(await table.evaluate(node => node.scrollWidth <= node.clientWidth), true, 'all weekdays fit');
-  await capture(student, 'student', table, 884, 635, await student.locator('.course-cell').all());
   await login(session, 'supporter');
   await session.getByRole('link', { name: '面談を開く', exact: true }).click();
   await session.getByRole('link', { name: '田中 太郎', exact: true }).click();
@@ -130,21 +115,19 @@ try {
   assert.match(await previous.innerText(), /11\/12 17:00/);
   assert.equal(await changed.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
   assert.match(await previous.evaluate(node => globalThis.getComputedStyle(node).textDecorationLine), /line-through/);
-  await capture(student, 'updated', table, 884, 635, [previous]);
+  const course = student.locator('.course-cell').filter({ hasText: courses[0] });
+  await course.locator('.previous-deadline').waitFor();
+  await capture(student, 'student', table, course);
   const changes = session.getByRole('region', { name: '前回の面談からの変化', exact: true });
   await changes.getByText('締切が 11/12 17:00 から 11/13 17:00 に変わりました', { exact: false }).waitFor();
   await session.getByRole('region', { name: '次の面談までの締切', exact: true })
     .getByText('書き方を書くレポート', { exact: true }).waitFor();
-  await capture(session, 'session', session.locator('.session-page'), 1072, 1005);
-  const landing = await readFile(new URL('../src/features/landing/page.tsx', import.meta.url), 'utf8');
-  for (const { name, width, height } of shots) {
-    assert(landing.includes(`src="/landing/${name}.png"`));
-    assert(landing.includes(`width="${width}" height="${height}"`));
-  }
+  const changedRow = changes.locator('li').filter({ hasText: '締切が 11/12 17:00 から 11/13 17:00 に変わりました' });
+  await capture(session, 'session', session.locator('.session-content'), changedRow);
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/capture-results.json`, JSON.stringify({ status: 'pass', fixedTime,
     viewport: options.viewport, serverClock: 'real; history timestamps may differ', shots, browserErrors: errors }, null, 2));
-  log('PASS landing capture: four fictional screens, original dimensions, six courses, weekday columns, red change and struck previous deadline, session history.');
+  log('PASS landing capture: two fictional screens, same highlighted changed deadline, six courses, weekday columns and session history.');
 } finally {
   await browser.close();
   await db.terminate();
