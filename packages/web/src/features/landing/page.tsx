@@ -113,7 +113,7 @@ export function LandingPage() {
 
       <section className="chapter privacy-section" id="privacy" aria-labelledby="privacy-title">
         <Reveal><div className="section-heading"><span className="chapter-number">05</span><h2 id="privacy-title">情報の扱い</h2></div>
-          <ul className="privacy-list"><li>LMS のパスワードを預かりません</li><li>LMS に提出や書き込みをしません</li><li>メールは本人にだけ届きます</li><li>支援担当が見られるのは、共有を許可した学生の情報だけです</li></ul>
+          <ul className="privacy-list"><li>LMS のパスワードを預かりません</li><li>LMSに課題の提出や書き込みをしません</li><li>メールは本人にだけ届きます</li><li>支援担当が見られるのは、共有を許可した学生の情報だけです</li></ul>
         </Reveal>
         <a className="pill" href="#home">トップに戻る <span aria-hidden="true">↑</span></a>
       </section>
