@@ -138,3 +138,7 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 - [提供されたToDokuデザインシステム](https://claude.ai/artifact/HpENnWNWCcXAxgPsG8RKRC)の明るいテーマのトークンと `components/bundle.css` を、Issue #223の指示で採用。React部品はTypeScriptで実装し直した。チームから提供された制作物であり、独立した再配布ライセンスの指定は確認できていない。外部の写真・ロゴ・アイコンは追加していない。
 - [Google Sans Flex](https://github.com/google/fonts/tree/main/ofl/googlesansflex)と[Google Sans Code](https://github.com/google/fonts/tree/main/ofl/googlesanscode)をGoogle Fontsから読み込む。両フォルダの `OFL.txt` でSIL Open Font License 1.1を確認（2026-11-09）。フォントファイル自体は同梱しない。既存のBIZ UDPゴシックと組み合わせる。
 - 画面の移動は、[Chrome公式のView Transitions APIの説明](https://developer.chrome.com/docs/web-platform/view-transitions/same-document)を参考に、ブラウザ標準APIと既存のReact DOMで実装した。ライブラリの追加はない。
+
+## 紹介ページの構成の参考（Issue #224）
+
+[株式会社ペンマークの企業サイト](https://corp.penmark.jp/)を、Sora提供の画面写しで確認し、見出し・余白・色面の配置だけを参考にした。ToDokuの既存の色・ロゴ・架空の画面を使用し、外部サイトの画像・写真・ロゴ・文章・コードは同梱していない。外部サイトの素材の再利用ライセンスは確認していないため、転載していない。
