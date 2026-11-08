@@ -15,6 +15,7 @@ import { readDemoAnnouncements, readDemoObservation } from './reader';
 import './demo.css';
 import { OperationMessages, useOperationMessage } from '../../shared/ui/operation-messages';
 import { PublicDemoEntry } from '../../shared/auth/public-demo-entry';
+import { hasJudgeLink, judgeLoginFailure, loginWithJudgeLink } from './judge-link';
 
 class DemoRequestError extends Error {
   constructor(readonly status: number, readonly code = 'demo-request-failed') { super(code); }
@@ -35,8 +36,29 @@ async function post(user: User, path: string, body: unknown) {
   return response;
 }
 export function DemoPage() {
-  const [user, setUser] = useState<User | null | undefined>(undefined);
-  const [error, setError] = useState('');
+  const [entry, setEntry] = useState<'pending' | 'absent' | 'success' | 'failed'>('pending');
+  const attempt = useRef<ReturnType<typeof loginWithJudgeLink> | null>(null);
+  useEffect(() => {
+    let active = true;
+    // Keep one authentication attempt across StrictMode's effect replay.
+    attempt.current ??= loginWithJudgeLink(window, firebase, signInWithEmailAndPassword);
+    void attempt.current.then(result => { if (active) setEntry(result); });
+    const followLink = () => {
+      if (hasJudgeLink(window.location.hash)) {
+        setEntry('pending'); window.location.reload();
+      }
+    };
+    window.addEventListener('hashchange', followLink);
+    return () => { active = false; window.removeEventListener('hashchange', followLink); };
+  }, []);
+  if (entry === 'pending') return <><p role="status">ログイン中…</p><Skeleton label="ログイン中…" /></>;
+  return <DemoPageContent initialLinkFailed={entry === 'failed'} />;
+}
+function DemoPageContent({ initialLinkFailed }: { initialLinkFailed: boolean }) {
+  const [linkFailed, setLinkFailed] = useState(initialLinkFailed);
+  const [sessionUser, setUser] = useState<User | null | undefined>(undefined);
+  const user = linkFailed ? null : sessionUser;
+  const [error, setError] = useState(initialLinkFailed ? judgeLoginFailure : '');
   const [logoutBusy, setLogoutBusy] = useState(false);
   const [loginBusy, setLoginBusy] = useState(false);
   useEffect(() => firebase ? onAuthStateChanged(firebase.auth, setUser) : undefined, []);
@@ -57,7 +79,7 @@ export function DemoPage() {
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(''); setLoginBusy(true);
     const form = new FormData(event.currentTarget);
-    try { await signInWithEmailAndPassword(client.auth, String(form.get('email')), String(form.get('password'))); }
+    try { await signInWithEmailAndPassword(client.auth, String(form.get('email')), String(form.get('password'))); setLinkFailed(false); }
     catch { setError('ログインできませんでした。アカウントと接続を確かめてください。'); }
     finally { setLoginBusy(false); }
   }
