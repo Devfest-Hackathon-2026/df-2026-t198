@@ -31,6 +31,8 @@ it('reads header labels after full-width notice and spacer rows', () => {
   const expected = [{ courseId: 'fictional-no', name: '架空の授業', slots: [{ weekday: 1, period: 1 }], url: base + '/support/top?no=fictional-no', currentTerm: true }];
   expect(readKulasisTimetable(definition, normal, base, parseUrl)).toEqual(expected);
   expect(readKulasisTimetable(definition, transposed, base, parseUrl)).toEqual(expected);
+  expect(() => readKulasisTimetable(definition, normal.replace('colspan="3"', 'colspan="unknown"'), base, parseUrl)).toThrow('parse-error');
+  expect(() => readKulasisTimetable(definition, normal.replace('colspan="3"', 'colspan="3" rowspan="2"'), base, parseUrl)).toThrow('parse-error');
 });
 it('keeps a course support path for a different department on the allowed host', () => {
   const other = link.replace('/student/la/', '/student/other/');

@@ -55,7 +55,9 @@ export function readKulasisTimetable(definition: KulasisDefinition, html: string
     const rows = Array.from(table.querySelectorAll(definition.rows)).filter(row => row.closest('table') === table);
     while (rows[0]) {
       const cells = Array.from(rows[0].querySelectorAll('th, td')).filter(cell => cell.closest('tr') === rows[0]);
-      if (cells.length !== 1 || Number(cells[0]!.getAttribute('colspan') ?? 1) <= 1) break;
+      if (cells.length !== 1) break;
+      const width = Number(cells[0]!.getAttribute('colspan') ?? 1);
+      if (!Number.isInteger(width) || width <= 1 || width > 50 || Number(cells[0]!.getAttribute('rowspan') ?? 1) !== 1) break;
       rows.shift();
     }
     const grid: (typeof rows[number])[][] = [];

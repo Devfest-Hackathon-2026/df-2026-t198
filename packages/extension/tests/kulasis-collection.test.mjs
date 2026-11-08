@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
+import { Buffer } from 'node:buffer';
 import { expect, it, vi } from 'vitest';
 import expected from '../../../lms-definitions/kulasis/samples/observation.expected.json' with { type: 'json' };
 import { collectKulasisObservation } from '../src/kulasis-collection.js';
@@ -30,6 +31,15 @@ it('accepts a browser fetch function that rejects an unrelated receiver', async 
     return original(url, init);
   });
   expect(await collectKulasisObservation(opts)).toEqual(expected);
+});
+it('sends current-host cross-department course URLs accepted by the server', async () => {
+  const opts = { ...options(), pageUrl: 'https://k.kyoto-u.ac.jp/student/la/top' };
+  const otherDepartment = Buffer.from(sample.toString('latin1').replaceAll('/student/la/support/top', '/student/other/support/top'), 'latin1');
+  opts.fetcher.mockImplementation(async url => new Response(String(url).includes('/entry/') ? otherDepartment : '<html></html>'));
+  const result = await collectKulasisObservation(opts);
+  expect(result.catalogCourses).toHaveLength(2);
+  expect(result.catalogCourses.every(course => course.url.startsWith('https://k.kyoto-u.ac.jp/student/other/support/top?no='))).toBe(true);
+  expect(parseObservation(result)).toEqual(result);
 });
 it('uses the current academic half in Japan, including January and the April boundary', async () => {
   for (const [at, path] of [['2031-01-01T00:00:00Z', 'kouki'], ['2031-03-31T15:00:00Z', 'zenki']]) {
