@@ -61,7 +61,7 @@ try {
     await entry.click();
     await student.getByLabel('メールアドレス').waitFor();
   }
-  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談', '紹介']);
+  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
   assert.equal(await student.title(), 'ToDoku');
   assert.equal(await student.locator('.app-header > a').innerText(), 'ToDoku');
   await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();

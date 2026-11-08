@@ -31,7 +31,6 @@ function Route({ path }: { path: string }) {
           <a href="/demo-lms" aria-current={path === '/demo-lms' ? 'page' : undefined}>体験用LMS</a>
           <a href="/student" aria-current={path === '/student' || path === '/student/plan' ? 'page' : undefined}>学生</a>
           <a href="/session" aria-current={session ? 'page' : undefined}>面談</a>
-          <a href="/">紹介</a>
         </nav>
       </header>
       <main>
