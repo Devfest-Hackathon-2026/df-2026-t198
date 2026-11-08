@@ -1,5 +1,7 @@
 # KULMS (Sakai) API 調査および現行 LMS 実装との比較
 
+> **時点案内（2026-11-09追記）**: 本資料の既存の第1〜7節は2026-11-06および固定commit `2732f359218a8167dd5264a48e36f0e74e0ec9e2` 時点の記述であり、既存の2026-11-07追記箇所はその日付（2026-11-07）時点の補足です。本文中の「未実装」等の表記はいずれも各節・各追記の日付時点における状態を指します。現行のcollector実装および2026-11-09の実機結果については、本資料末尾の2026-11-09追記および[11/9実機記録](./records/2026-11-09-issue-152.md)を参照してください。
+
 ## 1. 目的と前提
 
 本資料は、[Issue #2](https://github.com/shieikan/kadai-hisho/issues/2)（京都大学 LMS 対応）を引き継ぐ実装担当に向け、2026-11-06 時点で確認済みの KULMS（Sakai EntityBroker `/direct` API）の仕様・実測結果と、`kadai-hisho`（比較対象コミット: `2732f359218a8167dd5264a48e36f0e74e0ec9e2`）における YNU LMS（CoursePower）・模擬 LMS（`demo-lms`）および共通契約との比較をまとめた調査文書である。
@@ -127,3 +129,15 @@ KULMS の EntityBroker は自己記述 API（[`/direct/describe`](https://lms.ga
 - **本文書の位置づけ**: 上記の本文・比較表は 2026-11-06 時点（コミット `2732f359218a8167dd5264a48e36f0e74e0ec9e2`）における KULMS（Sakai REST API）単体の調査スナップショットとしてそのまま維持しています。KULMS 単体の調査で曜日・時限等の時間割項目が未確認であった点に変更はありません。
 - **KULASIS を含めた最新比較**: 2026-11-07 に実施した京都大学教務情報システム（KULASIS）の取得先・フィールド調査、および `origin/main`（[`00c0bf771a9f909a4aa4d87d035e930b9144c7ee`](https://github.com/shieikan/kadai-hisho/tree/00c0bf771a9f909a4aa4d87d035e930b9144c7ee/)）時点の YNU / CoursePower・ダミー LMS との 4 方式比較については、[**docs/kulasis-data-comparison.md**](./kulasis-data-comparison.md) を参照してください。
 - **現行実装の進捗に関する補足**: 本文書内の「未実装」等の記述は 2026-11-06 時点のものです。2026-11-07 時点の現行 `main` では、YNU / CoursePower の今学期判定・公開終了課題（`endedSourceIds`）の扱い・空教材一覧や `24:00` 読取の修正および実機検証（[2026-11-07 実機記録](https://github.com/shieikan/kadai-hisho/blob/00c0bf771a9f909a4aa4d87d035e930b9144c7ee/docs/records/2026-11-07-integrated-live-verification.md)）、ならびに準備予定の保存や手入力課題といった共通機能の実装が進んでいます（KULMS および KULASIS の接続アダプターは引き続き未実装です）。
+
+---
+
+## 2026-11-09 追記：現行 collector の収集範囲と実機確認（`fed9132` 時点）
+
+本書の既存本文・表は 2026-11-06 時点（`2732f359218a8167dd5264a48e36f0e74e0ec9e2`）の記録として保持し、ここでは `fed913248c99c4cc18dcb8ccb58d3ae80f4129c8`（拡張修正 `9ef4c77529466a27a71b21b5571ab6c2cd1ec84d` を含む）および `main` `15a1a42cd9573037d13a27839536e8001f46214e` 時点の実装と実機確認結果を追記する。詳細は [2026-11-09 記録](./records/2026-11-09-issue-152.md) および [KULASIS 比較文書](./kulasis-data-comparison.md) を参照。
+
+### 1. 3層の区別（API 取得可能項目 / 現行 collector 送信範囲 / 2026-11-09 実機確認）
+
+- **Sakai `/direct` API で確認された項目（11/6 調査）**: `site.json`、`assignment/site/{siteId}.json` のほか、11/6 時点で調査したエンドポイント群（過去 API 一覧の全 prefix でのデータ取得を保証するものではない）。
+- **現行 collector が運ぶ項目**: `/direct/user/current.json` における匿名 HTTP 200（空 `id`）と通常 Login 後の非空 `id` を区別したうえで（SSO 通過だけで完了としない）、授業一覧および課題一覧（課題名・締切・自己提出状態等）を KULMS 固有のシステム・キーで保存する。KULASIS 側の時間割とは授業名で自動結合せず、KULASIS 授業サポート `support/top` からたどる KULMS 側公開テンプレート URL（`https://lms.gakusei.kyoto-u.ac.jp/direct/courselink/_kcd={科目コード}`、KULASIS 同一 host の API ではない）から得た明示的な KULMS リンク（`/portal/site/{siteId}` に加え、PR #205 `fed9132` で `/portal/site/{siteId}/tool/{toolId}` と `/tool-reset/{toolId}` に対応、query/hash は拒否）由来の `siteId` だけで表示上の時間割を補う。
+- **2026-11-09 実機確認結果**: PR #200（native `fetch` の `this` 束縛による `Illegal invocation` 修正）取込後の本人 Chrome 実機にて、`/direct/user/current.json` の空 `id`（HTTP 200）とログイン後の非空 `id` を観測し、02:16:13 JST 時点で 20 授業・完了一覧 20 件・失敗 0 件を確認した。返却された実課題 43 件はすべて期限経過であり、期間内の対象課題は 0 件であった。そのため実課題に対する精度指標 M2 は未測定であり、合成見本の結果（`15/15`）を実課題精度に流用しない。また、許可済みの認証状態変更として実施したログアウト試験（履修・提出・授業内容への書き込みは一切なし）において、固定エラーコード `not-logged-in` による未ログイン検知と「LMSを開き直してください」表示、既存データ保持（KULMS 20授業＋KULASIS 7授業の計27授業・7時限・7対応の SHA と Firestore 更新時刻が不変、当時の `CalendarItems` は 0 件）、および再ログイン回復を確認した。その後 02:46:43 JST にも KULMS 通常更新が成功し、拡張の標準同期を起動できることを確認している。
