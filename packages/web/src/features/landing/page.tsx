@@ -3,7 +3,6 @@ import { Reveal, Splash, Staged } from '../../shared/ui/motion';
 import { PublicDemoEntry } from '../../shared/auth/public-demo-entry';
 import { TodokuLogo } from '../../shared/ui/todoku-logo';
 import './landing.css';
-import { settleChapters } from './chapter-scroll';
 
 const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
 const chapters = [
@@ -88,10 +87,8 @@ export function LandingPage() {
       const visible = [...visibleChapters.values()].sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
       if (visible) setCurrent(visible.target.id);
     }, { rootMargin: '-15% 0px -40% 0px', threshold: [0, .1, .3] });
-    const sections = chapters.map(chapter => document.getElementById(chapter.id)).filter((section): section is HTMLElement => !!section);
-    for (const section of sections) observer.observe(section);
-    const stopSettling = settleChapters(sections);
-    return () => { observer.disconnect(); stopSettling(); document.documentElement.classList.remove('landing-scroll'); };
+    for (const chapter of chapters) { const section = document.getElementById(chapter.id); if (section) observer.observe(section); }
+    return () => { observer.disconnect(); document.documentElement.classList.remove('landing-scroll'); };
   }, []);
   return <div className="landing brand"><Splash />
     <header className="landing-header">
