@@ -1,0 +1,34 @@
+{
+  "status": "pass",
+  "fixedTime": "2026-11-09T23:50:00+09:00",
+  "viewport": {
+    "width": 1280,
+    "height": 1100
+  },
+  "serverClock": "real; history timestamps may differ",
+  "shots": [
+    {
+      "name": "student",
+      "width": 685,
+      "height": 686,
+      "highlighted": "レポートの書き方の書き方\n11/12 17:00\n11/13 17:00\n書き方を書くレポート",
+      "sha256": "4c9b87e19601323a24bb16d893f7cce6e48b6ca40075d33aa107213db3d8d3ce",
+      "viewport": {
+        "width": 1280,
+        "height": 1100
+      }
+    },
+    {
+      "name": "session",
+      "width": 768,
+      "height": 312,
+      "highlighted": "11/9(月) 08:46 書き方を書くレポート：締切が 11/12 17:00 から 11/13 17:00 に変わりました",
+      "sha256": "f557db34f678ef0ae8fb9a45b370a82462caee4a1b8b398a483428da4fbe125c",
+      "viewport": {
+        "width": 800,
+        "height": 1100
+      }
+    }
+  ],
+  "browserErrors": []
+}

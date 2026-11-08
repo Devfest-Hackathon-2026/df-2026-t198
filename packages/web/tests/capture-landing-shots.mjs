@@ -20,14 +20,16 @@ const { getFirestore } = requireServer('firebase-admin/firestore');
 const app = initializeApp({ projectId: 'demo-kadai-hisho' }, 'capture-landing-shots');
 const db = getFirestore(app);
 const browser = await chromium.launch({ headless: true });
-const options = { viewport: { width: 1184, height: 1100 }, deviceScaleFactor: 1,
+const options = { viewport: { width: 1280, height: 1100 }, deviceScaleFactor: 1,
   locale: 'ja-JP', timezoneId: 'Asia/Tokyo', reducedMotion: 'reduce' };
 const studentContext = await browser.newContext(options);
 const supporterContext = await browser.newContext(options);
 const demo = await studentContext.newPage();
 const student = await studentContext.newPage();
 const session = await supporterContext.newPage();
-const fixedTime = '2026-11-09T08:40:00+09:00';
+// Keep the client after this day's real server history, without changing stored change records.
+const fixedTime = '2026-11-09T23:50:00+09:00';
+assert(Date.now() < Date.parse(fixedTime), 'capture clock must be later than server history; choose a new fictional capture day');
 const output = new URL('../public/landing/', import.meta.url);
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i189-evidence';
 const errors = [];
@@ -66,7 +68,7 @@ async function capture(page, name, anchor, target) {
     node.style.outlineOffset = '3px';
   });
   const buffer = await anchor.screenshot({ path: new URL(`${name}.png`, output).pathname, animations: 'disabled' });
-  shots.push({ name, width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20),
+  shots.push({ name, viewport: page.viewportSize(), width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20),
     highlighted: await target.innerText(), sha256: createHash('sha256').update(buffer).digest('hex') });
   await target.evaluate(node => { node.style.removeProperty('outline'); node.style.removeProperty('outline-offset'); });
 }
@@ -81,7 +83,6 @@ try {
   await owner.collection('sessionContext').doc('current').set(fixture.context);
   await owner.collection('supporters').doc('trial-supporter').set({ scopes: ['all'], revokedAt: null });
   await login(demo, 'student');
-  await demo.getByText('今日の準備や次に提出する課題、近い締切がない日は、メールを送りません。', { exact: true }).waitFor();
   const home = demo.getByRole('region', { name: '体験用LMSの授業一覧', exact: true });
   assert.deepEqual(await home.locator('.demo-course h2').allTextContents(), courses);
   // The original starts just above the home panel, leaving its 36px top margin.
@@ -95,7 +96,6 @@ try {
   assert.equal(await student.locator('.timetable [data-weekday="7"]').count(), 0);
   assert.equal(await student.locator('.changed, .previous-deadline').count(), 0);
   const table = student.locator('.timetable-scroll');
-  assert.equal(await table.evaluate(node => node.scrollWidth <= node.clientWidth), true, 'all weekdays fit');
   await login(session, 'supporter');
   await session.getByRole('link', { name: '面談を開く', exact: true }).click();
   await session.getByRole('link', { name: '田中 太郎', exact: true }).click();
@@ -117,13 +117,16 @@ try {
   assert.match(await previous.evaluate(node => globalThis.getComputedStyle(node).textDecorationLine), /line-through/);
   const course = student.locator('.course-cell').filter({ hasText: courses[0] });
   await course.locator('.previous-deadline').waitFor();
+  await student.getByRole('button', { name: '閉じる', exact: true }).click();
+  assert.equal(await table.evaluate(node => node.scrollWidth <= node.clientWidth), true, 'all weekdays fit the captured timetable');
   await capture(student, 'student', table, course);
   const changes = session.getByRole('region', { name: '前回の面談からの変化', exact: true });
   await changes.getByText('締切が 11/12 17:00 から 11/13 17:00 に変わりました', { exact: false }).waitFor();
   await session.getByRole('region', { name: '次の面談までの締切', exact: true })
     .getByText('書き方を書くレポート', { exact: true }).waitFor();
   const changedRow = changes.locator('li').filter({ hasText: '締切が 11/12 17:00 から 11/13 17:00 に変わりました' });
-  await capture(session, 'session', session.locator('.session-content'), changedRow);
+  await session.setViewportSize({ width: 800, height: 1100 });
+  await capture(session, 'session', changes, changedRow);
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/capture-results.json`, JSON.stringify({ status: 'pass', fixedTime,
     viewport: options.viewport, serverClock: 'real; history timestamps may differ', shots, browserErrors: errors }, null, 2));

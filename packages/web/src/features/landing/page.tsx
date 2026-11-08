@@ -86,10 +86,10 @@ export function LandingPage() {
       </section>
 
       <section className="chapter people-section" id="people" aria-labelledby="people-title">
-        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Who it is for</span><h2 id="people-title">使う人</h2></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">02</span><h2 id="people-title">使う人</h2></div></Reveal>
         <div className="product-grid">
-          <Reveal><h3>学生</h3><Screenshot name="student" alt="学生の時間割" width={884} height={635} caption="締切の変更が、いつもの時間割に出ます。" /></Reveal>
-          <Reveal order={1}><h3>支援担当（カウンセラーなど）</h3><Screenshot name="session" alt="支援担当の面談画面" width={1072} height={1005} caption="前回の面談から変わった課題を確かめられます。" /></Reveal>
+          <Reveal><h3>学生</h3><Screenshot name="student" alt="学生の時間割" width={685} height={686} caption="締切の変更が時間割に出ます。" /></Reveal>
+          <Reveal order={1}><h3>支援担当（カウンセラーなど）</h3><Screenshot name="session" alt="支援担当の面談画面" width={768} height={312} caption="前回の面談から変わった課題を確かめられます。" /></Reveal>
         </div>
         <a className="next-chapter" href="#try">体験する <span aria-hidden="true">↓</span></a>
       </section>
