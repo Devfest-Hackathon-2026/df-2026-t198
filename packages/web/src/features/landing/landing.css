@@ -53,7 +53,7 @@ html.landing-scroll { scroll-behavior: smooth; }
 .landing .try-section { background: var(--paper); }
 .landing .start-section { background: var(--ink); color: var(--paper); }
 .landing .start-section .eyebrow { color: inherit; }
-.landing .privacy-section { min-height: 80svh; background: var(--accent-soft); }
+.landing .privacy-section { background: var(--accent-soft); }
 .landing .product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; align-items: start; }
 .landing .product-grid > * { min-width: 0; }
 .landing .product-label { display: flex; gap: 18px; align-items: center; }
@@ -93,8 +93,10 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 .landing .lms-support { display: flex; align-items: baseline; gap: 36px; padding-top: 24px; border-top: 1px solid var(--line-strong); }
 .landing .lms-support h3 { font-size: 16px; }
 .landing .supported-lms { list-style: none; padding: 0; margin: 0; font-size: 20px; }
-.landing .privacy-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; list-style: none; padding: 0; margin: 60px 0; }
-.landing .privacy-list li { padding-top: 22px; border-top: 1px solid var(--ink); font-size: 18px; }
+.landing .privacy-list { display: grid; gap: 0; list-style: none; padding: 0; margin: 0 0 32px; counter-reset: privacy; }
+.landing .privacy-list li { display: flex; align-items: baseline; gap: 24px; padding: 22px 0; border-top: 1px solid var(--ink); font-size: 19px; }
+.landing .privacy-list li::before { counter-increment: privacy; content: "0" counter(privacy); flex: none; font: 13px var(--mono); color: var(--accent-text); }
+.landing .privacy-section > .pill { align-self: flex-start; }
 .landing-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 40px 8vw; font: 12px/1.8 var(--mono); }
 .landing-footer .todoku-logo { font-size: 28px; }
 .landing .chapter-nav { position: fixed; z-index: 5; right: 20px; top: 50%; display: grid; gap: 8px; transform: translateY(-50%); }
@@ -142,8 +144,8 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing .setup-steps li { gap: 12px; padding-top: 16px; }
   .landing .lms-support { flex-direction: column; gap: 12px; }
   .landing .supported-lms { font-size: 18px; }
-  .landing .privacy-list { margin: 32px 0; }
-  .landing .privacy-list li { font-size: 16px; }
+  .landing .privacy-list { margin: 0 0 28px; gap: 0; }
+  .landing .privacy-list li { font-size: 15px; gap: 16px; padding: 20px 0; }
   .landing-footer { flex-wrap: wrap; padding: 32px 24px; }
 }
 @media (prefers-reduced-motion: reduce) { html.landing-scroll { scroll-behavior: auto; } }
