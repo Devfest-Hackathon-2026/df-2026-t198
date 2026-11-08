@@ -28,7 +28,7 @@ beforeEach(async () => {
     storage: { local: { get: async () => local, set: async (value: object) => Object.assign(local, value) }, session: { get: async () => storage, set: async (value: object) => Object.assign(storage, value) } } });
   handler = (await import('../src/kulms-worker.js')).handleKulmsMessage;
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 it('uses the page for LMS reads, posts with isolated credentials and triggers existing calendar sync', async () => {
   expect((await run()).ok).toBe(true);
   expect(send.mock.calls[0]).toEqual([7, expect.objectContaining({ type: 'kulms-collect' }), { frameId: 0, documentId: 'fictional-doc' }]);
@@ -63,14 +63,43 @@ it('retries delivery with the identical observation and ID after a lost response
   expect(post.mock.calls[0]?.[1].body).toBe(post.mock.calls[1]?.[1].body);
   expect(send).toHaveBeenCalledOnce();
 });
-it('sends the fixed logout failure, permits immediate retry and displays reopen guidance', async () => {
+it('sends the fixed logout failure, waits before retry and displays reopen guidance', async () => {
   send.mockImplementationOnce(async (_tab, request) => ({ ok: true, observation: { ...expected,
     observationId: request.observationId, fetchedAt: request.fetchedAt, catalogCourses: [], assignments: [], courseResults: [],
     failures: [{ courseId: null, kind: 'not-logged-in', detail: 'not-logged-in' }] } }));
   await run();
-  expect(storage.kulmsFetchCompletedAt).toBeUndefined(); expect(display).toHaveBeenLastCalledWith('not-logged-in');
+  expect(storage.kulmsFetchCompletedAt).toBeTypeOf('number'); expect(display).toHaveBeenLastCalledWith('not-logged-in');
   post.mockResolvedValue(new Response(JSON.stringify({ status: 'applied', changed: false, changeCount: 0 })));
-  expect((await run()).ok).toBe(true);
+  expect((await run()).code).toBe('cooldown');
+});
+
+it.each(['kulms', 'kulasis'] as const)('waits ten minutes after a partial %s receipt, including after worker restart', async system => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date('2030-11-09T00:00:00Z'));
+  post.mockImplementation(async () => new Response(JSON.stringify({ status: 'applied', changed: false, changeCount: 0 })));
+  const sample = system === 'kulms' ? expected : timetable;
+  send.mockImplementation(async (_tab, request) => ({ ok: true, observation: { ...structuredClone(sample),
+    observationId: request.observationId, fetchedAt: request.fetchedAt,
+    failures: [{ courseId: null, kind: 'http', detail: 'http-error' }] } }));
+  const ready = () => new Promise<Record<string, unknown>>(resolve => handler({ type: `${system}-page-ready` },
+    { ...sender, url: system === 'kulms' ? sender.url : 'https://www.k.kyoto-u.ac.jp/student/la/top' }, resolve, system));
+  expect((await ready()).ok).toBe(true);
+  expect(storage[`${system}FetchStatus`]).toBe('partial');
+  vi.resetModules(); handler = (await import('../src/kulms-worker.js')).handleKulmsMessage;
+  vi.setSystemTime(new Date('2030-11-09T00:09:59.999Z'));
+  expect((await ready()).code).toBe('cooldown');
+  expect(send).toHaveBeenCalledOnce(); expect(post).toHaveBeenCalledOnce();
+  vi.setSystemTime(new Date('2030-11-09T00:10:00Z'));
+  expect((await ready()).ok).toBe(true);
+  expect(send).toHaveBeenCalledTimes(2); expect(post).toHaveBeenCalledTimes(2);
+});
+
+it.each(['send-failed', 'collection-unavailable'])('also waits after %s instead of repeating LMS reads', async code => {
+  if (code === 'send-failed') post.mockResolvedValue(new Response(null, { status: 503 }));
+  else send.mockRejectedValue(new Error('fictional-transport-failure'));
+  expect((await run()).code).toBe(code);
+  const posts = post.mock.calls.length;
+  expect((await run()).code).toBe('cooldown');
+  expect(send).toHaveBeenCalledOnce(); expect(post).toHaveBeenCalledTimes(posts);
 });
 it('does not deliver to a changed account, including before retry', async () => {
   post.mockImplementationOnce(async () => { identity.mockResolvedValue(null); throw new Error('lost'); });
