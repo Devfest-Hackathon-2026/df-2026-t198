@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { NotificationStore } from '../src/notification-store.js';
-import { createNotificationDispatch } from '../src/notification-dispatch.js';
+import type { NotificationStore } from '../src/notifications/store.js';
+import { createNotificationDispatch } from '../src/notifications/dispatch.js';
 import { notificationFixture, origin } from './notification-fixture.js';
 
 describe('runtime defaults', () => {

@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { parseObservation } from '../src/observation-input.js';
+import { parseObservation } from '../src/observations/input.js';
 import { observation } from './observation-fixture.js';
 
 function ended() {

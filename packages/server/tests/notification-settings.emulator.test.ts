@@ -2,10 +2,10 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { createHttpServer } from '../src/http.js';
 import { firebaseDependencies } from '../src/firebase.js';
-import { createNotificationSettingsStore } from '../src/notification-settings.js';
-import { createMailSender, type SenderState } from '../src/mail-sender.js';
-import { createNotificationDispatch } from '../src/notification-dispatch.js';
-import { createNotificationStore } from '../src/notification-store.js';
+import { createNotificationSettingsStore } from '../src/notifications/settings.js';
+import { createMailSender, type SenderState } from '../src/notifications/mail-sender.js';
+import { createNotificationDispatch } from '../src/notifications/dispatch.js';
+import { createNotificationStore } from '../src/notifications/store.js';
 import { notificationFixture, origin } from './notification-fixture.js';
 
 describe.skipIf(process.env['RUN_NOTIFICATION_EMULATOR_TESTS'] !== '1')('A1 notification settings with Auth/Firestore', () => {

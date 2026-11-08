@@ -1,10 +1,10 @@
+import { localProcesses } from './helpers/local-processes.mjs';
 import process from 'node:process';
-import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { URL } from 'node:url';
 import { createHttpServer } from '../../server/dist/http.js';
 import { firebaseDependencies } from '../../server/dist/firebase.js';
-import { createNotificationSettingsStore } from '../../server/dist/notification-settings.js';
+import { createNotificationSettingsStore } from '../../server/dist/notifications/settings.js';
 
 const require = createRequire(new URL('../../server/package.json', import.meta.url));
 const { getFirestore } = require('firebase-admin/firestore');
@@ -26,22 +26,13 @@ const env = { ...process.env, VITE_USE_FIREBASE_EMULATORS: 'true',
   VITE_AUTH_EMULATOR_PORT: process.env.FIREBASE_AUTH_EMULATOR_HOST.split(':')[1],
   VITE_FIRESTORE_EMULATOR_PORT: process.env.FIRESTORE_EMULATOR_HOST.split(':')[1],
   KADAI_API_PORT: apiPort, KADAI_WEB_ORIGIN: `http://127.0.0.1:${webPort}` };
-const web = spawn('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', webPort, '--strictPort'], { env, stdio: 'ignore' });
+const { start, ready, finish, stop } = localProcesses(env, 'notifications');
 try {
-  let ready = false;
-  for (let i = 0; i < 100; i++) {
-    try { if ((await globalThis.fetch(env.KADAI_WEB_ORIGIN)).ok) { ready = true; break; } } catch { /* Local startup. */ }
-    if (web.exitCode !== null) throw new Error('web-stopped');
-    await new Promise(resolve => globalThis.setTimeout(resolve, 100));
-  }
-  if (!ready) throw new Error('web-not-ready');
-  await new Promise((resolve, reject) => {
-    const child = spawn('node', ['packages/web/tests/notifications.browser.mjs', ...process.argv.slice(2)], { env, stdio: 'inherit' });
-    child.once('error', () => reject(new Error('browser-start-failed')));
-    child.once('exit', code => code === 0 ? resolve() : reject(new Error('browser-failed')));
-  });
+  const web = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', webPort, '--strictPort'], true);
+  await ready(env.KADAI_WEB_ORIGIN, web);
+  await finish(start('node', ['packages/web/tests/notifications.browser.mjs', ...process.argv.slice(2)]));
 } finally {
-  web.kill('SIGTERM');
+  stop();
   await new Promise(resolve => api.close(resolve));
   await getFirestore().terminate();
 }

@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import { afterEach, expect, it, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { StudentView } from '../src/student';
+import { StudentView } from '../src/features/student/page';
 import { applyObservation } from '../../core/src/ledger';
 import type { Observation } from '../../core/src/types';
 import golden from '../../../lms-definitions/kulms/samples/observation.expected.json';

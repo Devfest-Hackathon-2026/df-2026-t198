@@ -1,8 +1,8 @@
 import { expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { SessionPlanning } from '../src/session-planning';
-import { emptySession } from '../src/session-model';
-import { assignment, dated } from '../src/student-fixture';
+import { SessionPlanning } from '../src/features/session/planning';
+import { emptySession } from '../src/features/session/model';
+import { assignment, dated } from '../src/shared/testing/student-fixture';
 import type { PreparationPlan } from '../../core/src/types';
 
 it.each(['2030-11-15', '2030-11-16', '2030-11-17'])('opens the first candidate week despite an active plan this Friday/weekend: %s', date => {

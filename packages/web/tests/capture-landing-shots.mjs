@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 import { URL } from 'node:url';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { initialDemo } from '../../server/src/demo-initial.ts';
+import { initialDemo } from '../../server/src/demo/initial.ts';
 
 if (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||
   !/^127\.0\.0\.1:\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST ?? '') ||
@@ -136,7 +136,7 @@ try {
   await session.getByRole('region', { name: '次の面談までの締切', exact: true })
     .getByText('書き方を書くレポート', { exact: true }).waitFor();
   await capture(session, 'session', session.locator('.session-page'), 1072, 1005);
-  const landing = await readFile(new URL('../src/landing.tsx', import.meta.url), 'utf8');
+  const landing = await readFile(new URL('../src/features/landing/page.tsx', import.meta.url), 'utf8');
   for (const { name, width, height } of shots) {
     assert(landing.includes(`src="/landing/${name}.png"`));
     assert(landing.includes(`width="${width}" height="${height}"`));

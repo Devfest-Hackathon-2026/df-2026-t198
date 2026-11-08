@@ -4,7 +4,7 @@ import console from 'node:console';
 import { URL } from 'node:url';
 import { createRequire } from 'node:module';
 import { mkdir } from 'node:fs/promises';
-import { studentFixture, dated } from '../src/student-fixture.ts';
+import { studentFixture, dated } from '../src/shared/testing/student-fixture.ts';
 
 // Playwright is supplied by the operator, without changing workspace dependencies.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
@@ -25,8 +25,8 @@ try {
   await page.goto(`${process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5176'}/student`);
   await page.getByRole('button', { name: 'Googleでログイン' }).waitFor();
   const uid = await page.evaluate(async () => {
-    const { firebase } = await import('/src/firebase.ts');
-    const source = await (await globalThis.fetch('/src/firebase.ts')).text();
+    const { firebase } = await import('/src/shared/firebase.ts');
+    const source = await (await globalThis.fetch('/src/shared/firebase.ts')).text();
     const sdk = await import(source.match(/from "([^"]*firebase_auth[^"]*)"/)[1]);
     const user = await sdk.signInAnonymously(firebase.auth);
     return user.user.uid;
@@ -76,8 +76,8 @@ try {
   await student.collection('assignments').doc('a0').update({ submission: 'submitted' });
   await cells.first().getByText('レポートA', { exact: true }).waitFor();
   await page.evaluate(async () => {
-    const { firebase } = await import('/src/firebase.ts');
-    const source = await (await globalThis.fetch('/src/firebase.ts')).text();
+    const { firebase } = await import('/src/shared/firebase.ts');
+    const source = await (await globalThis.fetch('/src/shared/firebase.ts')).text();
     await (await import(source.match(/from "([^"]*firebase_firestore[^"]*)"/)[1])).disableNetwork(firebase.db);
   });
   await page.getByText('接続を確かめています。', { exact: false }).waitFor();
@@ -90,8 +90,8 @@ try {
   await panel.getByRole('button', { name: '閉じる' }).click();
   // Issue #105: an ended task remains reachable in the finished section only.
   await page.evaluate(async () => {
-    const { firebase } = await import('/src/firebase.ts');
-    const source = await (await globalThis.fetch('/src/firebase.ts')).text();
+    const { firebase } = await import('/src/shared/firebase.ts');
+    const source = await (await globalThis.fetch('/src/shared/firebase.ts')).text();
     await (await import(source.match(/from "([^"]*firebase_firestore[^"]*)"/)[1])).enableNetwork(firebase.db);
   });
   await student.collection('assignments').doc('a1').update({ presenceState: 'ended', consecutiveMissingCount: 0 });

@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import input from '../../../lms-definitions/kulms/samples/input.json' with { type: 'json' };
 import expected from '../../../lms-definitions/kulms/samples/observation.expected.json' with { type: 'json' };
 import { collectKulmsObservation } from '../src/kulms-collection.js';
-import { parseObservation } from '../../server/src/observation-input.js';
+import { parseObservation } from '../../server/src/observations/input.js';
 
 const origin = 'https://lms.gakusei.kyoto-u.ac.jp';
 let requests: { url: string; init: RequestInit | undefined }[];

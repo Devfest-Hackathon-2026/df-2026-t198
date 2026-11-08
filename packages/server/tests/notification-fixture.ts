@@ -1,5 +1,5 @@
 import { applyObservation } from '@kadai-hisho/core';
-import type { NotificationSnapshot } from '../src/notification-targets.js';
+import type { NotificationSnapshot } from '../src/notifications/targets.js';
 import { observation } from './observation-fixture.js';
 
 export const origin = 'https://study.example.invalid';

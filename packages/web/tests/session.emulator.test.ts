@@ -3,8 +3,8 @@ import { deleteApp, initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, signInWithCustomToken, signOut } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore, terminate } from 'firebase/firestore';
 import { observation } from '../../server/tests/observation-fixture';
-import { firebaseSessionSource } from '../src/session-firebase';
-import { watchSession, type SessionState } from '../src/session-watch';
+import { firebaseSessionSource } from '../src/features/session/firebase';
+import { watchSession, type SessionState } from '../src/features/session/watch';
 
 const enabled = process.env['RUN_SESSION_EMULATOR_TESTS'] === '1';
 describe.skipIf(!enabled)('session API and Web listeners with Auth and Firestore rules', () => {

@@ -4,8 +4,8 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { CalendarItem, CalendarIntegration } from '@kadai-hisho/core/calendar';
 import { createHttpServer } from '../src/http.js';
-import { createObservationStore, documentKey } from '../src/observation-store.js';
-import { createCalendarStore } from '../src/calendar-store.js';
+import { createObservationStore, documentKey } from '../src/observations/store.js';
+import { createCalendarStore } from '../src/calendar/store.js';
 import { observation } from './observation-fixture.js';
 
 describe.skipIf(process.env['RUN_OBSERVATION_EMULATOR_TESTS'] !== '1')('calendar sync with Auth and Firestore emulators', () => {

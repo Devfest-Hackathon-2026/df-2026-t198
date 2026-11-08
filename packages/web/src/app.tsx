@@ -1,9 +1,9 @@
-import { LandingPage } from './landing';
-import { TodokuLogo } from './todoku-logo';
-import { StudentPage } from './student';
-import { SessionPage } from './session-page';
-import { usePathname } from './session-route';
-import { DemoPage } from './demo-page';
+import { LandingPage } from './features/landing/page';
+import { TodokuLogo } from './shared/ui/todoku-logo';
+import { StudentPage } from './features/student/page';
+import { SessionPage } from './features/session/page';
+import { usePathname } from './shared/use-pathname';
+import { DemoPage } from './features/demo/page';
 
 export function App() {
   const path = usePathname();

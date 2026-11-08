@@ -1,10 +1,10 @@
 import { handleKulmsMessage } from './kulms-worker.js';
 import { handleKulasisMessage } from './kulasis-worker.js';
-import { startCalendarSync, handleCalendarMessage } from './calendar-browser.js';
+import { startCalendarSync, handleCalendarMessage } from './calendar/browser.js';
 import { isSessionFound, sessionFromUrl } from './session.js';
-import { handleAuthProbeMessage } from './auth-probe-worker.js';
+import { handleAuthProbeMessage } from './auth/worker.js';
 import { runCollection, yieldCollection } from './collection-worker.js';
-import { startDigest, handleDigestMessage } from './digest-browser.js';
+import { startDigest, handleDigestMessage } from './digest/browser.js';
 import { isHomePage } from './collection-diagnostics.js';
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {

@@ -2,9 +2,9 @@ import { KULASIS_ORIGIN, kulasisTerm } from '../../core/src/kulasis-reader.js';
 import type { Observation } from '../../core/src/types.js';
 import { KULMS_ORIGIN } from '../../core/src/sakai-reader.js';
 import { isSafeMailText } from '../../core/src/mail-safety.js';
-import { observationIdentity } from './auth-probe-browser.js';
-import { observationApiOrigin } from './probe-config.js';
-import { syncCalendarInBackground } from './calendar-browser.js';
+import { observationIdentity } from './auth/browser.js';
+import { observationApiOrigin } from './auth/config.js';
+import { syncCalendarInBackground } from './calendar/browser.js';
 import { showCollectionStatus } from './collection-display.js';
 
 const running = new Set<string>();

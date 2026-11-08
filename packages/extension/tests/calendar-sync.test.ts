@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { CalendarFailure, createCalendarSync, googleCalendarTarget, sendObservationAndSync, type CalendarRequest } from '../src/calendar-sync.js';
+import { CalendarFailure, createCalendarSync, googleCalendarTarget, sendObservationAndSync, type CalendarRequest } from '../src/calendar/sync.js';
 import type { CalendarItem, CalendarReport, Observation } from '../../core/src/types.js';
 function item(): CalendarItem {
   return { itemKey: 'a'.repeat(64), sourceKey: { system: 'demo-lms', sourceId: 'task' }, kind: 'deadline', calendarId: 'dedicated',

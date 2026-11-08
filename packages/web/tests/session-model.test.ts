@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import type { AssignmentChange, LedgerAssignment } from '../../core/src/types';
-import { buildSessionView, changeDescription, formatDeadline } from '../src/session-model';
+import { buildSessionView, changeDescription } from '../src/features/session/model';
+import { formatDeadline } from '../src/shared/assignments/deadline-format';
 
 const now = new Date('2026-11-06T06:00:00Z');
 const context = { lastSessionAt: '2026-11-01T10:00:00+09:00', nextSessionAt: '2026-11-13T11:00:00+09:00' };
@@ -14,7 +15,7 @@ function row(id: string, deadline: LedgerAssignment['latest']['deadline'], extra
 const date = (value: string) => ({ kind: 'date' as const, date: value, dueText: value, timeZone: 'Asia/Tokyo' });
 const instant = (value: string) => ({ kind: 'datetime' as const, dueAt: value, dueText: value, timeZone: 'Asia/Tokyo' });
 it('excludes ended tasks from session deadlines, review and preparation candidates', async () => {
-  const { emptySession, preparationCandidates } = await import('../src/session-model');
+  const { emptySession, preparationCandidates } = await import('../src/features/session/model');
   const data = { ...emptySession(), context, assignments: [row('ended', date('2026-11-11'), {
     presenceState: 'ended', reviewReasons: [{ kind: 'unreadable-deadline', detail: 'unreadable' }],
   })] };
@@ -24,7 +25,7 @@ it('excludes ended tasks from session deadlines, review and preparation candidat
 });
 
 it('does not reserve out-of-term classes when suggesting preparation slots', async () => {
-  const { emptySession, preparationCandidates } = await import('../src/session-model');
+  const { emptySession, preparationCandidates } = await import('../src/features/session/model');
   const data = { ...emptySession(), context, assignments: [row('next-week', date('2026-11-11'))],
     courses: [{ courseId: 'old', name: '春の授業', system: 'demo-lms' as const, currentTerm: false,
       slots: [{ weekday: 1 as const, period: 1 }] }] };
@@ -66,7 +67,7 @@ it('keeps review reasons even outside the deadline interval and does not invent 
 });
 
 it('offers at most two weekday periods per task, before its deadline, without classes or stored plans', async () => {
-  const { preparationCandidates, emptySession } = await import('../src/session-model');
+  const { preparationCandidates, emptySession } = await import('../src/features/session/model');
   const data = { ...emptySession(), context, assignments: [row('next-week', date('2026-11-11')),
     row('done', date('2026-11-11'), { submission: 'submitted' }),
     row('cancelled', date('2026-11-11'), { presenceState: 'cancelled' }),
@@ -83,7 +84,7 @@ it('offers at most two weekday periods per task, before its deadline, without cl
 });
 
 it('does not suggest a date-only due day or any period in a fully occupied timetable', async () => {
-  const { preparationCandidates, emptySession } = await import('../src/session-model');
+  const { preparationCandidates, emptySession } = await import('../src/features/session/model');
   const data = { ...emptySession(), context, assignments: [row('monday-due', date('2026-11-09'))], courses: [] };
   expect(preparationCandidates(data, now)).toEqual([]); // Friday now, then weekend, then due day.
   const full = { courseId: 'full', name: '授業', system: 'demo-lms' as const,

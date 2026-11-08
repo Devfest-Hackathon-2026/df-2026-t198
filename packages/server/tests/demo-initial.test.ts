@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { initialDemo } from '../src/demo-initial.js';
+import { initialDemo } from '../src/demo/initial.js';
 
 it.each([
   ['2026-11-07T07:41:00+09:00', '2026-10-30T06:00:00.000Z', '2026-11-13T06:00:00.000Z'],

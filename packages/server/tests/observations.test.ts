@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHttpServer } from '../src/http.js';
-import { parseObservation } from '../src/observation-input.js';
-import { documentKey } from '../src/observation-store.js';
+import { parseObservation } from '../src/observations/input.js';
+import { documentKey } from '../src/observations/store.js';
 import { observation } from './observation-fixture.js';
 
 const verifyToken = vi.fn(async () => 'verified-student');

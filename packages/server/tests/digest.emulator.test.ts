@@ -3,15 +3,15 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import * as core from '@kadai-hisho/core';
 import type { CalendarItem, LedgerAssignment, PreparationPlan } from '@kadai-hisho/core';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
-import { createPlanStore } from '../src/plan-store.js';
-import { createDigestStore, type PlanActionResult } from '../src/digest-store.js';
-import { createDemoCalendarSync } from '../src/demo-calendar.js';
-import { initialDemo } from '../src/demo-initial.js';
+import { createPlanStore } from '../src/plans/store.js';
+import { createDigestStore, type PlanActionResult } from '../src/digest/store.js';
+import { createDemoCalendarSync } from '../src/demo/calendar.js';
+import { initialDemo } from '../src/demo/initial.js';
 import { createHttpServer } from '../src/http.js';
 import { firebaseDependencies } from '../src/firebase.js';
 import { observation } from './observation-fixture.js';
-import { createObservationStore, documentKey } from '../src/observation-store.js';
-import { createSessionStore } from '../src/session-store.js';
+import { createObservationStore, documentKey } from '../src/observations/store.js';
+import { createSessionStore } from '../src/sessions/store.js';
 
 // All users and tasks are invented; the clock is injected only into this new behavior's store.
 describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and actions with Auth/Firestore', () => {

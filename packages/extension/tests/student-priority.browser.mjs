@@ -32,9 +32,9 @@ async function bundle(name, plugins = []) {
 }
 const content = await bundle('content');
 const worker = await bundle('service-worker', [{ name: 'no-external-accounts', setup(builder) {
-  builder.onResolve({ filter: /auth-probe-browser\.js$/ }, () => ({ path: 'identity', namespace: 'fake' }));
-  builder.onResolve({ filter: /calendar-browser\.js$/ }, () => ({ path: 'calendar', namespace: 'fake' }));
-  builder.onResolve({ filter: /digest-browser\.js$/ }, () => ({ path: 'digest', namespace: 'fake' }));
+  builder.onResolve({ filter: /(?:auth\/|^\.\/)browser\.js$/ }, () => ({ path: 'identity', namespace: 'fake' }));
+  builder.onResolve({ filter: /calendar\/browser\.js$/ }, () => ({ path: 'calendar', namespace: 'fake' }));
+  builder.onResolve({ filter: /digest\/browser\.js$/ }, () => ({ path: 'digest', namespace: 'fake' }));
   builder.onLoad({ filter: /.*/, namespace: 'fake' }, ({ path }) => ({ contents: path === 'identity'
     ? `export const observationIdentity = async () => ({ uid: 'synthetic-user', token: 'synthetic-token' });
        export const browserProbe = () => { throw new Error('interactive-auth-forbidden'); };`

@@ -1,8 +1,8 @@
 import type { CalendarItem, ManualAssignment, ManualAssignmentInput } from '@kadai-hisho/core';
-import { createManualAssignmentStore } from '../src/manual-assignment-store.js';
-import { createDemoCalendarSync } from '../src/demo-calendar.js';
-import { initialDemo } from '../src/demo-initial.js';
-import { documentKey, createObservationStore } from '../src/observation-store.js';
+import { createManualAssignmentStore } from '../src/manual-assignments/store.js';
+import { createDemoCalendarSync } from '../src/demo/calendar.js';
+import { initialDemo } from '../src/demo/initial.js';
+import { documentKey, createObservationStore } from '../src/observations/store.js';
 import { observation } from './observation-fixture.js';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

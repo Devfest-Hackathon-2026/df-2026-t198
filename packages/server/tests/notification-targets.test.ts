@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cloudNotificationsEnabled, notificationMessage, notificationTargets } from '../src/notification-targets.js';
+import { cloudNotificationsEnabled, notificationMessage, notificationTargets } from '../src/notifications/targets.js';
 import { notificationFixture, origin } from './notification-fixture.js';
 
 describe('notification windows and latest content (#156 N4)', () => {

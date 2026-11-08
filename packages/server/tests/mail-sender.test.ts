@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createMailSender } from '../src/mail-sender.js';
+import { createMailSender } from '../src/notifications/mail-sender.js';
 
 const address = (name: string) => `${name}@example.invalid`;
 const message = { to: address('student'), subject: '今日の課題', text: '架空の本文', html: '<p>架空の本文</p>' };

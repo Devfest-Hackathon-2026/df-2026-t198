@@ -3,7 +3,7 @@ import { deleteApp, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createHttpServer } from '../src/http.js';
 import { firebaseDependencies } from '../src/firebase.js';
-import { documentKey } from '../src/observation-store.js';
+import { documentKey } from '../src/observations/store.js';
 import { createAnnouncementStore } from '../src/announcements/store.js';
 import { createRuntimeBudget } from '../src/announcements/runtime-budget.js';
 import type { Announcement, AssignmentCandidate } from '../src/announcements/extract.js';
@@ -233,8 +233,8 @@ describe.skipIf(!enabled)('announcement intake with local Auth and Firestore', (
       expect(response.headers.get('cache-control')).toBe('no-store');
       expect(await response.json()).toEqual({ error: 'public-demo-limit' });
     }
-    const { createDemoStore } = await import('../src/demo-store.js');
-    const { initialDemo } = await import('../src/demo-initial.js');
+    const { createDemoStore } = await import('../src/demo/store.js');
+    const { initialDemo } = await import('../src/demo/initial.js');
     await db.doc(`students/${shared.uid}/demo/current`).set(initialDemo(now).data);
     const demo = createDemoStore(db, () => now);
     const reset = await demo.reset(shared.uid, false);

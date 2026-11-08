@@ -26,8 +26,8 @@ try {
   await mkdir(evidence, { recursive: true });
   await page.goto(origin + '/student');
   const auth = await page.evaluate(async () => {
-    const { firebase } = await import('/src/firebase.ts');
-    const source = await (await globalThis.fetch('/src/firebase.ts')).text();
+    const { firebase } = await import('/src/shared/firebase.ts');
+    const source = await (await globalThis.fetch('/src/shared/firebase.ts')).text();
     const sdk = await import(source.match(/from "([^"]*firebase_auth[^"]*)"/)[1]);
     const user = (await sdk.signInAnonymously(firebase.auth)).user;
     return { uid: user.uid, token: await user.getIdToken() };

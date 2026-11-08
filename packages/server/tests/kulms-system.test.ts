@@ -1,8 +1,8 @@
 import { expect, it } from 'vitest';
 import expected from '../../../lms-definitions/kulms/samples/observation.expected.json' with { type: 'json' };
-import { parseObservation } from '../src/observation-input.js';
-import { parseManualAssignment } from '../src/manual-assignment-input.js';
-import { parsePlan } from '../src/plan-input.js';
+import { parseObservation } from '../src/observations/input.js';
+import { parseManualAssignment } from '../src/manual-assignments/input.js';
+import { parsePlan } from '../src/plans/input.js';
 it.each(['kulms', 'kulasis'])('accepts the approved system in observations and manual assignments: %s', system => {
   expect(parseObservation({ ...expected, system }).system).toBe(system);
   expect(parseManualAssignment({ title: '架空の課題', date: '2030-11-10', time: null,

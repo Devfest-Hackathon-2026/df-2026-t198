@@ -1,5 +1,5 @@
-import type { ProbeResult } from './auth-probe.js';
-import type { DigestStatus } from './digest-browser.js';
+import type { ProbeResult } from './auth/probe.js';
+import type { DigestStatus } from './digest/browser.js';
 
 const run = document.querySelector<HTMLButtonElement>('#run')!;
 const restore = document.querySelector<HTMLButtonElement>('#restore')!;

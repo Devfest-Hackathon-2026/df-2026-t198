@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { URL } from 'node:url';
-import { calendarScopes, gmailScope } from './src/oauth-scopes.ts';
+import { calendarScopes, gmailScope } from './src/auth/scopes.ts';
 
 export const oauthScopes = [...calendarScopes, gmailScope];
 

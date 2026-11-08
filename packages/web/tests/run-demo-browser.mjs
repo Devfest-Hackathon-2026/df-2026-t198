@@ -1,8 +1,7 @@
+import { localProcesses } from './helpers/local-processes.mjs';
 import process from 'node:process';
 import { URL } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { spawn } from 'node:child_process';
-import { createServer } from 'node:net';
 import { createRequire } from 'node:module';
 import { seedPairs } from '../../server/scripts/seed-demo-live.mjs';
 
@@ -12,32 +11,9 @@ if (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||
 const env = { ...process.env, KADAI_DEMO_PASSWORD: randomUUID(), VITE_USE_FIREBASE_EMULATORS: 'true',
   PUBLIC_WEB_ORIGIN: 'http://127.0.0.1:5177' };
 const publicDemo = process.argv[2] === '--public-demo';
-const children = [];
-function start(command, args, quiet = false) {
-  const child = spawn(command, args, { env, stdio: quiet ? 'ignore' : 'inherit' });
-  children.push(child);
-  return child;
-}
-function finish(child) {
-  return new Promise((resolve, reject) => {
-    child.once('error', () => reject(new Error('demo-process-start-failed')));
-    child.once('exit', code => code === 0 ? resolve() : reject(new Error('demo-process-failed')));
-  });
-}
-async function ready(url, child) {
-  for (let attempt = 0; attempt < 100; attempt++) {
-    if (child.exitCode !== null) throw new Error('demo-server-stopped');
-    try { if ((await globalThis.fetch(url)).ok) return; } catch { /* Wait for the local process. */ }
-    await new Promise(resolve => globalThis.setTimeout(resolve, 100));
-  }
-  throw new Error('demo-server-not-ready');
-}
+const { start, finish, ready, checkPorts, stop } = localProcesses(env, 'demo');
 try {
-  for (const port of [8080, 5177]) await new Promise((resolve, reject) => {
-    const probe = createServer();
-    probe.once('error', () => reject(new Error('demo-port-in-use')));
-    probe.listen(port, '127.0.0.1', () => probe.close(resolve));
-  });
+  await checkPorts([8080, 5177]);
   await finish(start('node', ['packages/server/scripts/seed-demo.mjs']));
   if (publicDemo) {
     const requireServer = createRequire(new URL('../../server/package.json', import.meta.url));
@@ -65,5 +41,5 @@ try {
     await finish(start('node', ['packages/web/tests/demo.browser.mjs']));
   }
 } finally {
-  for (const child of children) if (child.exitCode === null) child.kill('SIGTERM');
+  stop();
 }
