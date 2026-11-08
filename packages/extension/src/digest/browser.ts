@@ -152,7 +152,13 @@ async function tick() {
         method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ raw }),
         credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15_000) })
         .catch(() => { throw new Error('send-unconfirmed'); });
-      if (response.status === 401) await chrome.identity.removeCachedAuthToken({ token });
+      if ([400, 401, 403, 429].includes(response.status)) {
+        // Confirmed rejection: release only this mail. The 15-minute refresh still throttles retries.
+        receipt.planIds = receipt.planIds.filter(id => id !== item.id);
+        await chrome.storage.local.set({ [receiptKey]: receipt });
+        if (response.status === 401) await chrome.identity.removeCachedAuthToken({ token });
+        throw new Error(response.status === 401 ? 'authorization-required' : 'digest-unavailable');
+      }
       if (!response.ok) throw new Error('send-unconfirmed');
     } catch (error) {
       // One rejected mail must not suppress unrelated reminders.
