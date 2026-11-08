@@ -1,0 +1,314 @@
+{
+  "issue": 223,
+  "status": "acceptance-incomplete",
+  "baselineCommit": "8b2b349",
+  "checkedAt": "2026-11-09 Asia/Tokyo",
+  "sixChecks": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "test": "passed",
+    "build": "passed",
+    "progress --check": "passed",
+    "check:samples": "17 passed; local materials absent"
+  },
+  "packageTests": {
+    "core": {
+      "passed": 272
+    },
+    "extension": {
+      "passed": 486
+    },
+    "server": {
+      "passed": 312,
+      "skipped": 127
+    },
+    "web": {
+      "passed": 147,
+      "skipped": 2
+    }
+  },
+  "uiBrowser": {
+    "results": [
+      {
+        "width": 1280,
+        "busyMilliseconds": 6,
+        "waitThree": true,
+        "waitTen": true,
+        "noOverflow": true
+      },
+      {
+        "width": 390,
+        "busyMilliseconds": 6,
+        "waitThree": true,
+        "waitTen": true,
+        "noOverflow": true
+      }
+    ],
+    "splashOnceAndSkip": true,
+    "viewTransitionAndBack": true,
+    "reducedMotion": true,
+    "errors": []
+  },
+  "productionGallery": {
+    "routeExcluded": true,
+    "exampleJavaScriptExcluded": true
+  },
+  "M6": {
+    "passed": 8,
+    "total": 8,
+    "mode": "local Auth/Firestore emulators and mock calendar; actual Google services not exercised"
+  },
+  "judgeQA": {
+    "baseline": {
+      "passed": 24,
+      "failed": 4,
+      "results": [
+        {
+          "name": "1280: student sees login in progress",
+          "status": "pass"
+        },
+        {
+          "name": "1280: submitted deadlines, scroll hints and date navigation",
+          "status": "pass"
+        },
+        {
+          "name": "1280: period labels stay visible after horizontal scrolling",
+          "status": "pass"
+        },
+        {
+          "name": "1280: supporter sees login in progress",
+          "status": "pass"
+        },
+        {
+          "name": "1280: candidate focuses its prefilled form and save button",
+          "status": "fail",
+          "reason": "Expected values to be strictly equal:"
+        },
+        {
+          "name": "1280: known period mismatch is explained",
+          "status": "fail",
+          "reason": "locator.waitFor: Timeout 8000ms exceeded."
+        },
+        {
+          "name": "1280: supporter sees saved notice after form closes",
+          "status": "pass"
+        },
+        {
+          "name": "1280: student chronological cards include visible state and controls",
+          "status": "pass"
+        },
+        {
+          "name": "1280: supporter chronological cards include visible state and controls",
+          "status": "pass"
+        },
+        {
+          "name": "1280: adding then removing leaves only the latest notice",
+          "status": "pass"
+        },
+        {
+          "name": "1280: checking explains preparation before the list and sorts promises",
+          "status": "pass"
+        },
+        {
+          "name": "1280: own session omits student picker and addresses the student",
+          "status": "pass"
+        },
+        {
+          "name": "1280: a later operation replaces the mail link result",
+          "status": "pass"
+        },
+        {
+          "name": "1280: next LMS operation clears the email action notice",
+          "status": "pass"
+        },
+        {
+          "name": "390: student sees login in progress",
+          "status": "pass"
+        },
+        {
+          "name": "390: submitted deadlines, scroll hints and date navigation",
+          "status": "pass"
+        },
+        {
+          "name": "390: period labels stay visible after horizontal scrolling",
+          "status": "pass"
+        },
+        {
+          "name": "390: supporter sees login in progress",
+          "status": "pass"
+        },
+        {
+          "name": "390: candidate focuses its prefilled form and save button",
+          "status": "fail",
+          "reason": "Expected values to be strictly equal:"
+        },
+        {
+          "name": "390: known period mismatch is explained",
+          "status": "fail",
+          "reason": "locator.waitFor: Timeout 8000ms exceeded."
+        },
+        {
+          "name": "390: supporter sees saved notice after form closes",
+          "status": "pass"
+        },
+        {
+          "name": "390: student chronological cards include visible state and controls",
+          "status": "pass"
+        },
+        {
+          "name": "390: supporter chronological cards include visible state and controls",
+          "status": "pass"
+        },
+        {
+          "name": "390: adding then removing leaves only the latest notice",
+          "status": "pass"
+        },
+        {
+          "name": "390: checking explains preparation before the list and sorts promises",
+          "status": "pass"
+        },
+        {
+          "name": "390: own session omits student picker and addresses the student",
+          "status": "pass"
+        },
+        {
+          "name": "390: a later operation replaces the mail link result",
+          "status": "pass"
+        },
+        {
+          "name": "390: next LMS operation clears the email action notice",
+          "status": "pass"
+        }
+      ]
+    },
+    "candidate": {
+      "passed": 24,
+      "failed": 4,
+      "results": [
+        {
+          "name": "1280: student sees login in progress",
+          "status": "pass"
+        },
+        {
+          "name": "1280: submitted deadlines, scroll hints and date navigation",
+          "status": "pass"
+        },
+        {
+          "name": "1280: period labels stay visible after horizontal scrolling",
+          "status": "pass"
+        },
+        {
+          "name": "1280: supporter sees login in progress",
+          "status": "pass"
+        },
+        {
+          "name": "1280: candidate focuses its prefilled form and save button",
+          "status": "fail",
+          "reason": "Expected values to be strictly equal:"
+        },
+        {
+          "name": "1280: known period mismatch is explained",
+          "status": "fail",
+          "reason": "locator.waitFor: Timeout 8000ms exceeded."
+        },
+        {
+          "name": "1280: supporter sees saved notice after form closes",
+          "status": "pass"
+        },
+        {
+          "name": "1280: student chronological cards include visible state and controls",
+          "status": "pass"
+        },
+        {
+          "name": "1280: supporter chronological cards include visible state and controls",
+          "status": "pass"
+        },
+        {
+          "name": "1280: adding then removing leaves only the latest notice",
+          "status": "pass"
+        },
+        {
+          "name": "1280: checking explains preparation before the list and sorts promises",
+          "status": "pass"
+        },
+        {
+          "name": "1280: own session omits student picker and addresses the student",
+          "status": "pass"
+        },
+        {
+          "name": "1280: a later operation replaces the mail link result",
+          "status": "pass"
+        },
+        {
+          "name": "1280: next LMS operation clears the email action notice",
+          "status": "pass"
+        },
+        {
+          "name": "390: student sees login in progress",
+          "status": "pass"
+        },
+        {
+          "name": "390: submitted deadlines, scroll hints and date navigation",
+          "status": "pass"
+        },
+        {
+          "name": "390: period labels stay visible after horizontal scrolling",
+          "status": "pass"
+        },
+        {
+          "name": "390: supporter sees login in progress",
+          "status": "pass"
+        },
+        {
+          "name": "390: candidate focuses its prefilled form and save button",
+          "status": "fail",
+          "reason": "Expected values to be strictly equal:"
+        },
+        {
+          "name": "390: known period mismatch is explained",
+          "status": "fail",
+          "reason": "locator.waitFor: Timeout 8000ms exceeded."
+        },
+        {
+          "name": "390: supporter sees saved notice after form closes",
+          "status": "pass"
+        },
+        {
+          "name": "390: student chronological cards include visible state and controls",
+          "status": "pass"
+        },
+        {
+          "name": "390: supporter chronological cards include visible state and controls",
+          "status": "pass"
+        },
+        {
+          "name": "390: adding then removing leaves only the latest notice",
+          "status": "pass"
+        },
+        {
+          "name": "390: checking explains preparation before the list and sorts promises",
+          "status": "pass"
+        },
+        {
+          "name": "390: own session omits student picker and addresses the student",
+          "status": "pass"
+        },
+        {
+          "name": "390: a later operation replaces the mail link result",
+          "status": "pass"
+        },
+        {
+          "name": "390: next LMS operation clears the email action notice",
+          "status": "pass"
+        }
+      ]
+    },
+    "remaining": "Both baseline and candidate offer a period-2 preparation slot on Monday 2026-11-09, while the unchanged QA expects period 1 (08:50-10:20). No oracle, fixture, course slot, or candidate-selection changes made."
+  },
+  "wording": {
+    "kuchiguse": "reviewed; no slogan or metaphor added",
+    "yomiyasu": "lint 0; material comparison reviewed; final hash verified",
+    "argon": "3 UI suggestions retained as specified issue wording or existing ui-words labels; 1 non-UI prompt sentence excluded"
+  },
+  "scope": "packages/web plus docs/ui-words.md and docs/third-party.md only. No new dependency, API, data contract, cloud resource or deployment."
+}
