@@ -1,5 +1,7 @@
 # KULASIS 取得データ調査および LMS 4方式比較
 
+> **時点案内（2026-11-09 追記）**: 本書第1節〜既存の表・証拠は **2026-11-07 時点（固定コミット `00c0bf771a9f909a4aa4d87d035e930b9144c7ee`）** の HTTP 取得調査記録であり、文中の「未接続」「未実装」等はすべて当時の状態を指す。その後の collector 実装および 2026-11-09 の実機確認における製品収集範囲との差分は、文書末尾の「2026-11-09 追記」および [2026-11-09 Issue #152 実機確認・メール段階移行の記録](./records/2026-11-09-issue-152.md) を参照されたい。
+
 ## 1. 調査概要と比較対象
 
 - **調査日**: 2026-11-07
@@ -121,3 +123,24 @@ KULASIS の知見を将来 `kadai-hisho` に統合する場合、現行の型・
 - 京都大学 大学から学生への連絡方針: <https://www.kyoto-u.ac.jp/ja/education-campus/cli/renraku>
 - 京都大学 文学部・文学研究科 学生向け機能案内資料（KULASIS 機能概要の参考資料であり、個人成績等の実測証拠ではない）: <https://www.bun.kyoto-u.ac.jp/wp-content/uploads/bun-student-handbook.pdf>
 - 調査時の認証経路確認で参照した外部資料（[`ku_auth_helper` README](https://github.com/orangeToT/ku_auth_helper/blob/723d775ab71098dc6718c2d3ffa7093d6aa5cf61/README.md)）の扱い・ライセンス区分については、[docs/third-party.md](./third-party.md) を参照。コードの複製・同梱・依存導入は行っておらず、新実装の入力ソースとしても使用しない。
+
+---
+
+## 2026-11-09 追記：現行 collector の収集範囲と実機確認（`fed9132` 時点）
+
+既存の本文・比較表は 2026-11-07 時点（`00c0bf771a9f909a4aa4d87d035e930b9144c7ee`）の HTTP 調査記録として固定し、本節では `fed913248c99c4cc18dcb8ccb58d3ae80f4129c8`（拡張修正 `9ef4c77529466a27a71b21b5571ab6c2cd1ec84d` を含む）および `main` `15a1a42cd9573037d13a27839536e8001f46214e` 時点の実装範囲と実機確認結果を補足する。詳細は [2026-11-09 記録](./records/2026-11-09-issue-152.md) を参照。
+
+### 1. 3層の区別（HTML 取得可能項目 / 現行 collector 送信範囲 / 2026-11-09 実機確認）
+
+- **HTML 画面で取得可能な項目（11/7 調査）**: `www.k.kyoto-u.ac.jp` に対する HTTP 調査で確認した時間割、シラバス詳細、教務・授業連絡のお知らせ、教員名、単位数、教室、添付確認（HEAD）等。公開 JSON API は未確認であり、日本語シラバス検索（CP932）の旧調査は今回再実行していない。
+- **現行 collector が運ぶ項目（製品の送信範囲）**: KULASIS の授業・曜日・時限と、KULASIS 授業サポート `support/top` からたどる KULMS 側公開テンプレート URL（`https://lms.gakusei.kyoto-u.ac.jp/direct/courselink/_kcd={科目コード}`、KULASIS 同一 host の API ではない）から得た明示的な KULMS `siteId` 対応のみ。KULMS と KULASIS は別システム・別キーで保存し、明示対応の `siteId` だけで表示上の時間割を補う（授業名の一致だけでは結合しない）。シラバス・教務のお知らせ・教員・単位・教室等は今回の製品送信範囲ではない。
+- **2026-11-09 実機確認結果**: 公式全学生共通ポータル（`https://student.iimc.kyoto-u.ac.jp/`）の Login → KULASIS Access 経由（`/student/` 直開きは 404 の場合あり）で、本人 Chrome 実機は `https://k.kyoto-u.ac.jp` のみで動作を確認した（`https://www.k.kyoto-u.ac.jp` は許可および合成試験の互換側であり、この Chrome で両 host の実物取得は行っていない）。`windows-31j` / CP932 応答を `shift_jis`（fatal decode）で処理し、PR #202（`12c120d`：実ホスト 2 限定、先頭全幅案内行・余分な閉じ `div` の inert `template` 補正、他学部 `support` パス保持、不正 `span`・ユーザー情報・外部 host 拒否）および PR #205（`fed9132`：同一 KULMS `/portal/site/{siteId}/tool/{toolId}` と `/tool-reset/{toolId}` のみ追加対応、query/hash 拒否）適用後、7 授業・7 コマを収集し、KULMS 対応数は修正前の `0` から `7` へ改善した。実時間割表との授業名・曜日・時限一致は `7/7`、学生画面の授業名・コマ一致 `7/7`、LMS リンク `7` 件、学生本人として自分の面談「相談する」画面での 7 授業表示、およびログアウト時の固定エラーコード `not-logged-in` 検知と SSO 再ログイン回復を確認した（別人の支援担当としての実データ閲覧は未実施）。
+
+### 2. 現在の LMS 4方式比較（2026-11-09 時点）
+
+| 方式 | 取得経路・文字コード | 現行 collector が運ぶ項目 | 2026-11-09 実機確認・測定状態 |
+| :--- | :--- | :--- | :--- |
+| **KULASIS** | HTML GET（`windows-31j` / CP932 → `shift_jis` fatal decode） | 授業・曜日・時限、授業サポート `support/top` からたどる KULMS 側公開テンプレート `https://lms.gakusei.kyoto-u.ac.jp/direct/courselink/_kcd={科目コード}` 由来 KULMS `siteId` 対応（別システム/キー保存） | 本人 Chrome 実機 `https://k.kyoto-u.ac.jp` で確認済み（7授業・7コマ、対応 `0→7`、実表・学生画面一致 `7/7`、ログアウト `not-logged-in` 検知・回復、無操作約1,052.6秒後の再読込 `7/7` 維持） |
+| **KULMS (Sakai)** | `/direct` JSON API（UTF-8、native `fetch` の `this` 束縛修正済み） | 授業一覧、課題一覧（課題名・締切・自己提出状態等）、`listComplete` / `seenSourceIds` | 本人 Chrome 実機で確認済み（20授業・完了一覧20、返却課題43件はすべて期限経過で期間内対象0件、失敗0件。実精度 M2 は未測定） |
+| **YNU (CoursePower)** | 既存 HTML DOM 収集（既存ソース定義に依拠） | 授業・時間割 `slots`・課題（題名/締切/提出状態）、`listComplete` / `seenSourceIds`、`currentTerm` / `endedSourceIds`（CoursePower 見本 17 ファイル検査 `check:samples` 17 passed） | 今回実機再測定は `NOT_RUN`（既存ソース比較および CoursePower 見本 17 ファイルの固定検査に依拠） |
+| **ダミー LMS (`demo-lms`)** | ローカル/模擬 HTML 収集（既存ソース定義に依拠） | 授業・時間割 `slots`・課題（題名/締切/提出状態）、`listComplete` / `seenSourceIds`（`currentTerm` / `endedSourceIds` は送らない。お知らせは別経路 `readDemoAnnouncements` で送信） | 今回実機再測定は `NOT_RUN`（既存ソース比較に依拠） |
