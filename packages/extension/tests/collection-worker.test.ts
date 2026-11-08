@@ -6,11 +6,12 @@ const identity = vi.hoisted(() => vi.fn());
 const collect = vi.hoisted(() => vi.fn());
 const syncCalendar = vi.hoisted(() => vi.fn());
 const sync = syncCalendar;
+const readPage = vi.hoisted(() => vi.fn());
 vi.mock('../src/auth/browser.js', () => ({ observationIdentity: identity }));
 vi.mock('../src/auth/config.js', () => ({ observationApiOrigin: apiOrigin }));
 vi.mock('../src/calendar/browser.js', () => ({ syncCalendarInBackground: syncCalendar }));
 vi.mock('../src/collection.js', () => ({ collectObservation: collect }));
-vi.mock('../../core/src/html-reader.js', () => ({ readPage: () => ({ pageType: 'home' }) }));
+vi.mock('../../core/src/html-reader.js', () => ({ readPage }));
 const observation: Observation = { schemaVersion: 1, observationId: '00000000-0000-4000-8000-000000000001', system: 'ynu-lms',
   definitionId: 'coursepower', definitionVersion: 3, fetchedAt: '2098-11-01T00:00:00Z', catalogCourses: [], courseResults: [], assignments: [], failures: [] };
 const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session';
@@ -24,6 +25,7 @@ let run: typeof import('../src/collection-worker.js')['runCollection'];
 beforeEach(async () => {
   vi.resetModules(); vi.clearAllMocks();
   apiOrigin.mockReturnValue('https://api.example.test');
+  readPage.mockReturnValue({ pageType: 'home' });
   sync.mockResolvedValue(undefined);
   for (const key of Object.keys(session)) delete session[key];
   session['ynuSessionId'] = 'synthetic-session';
@@ -202,15 +204,55 @@ it('waits ten minutes after a receipt without changing the icon, even after work
   expect(session['ynuFetchStats']).toMatchObject({ attempted: 2, backgroundSucceeded: 2 });
 });
 
-it.each(['sign-in-required', 'api-not-configured', 'send-failed'])('allows immediate retry after %s', async code => {
+it.each(['sign-in-required', 'api-not-configured'])('allows immediate retry after %s', async code => {
   if (code === 'sign-in-required') identity.mockResolvedValue(null);
   if (code === 'api-not-configured') apiOrigin.mockReturnValue(null);
-  if (code === 'send-failed') { collect.mockResolvedValue(observation); fetcher.mockResolvedValueOnce({ ok: false }); }
   expect((await run(pageUrl, 7)).code).toBe(code);
   expect(session['ynuFetchCompletedAt']).toBeUndefined();
   identity.mockResolvedValue({ uid: 'synthetic-user', token: 'synthetic-id-token' });
   apiOrigin.mockReturnValue('https://api.example.test');
   expect((await run(pageUrl, 7)).ok).toBe(true);
+});
+
+it.each(['send-failed', 'response-lost', 'unsafe-observation', 'collection-unavailable', 'not-logged-in', 'lms-state'])(
+'waits ten minutes after %s, including across worker restart', async failure => {
+  const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+  collect.mockImplementation(async ({ request }) => {
+    await request({ kind: 'home' });
+    now.mockReturnValue(1_900_000);
+    if (failure === 'collection-unavailable' || failure === 'lms-state') throw new Error(failure);
+    if (failure === 'not-logged-in') readPage.mockReturnValue({ pageType: 'login' });
+    return failure === 'unsafe-observation'
+      ? { ...observation, catalogCourses: [{ courseId: 'synthetic-course', name: 'synthetic-session', slots: [] }] }
+      : structuredClone(observation);
+  });
+  const fetch = fetcher.getMockImplementation()!;
+  fetcher.mockImplementation(async (url, options) => {
+    if (url === 'https://api.example.test/api/v1/observations') {
+      if (failure === 'send-failed') return { ok: false };
+      if (failure === 'response-lost') throw new Error('synthetic-response-lost');
+    }
+    return fetch(url, options);
+  });
+  expect(await run(pageUrl, 7)).toEqual({ ok: false, code: failure === 'response-lost' ? 'collection-unavailable' : failure });
+  expect(session['ynuFetchCompletedAt']).toBeUndefined();
+  expect(sync).not.toHaveBeenCalled();
+  const prior = structuredClone(session);
+  vi.clearAllMocks(); vi.resetModules();
+  run = (await import('../src/collection-worker.js')).runCollection;
+  now.mockReturnValue(2_499_999);
+  for (let trigger = 0; trigger < 3; trigger++) {
+    expect(await run(pageUrl, 7)).toEqual({ ok: false, code: 'cooldown' });
+  }
+  expect(session).toEqual(prior);
+  expect(collect).not.toHaveBeenCalled(); expect(fetcher).not.toHaveBeenCalled();
+  expect(identity).not.toHaveBeenCalled(); expect(badge).not.toHaveBeenCalled();
+  collect.mockResolvedValue(structuredClone(observation));
+  readPage.mockReturnValue({ pageType: 'home' });
+  fetcher.mockImplementation(fetch);
+  now.mockReturnValue(2_500_000);
+  expect((await run(pageUrl, 7)).ok).toBe(true);
+  expect(session['ynuFetchStats']).toMatchObject({ attempted: 2, failed: 1, backgroundSucceeded: 1 });
 });
 
 it('only opens the page circuit after three consecutive failed courses, resetting on success', async () => {
