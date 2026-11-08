@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { withEvaluationBudget } from '../src/announcements/budget.js';
@@ -20,9 +20,17 @@ it('persists reservations before a call, including failed/unknown usage', async 
 });
 it('stops before daily spend exceeds 3000 yen', async () => {
   const path = await state();
+  await writeFile(path, JSON.stringify({ version: 1, baseline: null,
+    days: { [day]: { yen: 2999.97, confirmation: false } } }));
   await withEvaluationBudget(path, 'development', day, async (budget) => {
-    await expect(budget.reserve(20_000_000, 0)).rejects.toThrow('budget-limit');
-    expect(budget.totals.calls).toBe(0);
+    await budget.reserve(100, 0);
+    expect(budget.dailyYen).toBe(3000);
+    await budget.settle({ inputTokens: 100, outputTokens: 0, totalTokens: 100 });
+    const before = await readFile(path, 'utf8');
+    await expect(budget.reserve(1, 0)).rejects.toThrow('budget-limit');
+    expect(budget.dailyYen).toBe(3000);
+    expect(budget.totals.calls).toBe(1);
+    expect(await readFile(path, 'utf8')).toBe(before);
   });
 });
 it('caps a later run at three times the measured tokens and calls', async () => {
@@ -50,7 +58,6 @@ it('fails closed on concurrent processes and corrupt state', async () => {
   await withEvaluationBudget(path, 'development', day, async () => {
     await expect(withEvaluationBudget(path, 'development', day, async () => {})).rejects.toThrow('budget-locked');
   });
-  const { writeFile } = await import('node:fs/promises');
   await writeFile(path, '{bad');
   await expect(withEvaluationBudget(path, 'development', day, async () => {})).rejects.toThrow('budget-state-invalid');
 });

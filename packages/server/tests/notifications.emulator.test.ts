@@ -17,7 +17,9 @@ describe.skipIf(process.env['RUN_NOTIFICATION_EMULATOR_TESTS'] !== '1')('durable
   const saved = async (key: string) => (await delivery(key).get()).data() as NotificationDelivery;
   const send = vi.fn<NotificationSender['send']>();
   const recipientFor = vi.fn(async (requested: string) => requested === uid ? recipient : null);
-  const dispatch = (enabled = true, sender: NotificationSender | undefined = { send }) => createNotificationDispatch(store, {
+  // Dispatch assertions belong to this fixture; enumeration itself is tested below without filtering.
+  const dispatchStore = () => ({ ...store, users: async () => (await store.users()).filter(user => user === uid) });
+  const dispatch = (enabled = true, sender: NotificationSender | undefined = { send }) => createNotificationDispatch(dispatchStore(), {
     origin, enabled, ...(sender ? { sender } : {}), resolveRecipient: recipientFor, clock: () => now,
   });
   async function queued(): Promise<NotificationTarget> {
@@ -55,12 +57,23 @@ describe.skipIf(process.env['RUN_NOTIFICATION_EMULATOR_TESTS'] !== '1')('durable
     await fixture.db.doc('unrelated/value/notificationSettings/current').delete();
   });
   it('dry-run neither reserves nor sends, including enabled-without-adapter', async () => {
-    expect(await dispatch(false)()).toEqual({ dryRun: true, candidates: 1, attempted: 0 });
-    const noSender = createNotificationDispatch(store, { origin, enabled: true, resolveRecipient: recipientFor, clock: () => now });
-    expect((await noSender()).dryRun).toBe(true);
-    expect(send).not.toHaveBeenCalled(); expect(recipientFor).not.toHaveBeenCalled();
-    expect((await student().collection('notificationDeliveries').get()).empty).toBe(true);
-    expect((await student().collection('notificationStatus').get()).empty).toBe(true);
+    // Another suite may have enabled settings in the shared emulator project.
+    const other = fixture.db.doc('students/fictional-other-suite/notificationSettings/current');
+    const data = notificationFixture();
+    const otherStudent = other.parent.parent!;
+    const otherPlan = otherStudent.collection('plans').doc(data.plans[0]!.planId);
+    const otherAssignment = otherStudent.collection('assignments').doc('fictional');
+    await other.set({ ...data.settings!, recipientUid: otherStudent.id });
+    await otherPlan.set(data.plans[0]!);
+    await otherAssignment.set(data.assignments[0]!);
+    try {
+      expect(await dispatch(false)()).toEqual({ dryRun: true, candidates: 1, attempted: 0 });
+      const noSender = createNotificationDispatch(dispatchStore(), { origin, enabled: true, resolveRecipient: recipientFor, clock: () => now });
+      expect(await noSender()).toEqual({ dryRun: true, candidates: 1, attempted: 0 });
+      expect(send).not.toHaveBeenCalled(); expect(recipientFor).not.toHaveBeenCalled();
+      expect((await student().collection('notificationDeliveries').get()).empty).toBe(true);
+      expect((await student().collection('notificationStatus').get()).empty).toBe(true);
+    } finally { await Promise.all([other.delete(), otherPlan.delete(), otherAssignment.delete()]); }
   });
   it('concurrent and repeated ticks call the sender once and retain API acceptance, never inbox delivery', async () => {
     const target = notificationTargets(await store.read(uid), now, origin)[0]!;

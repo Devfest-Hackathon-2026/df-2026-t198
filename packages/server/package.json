@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "test": "pnpm --filter @kadai-hisho/core build && vitest run",
     "test:emulator": "pnpm --filter @kadai-hisho/core build && RUN_OBSERVATION_EMULATOR_TESTS=1 vitest run --testTimeout=20000 tests/observations.emulator.test.ts tests/calendar.emulator.test.ts",
+    "test:digest:emulator": "pnpm --filter @kadai-hisho/core build && RUN_DIGEST_EMULATOR_TESTS=1 vitest run --testTimeout=20000 tests/digest.emulator.test.ts",
+    "test:notifications:emulator": "pnpm --filter @kadai-hisho/core build && RUN_NOTIFICATION_EMULATOR_TESTS=1 vitest run --testTimeout=20000 tests/notifications.emulator.test.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js"
   },
