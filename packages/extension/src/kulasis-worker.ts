@@ -10,10 +10,11 @@ export async function resolveKulmsSite(code: unknown, fetcher: typeof fetch = fe
       method: 'GET', credentials: 'include', redirect: 'follow', cache: 'no-store', referrerPolicy: 'no-referrer',
       signal: AbortSignal.timeout(15_000),
     });
-    const site = response.ok ? kulmsSiteFromUrl(response.url, (s, b) => new URL(s, b)) : undefined;
+    const site = response.status === 200 ? kulmsSiteFromUrl(response.url, (s, b) => new URL(s, b)) : undefined;
     await response.body?.cancel();
+    if (!site) throw new Error('detail-unavailable');
     return site;
-  } catch { return; }
+  } catch { throw new Error('detail-unavailable'); }
 }
 export function handleKulasisMessage(message: unknown, sender: chrome.runtime.MessageSender, respond: (value: unknown) => void): boolean | undefined {
   if (message && typeof message === 'object' && 'type' in message && message.type === 'kulasis-resolve-site') {
@@ -22,7 +23,8 @@ export function handleKulasisMessage(message: unknown, sender: chrome.runtime.Me
     if (!trusted || sender.id !== chrome.runtime.id || sender.frameId !== 0 || sender.tab?.id === undefined) {
       respond({ ok: false }); return false;
     }
-    void resolveKulmsSite('code' in message ? message.code : undefined).then(siteId => respond({ ok: true, siteId }));
+    void resolveKulmsSite('code' in message ? message.code : undefined).then(
+      siteId => respond({ ok: true, siteId }), () => respond({ ok: false }));
     return true;
   }
   return handleKulmsMessage(message, sender, respond, 'kulasis');

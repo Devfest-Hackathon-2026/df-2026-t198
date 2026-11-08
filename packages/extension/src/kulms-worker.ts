@@ -27,6 +27,7 @@ async function runKyotoCollection(system: 'kulms' | 'kulasis', tabId: number, do
   if (running.has(system)) return { ok: false, code: 'busy' };
   running.add(system);
   let outcome: string | undefined;
+  let attemptedUid: string | undefined;
   try {
     const saved = await chrome.storage.session.get([`${system}FetchCompletedAt`, `${system}FetchOwnerUid`]);
     const completed = saved[`${system}FetchCompletedAt`];
@@ -41,6 +42,7 @@ async function runKyotoCollection(system: 'kulms' | 'kulasis', tabId: number, do
     const cached = (await chrome.storage.local.get('kulasisMapping'))['kulasisMapping'] as { uid?: string; term?: string; siteIds?: string[] } | undefined;
     const prioritySiteIds = cached?.uid === identity.uid && cached.term === kulasisTerm(fetchedAt) && Array.isArray(cached.siteIds) ? cached.siteIds : [];
     const target = { frameId: 0, ...(documentId ? { documentId } : {}) };
+    attemptedUid = identity.uid;
     const reply = await chrome.tabs.sendMessage(tabId, { type: `${system}-collect`, observationId, fetchedAt, ...(system === 'kulms' ? { prioritySiteIds } : {}) }, target) as {
       ok?: boolean; observation?: Observation; code?: string };
     if (!reply?.ok || !reply.observation) {
@@ -76,7 +78,6 @@ async function runKyotoCollection(system: 'kulms' | 'kulasis', tabId: number, do
     const loggedOut = observation.failures.some(f => f.kind === 'not-logged-in');
     outcome = loggedOut ? 'not-logged-in' : observation.failures.length ? 'partial' : 'success';
     if (!observation.failures.length) {
-      await chrome.storage.session.set({ [`${system}FetchCompletedAt`]: Date.now(), [`${system}FetchOwnerUid`]: identity.uid });
       if (system === 'kulasis') {
         const mapping = { uid: identity.uid, term: kulasisTerm(fetchedAt),
           siteIds: observation.catalogCourses.filter(c => c.currentTerm === true && c.kulmsSiteId).map(c => c.kulmsSiteId!) };
@@ -90,6 +91,10 @@ async function runKyotoCollection(system: 'kulms' | 'kulasis', tabId: number, do
     return { ok: true, changed: receipt.changed, changeCount: receipt.changeCount };
   } catch { outcome = 'collection-unavailable'; return { ok: false, code: outcome }; }
   finally {
+    // Failed reads and delivery attempts still consume LMS requests. Student activity may resume immediately.
+    if (attemptedUid && outcome !== 'yielded') {
+      await chrome.storage.session.set({ [`${system}FetchCompletedAt`]: Date.now(), [`${system}FetchOwnerUid`]: attemptedUid }).catch(() => {});
+    }
     if (outcome) {
       await chrome.storage.session.set({ [`${system}FetchStatus`]: outcome }).catch(() => {});
       await showCollectionStatus(outcome);

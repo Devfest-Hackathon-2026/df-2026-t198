@@ -50,7 +50,8 @@ export async function collectKulasisObservation(options: Options): Promise<Obser
       } catch (error) {
         active();
         if (error instanceof Error && error.message === 'not-logged-in') throw error;
-        observation.failures.push({ courseId: course.courseId, kind: 'http', detail: 'detail-unavailable' });
+        // The server replaces each published course. Withhold the catalog to preserve confirmed mappings.
+        throw new Error('http-error', { cause: error });
       }
     }
     observation.catalogCourses = courses;
