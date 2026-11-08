@@ -63,7 +63,7 @@ try {
   }
   assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
   assert.equal(await student.title(), 'ToDoku');
-  assert.equal(await student.locator('.brand').innerText(), 'ToDoku');
+  assert.equal(await student.locator('.app-header > a').innerText(), 'ToDoku');
   await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();
   assert.match(await student.locator('main').innerText(), /ここで扱う授業と課題は架空のものです/);
   // A signed-in account without a demo profile can return to the demo login.

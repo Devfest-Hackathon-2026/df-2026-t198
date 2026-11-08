@@ -1,3 +1,4 @@
+import { Button } from '../../shared/ui/button';
 import { performPlanAction, PlanActionError, type PlanActionResponse } from './api';
 import { useEffect, useRef, useState } from 'react';
 import { useOperationMessage } from '../../shared/ui/operation-messages';
@@ -91,8 +92,8 @@ function PlanConfirmation({ user, data, id, action, revision }: {
       {stale && state === 'idle' && <p>このリンクが作られた後に予定が変わっています。変更していません。時間割で確かめてください。</p>}</> :
       <p role="status">本人の準備の予定を見つけられませんでした。本人のアカウントと時間割を確かめてください。</p>}
     {canConfirm && <p>「{action === 'done' ? '終わった' : '後回し'}」を押すと記録します。LMSへの提出は別に行ってください。</p>}
-    {(canConfirm || state === 'busy' || state === 'retry') && <button disabled={state === 'busy'} onClick={() => { void confirm(); }}>
-      {state === 'busy' ? '確認中…' : state === 'retry' ? 'もう一度試す' : action === 'done' ? '終わった' : '後回し'}</button>}
+    {(canConfirm || state === 'busy' || state === 'retry') && <Button busy={state === 'busy'} busyLabel="確認中…" onClick={() => { void confirm(); }}>
+      {state === 'retry' ? 'もう一度試す' : action === 'done' ? '終わった' : '後回し'}</Button>}
     {message && <p role="status">{message}</p>}
     <NextSubmission plan={plan} assignments={data.assignments} courses={data.courses} />
     <a href="/student">時間割を見る</a></section>;

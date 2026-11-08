@@ -91,7 +91,7 @@ async function click(text: string) {
 }
 it('separates checking from planning and opens source details only inside the assignment row', async () => {
   await open();
-  expect(host.textContent).toContain('学生が見せることにした');
+  expect(host.textContent).toContain('共有を許可した学生の授業と課題を出しています。');
   await click('学生 student-a');
   expect(window.location.pathname).toBe('/session/student-a');
   expect(host.querySelector('#session-deadlines')?.parentElement?.textContent).toContain('数学のレポート');
@@ -100,7 +100,7 @@ it('separates checking from planning and opens source details only inside the as
   expect(host.querySelector('table')).toBeNull();
   expect(host.querySelector('.session-task:not([open]) a')?.textContent).toContain('LMSで見る');
   expect(host.querySelector('.session-task summary')?.textContent).toContain('要確認');
-  expect(host.textContent).not.toContain('学生が見せることにした');
+  expect(host.textContent).not.toContain('共有を許可した学生の授業と課題を出しています。');
   await click('② 相談する');
   expect(window.location.pathname).toBe('/session/student-a/plan');
   expect(host.querySelector('table')).not.toBeNull();

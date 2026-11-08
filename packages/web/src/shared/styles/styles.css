@@ -1,4 +1,6 @@
 @import './tokens.css';
+@import '../ui/components.css';
+@import '../ui/motion.css';
 
 * { box-sizing: border-box; }
 body {
@@ -14,7 +16,9 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 4px;
 }
-.app { max-width: 1280px; margin: 0 auto; padding: 0 56px; }
+.app, .brand, .lms-skin { background: var(--paper); color: var(--ink); }
+.app { font-family: var(--sans); }
+.app-shell { min-height: 100vh; max-width: 1280px; margin: 0 auto; padding: 0 56px; }
 .app-header {
   display: flex;
   justify-content: space-between;
@@ -24,7 +28,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   padding: 24px 0;
   border-bottom: 1px solid var(--line);
 }
-.brand { font-weight: 700; letter-spacing: .08em; text-decoration: none; }
+.app-home { font-weight: 700; letter-spacing: .08em; text-decoration: none; }
 nav { display: flex; gap: 24px; }
 nav a[aria-current='page'] { font-weight: 700; }
 .app-header nav a { color: var(--ink); text-decoration: none; }
@@ -37,9 +41,9 @@ h1 {
   letter-spacing: normal;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
-.app :where(button, input, select) { font: inherit; color: var(--ink); border: 1.5px solid var(--ink); border-radius: 0; background: transparent; padding: 8px 14px; min-height: 44px; max-width: 100%; }
-.app :where(input, select) { border: 1px solid var(--line); background: var(--white); }
-.app :where(input, select):focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.app :where(button:not(.td-btn, .td-tab, .td-table-select), input:not(.td-field input), select) { font: inherit; color: var(--ink); border: 1.5px solid var(--ink); border-radius: 0; background: transparent; padding: 8px 14px; min-height: 44px; max-width: 100%; }
+.app :where(input:not(.td-field input), select) { border: 1px solid var(--line); background: var(--white); }
+.app :where(input:not(.td-field input), select):focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .app button:disabled { cursor: default; opacity: .65; }
 h2 { font-size: 17px; margin: 0 0 14px; }
 h3 { font-size: 15px; margin: 0; }
@@ -87,7 +91,7 @@ summary { cursor: pointer; color: var(--muted); }
 .logout { float: right; color: var(--muted); }
 @media (max-width: 850px) {
   .student-layout.with-course { grid-template-columns: minmax(0, 1fr); }
-  .app { padding: 0 16px; }
+  .app-shell { padding: 0 16px; }
   h1 { font-size: 27px; }
 }
 
@@ -109,12 +113,12 @@ summary { cursor: pointer; color: var(--muted); }
 @media (max-width: 850px) { .scroll-hint { display: block; } }
 .calendar-outside { margin-top: 8px; font-size: 12px; }
 .course-cell, .deadline, .calendar-event { transition: background-color 1s; }
-.course-cell.changed, .deadline.changed, .calendar-event.changed { color: var(--accent-text); transition: none; }
+.course-cell.changed, .deadline.changed, .calendar-event.changed { color: var(--change-text); transition: none; }
 @media (prefers-reduced-motion: reduce) {
   .course-cell, .deadline, .calendar-event { transition: none; }
 }
 
-.course-cell.changed span:first-of-type { color: var(--accent-text); }
+.course-cell.changed span:first-of-type { color: var(--change-text); }
 .previous-deadline { display: block; color: var(--muted); font: 400 13px/1.7 var(--mono); }
 .deadline-week th, .calendar-navigation, .calendar-event time { font-family: var(--mono); }
 .course-cell.changed:not([aria-pressed='true']) { background: var(--paper); }

@@ -1,3 +1,6 @@
+import { LongWait, Skeleton } from '../../shared/ui/loading';
+import { Button } from '../../shared/ui/button';
+import { serverFetch } from '../../shared/network';
 import { DigestPreview } from '../digest/preview';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, type User } from 'firebase/auth';
@@ -14,7 +17,7 @@ class DemoRequestError extends Error {
   constructor(readonly status: number, readonly code = 'demo-request-failed') { super(code); }
 }
 async function post(user: User, path: string, body: unknown) {
-  const response = await fetch(path, { method: 'POST', cache: 'no-store', headers: {
+  const response = await serverFetch(path, { method: 'POST', cache: 'no-store', headers: {
     Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json',
   }, body: JSON.stringify(body) });
   if (!response.ok) {
@@ -31,6 +34,7 @@ async function post(user: User, path: string, body: unknown) {
 export function DemoPage() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [error, setError] = useState('');
+  const [logoutBusy, setLogoutBusy] = useState(false);
   const [loginBusy, setLoginBusy] = useState(false);
   useEffect(() => firebase ? onAuthStateChanged(firebase.auth, setUser) : undefined, []);
   useEffect(() => {
@@ -55,7 +59,7 @@ export function DemoPage() {
     finally { setLoginBusy(false); }
   }
   return <div className="demo-shell"><header className="demo-header"><h1>ToDokuを試す</h1>
-    {user && <button className="demo-logout" onClick={() => { void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')); }}>ログアウト</button>}</header>
+    {user && <Button className="demo-logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}</header>
     <p>ここで扱う授業と課題は架空のものです。学生と支援担当は別のブラウザでログインしてください。</p>
     <p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>
     {user === undefined ? <p role="status">ログインを確かめています…</p> : user ? <>
@@ -63,7 +67,7 @@ export function DemoPage() {
     </> : <><PublicDemoEntry /><form className="session-login" onSubmit={event => { void login(event); }}>
       <label>メールアドレス<input name="email" type="email" autoComplete="username" required /></label>
       <label>パスワード<input name="password" type="password" autoComplete="current-password" required /></label>
-      <button disabled={loginBusy}>{loginBusy ? 'ログイン中…' : 'ログイン'}</button>
+      <Button type="submit" busy={loginBusy} busyLabel="ログイン中…">ログイン</Button>
     </form></>}
     {error && <p role="alert">{error}</p>}
   </div>;
@@ -73,6 +77,7 @@ function DemoWorkspace({ user }: { user: User }) {
   const [data, setData] = useState<DemoData | null>(null);
   const [failure, setFailure] = useState<'not-demo' | 'load' | null>(null);
   const [logoutFailed, setLogoutFailed] = useState(false);
+  const [logoutBusy, setLogoutBusy] = useState(false);
   useEffect(() => {
     let active = true;
     let stopData = () => {};
@@ -101,17 +106,18 @@ function DemoWorkspace({ user }: { user: User }) {
   }, [user.uid]);
   if (failure === 'not-demo') return <div>
     <p role="alert">このアカウントは体験用ではありません。ログアウトして、体験用のアカウントでログインしてください。</p>
-    <button onClick={() => { void firebase!.logout().catch(() => setLogoutFailed(true)); }}>ログアウト</button>
+    <Button busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void firebase!.logout().catch(() => setLogoutFailed(true)).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>
     {logoutFailed && <p role="alert">ログアウトできませんでした。もう一度お試しください。</p>}
   </div>;
   if (failure) return <p role="alert">体験用のデータを開けませんでした。体験用アカウントと接続を確かめてください。</p>;
-  if (!account) return <p role="status">体験用のデータを開いています…</p>;
+  if (!account) return <Skeleton label="体験用のデータを開いています…" />;
   if (account.role === 'supporter') return <><p>面談画面で、担当する学生を選んでください。</p><a href="/session">面談を開く</a></>;
-  return data ? <OperationMessages><DemoStudent key={user.uid} user={user} data={data} /></OperationMessages> : <p role="status">授業を開いています…</p>;
+  return data ? <OperationMessages><DemoStudent key={user.uid} user={user} data={data} /></OperationMessages> : <Skeleton label="授業を開いています…" />;
 }
 function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   const pages = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const [operation, setOperation] = useState('open');
   const [awaiting, setAwaiting] = useState<{ dates: { sourceId: string; dueAt: string }[]; announcementIds?: string[]; message: string } | null>(null);
   const [message, setMessage] = useOperationMessage();
   const [error, setError] = useOperationMessage();
@@ -126,9 +132,9 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
     }
   }, [awaiting, data]);
   const blocked = busy || awaiting !== null;
-  async function action(run: () => Promise<string>) {
+  async function action(run: () => Promise<string>, key = 'open') {
     if (blocked) return;
-    setBusy(true); setMessage(''); setError('');
+    setBusy(true); setOperation(key); setMessage(''); setError('');
     try { const text = await run(); if (active.current) setMessage(text); }
     catch (failure) { if (active.current) setError(failure instanceof DemoRequestError && failure.status === 409
       ? '締切がすでに変わっています。今の締切を確かめてください。'
@@ -161,7 +167,8 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   return <>
     <ol className="demo-steps">
       <li><h2>1. LMSを開く</h2><p>学生としてLMSを開き、課題を読み込みます。</p>
-        <button disabled={blocked} onClick={() => { void open(); }}>LMSを開く</button>
+        <Button disabled={blocked} busy={blocked && operation === 'open'} busyLabel="確認中…" onClick={() => { void open(); }}>LMSを開く</Button>
+        <LongWait busy={blocked && operation === 'open'} afterThree="課題とお知らせを確認しています…" afterTen="お知らせの確認に時間がかかっています。操作が終わるまで、この画面でお待ちください。" />
         {message ? <p role="status">{message}</p> : error ? <p role="alert">{error}</p> : null}
       </li>
       <li><h2>2. 学生の画面を開く</h2>
@@ -172,13 +179,13 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         <p>延ばしたら、もう一度 1 を押します。</p>
         {data.courses.flatMap(course => course.assignments).filter(task => task.submission !== 'submitted').map(task =>
           <div className="demo-teacher-action" key={task.sourceId}><p>{task.title}：{demoDueText(task.dueAt)}</p>
-            <div className="demo-teacher-option"><button disabled={blocked || pending.current !== null} onClick={() => { void action(async () => {
+            <div className="demo-teacher-option"><Button disabled={blocked || pending.current !== null} busy={blocked && operation === `extend:${task.sourceId}`} busyLabel="変更中…" onClick={() => { void action(async () => {
               const response = await post(user, '/api/v1/demo/extend', { sourceId: task.sourceId, expectedDueAt: task.dueAt });
               const expected = await response.json() as { sourceId: string; dueAt: string };
               setAwaiting({ dates: [expected], message: 'LMSの締切を1日延ばしました。「LMSを開く」で課題を確かめてください。' });
               return 'LMSの締切が変わるのを待っています…';
-            }); }}>「{task.title}」の締切を1日延ばす</button></div>
-            <div className="demo-teacher-option"><button disabled={blocked || pending.current !== null} onClick={() => { void action(async () => {
+            }, `extend:${task.sourceId}`); }}>「{task.title}」の締切を1日延ばす</Button></div>
+            <div className="demo-teacher-option"><Button disabled={blocked || pending.current !== null} busy={blocked && operation === `announce:${task.sourceId}`} busyLabel="投稿中…" onClick={() => { void action(async () => {
               const response = await post(user, '/api/v1/demo/announce', { sourceId: task.sourceId, expectedDueAt: task.dueAt });
               const result = await response.json() as { announcementId: string };
               setAwaiting({ dates: [], announcementIds: [...(data.announcements ?? [])
@@ -186,19 +193,19 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
                 .map(item => item.announcement.announcementId), result.announcementId],
                 message: 'お知らせを出しました。「LMSを開く」で、課題の締切との違いを確かめてください。' });
               return 'お知らせが画面に出るのを待っています…';
-            }); }}>お知らせを出す</button>
+            }, `announce:${task.sourceId}`); }}>お知らせを出す</Button>
             <p>LMSの課題ページの締切はそのままに、延ばすお知らせを出します。もう一度 1 を押すと「要確認」が出ます。</p></div>
           </div>)}
       </section></li>
     </ol>
-    <button disabled={blocked} onClick={() => { void action(async () => {
+    <Button disabled={blocked} busy={blocked && operation === 'reset'} busyLabel="やり直しています…" onClick={() => { void action(async () => {
       const response = await post(user, '/api/v1/demo/reset', { onlyIfStale: false });
       const result = await response.json() as { data: DemoData };
       pending.current = null;
       setAwaiting({ announcementIds: [], dates: result.data.courses.flatMap(course => course.assignments),
         message: '体験を最初の状態に戻しました。「LMSを開く」から始めてください。' });
       return '体験の画面を更新しています…';
-    }); }}>体験を最初からやり直す</button>
+    }, 'reset'); }}>体験を最初からやり直す</Button>
     <DigestPreview user={user} />
     <div className="demo-lms"><h2>LMSの画面（架空）</h2>
       <div ref={pages}><DemoPages data={data} /></div>

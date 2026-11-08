@@ -1,3 +1,5 @@
+import { Button } from '../../shared/ui/button';
+import { serverFetch } from '../../shared/network';
 import { useEffect, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import type { NotificationSettings, NotificationStatus } from '../../../../core/src/types';
@@ -29,7 +31,7 @@ export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | '
     locked.current = true; setBusy(true); setError(''); setSaved(false);
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/v1/notification-settings', {
+      const response = await serverFetch('/api/v1/notification-settings', {
         method: input ? 'PUT' : 'GET', signal: AbortSignal.timeout(15_000),
         headers: { Authorization: `Bearer ${token}`, ...(input ? { 'Content-Type': 'application/json' } : {}) },
         ...(input ? { body: JSON.stringify(input) } : {}),
@@ -66,16 +68,16 @@ export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | '
       {view && <>
         <p>クラウドからの通知：{view.settings.enabled ? '有効' : '停止中'}</p>
         {availabilityText[view.availability] && <p className="notice">{availabilityText[view.availability]}</p>}
-        <button className="plain-button" disabled={busy || (!view.settings.enabled && view.availability !== 'ready')}
+        <Button className="plain-button" busy={busy} busyLabel="保存中…" disabled={busy || (!view.settings.enabled && view.availability !== 'ready')}
           onClick={() => void request({ enabled: !view.settings.enabled, version: view.settings.version })}>
-          {view.settings.enabled ? '通知を停止する' : '通知を有効にする'}</button>
+          {view.settings.enabled ? '通知を停止する' : '通知を有効にする'}</Button>
         <p className="muted">設定の保存だけではメールは送られません。停止する前に送信を始めたメールは届くことがあります。</p>
         <p>{view.status ? statusText[view.status.state] : 'まだ送信の記録はありません。'}</p>
         {view.status?.errorCode === 'authorization-required' && <p>送信元の接続をやり直す必要があります。運営が確認します。</p>}
         {view.status?.lastAcceptedAt && <p>最後に送信サービスが受け付けた日時：{dateText(view.status.lastAcceptedAt)}（日本時間）</p>}
         {view.status && <p className="muted">通知の記録：{dateText(view.status.updatedAt)} 時点（日本時間）</p>}
       </>}
-      <button className="plain-button" disabled={busy} onClick={() => void request()}>{busy ? '確認しています…' : '状態を更新'}</button>
+      <Button className="plain-button" busy={busy} busyLabel="確認中…" onClick={() => void request()}>状態を更新</Button>
       {saved && <p role="status">通知の設定を保存しました。</p>}
       {error && <p role="alert">{error}</p>}
     </section>

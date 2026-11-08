@@ -1,3 +1,4 @@
+import { Button } from '../../shared/ui/button';
 import { ContextEditor } from './context-editor';
 import { linkedCourses } from '../../../../core/src/course-links';
 import { ManualAssignments, ManualAssignmentRow } from '../manual-assignments/components';
@@ -28,12 +29,13 @@ export function SessionPage({ path = '/session' }: { path?: string }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
+  const [logoutBusy, setLogoutBusy] = useState(false);
   useEffect(() => services?.observeUser(current => { setUser(current); setReady(true); setError(''); }), [services]);
   if (!services) return <p role="status">面談画面の準備がまだできていません。画面を用意した担当者に確認してください。</p>;
   if (!ready) return <p role="status">ログインを確かめています…</p>;
   return <>
     <div className="session-account">
-      {user && <button className="logout" onClick={() => { void services.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')); }}>ログアウト</button>}
+      {user && <Button className="logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void services.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}
     </div>
     {error && <p role="alert">{error}</p>}
     {user ? <SessionWorkspace key={user.uid} user={user} services={services} path={path} /> : <Login services={services} />}
@@ -56,7 +58,7 @@ function Login({ services }: { services: SessionServices }) {
       <label>メールアドレス<input type="email" name="email" autoComplete="username" required /></label>
       <label>パスワード<input type="password" name="password" autoComplete="current-password" required /></label>
     </>}
-    <button disabled={busy}>{busy ? 'ログイン中…' : services.local ? 'ログイン' : 'Googleでログイン'}</button>
+    <Button type="submit" busy={busy} busyLabel="ログイン中…">{services.local ? 'ログイン' : 'Googleでログイン'}</Button>
     {error && <p role="alert">{error}</p>}
   </form>;
 }
@@ -88,7 +90,7 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
   </div>;
   return <section className="session-students">
     <h2>{students?.length === 0 ? '自分の面談' : '担当する学生'}</h2>
-    {students?.length !== 0 && <p>学生が見せることにした授業と課題だけを出しています。</p>}
+    {students?.length !== 0 && <p>共有を許可した学生の授業と課題を出しています。</p>}
     <nav aria-label="担当する学生">
       {students?.map(student => <SessionLink key={student.uid} href={`/session/${encodeURIComponent(student.uid)}`}>
         <strong>{student.displayName ?? '学生'}</strong>{!student.displayName && <>{' '}<span className="session-student-id">{student.uid}</span></>}</SessionLink>)}

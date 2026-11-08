@@ -1,3 +1,5 @@
+import { Button } from '../../shared/ui/button';
+import { serverFetch } from '../../shared/network';
 import { useEffect, useState, type MouseEvent } from 'react';
 import type { User } from 'firebase/auth';
 import { collection, onSnapshot } from 'firebase/firestore';
@@ -21,7 +23,7 @@ export function DigestPreview({ user }: { user: User }) {
     const load = async () => {
       const current = ++request;
       try {
-        const response = await fetch('/api/v1/digest/demo-preview', { cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
+        const response = await serverFetch('/api/v1/digest/demo-preview', { cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
         if (!response.ok) throw new Error();
         const value = await response.json() as Preview;
         if (active && current === request) setDigest(value);
@@ -46,7 +48,7 @@ export function DigestPreview({ user }: { user: User }) {
   async function prepare() {
     if (busy) return; setBusy(true); setMessage('');
     try {
-      const response = await fetch('/api/v1/digest/demo-plan', { method: 'POST', cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
+      const response = await serverFetch('/api/v1/digest/demo-plan', { method: 'POST', cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
       if (!response.ok) {
         const value = await response.json().catch(() => ({})) as { error?: string };
         throw new Error(value.error === 'plan-after-deadline' ? value.error : 'demo-plan-failed');
@@ -71,7 +73,7 @@ export function DigestPreview({ user }: { user: User }) {
 
   return <section className="digest-preview" aria-label="今日やることのメール"><h2>今日やることのメール</h2>
     <p>今日の準備と次に提出する課題、締切の近い課題を知らせるメールの見本です。ここからメールは送りません。</p>
-    <button disabled={busy} onClick={() => { void prepare(); }}>今日の準備の見本を用意する</button>
+    <Button busy={busy} busyLabel="準備中…" onClick={() => { void prepare(); }}>今日の準備の見本を用意する</Button>
     {digest && !digest.empty && <><h3>{digest.subject}</h3>
       <div aria-busy={busy} onClick={click} dangerouslySetInnerHTML={{ __html: digest.html }} /></>}
     {actionLink && <PlanLinkAction user={user} data={data} link={actionLink} />}

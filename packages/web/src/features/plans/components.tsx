@@ -1,3 +1,4 @@
+import { Button } from '../../shared/ui/button';
 import type { PlanActions } from './api';
 import { actionMessage, planActionErrorMessage, planProgress } from './progress';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -65,7 +66,7 @@ export function PlanForm({ assignments, candidate, actions, onSaved }: {
     <label>開始時刻<input name="start" type="time" required value={start} onChange={event => setStart(event.target.value)} /></label>
     <label>終了時刻<input name="end" type="time" required value={end} onChange={event => setEnd(event.target.value)} /></label>
     {mismatch && <p className="notice">{period}限の時刻は{times[0]}〜{times[1]}です。指定した時刻がこのコマからはみ出しています。時限と時刻を確かめてください。</p>}
-    <button disabled={busy}>{busy ? '保存中…' : '入れる'}</button>
+    <Button type="submit" busy={busy} busyLabel="保存中…">入れる</Button>
     {message && <p role="status">{message}</p>}
   </form>;
 }
@@ -88,20 +89,20 @@ export function comparePreparationPlans(a: PreparationPlan, b: PreparationPlan) 
   return a.date.localeCompare(b.date) || Date.parse(a.startsAt) - Date.parse(b.startsAt) || a.planId.localeCompare(b.planId);
 }
 export function PlanList({ plans, actions, viewerUid, own, assignments }: { plans: PreparationPlan[]; actions?: PlanActions | undefined; viewerUid?: string | undefined; own: boolean; assignments?: LedgerAssignment[] | undefined }) {
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState<{ id: string; action: 'done' | 'later' | 'remove' } | null>(null);
   const [message, setMessage] = useOperationMessage();
   const visible = plans.filter(plan => plan.status !== 'cancelled').sort(comparePreparationPlans);
   if (!visible.length) return message ? <p role="status">{message}</p> : null;
   async function act(plan: PreparationPlan, action: 'done' | 'later') {
     if (!actions?.act || busy) return;
-    setBusy(plan.planId); setMessage('');
+    setBusy({ id: plan.planId, action }); setMessage('');
     try { const result = await actions.act(plan.planId, action, plan.revision); setMessage(actionMessage(result.outcome, result.plan, result.demo)); }
     catch (error) { setMessage(planActionErrorMessage(error, '変更を確認できませんでした。接続と予定を確かめて、もう一度お試しください。')); }
     finally { setBusy(null); }
   }
   async function remove(plan: PreparationPlan) {
     if (!actions || busy) return;
-    setBusy(plan.planId); setMessage('');
+    setBusy({ id: plan.planId, action: 'remove' }); setMessage('');
     try { await actions.remove(plan.planId); setMessage('準備の予定を外しました。'); }
     catch { setMessage('準備の予定を外せたか確認できませんでした。接続と共有の許可を確かめて、もう一度お試しください。'); }
     finally { setBusy(null); }
@@ -115,10 +116,10 @@ export function PlanList({ plans, actions, viewerUid, own, assignments }: { plan
       <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
       <span>{planProgress(plan)}</span>
       <PlanDeadlineWarning plan={plan} assignments={assignments} />
-      <div className="preparation-buttons">{own && actions?.act && plan.status === 'active' && <><button disabled={busy !== null} onClick={() => { void act(plan, 'done'); }}>終わった</button>
-        {Date.parse(plan.startsAt) > Date.now() && <button disabled={busy !== null} onClick={() => { void act(plan, 'later'); }}>後回し</button>}</>}
-      {actions && (own || plan.confirmedBy === viewerUid) && <button disabled={busy !== null}
-        aria-label={`${plan.title} ${plan.date} ${plan.period}限の準備を外す`} onClick={() => { void remove(plan); }}>外す</button>}</div>
+      <div className="preparation-buttons">{own && actions?.act && plan.status === 'active' && <><Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'done'} busyLabel="記録中…" onClick={() => { void act(plan, 'done'); }}>終わった</Button>
+        {Date.parse(plan.startsAt) > Date.now() && <Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'later'} busyLabel="記録中…" onClick={() => { void act(plan, 'later'); }}>後回し</Button>}</>}
+      {actions && (own || plan.confirmedBy === viewerUid) && <Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'remove'} busyLabel="外しています…"
+        aria-label={`${plan.title} ${plan.date} ${plan.period}限の準備を外す`} onClick={() => { void remove(plan); }}>外す</Button>}</div>
     </li>)}</ul></div>{message && <p role="status">{message}</p>}
   </section>;
 }

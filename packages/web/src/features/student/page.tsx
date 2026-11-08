@@ -1,3 +1,4 @@
+import { Button } from '../../shared/ui/button';
 import { linkedCourses } from '../../../../core/src/course-links';
 import { ManualAssignments, ManualAssignmentForm, ManualAssignmentRow, manualAuthor } from '../manual-assignments/components';
 import { manualAssignmentActions, type ManualAssignmentActions } from '../manual-assignments/api';
@@ -174,8 +175,8 @@ export function StudentPage() {
   const accountAction = (action: () => Promise<unknown>) => { setAuthError(false); setAuthBusy(true); void action().catch(() => setAuthError(true)).finally(() => setAuthBusy(false)); };
   return <>
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin returnTo={window.location.pathname === '/student/plan' ? window.location.pathname + window.location.search : undefined} />
-      <button className="plain-button" disabled={authBusy} onClick={() => accountAction(client.login)}>{authBusy ? 'ログイン中…' : 'Googleでログイン'}</button></> :
-      <><button className="logout" onClick={() => accountAction(client.logout)}>ログアウト</button>
+      <Button className="plain-button" busy={authBusy} busyLabel="ログイン中…" onClick={() => accountAction(client.login)}>Googleでログイン</Button></> :
+      <><Button className="logout" busy={authBusy} busyLabel="ログアウト中…" onClick={() => accountAction(client.logout)}>ログアウト</Button>
         {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
           planLink={window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} data={state} />}
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}

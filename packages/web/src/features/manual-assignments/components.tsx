@@ -1,3 +1,4 @@
+import { Button } from '../../shared/ui/button';
 import type { ManualAssignmentActions } from './api';
 import { useRef, useState, type FormEvent } from 'react';
 import { manualDeadline } from '@kadai-hisho/core';
@@ -51,7 +52,7 @@ export function ManualAssignmentForm({ courses, actions, course }: {
         value={JSON.stringify([c.system, c.courseId])}>{c.name}</option>)}
     </select></label>
     <label>メモ（任意・300文字まで）<input name="memo" maxLength={300} /></label>
-    <button disabled={busy}>{busy ? '保存中…' : '課題を入れる'}</button>
+    <Button type="submit" busy={busy} busyLabel="保存中…">課題を入れる</Button>
     {message && <p role="status">{message}</p>}
   </form>;
 }
@@ -70,8 +71,8 @@ export function ManualAssignmentRow({ row, actions, own, viewerUid }: {
   return <li className="manual-assignment" data-manual-id={row.manualAssignmentId}>
     <h3>{row.title}</h3><p><time>{formatDeadline(manualDeadline(row))}</time>{row.courseName && <span className="muted"> {row.courseName}</span>}</p>
     <p className="manual-author">{manualAuthor(row)}</p>{row.memo && <p className="manual-memo">{row.memo}</p>}
-    {actions && (own || row.createdBy === viewerUid) && <button disabled={busy} aria-label={`${row.title}を消す`}
-      onClick={() => { void remove(); }}>{busy ? '消しています…' : '消す'}</button>}
+    {actions && (own || row.createdBy === viewerUid) && <Button busy={busy} busyLabel="消しています…" aria-label={`${row.title}を消す`}
+      onClick={() => { void remove(); }}>消す</Button>}
     {error && <p role="alert">{error}</p>}
   </li>;
 }

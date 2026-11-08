@@ -1,3 +1,4 @@
+import { serverFetch } from '../../shared/network';
 import type { User } from 'firebase/auth';
 import type { ManualAssignmentInput } from '../../../../core/src/types';
 
@@ -7,7 +8,7 @@ export interface ManualAssignmentActions {
 }
 export function manualAssignmentActions(user: User, student: string): ManualAssignmentActions {
   const request = async (id: string, input?: ManualAssignmentInput) => {
-    const response = await fetch(`/api/v1/students/${encodeURIComponent(student)}/manual-assignments/${id}`, {
+    const response = await serverFetch(`/api/v1/students/${encodeURIComponent(student)}/manual-assignments/${id}`, {
       method: input ? 'PUT' : 'DELETE', cache: 'no-store', headers: {
         Authorization: `Bearer ${await user.getIdToken()}`, ...(input ? { 'Content-Type': 'application/json' } : {}),
       }, ...(input ? { body: JSON.stringify(input) } : {}),
