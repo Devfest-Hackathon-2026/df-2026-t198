@@ -5,7 +5,7 @@ import { createContext, runInContext } from 'node:vm';
 import { fileURLToPath, URL, URLSearchParams } from 'node:url';
 import { expect, it, vi } from 'vitest';
 import { setTimeout, clearTimeout, setImmediate } from 'node:timers';
-import { parseObservation } from '../../server/src/observation-input.js';
+import { parseObservation } from '../../server/src/observations/input.js';
 import { createHash, randomUUID, webcrypto } from 'node:crypto';
 import { TextEncoder } from 'node:util';
 import { applyObservation } from '../../core/src/ledger.js';
@@ -20,7 +20,7 @@ const worker = await build({
   bundle: true, write: false, platform: 'browser', format: 'iife', target: 'chrome105',
   define: { __AUTH_PROBE_CONFIG__: JSON.stringify(config) },
   plugins: [{ name: 'fake-identity', setup(builder) {
-    builder.onResolve({ filter: /auth-probe-browser\.js$/ }, () => ({ path: 'identity', namespace: 'fake' }));
+    builder.onResolve({ filter: /(?:auth\/|^\.\/)browser\.js$/ }, () => ({ path: 'identity', namespace: 'fake' }));
     builder.onLoad({ filter: /.*/, namespace: 'fake' }, () => ({ contents: `
       export const observationIdentity = async () => ({ uid: 'synthetic-user', token: 'synthetic-id-token' });
       export const firebaseAuth = () => sdk.auth;

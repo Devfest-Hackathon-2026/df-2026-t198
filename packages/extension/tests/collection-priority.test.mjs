@@ -6,9 +6,9 @@ import { protectStudentNavigation } from '../src/student-navigation.js';
 import { readFile } from 'node:fs/promises';
 import { URL } from 'node:url';
 
-vi.mock('../src/auth-probe-browser.js', () => ({ observationIdentity: async () => ({ uid: 'synthetic-user', token: 'synthetic-id-token' }) }));
-vi.mock('../src/probe-config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
-vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: async () => {} }));
+vi.mock('../src/auth/browser.js', () => ({ observationIdentity: async () => ({ uid: 'synthetic-user', token: 'synthetic-id-token' }) }));
+vi.mock('../src/auth/config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
+vi.mock('../src/calendar/browser.js', () => ({ syncCalendarInBackground: async () => {} }));
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const url = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session';
 

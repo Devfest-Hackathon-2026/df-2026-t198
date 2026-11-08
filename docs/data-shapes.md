@@ -1,6 +1,6 @@
 # データの形
 
-Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observation-input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。カレンダー同期は本書の末尾、未実装の共有の操作は設計案を参照する。
+Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observations/input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。カレンダー同期は本書の末尾、未実装の共有の操作は設計案を参照する。
 
 ## 体験用データ（Issue #19）
 

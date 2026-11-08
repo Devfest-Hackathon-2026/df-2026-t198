@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { InvalidPlan, parsePlan, validPlanId } from '../src/plan-input.js';
+import { InvalidPlan, parsePlan, validPlanId } from '../src/plans/input.js';
 const input = { assignment: { system: 'ynu-lms', sourceId: 'fictional-task' }, date: '2030-11-11', period: 3,
   startsAt: '2030-11-11T13:00:00+09:00', endsAt: '2030-11-11T14:30:00+09:00' };
 it('accepts only the explicit slot and Japan-time interval, with no caller-supplied author or calendar destination', () => {

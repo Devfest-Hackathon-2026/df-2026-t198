@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { createHttpServer } from '../src/http.js';
-import { DemoConflict, DemoForbidden } from '../src/demo-store.js';
+import { DemoConflict, DemoForbidden } from '../src/demo/store.js';
 
 const extend = vi.fn(async (_uid: string, sourceId: string) => ({ sourceId, dueAt: '2026-11-13T08:00:00.000Z' }));
 const verifyToken = vi.fn(async () => 'demo-student');

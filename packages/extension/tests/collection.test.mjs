@@ -3,7 +3,7 @@ import { URL, URLSearchParams } from 'node:url';
 import { expect, it, vi } from 'vitest';
 import { collectObservation } from '../src/collection.js';
 import { executeLmsRequest } from '../src/lms-request.js';
-import { parseObservation } from '../../server/src/observation-input.js';
+import { parseObservation } from '../../server/src/observations/input.js';
 
 const sample = async (name) => readFile(new URL(`../../../lms-definitions/coursepower/samples/${name}.html`, import.meta.url), 'utf8');
 const homeForm = '<form id="homeHomlForm" name="homeHomlActionForm"><input name="nendo" value="2098"><input name="kougiId"><input name="ignoredSecret" value="synthetic-private"></form>';

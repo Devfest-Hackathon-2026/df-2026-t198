@@ -3,9 +3,9 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { User } from 'firebase/auth';
 import { afterEach, expect, it, vi } from 'vitest';
-import { DigestPreview } from '../src/digest-preview';
+import { DigestPreview } from '../src/features/digest/preview';
 
-vi.mock('../src/firebase', () => ({ firebase: { db: {} } }));
+vi.mock('../src/shared/firebase', () => ({ firebase: { db: {} } }));
 vi.mock('firebase/firestore', () => ({ collection: vi.fn(), onSnapshot: () => () => {} }));
 const requireCore = createRequire(new URL('../../core/package.json', import.meta.url));
 const { parseHTML } = requireCore('linkedom');

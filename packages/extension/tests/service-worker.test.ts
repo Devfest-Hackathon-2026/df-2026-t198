@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../src/calendar-browser.js', () => ({ startCalendarSync: () => {}, handleCalendarMessage: () => undefined }));
-vi.mock('../src/auth-probe-worker.js', () => ({ handleAuthProbeMessage: () => undefined }));
+vi.mock('../src/calendar/browser.js', () => ({ startCalendarSync: () => {}, handleCalendarMessage: () => undefined }));
+vi.mock('../src/auth/worker.js', () => ({ handleAuthProbeMessage: () => undefined }));
 const runCollection = vi.hoisted(() => vi.fn());
 vi.mock('../src/collection-worker.js', () => ({ runCollection, yieldCollection: async () => ({ ok: true }) }));
 

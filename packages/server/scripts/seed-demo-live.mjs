@@ -6,7 +6,7 @@ import { pathToFileURL, URL } from 'node:url';
 import { initializeApp, applicationDefault, deleteApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initialDemo } from '../src/demo-initial.ts';
+import { initialDemo } from '../src/demo/initial.ts';
 
 const projectId = 'project-00439085-4e2d-44c3-9a8';
 export function liveSetupOptions(args, env) {

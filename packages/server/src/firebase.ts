@@ -1,23 +1,23 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { createDemoCalendarSync } from './demo-calendar.js';
-import { createCalendarStore } from './calendar-store.js';
-import { createObservationStore } from './observation-store.js';
-import { createManualAssignmentStore } from './manual-assignment-store.js';
-import { createDigestStore } from './digest-store.js';
-import { createPlanStore } from './plan-store.js';
-import { createSessionStore } from './session-store.js';
-import { createDemoStore } from './demo-store.js';
+import { createDemoCalendarSync } from './demo/calendar.js';
+import { createCalendarStore } from './calendar/store.js';
+import { createObservationStore } from './observations/store.js';
+import { createManualAssignmentStore } from './manual-assignments/store.js';
+import { createDigestStore } from './digest/store.js';
+import { createPlanStore } from './plans/store.js';
+import { createSessionStore } from './sessions/store.js';
+import { createDemoStore } from './demo/store.js';
 import { createAnnouncementStore } from './announcements/store.js';
 import { createGeminiModel } from './announcements/gemini.js';
 import { createRuntimeBudget } from './announcements/runtime-budget.js';
 import type { ObservationDependencies } from './http.js';
-import { createNotificationStore } from './notification-store.js';
-import { createNotificationDispatch } from './notification-dispatch.js';
-import { createSchedulerVerifier } from './notification-auth.js';
-import { mailSenderFromEnvironment } from './mail-sender.js';
-import { createNotificationSettingsStore } from './notification-settings.js';
+import { createNotificationStore } from './notifications/store.js';
+import { createNotificationDispatch } from './notifications/dispatch.js';
+import { createSchedulerVerifier } from './notifications/auth.js';
+import { mailSenderFromEnvironment } from './notifications/mail-sender.js';
+import { createNotificationSettingsStore } from './notifications/settings.js';
 
 export function firebaseDependencies() {
   const app = getApps()[0] ?? initializeApp();

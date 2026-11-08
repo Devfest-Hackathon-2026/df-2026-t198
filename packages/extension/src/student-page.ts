@@ -1,4 +1,4 @@
-import { probeConfig } from './probe-config.js';
+import { probeConfig } from './auth/config.js';
 
 export function studentPageUrl(): string | null {
   const projectId = probeConfig.firebase.projectId;

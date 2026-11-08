@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LedgerAssignment, PreparationPlan } from '@kadai-hisho/core';
-import { buildDigest } from '../src/digest.js';
-import { mailIsSafe, parseDigest } from '../../extension/src/digest.js';
+import { buildDigest } from '../src/digest/digest.js';
+import { mailIsSafe, parseDigest } from '../../extension/src/digest/mail.js';
 const now = new Date('2030-11-10T15:30:00Z'); // Monday 00:30 JST
 const row = (id: string, dueAt = '2030-11-13T00:30:00+09:00'): LedgerAssignment => ({
   key: { system: 'ynu-lms', sourceId: id }, latest: { sourceId: id, courseId: 'c1', title: '<課題&ノート>', url: 'https://lms.example.invalid/task?id=1',

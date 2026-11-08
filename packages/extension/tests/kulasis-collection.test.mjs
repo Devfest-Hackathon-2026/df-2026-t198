@@ -3,7 +3,7 @@ import { URL } from 'node:url';
 import { expect, it, vi } from 'vitest';
 import expected from '../../../lms-definitions/kulasis/samples/observation.expected.json' with { type: 'json' };
 import { collectKulasisObservation } from '../src/kulasis-collection.js';
-import { parseObservation } from '../../server/src/observation-input.js';
+import { parseObservation } from '../../server/src/observations/input.js';
 const { AbortController, Response } = globalThis;
 
 const sample = readFileSync(new URL('../../../lms-definitions/kulasis/samples/timetable.cp932.html', import.meta.url));

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { createHttpServer } from '../src/http.js';
-import { SessionForbidden } from '../src/session-store.js';
-import { parseSessionContext } from '../src/session-input.js';
+import { SessionForbidden } from '../src/sessions/store.js';
+import { parseSessionContext } from '../src/sessions/input.js';
 
 const session = {
   listStudents: vi.fn(async () => [{ uid: 'student-a' }]),

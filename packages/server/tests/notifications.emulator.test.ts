@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NotificationDelivery, NotificationTarget } from '@kadai-hisho/core';
-import { createNotificationStore } from '../src/notification-store.js';
-import { createNotificationDispatch, type NotificationSender } from '../src/notification-dispatch.js';
-import { notificationTargets } from '../src/notification-targets.js';
+import { createNotificationStore } from '../src/notifications/store.js';
+import { createNotificationDispatch, type NotificationSender } from '../src/notifications/dispatch.js';
+import { notificationTargets } from '../src/notifications/targets.js';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { notificationFixture, origin, recipient } from './notification-fixture.js';
 

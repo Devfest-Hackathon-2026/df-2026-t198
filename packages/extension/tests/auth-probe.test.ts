@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createProbe, type ProbeDependencies, type ProbeState } from '../src/auth-probe.js';
+import { createProbe, type ProbeDependencies, type ProbeState } from '../src/auth/probe.js';
 
 const token = 'synthetic-secret-access-token';
 const uid = 'synthetic-uid-never-send-in-full';

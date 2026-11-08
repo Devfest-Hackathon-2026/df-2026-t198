@@ -2,12 +2,12 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { fakeLms } from './helpers/stateful-lms.mjs';
 import { executeLmsRequest } from '../src/lms-request.js';
 import { protectStudentNavigation } from '../src/student-navigation.js';
-import { parseObservation } from '../../server/src/observation-input.js';
+import { parseObservation } from '../../server/src/observations/input.js';
 import { URLSearchParams } from 'node:url';
 
-vi.mock('../src/auth-probe-browser.js', () => ({ observationIdentity: async () => ({ uid: 'synthetic-user', token: 'synthetic-id-token' }) }));
-vi.mock('../src/probe-config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
-vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: async () => {} }));
+vi.mock('../src/auth/browser.js', () => ({ observationIdentity: async () => ({ uid: 'synthetic-user', token: 'synthetic-id-token' }) }));
+vi.mock('../src/auth/config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
+vi.mock('../src/calendar/browser.js', () => ({ syncCalendarInBackground: async () => {} }));
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 const sid = 'synthetic-session', url = `https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=${sid}`;
 const ids = [1, 2, 3, 4, 5].map(n => `KOG${String(n).padStart(13, '0')}`);

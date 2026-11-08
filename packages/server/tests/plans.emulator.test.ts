@@ -2,10 +2,10 @@ import type { CalendarItem, PreparationPlanInput } from '@kadai-hisho/core';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
-import { createPlanStore } from '../src/plan-store.js';
-import { createDemoCalendarSync } from '../src/demo-calendar.js';
+import { createPlanStore } from '../src/plans/store.js';
+import { createDemoCalendarSync } from '../src/demo/calendar.js';
 import { observation } from './observation-fixture.js';
-import { documentKey } from '../src/observation-store.js';
+import { documentKey } from '../src/observations/store.js';
 
 /** The acceptance contract uses invented users, assignments and times only. */
 describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A preparation plans', () => {

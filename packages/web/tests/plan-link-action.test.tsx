@@ -4,8 +4,8 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { User } from 'firebase/auth';
 import type { PreparationPlan } from '../../core/src/types';
-import { PlanLinkAction } from '../src/plan-progress';
-import { assignment, dated } from '../src/student-fixture';
+import { PlanLinkAction } from '../src/features/plans/progress';
+import { assignment, dated } from '../src/shared/testing/student-fixture';
 afterEach(() => vi.unstubAllGlobals());
 const plan: PreparationPlan = { planId: 'fictional', assignment: { system: 'demo-lms', sourceId: 'task' }, title: '架空のレポート',
   date: '2030-11-11', period: 3, startsAt: '2030-11-11T13:00:00+09:00', endsAt: '2030-11-11T14:30:00+09:00',

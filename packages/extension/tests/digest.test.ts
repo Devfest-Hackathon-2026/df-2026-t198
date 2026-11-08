@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { encodeMail, mailIsSafe, morningAt, japanDate } from '../src/digest.js';
+import { encodeMail, mailIsSafe, morningAt, japanDate } from '../src/digest/mail.js';
 import { isSafeMailText } from '../../core/src/mail-safety.js';
 
 const mail = { to: 'student@example.invalid', subject: '今日やること', text: '今日 3限：架空の課題の準備。', html: '<p>今日 3限：架空の課題の準備。</p>' };

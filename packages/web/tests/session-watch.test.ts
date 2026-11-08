@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
-import { watchSession, type SessionSource, type SessionState } from '../src/session-watch';
-import { emptySession } from '../src/session-model';
+import { watchSession, type SessionSource, type SessionState } from '../src/features/session/watch';
+import { emptySession } from '../src/features/session/model';
 
 function fixture() {
   let grant: (allowed: boolean) => void = () => {};

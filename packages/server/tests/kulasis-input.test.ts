@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { parseObservation } from '../src/observation-input.js';
+import { parseObservation } from '../src/observations/input.js';
 import type { Observation } from '@kadai-hisho/core';
 
 export const timetable: Observation = {

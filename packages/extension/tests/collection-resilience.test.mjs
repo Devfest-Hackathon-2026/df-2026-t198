@@ -2,9 +2,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { fakeLms } from './helpers/stateful-lms.mjs';
 import { safeDiagnostic } from '../src/collection-diagnostics.js';
 
-vi.mock('../src/auth-probe-browser.js', () => ({ observationIdentity: async () => ({ uid: 'synthetic-user', token: 'synthetic-id-token' }) }));
-vi.mock('../src/probe-config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
-vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: async () => {} }));
+vi.mock('../src/auth/browser.js', () => ({ observationIdentity: async () => ({ uid: 'synthetic-user', token: 'synthetic-id-token' }) }));
+vi.mock('../src/auth/config.js', () => ({ observationApiOrigin: () => 'https://api.example.test' }));
+vi.mock('../src/calendar/browser.js', () => ({ syncCalendarInBackground: async () => {} }));
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 async function runFake(options, pageRoute = false) {

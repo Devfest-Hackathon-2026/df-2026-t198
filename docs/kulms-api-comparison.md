@@ -69,9 +69,9 @@ KULMS の EntityBroker は自己記述 API（[`/direct/describe`](https://lms.ga
 ## 4. `kadai-hisho` 現行実装（YNU・模擬 LMS・共通契約）との項目別比較
 
 現行コードベースの正本と KULMS API の対応関係を以下に示す。
-- **共通型・上限・お知らせ制御**: [`packages/core/src/types.ts`](../packages/core/src/types.ts)、[`packages/server/src/observation-input.ts`](../packages/server/src/observation-input.ts)、[`packages/server/src/announcements/input.ts`](../packages/server/src/announcements/input.ts)、[`packages/server/src/announcements/store.ts`](../packages/server/src/announcements/store.ts)、[`packages/server/src/firebase.ts`](../packages/server/src/firebase.ts)、[`docs/data-shapes.md`](data-shapes.md)
+- **共通型・上限・お知らせ制御**: [`packages/core/src/types.ts`](../packages/core/src/types.ts)、[`packages/server/src/observations/input.ts`](../packages/server/src/observations/input.ts)、[`packages/server/src/announcements/input.ts`](../packages/server/src/announcements/input.ts)、[`packages/server/src/announcements/store.ts`](../packages/server/src/announcements/store.ts)、[`packages/server/src/firebase.ts`](../packages/server/src/firebase.ts)、[`docs/data-shapes.md`](data-shapes.md)
 - **YNU 実装**: [`packages/extension/src/collection.ts`](../packages/extension/src/collection.ts)、[`packages/extension/src/lms-request.ts`](../packages/extension/src/lms-request.ts)、[`lms-definitions/coursepower/navigation.json`](../lms-definitions/coursepower/navigation.json)、[`lms-definitions/coursepower/definition.json`](../lms-definitions/coursepower/definition.json)（実機確認記録: [`docs/records/2026-11-06-real-lms-check.md`](records/2026-11-06-real-lms-check.md) ※全件取得は partial、提出状態・面談全件照合・裏取得失敗試験は未完了）
-- **模擬 LMS 実装**: [`packages/web/src/demo-reader.ts`](../packages/web/src/demo-reader.ts)、[`lms-definitions/demo-lms/definition.json`](../lms-definitions/demo-lms/definition.json)（検証記録: [`docs/records/2026-11-06-issue-66-verification.md`](records/2026-11-06-issue-66-verification.md)）
+- **模擬 LMS 実装**: [`packages/web/src/features/demo/reader.ts`](../packages/web/src/features/demo/reader.ts)、[`lms-definitions/demo-lms/definition.json`](../lms-definitions/demo-lms/definition.json)（検証記録: [`docs/records/2026-11-06-issue-66-verification.md`](records/2026-11-06-issue-66-verification.md)）
 
 | 比較項目 | 共通契約 (`core` / `server`) | YNU (`ynu-lms` / CoursePower) | 模擬 LMS (`demo-lms`) | KULMS (Sakai `/direct` API) |
 | :--- | :--- | :--- | :--- | :--- |
@@ -92,7 +92,7 @@ KULMS の EntityBroker は自己記述 API（[`/direct/describe`](https://lms.ga
 
 ## 5. 面談画面・Firestore 共有範囲との関わり
 
-- **面談支援画面の前提**: [`packages/web/src/session-model.ts`](../packages/web/src/session-model.ts) および [`packages/web/src/session-page.tsx`](../packages/web/src/session-page.tsx) は、担当学生の次回面談までの締切、前回からの変更、要確認項目、取得状態、面談日時変更を表示する。空きコマ候補の表示はあるが、保存・学生への確認依頼は未実装である（[`PLAN.md`](../PLAN.md) の C24/C25 未完了）。
+- **面談支援画面の前提**: [`packages/web/src/features/session/model.ts`](../packages/web/src/features/session/model.ts) および [`packages/web/src/features/session/page.tsx`](../packages/web/src/features/session/page.tsx) は、担当学生の次回面談までの締切、前回からの変更、要確認項目、取得状態、面談日時変更を表示する。空きコマ候補の表示はあるが、保存・学生への確認依頼は未実装である（[`PLAN.md`](../PLAN.md) の C24/C25 未完了）。
 - **Firestore 共有ルールとの関係**: [`firestore.rules`](../firestore.rules) において、支援担当に対する既存の `scopes: all` 許可は `courses`, `assignments`, `changes`, `fetchStates`, `plans`, `sessionContext` の各コレクション文書を共有対象としている。仮に `assignments` 文書へ成績（`grade`）、採点コメント（`feedbackComment`）、提出本文（`submittedText`）等をそのまま追加すると、既存の権限設定のまま支援担当に見える情報範囲が広がることになる。また、アプリ内の支援担当への共有権限と、Sakai 上の閲覧・提出権限は独立している。
 
 ---
@@ -103,7 +103,7 @@ KULMS の EntityBroker は自己記述 API（[`/direct/describe`](https://lms.ga
 
 1. **最小対応スコープと拡張情報の分離**
    - 最小対応としては、`/site.json` と `/assignment/...` から既存の `Observation` 契約（授業 ID・名称、`dueTime` からの `deadline`、明確な自身の提出状態からの `submission`、検証済みの提出時刻からの任意 `submittedAt`）へ変換する JSON アダプター構成が考えられる。
-   - 授業資料（`/content`）、採点結果・講評、提出本文・添付ファイル等は、Observation 受信 API の受信 JSON 全体 512KiB 上限や未知フィールド拒否（[`packages/server/src/observation-input.ts`](../packages/server/src/observation-input.ts)）、および [`firestore.rules`](../firestore.rules) の共有範囲に関わるため、最小対応とは別の拡張として切り分け、共有方針を人間間で合意してから扱うべきである。
+   - 授業資料（`/content`）、採点結果・講評、提出本文・添付ファイル等は、Observation 受信 API の受信 JSON 全体 512KiB 上限や未知フィールド拒否（[`packages/server/src/observations/input.ts`](../packages/server/src/observations/input.ts)）、および [`firestore.rules`](../firestore.rules) の共有範囲に関わるため、最小対応とは別の拡張として切り分け、共有方針を人間間で合意してから扱うべきである。
 2. **曜日・時限（`slots`）が取得できない場合の扱い**
    - KULMS API から曜日・時限が取得できない場合、`slots: []` を「全コマが空いている」と解釈すると誤った空きコマ候補が生成される。現行の `Course.slots` 契約のままどのように「日時未知」を表現し、候補生成を抑止するか相談が必要である。
 3. **締切種別・完全性フラグ（`listComplete`）・取消判定の扱い**

@@ -6,9 +6,9 @@ const identity = vi.hoisted(() => vi.fn());
 const collect = vi.hoisted(() => vi.fn());
 const syncCalendar = vi.hoisted(() => vi.fn());
 const sync = syncCalendar;
-vi.mock('../src/auth-probe-browser.js', () => ({ observationIdentity: identity }));
-vi.mock('../src/probe-config.js', () => ({ observationApiOrigin: apiOrigin }));
-vi.mock('../src/calendar-browser.js', () => ({ syncCalendarInBackground: syncCalendar }));
+vi.mock('../src/auth/browser.js', () => ({ observationIdentity: identity }));
+vi.mock('../src/auth/config.js', () => ({ observationApiOrigin: apiOrigin }));
+vi.mock('../src/calendar/browser.js', () => ({ syncCalendarInBackground: syncCalendar }));
 vi.mock('../src/collection.js', () => ({ collectObservation: collect }));
 vi.mock('../../core/src/html-reader.js', () => ({ readPage: () => ({ pageType: 'home' }) }));
 const observation: Observation = { schemaVersion: 1, observationId: '00000000-0000-4000-8000-000000000001', system: 'ynu-lms',

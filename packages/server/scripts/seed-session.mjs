@@ -4,7 +4,7 @@ import { log } from 'node:console';
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { createObservationStore, documentKey } from '../dist/observation-store.js';
+import { createObservationStore, documentKey } from '../dist/observations/store.js';
 
 // This helper refuses real projects and never emits credentials or account tokens.
 if (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||

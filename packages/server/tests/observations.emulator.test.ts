@@ -5,7 +5,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import type { Observation } from '@kadai-hisho/core/ledger';
 import { createHttpServer } from '../src/http.js';
 import { firebaseDependencies } from '../src/firebase.js';
-import { documentKey } from '../src/observation-store.js';
+import { documentKey } from '../src/observations/store.js';
 import { observation } from './observation-fixture.js';
 import kulasis from '../../../lms-definitions/kulasis/samples/observation.expected.json' with { type: 'json' };
 import kulms from '../../../lms-definitions/kulms/samples/observation.expected.json' with { type: 'json' };

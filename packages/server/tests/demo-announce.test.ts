@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { createHttpServer } from '../src/http.js';
-import { DemoForbidden } from '../src/demo-store.js';
+import { DemoForbidden } from '../src/demo/store.js';
 
 const announce = vi.fn(async () => ({ announcementId: 'fictional-notice' }));
 const server = createHttpServer({ verifyToken: async () => 'demo-owner', saveObservation: vi.fn(),

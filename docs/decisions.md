@@ -41,7 +41,7 @@
 
 〔作品〕
 
-注記：D30で本人宛ての「今日やること」メールを追加し、D36案でその送信をクラウドへ移す方針を仮採用した。カレンダーの通知だけで済ませるという下の範囲を改めた。カレンダー予定は [calendar.ts](../packages/core/src/calendar.ts)、既存の拡張メールは [digest-browser.ts](../packages/extension/src/digest-browser.ts)。クラウドからの実受信はこの記録では確認済みと扱わない。
+注記：D30で本人宛ての「今日やること」メールを追加し、D36案でその送信をクラウドへ移す方針を仮採用した。カレンダーの通知だけで済ませるという下の範囲を改めた。カレンダー予定は [calendar.ts](../packages/core/src/calendar.ts)、既存の拡張メールは [digest-browser.ts](../packages/extension/src/digest/browser.ts)。クラウドからの実受信はこの記録では確認済みと扱わない。
 
 通知の仕組みを自分たちで作らない。学生のスマホにはカレンダーの通知が既に届くので、予定の通知の時刻と回数を設定で決める。
 
@@ -49,7 +49,7 @@
 
 〔作品〕
 
-注記：D11・D23の優先順位に沿い、Geminiによる面談前のまとめは作っていない。変更履歴を条件で絞る現在の面談画面（[buildSessionView](../packages/web/src/session-model.ts)）とは別の機能。実装済みなのはHTMLの定義による解析（D18）、お知らせの締切変更の抽出（D24）、定義の下書き（D9、C30）。メール本文の取り込みも未実装。お知らせの公開体験版での動作は[確認記録](records/2026-11-08-gemini-live.md)を参照。
+注記：D11・D23の優先順位に沿い、Geminiによる面談前のまとめは作っていない。変更履歴を条件で絞る現在の面談画面（[buildSessionView](../packages/web/src/features/session/model.ts)）とは別の機能。実装済みなのはHTMLの定義による解析（D18）、お知らせの締切変更の抽出（D24）、定義の下書き（D9、C30）。メール本文の取り込みも未実装。お知らせの公開体験版での動作は[確認記録](records/2026-11-08-gemini-live.md)を参照。
 
 課題の一覧のように形の決まった画面は、決まった手順で解析する。Gemini（Vertex AI、Gemini 3.8 Flash）は、お知らせやメールの文章から締切の変更を拾って台帳の課題にひも付けることと、面談の前に前回からの変化をまとめることに使う。形の決まった画面までGeminiに読ませると、確実さが下がり費用も増える。
 
@@ -231,7 +231,7 @@ Discordから開発のエージェントを呼ぶ仕組み（Claude CodeのDisco
 
 注記：D36案で、サーバーは利用者のGoogle認可・LMSの認証情報を預からず、専用送信元のGmail認可だけを持つ方針を仮採用した。情報を持つ範囲は [data-shapes.md](data-shapes.md) を参照。架空の体験用LMSのお知らせ本文を体験用文書に置く例外はIssue #84の記録のとおりで、実物の本文や解析の受領記録への保存を許可しない。
 
-注記：下の「共有はいつでも取り消せる」は当初の目標。現在は運用で許可文書を失効・削除すると、その後の読み取りを拒否し、通知を受けた支援担当の画面を消して購読を止める（[session-watch.ts](../packages/web/src/session-watch.ts)、[firestore.rules](../firestore.rules)、C26）。学生が自分で取り消す画面・APIは未実装。通信が切れている間の即時検知や、すでに渡した情報の回収は保証しない。
+注記：下の「共有はいつでも取り消せる」は当初の目標。現在は運用で許可文書を失効・削除すると、その後の読み取りを拒否し、通知を受けた支援担当の画面を消して購読を止める（[session-watch.ts](../packages/web/src/features/session/watch.ts)、[firestore.rules](../firestore.rules)、C26）。学生が自分で取り消す画面・APIは未実装。通信が切れている間の即時検知や、すでに渡した情報の回収は保証しない。
 
 持たない情報：
 - 診断名や障害の情報を入れる欄を作らない。支援の方針は「どう知らせるか」という行動の言葉で書く。
@@ -621,7 +621,7 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 
 〔作品〕
 
-注記：送信部品 [mail-sender.ts](../packages/server/src/mail-sender.ts) と設定APIの実装は、送信元・認証・実行間隔の決定や実受信の証拠ではない。orangeの確定待ちのため案を維持する。
+注記：送信部品 [mail-sender.ts](../packages/server/src/notifications/mail-sender.ts) と設定APIの実装は、送信元・認証・実行間隔の決定や実受信の証拠ではない。orangeの確定待ちのため案を維持する。
 
 - 状態：Issue #162に従ったSoraのA1仮採用。Codexは実装・手順を用意し、**orangeが確定する**。Cloud資源・secret・送信の準備は未実行。凍結条件はD35、今日の順序と切替の打ち切りは #152。
 - A1：専用Gmailのgmail.sendだけを同意し、そのrefresh tokenをSecret Managerの数字の版でCloud Runへ渡す。固定Fromから、Firebase Authで確認できた本人だけへTo 1件、CC/BCCなしで送る。多数の学生それぞれのOAuthを預からず、送信元1つの認可で準備できるため仮採用する。

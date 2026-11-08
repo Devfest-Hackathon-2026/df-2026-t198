@@ -3,7 +3,7 @@ import { log } from 'node:console';
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import { initialDemo } from '../src/demo-initial.ts';
+import { initialDemo } from '../src/demo/initial.ts';
 
 // This helper cannot create accounts or change data in a real Firebase project.
 if (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||

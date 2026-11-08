@@ -54,7 +54,7 @@ CoursePower（富士通）の画面の構造を抽出・架空化した試験用
 
 ## メールのボタンの見た目（2026-11-07）
 
-「今日やること」のメールの「✅ 終わった」「🕒 後回し」のボタンと、下の注意書きの色・大きさ・文言は、Soraの別のrepo `ynu-lms-agent` の `workers/sol/src/actions.mjs`（2026-11-07 02:22作成、大会の開始のあと）のメールに合わせた。Soraの作で、本人の許可（2026-11-07）を得て、見た目の値だけを `packages/server/src/digest.ts` に写した。コードは写していない。
+「今日やること」のメールの「✅ 終わった」「🕒 後回し」のボタンと、下の注意書きの色・大きさ・文言は、Soraの別のrepo `ynu-lms-agent` の `workers/sol/src/actions.mjs`（2026-11-07 02:22作成、大会の開始のあと）のメールに合わせた。Soraの作で、本人の許可（2026-11-07）を得て、見た目の値だけを `packages/server/src/digest/digest.ts` に写した。コードは写していない。
 
 ## LMS 仕様調査の出典とライセンス（KULMS / Sakai）
 
@@ -105,3 +105,15 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 | JetBrains Mono | 番号・時刻 | [Google Fonts](https://fonts.google.com/specimen/JetBrains+Mono)、[OFL](https://github.com/google/fonts/blob/main/ofl/jetbrainsmono/OFL.txt) |
 
 紹介ページの配色・構成・文・格子のロゴは、Sora承認の見本（Issue #182、D37）に従う。掲載画像は、このrepoの体験用データをローカルのエミュレーターで描いた画面を撮影したもの。実LMS・実際の課題のデータ・外部の画像は使っていない。
+
+## 構造整理の参考資料（Issue #151、2026-11-08）
+
+| 出典 | 参考にした内容 | ライセンス |
+|---|---|---|
+| [Matt Pocock: Improve Codebase Architecture](https://github.com/mattpocock/skills/blob/main/skills/engineering/improve-codebase-architecture/SKILL.md) | 変更箇所の責務と入口を調べ、不要な委譲層を増やさない進め方 | MIT |
+| [Vercel: React Best Practices](https://github.com/vercel-labs/agent-skills/blob/main/skills/react-best-practices/SKILL.md) | 直接importと状態の所有者を保つ観点 | MIT |
+| [Vercel: Composition Patterns](https://github.com/vercel-labs/agent-skills/blob/main/skills/composition-patterns/SKILL.md) | 表示と状態・操作の責務の分離 | MIT |
+| [Bulletproof React: Project Structure](https://github.com/alan2207/bulletproof-react/blob/master/docs/project-structure.md) | 機能ごとの集約と共有部分への依存方向 | MIT |
+| [Google Cloud: Cloud Run Node.js samples](https://github.com/GoogleCloudPlatform/nodejs-docs-samples/tree/main/run) | ローカル・単体・通し試験・配備を分ける検証 | Apache-2.0 |
+
+方針の参照に限り、外部のコード・文書原文・テンプレートは複製していない。スキルのインストールや実行依存の追加も行っていない。

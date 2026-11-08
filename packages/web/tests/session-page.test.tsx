@@ -5,16 +5,17 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { User } from 'firebase/auth';
 import { applyObservation } from '../../core/src/ledger';
 import { observation } from '../../server/tests/observation-fixture';
-import { emptySession, formatDeadline, type SessionData } from '../src/session-model';
-import type { SessionServices } from '../src/session-firebase';
-import { SessionPage } from '../src/session-page';
-import { usePathname } from '../src/session-route';
+import { emptySession, type SessionData } from '../src/features/session/model';
+import { formatDeadline } from '../src/shared/assignments/deadline-format';
+import type { SessionServices } from '../src/features/session/firebase';
+import { SessionPage } from '../src/features/session/page';
+import { usePathname } from '../src/shared/use-pathname';
 
 // Reuse the workspace's existing DOM parser for component tests; no browser automation or new dependency.
 const requireCore = createRequire(new URL('../../core/package.json', import.meta.url));
 const { parseHTML } = requireCore('linkedom');
 const holder = vi.hoisted(() => ({ services: null as SessionServices | null }));
-vi.mock('../src/session-firebase', () => ({ getSessionServices: () => holder.services }));
+vi.mock('../src/features/session/firebase', () => ({ getSessionServices: () => holder.services }));
 let root: Root;
 let host: HTMLElement;
 let userChanged: (user: User | null) => void;

@@ -1,6 +1,6 @@
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createSchedulerVerifier } from '../src/notification-auth.js';
+import { createSchedulerVerifier } from '../src/notifications/auth.js';
 import { createHttpServer } from '../src/http.js';
 
 const pair = generateKeyPairSync('rsa', { modulusLength: 2048 });

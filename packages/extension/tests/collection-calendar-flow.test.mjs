@@ -20,7 +20,7 @@ const worker = await build({
   bundle: true, write: false, platform: 'browser', format: 'iife', target: 'chrome105',
   define: { __AUTH_PROBE_CONFIG__: JSON.stringify(config) },
   plugins: [{ name: 'synthetic-collection-and-identity', setup(builder) {
-    builder.onResolve({ filter: /auth-probe-browser\.js$/ }, () => ({ path: 'identity', namespace: 'fake' }));
+    builder.onResolve({ filter: /(?:auth\/|^\.\/)browser\.js$/ }, () => ({ path: 'identity', namespace: 'fake' }));
     builder.onResolve({ filter: /\/collection\.js$/ }, () => ({ path: 'collection', namespace: 'fake' }));
     builder.onLoad({ filter: /.*/, namespace: 'fake' }, ({ path }) => ({ contents: path === 'collection'
       ? `export const collectObservation = async () => (${JSON.stringify(observation)});`

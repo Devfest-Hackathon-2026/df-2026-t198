@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { deleteApp, getApps, initializeApp } from 'firebase-admin/app';
 import { firebaseDependencies } from '../src/firebase.js';
-import { createDigestStore } from '../src/digest-store.js';
+import { createDigestStore } from '../src/digest/store.js';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createHttpServer } from '../src/http.js';
 afterEach(async () => { vi.unstubAllEnvs(); await Promise.all(getApps().map(deleteApp)); });

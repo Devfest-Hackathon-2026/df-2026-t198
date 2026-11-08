@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { createHttpServer } from '../src/http.js';
-import { DemoForbidden } from '../src/demo-store.js';
+import { DemoForbidden } from '../src/demo/store.js';
 
 const reset = vi.fn(async () => ({ reset: true, data: { courses: [] } }));
 const verifyToken = vi.fn(async () => 'trial-owner');

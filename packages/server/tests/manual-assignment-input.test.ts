@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { parseManualAssignment } from '../src/manual-assignment-input.js';
+import { parseManualAssignment } from '../src/manual-assignments/input.js';
 const input = { title: '架空の紙の課題', date: '2032-02-29', time: null, course: null, memo: '' };
 it('accepts an actual leap day and preserves absent time and course', () => {
   expect(parseManualAssignment(input)).toEqual(input);

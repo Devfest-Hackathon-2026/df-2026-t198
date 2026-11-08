@@ -3,9 +3,9 @@ import { URL } from 'node:url';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
-import { DemoPages } from '../src/demo-pages';
-import { readDemoAnnouncements, readDemoObservation } from '../src/demo-reader';
-import { parseObservation } from '../../server/src/observation-input';
+import { DemoPages } from '../src/features/demo/pages';
+import { readDemoAnnouncements, readDemoObservation } from '../src/features/demo/reader';
+import { parseObservation } from '../../server/src/observations/input';
 
 const requireCore = createRequire(new URL('../../core/package.json', import.meta.url));
 const { parseHTML } = requireCore('linkedom');

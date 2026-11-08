@@ -4,7 +4,7 @@ import console from 'node:console';
 import { createRequire } from 'node:module';
 import { URL } from 'node:url';
 import { mkdir } from 'node:fs/promises';
-import { studentFixture } from '../src/student-fixture.ts';
+import { studentFixture } from '../src/shared/testing/student-fixture.ts';
 
 const require = createRequire(new URL('../../server/package.json', import.meta.url));
 const { initializeApp, deleteApp } = require('firebase-admin/app');
@@ -24,8 +24,8 @@ page.on('pageerror', () => errors.push('page-error'));
 async function login(target, id) {
   const token = await auth.createCustomToken(id);
   await target.evaluate(async customToken => {
-    const { firebase } = await import('/src/firebase.ts');
-    const source = await (await globalThis.fetch('/src/firebase.ts')).text();
+    const { firebase } = await import('/src/shared/firebase.ts');
+    const source = await (await globalThis.fetch('/src/shared/firebase.ts')).text();
     const sdk = await import(source.match(/from "([^"]*firebase_auth[^"]*)"/)[1]);
     await sdk.signInWithCustomToken(firebase.auth, customToken);
   }, token);
@@ -99,10 +99,10 @@ try {
     await second.getByText('送信の切り替えが済むと有効にできます。', { exact: false }).waitFor();
     assert.equal(await second.getByRole('button', { name: '通知を有効にする' }).isDisabled(), true);
     const accessCheck = async () => second.evaluate(async owner => {
-      const { firebase } = await import('/src/firebase.ts');
+      const { firebase } = await import('/src/shared/firebase.ts');
       const token = await firebase.auth.currentUser.getIdToken();
       const response = await globalThis.fetch(`/api/v1/notification-settings?uid=${owner}`, { headers: { Authorization: `Bearer ${token}` } });
-      const source = await (await globalThis.fetch('/src/firebase.ts')).text();
+      const source = await (await globalThis.fetch('/src/shared/firebase.ts')).text();
       const sdk = await import(source.match(/from "([^"]*firebase_firestore[^"]*)"/)[1]);
       let denied = false;
       try { await sdk.getDoc(sdk.doc(firebase.db, 'students', owner, 'notificationSettings', 'current')); }

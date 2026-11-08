@@ -3,8 +3,8 @@ import { Buffer } from 'node:buffer';
 
 const state = vi.hoisted(() => ({ user: undefined, googleUid: 'owner' }));
 const config = { apiOrigin: 'https://api.example.invalid', oauthClientId: '123-test.apps.googleusercontent.com', firebase: { projectId: 'synthetic' } };
-vi.mock('../src/probe-config.js', () => ({ probeConfig: { apiOrigin: 'https://api.example.invalid', oauthClientId: '123-test.apps.googleusercontent.com', firebase: { projectId: 'synthetic' } }, missingConfig: () => [] }));
-vi.mock('../src/auth-probe-browser.js', () => ({
+vi.mock('../src/auth/config.js', () => ({ probeConfig: { apiOrigin: 'https://api.example.invalid', oauthClientId: '123-test.apps.googleusercontent.com', firebase: { projectId: 'synthetic' } }, missingConfig: () => [] }));
+vi.mock('../src/auth/browser.js', () => ({
   observationIdentity: async () => state.user && { uid: state.user.uid, token: 'synthetic-firebase-token' },
   firebaseAuth: () => ({ currentUser: state.user }),
   confirmGoogleIdentity: async (_token, uid) => state.googleUid === uid,
@@ -53,7 +53,7 @@ async function fixture({ enabled = true, now = '2026-11-07T07:29:00+09:00' } = {
     return { ok: sendStatus === 200, status: sendStatus };
   });
   vi.stubGlobal('chrome', chrome); vi.stubGlobal('fetch', fetch);
-  const module = await import('../src/digest-browser.js');
+  const module = await import('../src/digest/browser.js');
   const sender = { id: 'extension', url: chrome.runtime.getURL('options.html'), frameId: 0 };
   async function message(message, from = sender) {
     return new Promise(resolve => module.handleDigestMessage(message, from, resolve));
@@ -83,7 +83,7 @@ it('catches up only the current morning on startup and remains duplicate-free af
   f.data[receipts] = { date: '2026-11-06', planIds: ['morning', plan.planId] };
   f.startDigest(); f.startup(); await f.runDigest();
   expect(f.sent).toHaveLength(1);
-  vi.resetModules(); const restarted = await import('../src/digest-browser.js');
+  vi.resetModules(); const restarted = await import('../src/digest/browser.js');
   restarted.startDigest(); await restarted.runDigest(); expect(f.sent).toHaveLength(1);
   vi.setSystemTime(new Date('2026-11-08T07:30:00+09:00')); f.digest.date = '2026-11-08';
   await restarted.runDigest(); expect(f.sent).toHaveLength(2);
@@ -175,7 +175,7 @@ it.each([false, true])('bounds daily requests across 1440 alarm-driven worker re
   if (fails) f.fetch.mockRejectedValue(new Error('synthetic-unavailable'));
   for (let minute = 0; minute < 1440; minute++) {
     vi.setSystemTime(new Date(Date.parse('2026-11-07T00:00:00+09:00') + minute * 60_000));
-    vi.resetModules(); const worker = await import('../src/digest-browser.js');
+    vi.resetModules(); const worker = await import('../src/digest/browser.js');
     worker.startDigest(); f.alarm('digest-poll'); await worker.runDigest();
   }
   const requests = f.fetch.mock.calls.filter(([url]) => url.endsWith('/api/v1/digest'));
@@ -322,7 +322,7 @@ it('stops two devices independently when cloud owns delivery, including after re
   for (let device = 0; device < 2; device++) {
     const f = await fixture({ now: '2026-11-07T10:00:00+09:00' }); f.delivery.deliveryOwner = 'cloud';
     await f.runDigest(); expect(f.sent).toHaveLength(0);
-    vi.resetModules(); const restarted = await import('../src/digest-browser.js');
+    vi.resetModules(); const restarted = await import('../src/digest/browser.js');
     vi.setSystemTime(new Date('2026-11-08T07:30:00+09:00')); f.digest.date = '2026-11-08';
     await restarted.runDigest(); expect(f.sent).toHaveLength(0); expect(f.data[receipts]).toBeUndefined();
   }

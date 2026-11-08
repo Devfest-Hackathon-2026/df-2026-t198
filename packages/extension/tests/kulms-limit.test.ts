@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { collectKulmsObservation } from '../src/kulms-collection.js';
-import { parseObservation } from '../../server/src/observation-input.js';
+import { parseObservation } from '../../server/src/observations/input.js';
 import { applyObservation } from '../../core/src/ledger.js';
 import type { Observation } from '../../core/src/types.js';
 import input from '../../../lms-definitions/kulms/samples/input.json' with { type: 'json' };

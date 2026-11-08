@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { observation } from './observation-fixture.js';
-import { createDemoStore } from '../src/demo-store.js';
+import { createDemoStore } from '../src/demo/store.js';
 
 describe.skipIf(process.env['RUN_DEMO_EMULATOR_TESTS'] !== '1')('demo API with real Auth and Firestore emulators', () => {
   let fixture: Awaited<ReturnType<typeof sessionEmulatorFixture>>;

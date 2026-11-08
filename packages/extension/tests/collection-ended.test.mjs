@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { collectObservation } from '../src/collection.js';
-import { parseObservation } from '../../server/src/observation-input.js';
+import { parseObservation } from '../../server/src/observations/input.js';
 
 const courseId = 'KOG0000000000001';
 const sourceId = 'REP0000000000001';

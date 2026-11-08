@@ -1,6 +1,6 @@
-import { observationIdentity } from './auth-probe-browser.js';
-import { observationApiOrigin } from './probe-config.js';
-import { syncCalendarInBackground } from './calendar-browser.js';
+import { observationIdentity } from './auth/browser.js';
+import { observationApiOrigin } from './auth/config.js';
+import { syncCalendarInBackground } from './calendar/browser.js';
 import { collectObservation } from './collection.js';
 import { showCollectionStatus } from './collection-display.js';
 import { LmsReadError, isHomePage, safeDiagnostic, type PageDiagnostic } from './collection-diagnostics.js';

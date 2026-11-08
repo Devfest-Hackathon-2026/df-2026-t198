@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import type { LedgerAssignment } from '@kadai-hisho/core/ledger';
-import { documentKey } from '../observation-store.js';
+import { documentKey } from '../observations/store.js';
 import { createAnnouncementExtractor, PublicDemoLimit, type AnnouncementModel } from './extract.js';
 import { announcementCandidates, announcementReviewReason } from './ledger.js';
 import type { AnnouncementInput } from './input.js';
