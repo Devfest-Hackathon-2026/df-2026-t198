@@ -31,7 +31,7 @@ it('accepts trailing slashes on the configured web origin', () => {
 
 it('does not require either a web origin or an explicit Firebase project at startup', () => {
   vi.stubEnv('PUBLIC_WEB_ORIGIN', undefined);
-  vi.stubEnv('GOOGLE_CLOUD_PROJECT', undefined); vi.stubEnv('GCLOUD_PROJECT', undefined);
+  for (const key of ['GOOGLE_CLOUD_PROJECT', 'GCLOUD_PROJECT', 'FIRESTORE_EMULATOR_HOST', 'FIREBASE_AUTH_EMULATOR_HOST', 'FIREBASE_CONFIG']) vi.stubEnv(key, undefined);
   initializeApp({});
   expect(() => firebaseDependencies()).not.toThrow();
 });

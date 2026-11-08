@@ -17,7 +17,8 @@ describe.skipIf(!enabled)('announcement intake with local Auth and Firestore', (
   let db: ReturnType<typeof getFirestore>;
   let server: ReturnType<typeof createHttpServer>;
   let base: string;
-  let analysisClock = Date.now;
+  const defaultAnalysisClock = () => Date.parse('2026-11-07T12:00:00+09:00');
+  let analysisClock = defaultAnalysisClock;
   let owner: { uid: string; token: string };
   const notice = { announcementId: 'fictional-notice', version: '1', publishedAt: observation().fetchedAt,
     body: '架空のレポートの締切を2026年11月30日17時に延長します。' };
@@ -266,7 +267,7 @@ describe.skipIf(!enabled)('announcement intake with local Auth and Firestore', (
       expect(next!['yen']).toBeCloseTo(0.105);
     }
     expect((await db.collection(`students/${shared.uid}/publicDemoUsage`).get()).empty).toBe(true);
-    analysisClock = Date.now;
+    analysisClock = defaultAnalysisClock;
   });
 
   it.each([false, true])('reserves atomically, settles and keeps unknown usage (public=%s)', async publicDemo => {
