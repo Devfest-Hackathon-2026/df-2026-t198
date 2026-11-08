@@ -26,7 +26,7 @@ try {
     await page.locator('.td-splash').waitFor({ state: 'hidden' });
     await page.getByText('支援担当が見られるのは、共有を許可した学生の情報だけです', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: '学生として試す', exact: true }).count(), 0);
-    await page.getByText('審査員の方', { exact: true }).waitFor();
+    await page.getByRole('link', { name: '審査員の方', exact: true }).waitFor();
     assert.equal(await page.locator('main > section.chapter').count(), 6);
     assert.equal(await page.locator('.hero h1 span').count(), 3);
     if (width === 1280) {

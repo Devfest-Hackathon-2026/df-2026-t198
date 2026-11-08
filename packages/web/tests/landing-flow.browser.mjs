@@ -40,6 +40,7 @@ try {
     async function at(text) {
       await page.waitForFunction(expected => globalThis.document.querySelector('.flow-status')?.textContent === expected, text);
       observed.push({ status: text, elapsedMs: Date.now() - started });
+      assert(await page.locator('#how').evaluate(el => el.getBoundingClientRect().height <= globalThis.innerHeight + 1), 'animated chapter fits every stage');
     }
     await at('先生がお知らせを出しました');
     assert.match(await flow.locator('.flow-notice').innerText(), /11\/13/);

@@ -1,0 +1,144 @@
+{
+  "schema_version": 2,
+  "root": "../../..",
+  "recipient": "紹介ページを見る学生・支援担当・審査員とPRの見直し役",
+  "purpose": "LMSから締切が届く順序と両画面の使い方を把握し、共用の体験へ入れる。",
+  "conditions": [
+    "1280×800と390×844",
+    "架空のデータだけ",
+    "既存の章送りを変更しない"
+  ],
+  "assumptions": [
+    "Auth/Firestoreエミュレーターを使う",
+    "公開先・実LMS・実Googleカレンダーは今回の対象外"
+  ],
+  "request": {
+    "reference": "docs/records/2026-11-09-issue-240/implementation-plan.md",
+    "source_refs": [
+      "docs/records/2026-11-09-issue-240/implementation-plan.md",
+      "docs/ui-words.md"
+    ]
+  },
+  "plan_alignment": {
+    "status": "checked",
+    "reason": "Issue #240の章ごとの再構成と自動の図・体験入口・両画面の画像に対応。"
+  },
+  "artifact_paths": [
+    "packages/web/src/features/landing",
+    "packages/web/public/landing/student.png",
+    "packages/web/public/landing/session.png",
+    "packages/web/src/shared/styles/tokens.css",
+    "packages/web/src/shared/ui/motion.tsx"
+  ],
+  "verification_paths": [
+    "packages/web/tests/verify-landing.mjs",
+    "packages/web/tests/run-landing-browser.mjs",
+    "packages/web/tests/landing.browser.mjs",
+    "packages/web/tests/landing-chapters.browser.mjs",
+    "packages/web/tests/landing-flow.browser.mjs",
+    "packages/web/tests/landing-shared.browser.mjs",
+    "packages/web/tests/helpers/local-processes.mjs",
+    "scripts/run-emulators.mjs"
+  ],
+  "intent_paths": [
+    "docs/records/2026-11-09-issue-240/implementation-plan.md",
+    "docs/ui-words.md"
+  ],
+  "requirements": [
+    {
+      "id": "layout",
+      "operation": "両サイズで6章を順に開く。",
+      "expected_result": "各章の高さが画面以下で、内容と操作が見え、横にはみ出さず、動きを減らす設定で静止する。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "flow",
+      "operation": "しくみの章に入り、最後まで見てから再生する。",
+      "expected_result": "先生→LMS→学生の閲覧→読み取り→同じ予定の移動→支援担当の順に約1秒以上ずつ進み、最後で止まる。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "entry",
+      "operation": "共用の入口を押し、戻ってもう一度押す。",
+      "expected_result": "主な入口1つから体験用LMSへ入り、戻った後も使える。未設定ビルドではLMSリンクがある。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "dialogs",
+      "operation": "画像を拡大し、閉じる・Esc・背景で閉じ、章や既存ページへ移動する。",
+      "expected_result": "画像が見え、フォーカスとスクロールが戻り、既存の入口も開く。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "reading",
+      "operation": "全章の画面写しと移動中・最終状態、撮影した両画面を読み比べる。",
+      "expected_result": "前のキービジュアル、短い一文、名詞の見出し、同じ締切の囲みと1文、4行の留保があり、流れと主な入口を見分けられる。",
+      "verification": "semantic",
+      "review_evidence": [
+        "全12章の画面写し",
+        "流れの移動中と最終状態",
+        "student.png と session.png",
+        "Argonとyomiyasuの点検の採否"
+      ],
+      "evidence_required": true
+    }
+  ],
+  "commands": [
+    {
+      "id": "layout",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "layout"
+      ],
+      "covers": [
+        "layout"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "flow",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "flow"
+      ],
+      "covers": [
+        "flow"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "entry",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "entry"
+      ],
+      "covers": [
+        "entry"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "dialogs",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "dialogs"
+      ],
+      "covers": [
+        "dialogs"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    }
+  ]
+}

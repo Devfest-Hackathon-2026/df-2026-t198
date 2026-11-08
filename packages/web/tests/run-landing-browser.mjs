@@ -9,7 +9,7 @@ if (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||
 const mode = process.argv[2] || '--landing';
 const port = process.env.KADAI_LANDING_PORT || '5184';
 const apiPort = process.env.KADAI_API_PORT || '24880';
-const env = { ...process.env, KADAI_DEMO_PASSWORD: randomUUID(),
+const env = { ...process.env, KADAI_DEMO_PASSWORD: process.env.KADAI_DEMO_PASSWORD || randomUUID(),
   VITE_USE_FIREBASE_EMULATORS: 'true',
   VITE_AUTH_EMULATOR_PORT: process.env.FIREBASE_AUTH_EMULATOR_HOST.split(':')[1],
   VITE_FIRESTORE_EMULATOR_PORT: process.env.FIRESTORE_EMULATOR_HOST.split(':')[1],
@@ -30,6 +30,9 @@ try {
   const vite = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', port, '--strictPort'], true);
   await ready(env.KADAI_WEB_ORIGIN, vite);
   const scripts = mode === '--capture' ? ['capture-landing-shots.mjs']
+    : mode === '--layout' ? ['landing-chapters.browser.mjs']
+    : mode === '--flow' ? ['landing-flow.browser.mjs']
+    : mode === '--dialogs' ? ['landing.browser.mjs']
     : mode === '--qa' ? ['judge-qa.browser.mjs']
     : mode === '--m6' ? ['demo.browser.mjs']
     : mode === '--shared' ? ['landing-shared.browser.mjs']

@@ -19,6 +19,7 @@ try {
     await page.locator('.shot').evaluateAll(images => Promise.all(images.map(image => image.decode())));
     for (const chapter of await page.locator('main > .chapter').all()) {
       await chapter.evaluate(el => globalThis.scrollTo(0, el.offsetTop));
+      await page.waitForFunction(id => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === `#${id}`, await chapter.getAttribute('id'));
       const result = await chapter.evaluate(el => {
         const box = el.getBoundingClientRect();
         const content = [...el.querySelectorAll('h1, h2, h3, p, a, button, .shot, li')]
@@ -36,7 +37,11 @@ try {
       assert.equal(await page.locator('#start .supported-lms li').count(), 1);
       assert.equal(await page.locator('#try .trial-entry').count(), 1);
       assert.equal(await page.locator('#try a.judge-link').count(), 1);
-      assert.equal(await page.locator('#try .local-demo, #try .entry-grid').count(), 0);
+      assert.equal(await page.locator('#try .local-demo, #try .entry-grid, #try .trial-route').count(), 0);
+      assert.equal(await page.locator('#try .trial-launch a:visible, #try .trial-launch button:visible').count(), 1);
+      assert.equal(await page.locator('.flow-status').innerText(), '支援担当の画面も更新しました');
+      assert.equal(await page.locator('.flow-schedule .flow-event').count(), 2);
+      assert.deepEqual(await page.locator('.flow-schedule s, .flow-supporter s').allTextContents(), ['11/12', '11/12', '11/12']);
       assert.equal(await page.locator('html').evaluate(el => globalThis.getComputedStyle(el).scrollBehavior), 'auto');
       assert.equal(await page.locator('.landing').evaluate(el => el.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running').length), 0);
     }
