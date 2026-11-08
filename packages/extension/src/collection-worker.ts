@@ -67,7 +67,7 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
   };
   const fail = (code: string) => { outcome = code; return { ok: false, code }; };
   try {
-    const last = await chrome.storage.session.get(['ynuFetchCompletedAt', 'ynuFetchStatus', 'ynuFetchCheckpoint', 'ynuSessionId']);
+    const last = await chrome.storage.session.get(['ynuFetchCompletedAt', 'ynuFetchFailedAt', 'ynuFetchStatus', 'ynuFetchCheckpoint', 'ynuSessionId']);
     sid = sessionFromUrl(pageUrl);
     checkpoint = last['ynuFetchCheckpoint'] as CollectionCheckpoint | undefined;
     const hash = checkpoint && sid ? await sessionHash(sid) : '';
@@ -75,8 +75,8 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       checkpoint = undefined;
       await clearCheckpoint();
     }
-    const completedAt = last['ynuFetchCompletedAt'];
-    if (last['ynuFetchStatus'] !== 'yielded' && typeof completedAt === 'number' && Number.isFinite(completedAt) && Date.now() - completedAt < 10 * 60_000 && Date.now() >= completedAt) {
+    const cooldowns = [last['ynuFetchFailedAt'], ...(last['ynuFetchStatus'] !== 'yielded' ? [last['ynuFetchCompletedAt']] : [])];
+    if (cooldowns.some(at => typeof at === 'number' && Number.isFinite(at) && Date.now() >= at && Date.now() - at < 10 * 60_000)) {
       return { ok: false, code: 'cooldown' };
     }
     if (!sid) return fail('session-changed');
@@ -215,6 +215,10 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       await clearCheckpoint().catch(() => {});
     }
     if (started) {
+      // Failed collections still consumed LMS reads. Yielding keeps immediate resumption available.
+      if (stats && !['success', 'partial', 'yielded'].includes(outcome)) {
+        await chrome.storage.session.set({ ynuFetchFailedAt: Date.now() }).catch(() => {});
+      }
       if (stats) {
         if (success) { if (route === 'background') stats.backgroundSucceeded++; else stats.pageSucceeded++; }
         else if (outcome !== 'yielded') stats.failed++;

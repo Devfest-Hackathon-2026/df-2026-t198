@@ -153,13 +153,67 @@ it('clears a preparation error after a later confirmed send', async () => {
   f.digest.date = '2026-11-07'; vi.setSystemTime(new Date('2026-11-07T10:15:00+09:00')); await f.runDigest(); expect(f.sent).toHaveLength(1);
   expect((await f.message({ type: 'digest-status' })).problem).toBeUndefined();
 });
-it.each(['response-lost', 'http-error', 'unauthorized'])('does not duplicate a mail after %s and exposes only a fixed problem', async reason => {
+it.each(['response-lost', 'timeout', 500, 502, 503, 504])('does not duplicate a mail after %s and exposes only a fixed problem', async reason => {
   const f = await fixture({ now: '2026-11-07T10:00:00+09:00' });
-  if (reason === 'response-lost') f.loseResponse(); else f.failSend(reason === 'unauthorized' ? 401 : 503);
-  await f.runDigest(); await f.runDigest(); expect(f.sent).toHaveLength(1);
+  if (reason === 'response-lost') f.loseResponse();
+  else if (reason === 'timeout') {
+    const fetch = f.fetch.getMockImplementation();
+    f.fetch.mockImplementation(async (url, options) => {
+      if (url.includes('/messages/send')) throw new globalThis.DOMException('synthetic-private-timeout', 'TimeoutError');
+      return fetch(url, options);
+    });
+  } else f.failSend(reason);
+  await f.runDigest();
+  vi.resetModules(); const restarted = await import('../src/digest/browser.js');
+  vi.setSystemTime(new Date('2026-11-07T10:15:00+09:00'));
+  await restarted.runDigest();
+  expect(f.fetch.mock.calls.filter(([url]) => url.includes('/messages/send'))).toHaveLength(1);
   expect((await f.message({ type: 'digest-status' })).problem).toBe('send-unconfirmed');
   expect(JSON.stringify(f.data)).not.toMatch(/synthetic-private-response|synthetic-google-token|今日の準備/);
-  if (reason === 'unauthorized') expect(f.chrome.identity.removeCachedAuthToken).toHaveBeenCalledWith({ token: 'synthetic-google-token' });
+  expect(f.data[receipts].planIds).toEqual(['morning']);
+});
+
+it.each([400, 401, 403, 429].flatMap(status => ['morning', 'plan'].map(kind => [status, kind])))(
+'retries a clearly rejected %s %s mail at the next refresh, including after worker restart', async (status, kind) => {
+  const f = await fixture({ now: '2026-11-07T12:30:00+09:00' });
+  const id = kind === 'morning' ? 'morning' : plan.planId;
+  if (kind === 'plan') {
+    f.data[receipts] = { date: '2026-11-07', planIds: ['morning'] };
+    f.digest.plans = [{ ...plan }];
+  }
+  f.failSend(status);
+  await f.runDigest();
+  expect(f.sent).toHaveLength(1);
+  expect(f.data[receipts].planIds).not.toContain(id);
+  expect((await f.message({ type: 'digest-status' })).problem).not.toBe('send-unconfirmed');
+  if (status === 401) expect(f.chrome.identity.removeCachedAuthToken).toHaveBeenCalledWith({ token: 'synthetic-google-token' });
+  vi.resetModules(); const restarted = await import('../src/digest/browser.js');
+  f.failSend(200);
+  vi.setSystemTime(new Date('2026-11-07T12:44:59.999+09:00'));
+  await restarted.runDigest(); expect(f.sent).toHaveLength(1);
+  vi.setSystemTime(new Date('2026-11-07T12:45:00+09:00'));
+  await restarted.runDigest(); expect(f.sent).toHaveLength(2);
+  expect(f.data[receipts].planIds).toContain(id);
+  expect((await f.message({ type: 'digest-status' })).problem).toBeUndefined();
+  vi.setSystemTime(new Date('2026-11-07T12:59:59+09:00'));
+  await restarted.runDigest(); expect(f.sent).toHaveLength(2);
+});
+
+it.each(['off', 'other-user', 'cloud', 'expired', 'cancelled', 'unsafe'])(
+'rechecks %s before retrying a rejected preparation mail', async change => {
+  const f = await fixture({ now: '2026-11-07T12:30:00+09:00' });
+  f.data[receipts] = { date: '2026-11-07', planIds: ['morning'] };
+  f.digest.plans = [{ ...plan }]; f.failSend(403);
+  await f.runDigest(); expect(f.sent).toHaveLength(1);
+  f.failSend(200);
+  if (change === 'off') await f.message({ type: 'digest-setting', enabled: false });
+  if (change === 'other-user') state.user.uid = 'other';
+  if (change === 'cloud') f.delivery.deliveryOwner = 'cloud';
+  if (change === 'cancelled') f.digest.plans = [];
+  if (change === 'unsafe') f.digest.plans[0].text += 'synthetic-lms-session';
+  vi.setSystemTime(new Date(change === 'expired' ? '2026-11-07T13:00:00+09:00' : '2026-11-07T12:45:00+09:00'));
+  await f.runDigest(); expect(f.sent).toHaveLength(1);
+  expect(f.data[receipts].planIds).toEqual(['morning']);
 });
 
 // Review regressions: derive expectations from notification and load requirements.

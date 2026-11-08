@@ -158,6 +158,9 @@ it('does not reuse cached courses after an API response was lost', async () => {
   expect((await f.run()).ok).toBe(false);
   expect(f.state.ynuFetchCheckpoint).toBeNull();
   f.requests.length = 0; vi.stubGlobal('fetch', fetcher);
+  expect(await f.run()).toEqual({ ok: false, code: 'cooldown' });
+  expect(f.requests).toEqual([]);
+  vi.setSystemTime(new Date(Date.now() + 10 * 60_000));
   expect((await f.run()).ok).toBe(true);
   expect(f.requests.filter(r => r.kind === 'course').map(r => r.course)).toEqual(ids);
   expect(f.state.ynuFetchSummary.reusedCourses).toBe(0);
