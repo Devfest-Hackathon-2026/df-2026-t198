@@ -56,6 +56,7 @@ it('keeps one collection running at a time', async () => {
   expect((await run()).code).toBe('busy');
   finish({ ok: false, code: 'yielded' }); expect((await first).code).toBe('yielded');
   expect(post).not.toHaveBeenCalled(); expect(storage.kulmsFetchCompletedAt).toBeUndefined();
+  expect((await run()).ok).toBe(true);
 });
 it('retries delivery with the identical observation and ID after a lost response', async () => {
   post.mockRejectedValueOnce(new Error('fictional-response-loss'));
@@ -81,7 +82,7 @@ it.each(['kulms', 'kulasis'] as const)('waits ten minutes after a partial %s rec
     observationId: request.observationId, fetchedAt: request.fetchedAt,
     failures: [{ courseId: null, kind: 'http', detail: 'http-error' }] } }));
   const ready = () => new Promise<Record<string, unknown>>(resolve => handler({ type: `${system}-page-ready` },
-    { ...sender, url: system === 'kulms' ? sender.url : 'https://www.k.kyoto-u.ac.jp/student/la/top' }, resolve, system));
+    { ...sender, url: system === 'kulms' ? sender.url! : 'https://www.k.kyoto-u.ac.jp/student/la/top' }, resolve as (value: unknown) => void, system));
   expect((await ready()).ok).toBe(true);
   expect(storage[`${system}FetchStatus`]).toBe('partial');
   vi.resetModules(); handler = (await import('../src/kulms-worker.js')).handleKulmsMessage;
@@ -104,6 +105,11 @@ it.each(['send-failed', 'collection-unavailable'])('also waits after %s instead 
 it('does not deliver to a changed account, including before retry', async () => {
   post.mockImplementationOnce(async () => { identity.mockResolvedValue(null); throw new Error('lost'); });
   expect((await run()).code).toBe('account-changed'); expect(post).toHaveBeenCalledOnce();
+});
+it('does not apply a different owner cooldown to the signed-in student', async () => {
+  storage.kulmsFetchCompletedAt = Date.now(); storage.kulmsFetchOwnerUid = 'fictional-other';
+  expect((await run()).ok).toBe(true); expect(send).toHaveBeenCalledOnce();
+  expect(storage.kulmsFetchOwnerUid).toBe('fictional-user');
 });
 it('blocks credential-bearing normalized text before delivery', async () => {
   send.mockImplementationOnce(async (_tab, request) => ({ ok: true, observation: { ...expected,
@@ -136,4 +142,16 @@ it('does not replace a confirmed mapping after a failed observation delivery', a
   post.mockResolvedValue(new Response(null, { status: 400 }));
   await new Promise(resolve => handler({ type: 'kulasis-page-ready' }, { ...sender, url: 'https://www.k.kyoto-u.ac.jp/student/la/top' }, resolve, 'kulasis'));
   expect(local.kulasisMapping).toEqual({ uid: 'fictional-user', siteIds: ['fictional-old'] });
+});
+it('keeps a confirmed mapping and the KULMS cooldown when a KULASIS mapping lookup failed', async () => {
+  const completed = Date.now();
+  storage.kulmsFetchCompletedAt = completed; storage.kulmsFetchOwnerUid = 'fictional-user';
+  const mapping = { uid: 'fictional-user', term: kulasisTerm(new Date().toISOString()), siteIds: ['fictional-site'] };
+  local.kulasisMapping = mapping;
+  send.mockImplementationOnce(async (_tab, request) => ({ ok: true, observation: { ...timetable,
+    observationId: request.observationId, fetchedAt: request.fetchedAt, catalogCourses: [],
+    failures: [{ courseId: null, kind: 'http', detail: 'http-error' }] } }));
+  await new Promise(resolve => handler({ type: 'kulasis-page-ready' }, { ...sender, url: 'https://www.k.kyoto-u.ac.jp/student/la/top' }, resolve, 'kulasis'));
+  expect(local.kulasisMapping).toEqual(mapping); expect(storage.kulmsFetchCompletedAt).toBe(completed);
+  expect(storage.kulasisFetchStatus).toBe('partial');
 });

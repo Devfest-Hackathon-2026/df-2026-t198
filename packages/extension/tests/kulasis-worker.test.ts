@@ -15,7 +15,23 @@ it('resolves only a fixed course-code GET and returns only a validated portal si
 });
 it.each(['https://example.test/portal/site/fictional-site', 'https://lms.gakusei.kyoto-u.ac.jp/portal', 'https://lms.gakusei.kyoto-u.ac.jp/direct/courselink/_kcd=fictional'])('does not invent a mapping for %s', async url => {
   const response = new Response(''); Object.defineProperty(response, 'url', { value: url });
-  expect(await resolveKulmsSite('fictional-code', async () => response)).toBeUndefined();
+  await expect(resolveKulmsSite('fictional-code', async () => response)).rejects.toThrow('detail-unavailable');
+});
+it.each([201, 204, 401, 403, 500])('reports a failed lookup for HTTP %s', async status => {
+  const response = new Response(null, { status });
+  Object.defineProperty(response, 'url', { value: 'https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-site' });
+  await expect(resolveKulmsSite('fictional-code', async () => response)).rejects.toThrow('detail-unavailable');
+});
+it('reports a timed-out lookup without passing the exception text to the page', async () => {
+  await expect(resolveKulmsSite('fictional-code', async () => { throw new Error('fictional-private-error'); })).rejects.toThrow('detail-unavailable');
+});
+it('returns a failed lookup message when SSO does not reach a course site', async () => {
+  const response = new Response(''); Object.defineProperty(response, 'url', { value: 'https://example.test/sso' });
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
+  vi.stubGlobal('chrome', { runtime: { id: 'fictional-extension' } });
+  const sender = { id: 'fictional-extension', frameId: 0, tab: { id: 1 }, url: 'https://www.k.kyoto-u.ac.jp/student/la/top' };
+  const reply = new Promise(resolve => handleKulasisMessage({ type: 'kulasis-resolve-site', code: 'fictional' }, sender as chrome.runtime.MessageSender, resolve));
+  expect(await reply).toEqual({ ok: false });
 });
 it.each(['tool', 'tool-reset'])('resolves an authenticated site %s redirect', async kind => {
   const response = new Response('not returned');
