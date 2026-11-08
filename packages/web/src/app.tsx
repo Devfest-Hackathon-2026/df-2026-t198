@@ -38,6 +38,7 @@ function Route({ path }: { path: string }) {
         {path === '/student' || path === '/student/plan' ? <StudentPage /> : path === '/demo-lms' ? <DemoPage /> : !session && <h1>{title}</h1>}
         {session && <div className="session-page"><SessionPage path={path} /></div>}
       </main>
+      <a className="app-introduction" href="/">ToDokuの紹介ページ</a>
     </div>
   );
 }
