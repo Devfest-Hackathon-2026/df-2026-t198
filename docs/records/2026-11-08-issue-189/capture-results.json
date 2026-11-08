@@ -1,0 +1,170 @@
+{
+  "status": "pass",
+  "fixedTime": "2026-11-09T08:40:00+09:00",
+  "viewport": {
+    "width": 1184,
+    "height": 1100
+  },
+  "serverClock": "real; history timestamps may differ",
+  "browserErrors": [],
+  "comparisonBase": "06084b7e83b0eebb7912268ed9822e03f7e93d5f",
+  "repeatRuns": [
+    {
+      "name": "lms",
+      "first": {
+        "name": "lms",
+        "width": 868,
+        "height": 535,
+        "clip": {
+          "x": 158,
+          "y": 1588,
+          "width": 868,
+          "height": 535
+        },
+        "loadedFonts": [
+          "BIZ UDPGothic",
+          "Space Grotesk"
+        ],
+        "sha256": "2611014995cd44c452f881834e0c617619bcc56586d5a35240a381fd74708414"
+      },
+      "second": {
+        "name": "lms",
+        "width": 868,
+        "height": 535,
+        "clip": {
+          "x": 158,
+          "y": 1588,
+          "width": 868,
+          "height": 535
+        },
+        "loadedFonts": [
+          "BIZ UDPGothic",
+          "Space Grotesk"
+        ],
+        "sha256": "2611014995cd44c452f881834e0c617619bcc56586d5a35240a381fd74708414"
+      },
+      "sameComposition": true,
+      "identicalBytes": true
+    },
+    {
+      "name": "student",
+      "first": {
+        "name": "student",
+        "width": 884,
+        "height": 635,
+        "clip": {
+          "x": 56,
+          "y": 815,
+          "width": 884,
+          "height": 635
+        },
+        "loadedFonts": [
+          "BIZ UDPGothic",
+          "JetBrains Mono",
+          "Space Grotesk"
+        ],
+        "sha256": "e7cbc83466367af5495ff0b9e5b0e7a2a255a66942e585bb7a9a87e67b0d3276"
+      },
+      "second": {
+        "name": "student",
+        "width": 884,
+        "height": 635,
+        "clip": {
+          "x": 56,
+          "y": 815,
+          "width": 884,
+          "height": 635
+        },
+        "loadedFonts": [
+          "BIZ UDPGothic",
+          "JetBrains Mono",
+          "Space Grotesk"
+        ],
+        "sha256": "e7cbc83466367af5495ff0b9e5b0e7a2a255a66942e585bb7a9a87e67b0d3276"
+      },
+      "sameComposition": true,
+      "identicalBytes": true
+    },
+    {
+      "name": "updated",
+      "first": {
+        "name": "updated",
+        "width": 884,
+        "height": 635,
+        "clip": {
+          "x": 56,
+          "y": 736,
+          "width": 884,
+          "height": 635
+        },
+        "loadedFonts": [
+          "BIZ UDPGothic",
+          "JetBrains Mono",
+          "Space Grotesk"
+        ],
+        "sha256": "1e806478e1cfff62dd4183b8bd0cdd3c0aaae3b15f2a3d08ddc8a3e5ffff7d3f"
+      },
+      "second": {
+        "name": "updated",
+        "width": 884,
+        "height": 635,
+        "clip": {
+          "x": 56,
+          "y": 736,
+          "width": 884,
+          "height": 635
+        },
+        "loadedFonts": [
+          "BIZ UDPGothic",
+          "JetBrains Mono",
+          "Space Grotesk"
+        ],
+        "sha256": "1e806478e1cfff62dd4183b8bd0cdd3c0aaae3b15f2a3d08ddc8a3e5ffff7d3f"
+      },
+      "sameComposition": true,
+      "identicalBytes": true
+    },
+    {
+      "name": "session",
+      "first": {
+        "name": "session",
+        "width": 1072,
+        "height": 1005,
+        "clip": {
+          "x": 56,
+          "y": 133,
+          "width": 1072,
+          "height": 1005
+        },
+        "loadedFonts": [
+          "BIZ UDPGothic",
+          "JetBrains Mono",
+          "Space Grotesk"
+        ],
+        "sha256": "041690eac31454694b5244818efdba9c3b813bb1ae6dda88330c56ffd8198710"
+      },
+      "second": {
+        "name": "session",
+        "width": 1072,
+        "height": 1005,
+        "clip": {
+          "x": 56,
+          "y": 133,
+          "width": 1072,
+          "height": 1005
+        },
+        "loadedFonts": [
+          "BIZ UDPGothic",
+          "JetBrains Mono",
+          "Space Grotesk"
+        ],
+        "sha256": "0ce59363b42b0447b47c33d00dce4005aee4965dacfff78da9acf38942f95eb8"
+      },
+      "sameComposition": true,
+      "identicalBytes": false
+    }
+  ],
+  "implementationHead": "5728b2c8cbee60e712cc7c5bcc2fce7e81f5f424",
+  "pullRequest": "https://github.com/shieikan/kadai-hisho/pull/191",
+  "verifiedHead": "dd951892ae3cd824434b95c1e655e86498f83f2c"
+}
