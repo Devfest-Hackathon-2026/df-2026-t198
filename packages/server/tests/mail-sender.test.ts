@@ -28,7 +28,7 @@ describe('A1 Gmail sender without POST retries', () => {
     expect(form.get('refresh_token')).toBe('dummy-refresh');
     expect(fetcher.mock.calls[1]![0]).toBe(`https://gmail.googleapis.com/gmail/v1/users/${encodeURIComponent(address('sender'))}/messages/send`);
     const mime = Buffer.from(JSON.parse(String(fetcher.mock.calls[1]![1]!.body)).raw, 'base64url').toString();
-    expect(mime).toContain(`From: ${address('sender')}\r\nTo: ${message.to}\r\n`);
+    expect(mime).toContain(`From: ToDoku <${address('sender')}>\r\nTo: ${message.to}\r\n`);
     expect(mime).not.toMatch(/^(Cc|Bcc):/im);
     expect(mime).toContain('multipart/alternative');
     expect(mime).toContain(Buffer.from(message.text).toString('base64'));
