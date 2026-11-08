@@ -37,3 +37,15 @@ it('accepts department paths without deriving identifiers from names or login UR
   expect(kulmsSiteFromUrl('https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-site', parseUrl)).toBe('fictional-site');
   for (const value of ['https://example.test/portal/site/fictional', 'https://lms.gakusei.kyoto-u.ac.jp/portal', 'https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional?sid=fictional']) expect(kulmsSiteFromUrl(value, parseUrl)).toBeUndefined();
 });
+it.each(['https://www.k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp'])('keeps timetable requests and support links on %s', origin => {
+  const department = origin + '/student/la';
+  expect(kulasisBase(department + '/top', parseUrl)).toBe(department);
+  const html = `<table><tr><th></th><th>月</th></tr><tr><th>1限</th><td>${link}</td></tr></table>`;
+  const courses = readKulasisTimetable(definition, html, department, parseUrl);
+  expect(courses).toMatchObject([{ courseId: 'fictional-no', slots: [{ weekday: 1, period: 1 }], url: department + '/support/top?no=fictional-no' }]);
+  const absolute = html.replace('href="/student/', 'href="https://www.k.kyoto-u.ac.jp/student/');
+  expect(readKulasisTimetable(definition, absolute, department, parseUrl)).toEqual(courses);
+});
+it.each(['http://k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp:444', 'https://k.kyoto-u.ac.jp.example.test', 'https://user@k.kyoto-u.ac.jp'])('rejects an unapproved KULASIS URL: %s', origin => {
+  expect(kulasisBase(origin + '/student/la/top', parseUrl)).toBeUndefined();
+});

@@ -27,3 +27,15 @@ it('rejects foreign senders, subframes and KULMS pages before making a cross-ori
   }
   expect(fetcher).not.toHaveBeenCalled();
 });
+it.each(['https://www.k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp'])('accepts a trusted top frame on %s', async origin => {
+  const response = new Response('');
+  Object.defineProperty(response, 'url', { value: 'https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-site' });
+  const fetcher = vi.fn().mockResolvedValue(response);
+  vi.stubGlobal('fetch', fetcher); vi.stubGlobal('chrome', { runtime: { id: 'fictional-extension' } });
+  const sender = { id: 'fictional-extension', frameId: 0, tab: { id: 1 }, url: origin + '/student/la/top' };
+  let respond!: (value: unknown) => void;
+  const reply = new Promise(resolve => { respond = resolve; });
+  expect(handleKulasisMessage({ type: 'kulasis-resolve-site', code: 'fictional' }, sender as chrome.runtime.MessageSender, respond)).toBe(true);
+  expect(await reply).toEqual({ ok: true, siteId: 'fictional-site' });
+  expect(fetcher).toHaveBeenCalledOnce();
+});

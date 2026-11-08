@@ -8,6 +8,9 @@ export type KulasisUrlParser = (value: string, base?: string) => {
   searchParams: { get(key: string): string | null };
 };
 export const KULASIS_ORIGIN = 'https://www.k.kyoto-u.ac.jp';
+export function isKulasisOrigin(origin: string): boolean {
+  return origin === KULASIS_ORIGIN || origin === 'https://k.kyoto-u.ac.jp';
+}
 export interface KulasisDefinition {
   definitionId: string; version: number; tables: string; rows: string; links: string;
   terms: { spring: string; autumn: string };
@@ -22,9 +25,9 @@ const period = (text: string) => {
 export function kulasisBase(value: string, parseUrl: KulasisUrlParser): string | undefined {
   try {
     const url = parseUrl(value);
-    if (url.origin !== KULASIS_ORIGIN || url.username || url.password) return;
+    if (!isKulasisOrigin(url.origin) || url.username || url.password) return;
     const path = /^\/student\/((?:[a-z]+\/)*[a-z]+)\/(?:top|(?:entry|support|global_notice|syllabus|oh)\/[^/]+|information_detail|information_attachment|course_mail_list)$/.exec(url.pathname);
-    return path ? `${KULASIS_ORIGIN}/student/${path[1]}` : undefined;
+    return path ? `${url.origin}/student/${path[1]}` : undefined;
   } catch { return; }
 }
 export function kulasisTerm(date: string): string {
@@ -86,7 +89,7 @@ export function readKulasisTimetable(definition: KulasisDefinition, html: string
       for (const link of cell.querySelectorAll(definition.links)) {
         let url: ReturnType<KulasisUrlParser>;
         try { url = parseUrl(link.getAttribute('href') ?? '', base + '/'); } catch { throw new Error('parse-error'); }
-        if (url.origin !== KULASIS_ORIGIN || !url.pathname.endsWith('/support/top')) continue;
+        if (!isKulasisOrigin(url.origin) || !url.pathname.endsWith('/support/top')) continue;
         if (url.pathname !== parseUrl(base).pathname + '/support/top' || url.username || url.password) throw new Error('parse-error');
         const id = url.searchParams.get('no'), name = (link.textContent ?? '').replace(/\s+/g, ' ').trim();
         if (!id || id.length > 200 || !/^[\w-]+$/.test(id) || !name || name.length > 1000 || !isSafeMailText(name)) throw new Error('parse-error');

@@ -81,12 +81,12 @@ it('blocks credential-bearing normalized text before delivery', async () => {
     observationId: request.observationId, fetchedAt: request.fetchedAt, definitionId: 'cookie=fictional' } }));
   expect((await run()).code).toBe('unsafe-observation'); expect(post).not.toHaveBeenCalled();
 });
-it('saves the explicit timetable mapping after receipt, with a separate source status and cooldown', async () => {
+it.each(['https://www.k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp'])('saves the explicit timetable mapping from %s after receipt, with a separate source status and cooldown', async origin => {
   storage.kulmsFetchCompletedAt = Date.now(); storage.kulmsFetchOwnerUid = 'fictional-user';
   send.mockImplementationOnce(async (_tab, request) => ({ ok: true, observation: { ...timetable,
     observationId: request.observationId, fetchedAt: request.fetchedAt } }));
   const reply = await new Promise<Record<string, unknown>>(resolve => handler({ type: 'kulasis-page-ready' },
-    { ...sender, url: 'https://www.k.kyoto-u.ac.jp/student/la/top' }, resolve as (x: unknown) => void, 'kulasis'));
+    { ...sender, url: origin + '/student/la/top' }, resolve as (x: unknown) => void, 'kulasis'));
   expect(reply.ok).toBe(true);
   expect(storage.kulasisFetchStatus).toBe('success'); expect(storage.kulmsFetchCompletedAt).toBe(0);
   expect(local.kulasisMapping).toEqual({ uid: 'fictional-user', term: kulasisTerm(new Date().toISOString()), siteIds: ['fictional-site'] });

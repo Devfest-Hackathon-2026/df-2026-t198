@@ -1,4 +1,4 @@
-import { KULASIS_ORIGIN, kulmsSiteFromUrl } from '../../core/src/kulasis-reader.js';
+import { isKulasisOrigin, kulmsSiteFromUrl } from '../../core/src/kulasis-reader.js';
 import { KULMS_ORIGIN } from '../../core/src/sakai-reader.js';
 import { handleKulmsMessage } from './kulms-worker.js';
 
@@ -18,7 +18,7 @@ export async function resolveKulmsSite(code: unknown, fetcher: typeof fetch = fe
 export function handleKulasisMessage(message: unknown, sender: chrome.runtime.MessageSender, respond: (value: unknown) => void): boolean | undefined {
   if (message && typeof message === 'object' && 'type' in message && message.type === 'kulasis-resolve-site') {
     let trusted = false;
-    try { trusted = new URL(sender.url ?? '').origin === KULASIS_ORIGIN; } catch { /* Reject invalid senders. */ }
+    try { trusted = isKulasisOrigin(new URL(sender.url ?? '').origin); } catch { /* Reject invalid senders. */ }
     if (!trusted || sender.id !== chrome.runtime.id || sender.frameId !== 0 || sender.tab?.id === undefined) {
       respond({ ok: false }); return false;
     }
