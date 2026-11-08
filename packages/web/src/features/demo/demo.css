@@ -84,3 +84,4 @@
   .demo-command .td-btn-primary { width: 100%; }
   .demo-lms-layout { grid-template-columns: 92px minmax(0, 1fr); }
 }
+.app .demo-observed-task[data-course-color] { border-inline-start: 4px solid var(--course-band); padding-inline-start: var(--space-3); background: var(--course-soft); }

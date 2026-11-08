@@ -23,6 +23,7 @@ import { ChangedDeadline } from '../../shared/assignments/deadline-change';
 import { missingDeadlineText } from '../../shared/assignments/review-reason';
 import { DemoLogin } from '../../shared/auth/demo-login';
 import { OperationMessages } from '../../shared/ui/operation-messages';
+import { courseColor } from '../../shared/course-color';
 
 export function SessionPage({ path = '/session' }: { path?: string }) {
   const [services] = useState(() => { try { return getSessionServices(); } catch { return null; } });
@@ -198,6 +199,7 @@ function SessionTaskTable({ entries, data, now, manualActions, own, viewerUid }:
   return <div className="session-task-workspace"><TaskTable caption="次の面談までの課題" selected={selected} onSelect={setSelected}
     now={now.toISOString()} rows={entries.map(item => ({ id: entryId(item), title: entryTitle(item),
       course: data.courses.find(course => entryBelongsTo(item, course))?.name ?? '授業の指定なし',
+      courseIdentity: data.courses.find(course => entryBelongsTo(item, course)),
       deadline: <ChangedDeadline value={entryDisplayDeadline(item) ? formatDeadline(entryDisplayDeadline(item)!) : '締切を確認できていません'} />,
       note: item.kind === 'lms' && reviewDescription(item.row) ? <span className="session-review"><span className="review-tag">要確認</span> {reviewDescription(item.row)}</span> : undefined,
     }))} />
@@ -214,8 +216,8 @@ export function SessionAssignment({ row, data, open = false }: { row: LedgerAssi
   const changes = data.changes.filter(change => sameAssignment(row, change.assignmentKey))
     .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
   const reason = reviewDescription(row);
-  return <li><details className="session-task" open={open}><summary><div>
-    <span className="eyebrow">{course?.name ?? '授業'}</span>
+  return <li><details className="session-task" data-course-color={courseColor({ system: row.key.system, courseId: row.latest.courseId })} open={open}><summary><div>
+    <span className="eyebrow course-label">{course?.name ?? '授業'}</span>
     <h3>{row.latest.title}</h3>
     <ChangedDeadline value={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) :
       missingDeadlineText(row.latest.deadline) ?? '締切を確認できていません'} />

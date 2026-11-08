@@ -29,6 +29,7 @@ export function DemoObserved({ state, role }: { state: SessionState; role: 'stud
   }
   const rows = deadlineEntries(data.assignments, [], Date.now()).flatMap(entry => entry.kind === 'lms' ? [entry.row] : []);
   return <><p className="demo-observed-label">課題と締切</p>{rows.map(row => <DemoTask key={row.key.sourceId}
-      course={data.courses.find(course => course.courseId === row.latest.courseId)?.name ?? '授業'}
+      identity={{ system: row.key.system, courseId: row.latest.courseId }}
+      course={data.courses.find(course => course.system === row.key.system && course.courseId === row.latest.courseId)?.name ?? '授業'}
       title={row.latest.title} due={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確かめてください'} />)}</>;
 }

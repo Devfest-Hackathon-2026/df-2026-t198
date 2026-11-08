@@ -21,6 +21,7 @@ import { firebase } from '../../shared/firebase';
 import { watchAccount, type StudentState } from './data';
 import { type StudentCourse, type StudentData } from '../../shared/assignments/types';
 import { NotificationSettingsPanel } from '../notifications/settings';
+import { courseColor } from '../../shared/course-color';
 
 export const courseKey = (course: StudentCourse) => JSON.stringify([course.system, course.courseId]);
 const belongsTo = (item: LedgerAssignment, course: StudentCourse) =>
@@ -114,7 +115,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
   };
   const taskRows = (items: typeof upcoming) => <ul className="td-tasklist">{items.map(item => {
       const owner = data.courses.find(c => entryBelongsTo(item, c));
-      return <li key={entryId(item)}><TaskRow course={owner?.name ?? '手で入れた課題'} title={entryTitle(item)}
+      return <li key={entryId(item)}><TaskRow course={owner?.name ?? '手で入れた課題'} courseIdentity={owner} title={entryTitle(item)}
         deadline={<ChangedDeadline value={deadlineText(entryDisplayDeadline(item))} />}
         onSelect={owner ? () => select(owner) : undefined} />
         {item.kind === 'manual' && <small className="manual-author">{manualAuthor(item.row)}</small>}</li>;
@@ -150,7 +151,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
             c.slots.some(slot => slot.weekday === d + 1 && slot.period === p + 1)).map(c => {
             const next = courseEntries(c)[0];
             return <button className={`course-cell${changed.has(courseKey(c)) ? ' changed' : ''}`} key={courseKey(c)} onClick={() => select(c)}
-              aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
+              data-course-color={courseColor(c)} aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
               <strong>{c.name}</strong>{next && <><span><ChangedDeadline value={deadlineText(entryDisplayDeadline(next))} /></span><span>{entryTitle(next)}</span>{next.kind === 'manual' && <small>手で入れた課題</small>}
                 {next.kind === 'lms' && (next.row.reviewReasons.length > 0 || next.row.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.row.reviewReasons[0]?.kind === 'unreadable-deadline'
                   ? missingDeadlineText(next.row.latest.deadline) ?? '締切を確認できていません。' : next.row.reviewReasons[0] ? reviewReasonText(next.row.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
@@ -161,7 +162,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
       </table></ScrollFrame>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
         <button className="plain-button" key={courseKey(c)} onClick={() => select(c)} aria-controls="course-assignments">{c.name}</button>)}</section>}</div>
       {course && <aside ref={panel} tabIndex={-1} className="course-panel" id="course-assignments" aria-label={`${course.name}の課題`}>
-        <div className="panel-heading"><h2>{course.name}</h2><button onClick={() => setSelected(null)}>閉じる</button></div>
+        <div className="panel-heading" data-course-color={courseColor(course)}><h2 className="course-label">{course.name}</h2><button onClick={() => setSelected(null)}>閉じる</button></div>
         {!!course.slots.length && <p>{course.slots.map(slot => `${'月火水木金土日'[slot.weekday - 1]}曜${slot.period}限`).join('・')}</p>}
         {course.url && <a href={course.url} target="_blank" rel="noreferrer">LMSで授業を開く</a>}
         <ul>{courseEntries(course).map(entry => entry.kind === 'lms'
@@ -185,7 +186,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
       <PlanForm assignments={data.assignments} actions={actions} /></details>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own />
     </section>
-    {calendar && <div className="student-calendar"><DemoCalendar courses={data.courses} assignments={data.assignments} now={now} /></div>}
+    {calendar && <div className="student-calendar"><DemoCalendar courses={data.courses} assignments={data.assignments} manual={data.manualAssignments} now={now} /></div>}
     </div>
     <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own now={now} />
     </div>

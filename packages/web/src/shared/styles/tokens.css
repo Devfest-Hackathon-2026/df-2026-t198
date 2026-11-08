@@ -49,6 +49,23 @@
 }
 
 .app {
+  /* Course categories: soft background / solid band. Keep status colors separate. */
+  --course-0-soft: #eef3fa;
+  --course-0-band: #42689a;
+  --course-1-soft: #eaf5f1;
+  --course-1-band: #367467;
+  --course-2-soft: #f3f5e8;
+  --course-2-band: #6b7338;
+  --course-3-soft: #faf3e4;
+  --course-3-band: #8b682e;
+  --course-4-soft: #f9f0f6;
+  --course-4-band: #8a5979;
+  --course-5-soft: #f0f4f7;
+  --course-5-band: #566e82;
+  --course-6-soft: #eff6eb;
+  --course-6-band: #507b45;
+  --course-7-soft: #f3f0fa;
+  --course-7-band: #716093;
   --paper: #f7f8f4;
   --sheet: #ffffff;
   --rule: #cbd7e6;
@@ -73,6 +90,15 @@
   --mono: var(--font-mono);
   --focus: var(--accent);
 }
+
+.app [data-course-color='0'] { --course-soft: var(--course-0-soft); --course-band: var(--course-0-band); }
+.app [data-course-color='1'] { --course-soft: var(--course-1-soft); --course-band: var(--course-1-band); }
+.app [data-course-color='2'] { --course-soft: var(--course-2-soft); --course-band: var(--course-2-band); }
+.app [data-course-color='3'] { --course-soft: var(--course-3-soft); --course-band: var(--course-3-band); }
+.app [data-course-color='4'] { --course-soft: var(--course-4-soft); --course-band: var(--course-4-band); }
+.app [data-course-color='5'] { --course-soft: var(--course-5-soft); --course-band: var(--course-5-band); }
+.app [data-course-color='6'] { --course-soft: var(--course-6-soft); --course-band: var(--course-6-band); }
+.app [data-course-color='7'] { --course-soft: var(--course-7-soft); --course-band: var(--course-7-band); }
 
 .lms-skin {
   --paper: #f5f6f8;

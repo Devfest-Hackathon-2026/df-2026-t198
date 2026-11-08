@@ -1,4 +1,5 @@
 import { ScrollFrame } from '../../shared/ui/scroll-frame';
+import { courseColor } from '../../shared/course-color';
 import { linkedCourses } from '../../../../core/src/course-links';
 import { useEffect, useRef, useState } from 'react';
 import type { PreparationCandidate } from '../../../../core/src/types';
@@ -83,7 +84,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
           {courses.filter(course => course.slots.some(slot => slot.weekday === d + 1 && slot.period === i + 1))
             .map(course => {
               const next = entries.find(entry => entryBelongsTo(entry, course));
-              return <span className="session-course" key={JSON.stringify([course.system, course.courseId])}>{course.name}
+              return <span className="session-course" data-course-color={courseColor(course)} key={JSON.stringify([course.system, course.courseId])}>{course.name}
                 {next && <small>{entryTitle(next)}</small>}</span>;
             })}
           {candidates.filter(candidate => candidate.date === date && candidate.period === i + 1).map(candidate =>
