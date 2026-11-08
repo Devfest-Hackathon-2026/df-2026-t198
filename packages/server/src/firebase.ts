@@ -31,7 +31,8 @@ export function firebaseDependencies() {
   const existing = getApps().find(current => current.name === '[DEFAULT]');
   const configuredProject = existing?.options.projectId ?? process.env['GOOGLE_CLOUD_PROJECT'] ?? process.env['GCLOUD_PROJECT'];
   assertEmulatorEnvironment(process.env, configuredProject);
-  const app = existing ?? initializeApp();
+  const app = existing ?? (process.env['FIRESTORE_EMULATOR_HOST'] !== undefined
+    ? initializeApp({ projectId: configuredProject! }) : initializeApp());
   const project = app.options.projectId ?? configuredProject;
   const db = getFirestore(app);
   const saveObservation = createObservationStore(db);

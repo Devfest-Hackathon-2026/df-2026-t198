@@ -1,15 +1,21 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { deleteApp, getApps, initializeApp } from 'firebase-admin/app';
+import { deleteApp, getApp, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { closeFirebaseDependencies, firebaseDependencies } from '../src/firebase.js';
 
+const directories: string[] = [];
+
 beforeEach(() => {
-  for (const key of ['FIRESTORE_EMULATOR_HOST', 'FIREBASE_AUTH_EMULATOR_HOST', 'GOOGLE_CLOUD_PROJECT', 'GCLOUD_PROJECT', 'PUBLIC_WEB_ORIGIN', 'ENABLE_DEMO_ANNOUNCEMENTS', 'FIREBASE_CONFIG']) vi.stubEnv(key, undefined);
+  for (const key of ['FIRESTORE_EMULATOR_HOST', 'FIREBASE_AUTH_EMULATOR_HOST', 'GOOGLE_CLOUD_PROJECT', 'GCLOUD_PROJECT', 'PUBLIC_WEB_ORIGIN', 'ENABLE_DEMO_ANNOUNCEMENTS', 'FIREBASE_CONFIG', 'K_SERVICE', 'NODE_ENV']) vi.stubEnv(key, undefined);
 });
 afterEach(async () => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   await Promise.all(getApps().map(deleteApp));
+  await Promise.all(directories.splice(0).map(directory => rm(directory, { recursive: true, force: true })));
 });
 it('reuses the default app regardless of an earlier named app and closes only its resources once', async () => {
   const other = initializeApp({ projectId: 'demo-unrelated' }, 'unrelated');
@@ -49,10 +55,49 @@ it('rejects a mixed emulator configuration before creating any SDK app', () => {
   expect(() => firebaseDependencies()).toThrow();
   expect(getApps()).toEqual([]);
 });
-it('preserves an implicitly configured project for optional features without emulators', async () => {
-  vi.stubEnv('FIREBASE_CONFIG', JSON.stringify({ projectId: 'demo-config' }));
+async function firebaseConfig(mode: 'json' | 'file', projectId: string) {
+  const options = { projectId, storageBucket: 'fictional-bucket.invalid' };
+  const json = JSON.stringify(options);
+  if (mode === 'json') vi.stubEnv('FIREBASE_CONFIG', json);
+  else {
+    const directory = await mkdtemp(join(tmpdir(), 'kadai-firebase-config-'));
+    directories.push(directory);
+    const file = join(directory, 'firebase.json');
+    await writeFile(file, json);
+    vi.stubEnv('FIREBASE_CONFIG', file);
+  }
+  return options;
+}
+it.each(['json', 'file'] as const)('preserves %s Firebase configuration for optional features without emulators', async mode => {
+  const options = await firebaseConfig(mode, 'fictional-live-project');
+  vi.stubEnv('NODE_ENV', 'production');
   vi.stubEnv('ENABLE_DEMO_ANNOUNCEMENTS', 'true');
   const dependencies = firebaseDependencies();
   expect(dependencies.announcements).toBeDefined();
+  expect(getApp().options).toMatchObject(options);
   await closeFirebaseDependencies(dependencies);
+});
+it.each([
+  ['json', 'fictional-live-project'], ['json', 'demo-other'],
+  ['file', 'fictional-live-project'], ['file', 'demo-other'],
+] as const)('binds the inspected demo project despite %s Firebase configuration naming %s', async (mode, projectId) => {
+  await firebaseConfig(mode, projectId);
+  vi.stubEnv('FIRESTORE_EMULATOR_HOST', '127.0.0.1:8085');
+  vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+  vi.stubEnv('GCLOUD_PROJECT', 'demo-checked');
+  vi.stubEnv('ENABLE_DEMO_ANNOUNCEMENTS', 'true');
+  const dependencies = firebaseDependencies();
+  const app = getApp();
+  expect(app.options.projectId).toBe('demo-checked');
+  expect(app.options.storageBucket).toBeUndefined();
+  expect(dependencies.announcements).toBeDefined();
+  await closeFirebaseDependencies(dependencies);
+});
+it('rejects a real existing default app rather than replacing it in an emulator process', () => {
+  const app = initializeApp({ projectId: 'fictional-live-project' });
+  vi.stubEnv('FIRESTORE_EMULATOR_HOST', '127.0.0.1:8085');
+  vi.stubEnv('FIREBASE_AUTH_EMULATOR_HOST', '127.0.0.1:9099');
+  vi.stubEnv('GCLOUD_PROJECT', 'demo-checked');
+  expect(() => firebaseDependencies()).toThrow('invalid-emulator-environment');
+  expect(getApps()).toEqual([app]);
 });

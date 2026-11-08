@@ -238,7 +238,7 @@ Cloud RunはSIGTERM送信の10秒後にSIGKILLを送る仕様です。Nodeサー
 
 ### 本番とローカルの分離
 
-サーバーで`FIREBASE_AUTH_EMULATOR_HOST`または`FIRESTORE_EMULATOR_HOST`を設定する場合は、両方をループバックホスト（`127.0.0.1`、`localhost`、`[::1]`）と1〜65535のポートで指定し、appと環境のproject IDを同じ`demo-*`へ揃えてください。`NODE_ENV=production`または`K_SERVICE`の設定時はエミュレーター設定を拒否し、環境変数値をエラーに出力せずSDK初期化前に停止するため、本番環境へエミュレーター変数を持ち込まないでください。Webエミュレーターは、Vite DEV実行時かつページhostnameが`127.0.0.1`または`localhost`でポートが有効な場合のみ`demo-kadai-hisho`へ接続します。productionビルドでのエミュレーター指定、非ループバック、無効なポートの場合は本番へフォールバックせず既存の準備中表示となり、通常のFirebase公開設定欠落時のnull/準備中動作は維持されます。
+サーバーで`FIREBASE_AUTH_EMULATOR_HOST`または`FIRESTORE_EMULATOR_HOST`を設定する場合は、両方をループバックホスト（`127.0.0.1`、`localhost`、`[::1]`）と1〜65535のポートで指定し、appと環境のproject IDを同じ`demo-*`へ揃えてください。サーバーの新規appでエミュレーターを使うときは、`GOOGLE_CLOUD_PROJECT`または`GCLOUD_PROJECT`の少なくとも1つで`demo-*`のproject IDを明示し、SDKが後から別projectを選ぶ問題を避けるためその検査済みproject IDを`initializeApp`へ直接渡します。`FIREBASE_CONFIG`（JSONまたはファイル）によるローカルprojectの暗黙切り替えは行いませんが、エミュレーターを使わない本番では既存の`FIREBASE_CONFIG`（JSONまたはファイル）による暗黙設定を維持します。`NODE_ENV=production`または`K_SERVICE`の設定時はエミュレーター設定を拒否し、環境変数値をエラーに出力せずSDK初期化前に停止するため、本番環境へエミュレーター変数を持ち込まないでください。Webエミュレーターは、Vite DEV実行時かつページhostnameが`127.0.0.1`または`localhost`でポートが有効な場合のみ`demo-kadai-hisho`へ接続します。productionビルドでのエミュレーター指定、非ループバック、無効なポートの場合は本番へフォールバックせず既存の準備中表示となり、通常のFirebase公開設定欠落時のnull/準備中動作は維持されます。
 
 ### 通信期限と購読
 
