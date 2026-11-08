@@ -1,0 +1,62 @@
+{
+  "base": "37b503d",
+  "implementationCommit": "b2c74e9",
+  "branch": "issue-232-pwa",
+  "environment": "local synthetic data only",
+  "checks": {
+    "typecheck": 0,
+    "lint": 0,
+    "test": 0,
+    "build": 0,
+    "progressCheck": 0,
+    "checkSamples": 0
+  },
+  "unitTests": {
+    "core": 274,
+    "extension": 509,
+    "web": 171,
+    "server": 312,
+    "webSkipped": 2,
+    "serverSkipped": 128,
+    "pwa": 22
+  },
+  "judgeQa": {
+    "passed": 28,
+    "total": 28,
+    "browserErrors": 0
+  },
+  "m6": {
+    "passed": 8,
+    "total": 8,
+    "calendar": "mock"
+  },
+  "pwa": {
+    "chromium": "158.0.8127.18",
+    "manifest": "pass",
+    "installabilityErrors": [],
+    "iconSizes": [
+      192,
+      512,
+      512,
+      180
+    ],
+    "excludedRequests": "pass",
+    "cachePaths": [
+      "/index.html",
+      "/assets/index-DOa-QQJv.js",
+      "/assets/index-DuBQcJUu.css"
+    ],
+    "offlineShell": "pass",
+    "viewport": 390,
+    "update": {
+      "old": "todoku-pwa-99b01e0f574b23de",
+      "current": "todoku-pwa-730447e0dcc08aef",
+      "nextOpen": "new HTML",
+      "offlineAfterUpdate": "new HTML",
+      "obsoleteCaches": 0
+    },
+    "developmentRegistrations": 0,
+    "browserErrors": 0,
+    "phoneHomeScreenAndGoogleLogin": "not tested"
+  }
+}

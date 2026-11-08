@@ -3,6 +3,8 @@ import { ChangedDeadline } from '../../shared/assignments/deadline-change';
 import { Button } from '../../shared/ui/button';
 import { reducedMotion } from '../../shared/ui/motion';
 import './demo.css';
+import type { CourseIdentity } from '../../shared/course-color';
+import { useCourseColors } from '../../shared/course-color-context';
 
 const roles = { lms: 'LMS', student: '学生', supporter: '支援担当' } as const;
 type Pane = keyof typeof roles;
@@ -25,8 +27,9 @@ export function DemoTriptych({ lms, student, supporter, waiting = false }: {
   </div>;
 }
 
-export function DemoTask({ course, title, due }: { course: string; title: string; due: string }) {
-  return <article className="demo-observed-task"><p className="eyebrow">{course}</p><h3>{title}</h3>
+export function DemoTask({ course, identity, title, due }: { course: string; identity?: CourseIdentity; title: string; due: string }) {
+  const courseColor = useCourseColors();
+  return <article className="demo-observed-task" data-course-color={courseColor(identity)}><p className="eyebrow course-label">{course}</p><h3>{title}</h3>
     <ChangedDeadline value={due} /></article>;
 }
 

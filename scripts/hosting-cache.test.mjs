@@ -36,6 +36,15 @@ test('fingerprinted JavaScript and CSS remain cacheable for a year', async () =>
   }
 });
 
+for (const path of ['/sw.js', '/manifest.webmanifest']) {
+  test(`${path} revalidates so a new application version can take over`, async () => {
+    const response = await fetch(new URL(path, origin));
+    await response.arrayBuffer();
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-cache');
+  });
+}
+
 test('built HTML links to the bundled ToDoku SVG favicon', async () => {
   const html = await (await fetch(new URL('/', origin))).text();
   assert.match(html, /<link rel="icon" type="image\/svg\+xml" href="\/favicon.svg"\s*\/?>/);

@@ -40,6 +40,11 @@
 .td-taskrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-4); align-items: center; padding: var(--space-3) var(--space-2); border-bottom: 1px solid var(--rule); min-height: var(--target); color: inherit; text-decoration: none; }
 a.td-taskrow:hover { background: var(--sheet); }
 .td-taskrow-course { grid-column: 1; font-size: 14px; line-height: 21px; color: var(--ink-muted); }
+.app [data-course-color] .course-label::before,
+.app .td-taskrow[data-course-color] .td-taskrow-course::before {
+  content: ''; display: inline-block; width: .6em; height: .6em; margin-inline-end: .5em;
+  border-radius: 50%; background: var(--course-band); vertical-align: .05em;
+}
 .td-taskrow-title { grid-column: 1; font-size: 16px; line-height: 24px; min-width: 0; overflow-wrap: anywhere; }
 .td-taskrow-side { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--space-1) var(--space-2); max-width: 22rem; }
 .td-taskrow-done .td-taskrow-title { color: var(--ink-muted); }

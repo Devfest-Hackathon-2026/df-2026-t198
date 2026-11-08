@@ -18,6 +18,10 @@
 .student-workspace .td-fetch { margin-bottom: var(--space-4); }
 .student-workspace .td-fetch .notice { margin: 0; padding: 0; border: 0; background: transparent; }
 .student-mobile-tabs { display: none; }
+.app .course-cell[data-course-color] {
+  background: var(--course-soft); border-inline-start: 4px solid var(--course-band);
+}
+.app .course-cell[data-course-color][aria-pressed='true'] { outline: 2px solid var(--ink); outline-offset: -2px; }
 .student-workspace .preparation-add { margin: 0 0 var(--space-4); }
 @media (max-width: 850px) {
   .student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr); }

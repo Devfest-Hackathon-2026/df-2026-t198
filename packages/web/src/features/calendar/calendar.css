@@ -2,3 +2,4 @@
 .deadline-calendar th[aria-current='date'] { box-shadow: inset 0 -3px 0 var(--accent); background: var(--accent-soft); }
 .deadline-calendar .calendar-navigation button { border: 1px solid var(--rule); border-radius: var(--radius-sm); }
 .deadline-calendar .calendar-event { border-radius: var(--radius-sm); }
+.app .calendar-event[data-course-color] { border-inline-start: 4px solid var(--course-band); }
