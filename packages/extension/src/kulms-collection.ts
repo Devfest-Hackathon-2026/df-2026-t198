@@ -10,7 +10,7 @@ const failure = (error: unknown, courseId: string | null): FetchFailure => {
 };
 /** Runs only inside the KULMS content script; no cookies or raw API data leave it. */
 export async function collectKulmsObservation(options: Options): Promise<Observation> {
-  const { signal } = options;
+  const { signal, fetcher } = options;
   const observation: Observation = { schemaVersion: 1, observationId: options.observationId, system: 'kulms',
     definitionId: definition.definitionId, definitionVersion: definition.version, fetchedAt: options.fetchedAt,
     catalogCourses: [], courseResults: [], assignments: [], failures: [] };
@@ -24,7 +24,7 @@ export async function collectKulmsObservation(options: Options): Promise<Observa
     try {
       let response: Response;
       try {
-        response = await options.fetcher(`${KULMS_ORIGIN}/direct/${path}`, { method: 'GET', credentials: 'same-origin',
+        response = await fetcher(`${KULMS_ORIGIN}/direct/${path}`, { method: 'GET', credentials: 'same-origin',
           redirect: 'manual', referrerPolicy: 'no-referrer', cache: 'no-store', signal: controller.signal });
       } catch { active(); throw new Error('http-error'); }
       active();

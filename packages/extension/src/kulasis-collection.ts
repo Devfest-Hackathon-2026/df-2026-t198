@@ -7,6 +7,7 @@ interface Options {
   resolveSite: (code: string) => Promise<string | undefined>;
 }
 export async function collectKulasisObservation(options: Options): Promise<Observation> {
+  const { fetcher } = options;
   const observation: Observation = { schemaVersion: 1, system: 'kulasis', observationId: options.observationId,
     definitionId: definition.definitionId, definitionVersion: definition.version, fetchedAt: options.fetchedAt,
     catalogCourses: [], courseResults: [], assignments: [], failures: [] };
@@ -20,7 +21,7 @@ export async function collectKulasisObservation(options: Options): Promise<Obser
     try {
       let response: Response;
       try {
-        response = await options.fetcher(url, { method: 'GET', credentials: 'same-origin', redirect: 'manual',
+        response = await fetcher(url, { method: 'GET', credentials: 'same-origin', redirect: 'manual',
           cache: 'no-store', referrerPolicy: 'no-referrer', signal: controller.signal });
       } catch { active(); throw new Error('http-error'); }
       if ([401, 302, 303, 307, 308].includes(response.status) || response.type === 'opaqueredirect') throw new Error('not-logged-in');

@@ -21,6 +21,16 @@ it('decodes CP932, ignores the delayed logout, and sends a timetable with an exp
   expect(opts.fetcher.mock.calls.every(([url, init]) => String(url).startsWith(base) && init?.method === 'GET' && init.credentials === 'same-origin' && init.redirect === 'manual')).toBe(true);
   expect(opts.fetcher.mock.calls[0]?.[0]).toBe(base + '/entry/kouki');
 });
+it('accepts a browser fetch function that rejects an unrelated receiver', async () => {
+  const opts = options();
+  opts.fetcher.mockImplementation(async url => new Response(String(url).includes('/entry/') ? sample : String(url).endsWith('1') ? support : '<html><body></body></html>'));
+  const original = opts.fetcher.getMockImplementation();
+  opts.fetcher.mockImplementation(function (url, init) {
+    if (this !== undefined && this !== globalThis) throw new TypeError('Illegal invocation');
+    return original(url, init);
+  });
+  expect(await collectKulasisObservation(opts)).toEqual(expected);
+});
 it('uses the current academic half in Japan, including January and the April boundary', async () => {
   for (const [at, path] of [['2031-01-01T00:00:00Z', 'kouki'], ['2031-03-31T15:00:00Z', 'zenki']]) {
     const opts = { ...options(), fetchedAt: at };
