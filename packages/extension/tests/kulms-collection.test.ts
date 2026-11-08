@@ -33,13 +33,21 @@ it('matches the frozen observation, sends only allowed fields, and measures M2',
   expect(matches.filter(Boolean)).toHaveLength(15);
   console.info(`M2: ${matches.filter(Boolean).length}/${matches.length} (100%); initial synthetic measurement`);
 });
+it('accepts a browser fetch function that rejects an unrelated receiver', async () => {
+  const original = fetcher.getMockImplementation()!;
+  fetcher.mockImplementation(function (this: unknown, url, init) {
+    if (this !== undefined && this !== globalThis) throw new TypeError('Illegal invocation');
+    return original(url, init);
+  });
+  expect(await collectKulmsObservation(options())).toEqual(expected);
+});
 it.each([401, 302])('sends a logout failure instead of an empty success: %s', async status => {
   fetcher.mockResolvedValue(new Response(null, { status }));
   const result = await collectKulmsObservation(options());
   expect(result.failures).toEqual([{ courseId: null, kind: 'not-logged-in', detail: 'not-logged-in' }]);
   expect(result.courseResults).toEqual([]);
 });
-it.each([null, {}, { id: null }])('does not treat an anonymous user as logged in: %s', async user => {
+it.each([null, {}, { id: null }, { id: '' }])('does not treat an anonymous user as logged in: %s', async user => {
   replies['/direct/user/current.json'] = user;
   expect((await collectKulmsObservation(options())).failures[0]?.kind).toBe('not-logged-in');
   expect(requests).toHaveLength(1);
