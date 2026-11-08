@@ -54,7 +54,7 @@ export function createMailSender(options: MailOptions) {
         else parts[parts.length - 1] += char;
         return parts;
       }, []).map(part => `=?UTF-8?B?${Buffer.from(part).toString('base64')}?=`).join('\r\n ');
-      const raw = [`From: ${options.from}`, `To: ${message.to}`, `Subject: ${subject}`, 'MIME-Version: 1.0',
+      const raw = [`From: ToDoku <${options.from}>`, `To: ${message.to}`, `Subject: ${subject}`, 'MIME-Version: 1.0',
         `Content-Type: multipart/alternative; boundary="${boundary}"`, '',
         ...(['text/plain', 'text/html'] as const).flatMap((type, i) => [`--${boundary}`,
           `Content-Type: ${type}; charset=UTF-8`, 'Content-Transfer-Encoding: base64', '', base64Lines(i ? message.html : message.text)]),
