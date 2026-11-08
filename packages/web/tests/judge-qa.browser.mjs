@@ -69,7 +69,7 @@ try {
     await login(student, 'student');
     await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
     await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
-    await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
+    await student.goto(`${base}/student`); await student.locator('.timetable').waitFor({ state: 'attached' });
     await check(`${width}: submitted deadlines, scroll hints and date navigation`, async () => {
       const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
       // #177 added a second submitted task; both badges and their date navigation must work.
@@ -77,19 +77,22 @@ try {
         const submitted = calendar.locator('.calendar-event.submitted').filter({ has: student.getByText(title, { exact: true }) });
         await submitted.getByText('出せました', { exact: true }).waitFor();
         const day = await submitted.evaluate(element => element.closest('[data-date]').dataset.date);
-        await calendar.getByRole('button', { name: `${Number(day.slice(5, 7))}/${Number(day.slice(8))}の締切へ`, exact: true }).click();
+        if (width === 390) await calendar.getByRole('button', { name: `${Number(day.slice(5, 7))}/${Number(day.slice(8))}の締切へ`, exact: true }).click();
+        else assert.equal(await calendar.locator('.calendar-navigation').count(), 0);
         assert.equal(await submitted.evaluate(element => {
           const box = element.getBoundingClientRect(); const parent = element.closest('.calendar-scroll').getBoundingClientRect();
           return box.left >= parent.left && box.right <= parent.right;
         }), true, 'the selected deadline is horizontally visible');
       }
       assert.equal(await calendar.locator('.calendar-event.submitted').count(), 2);
-      await calendar.getByRole('button', { name: '今日へ', exact: true }).click();
+      if (width === 390) await calendar.getByRole('button', { name: '今日へ', exact: true }).click();
       assert.equal(await calendar.locator('.calendar-scroll').evaluate(element => Math.round(element.scrollLeft)), 0);
-      assert.equal(await student.locator('.scroll-hint').first().isVisible(), width <= 850);
+      assert.equal(await calendar.locator('.td-scroll-frame').getAttribute('data-right'), String(width === 390));
+      assert.equal(await student.locator('.scroll-hint').count(), 0);
       assert.equal(await student.getByText('朱色は、今変わった締切の目印です。しばらくすると元の色に戻ります。', { exact: true }).count(), 0);
     });
     await check(`${width}: period labels stay visible after horizontal scrolling`, async () => {
+      if (width === 390) await student.getByRole('tab', { name: '時間割', exact: true }).click();
       const region = student.locator('.timetable-scroll');
       await region.evaluate(element => { element.scrollLeft = element.scrollWidth; });
       assert.equal(await region.locator('tbody th').first().evaluate(element => {
@@ -97,6 +100,7 @@ try {
         return box.left >= outer.left && box.right <= outer.right;
       }), true);
     });
+    if (width === 390) await student.getByRole('tab', { name: '準備', exact: true }).click();
     await login(supporter, 'supporter');
     await supporter.goto(`${base}/session/trial-student/plan`); await supporter.locator('.session-candidate button').first().waitFor();
     const candidate = supporter.locator('.session-candidate button').first();
@@ -167,8 +171,8 @@ try {
     });
     await ref.collection('sessionContext').doc('current').update({ lastSessionAt: `${saved.decidedOn}T09:00:00+09:00` });
     await student.goto(`${base}/session/trial-student`); await student.locator('.session-heading').waitFor();
-    await check(`${width}: checking explains preparation before the list and sorts promises`, async () => {
-      await student.getByText('準備は、課題に取り組む時間のことです。', { exact: true }).waitFor();
+    await check(`${width}: checking labels preparation and sorts promises`, async () => {
+      await student.getByRole('heading', { name: '入れた準備の予定', exact: true }).waitFor();
       const promises = student.locator('#session-promises').locator('..');
       const dates = await promises.locator('time').evaluateAll(nodes => nodes.map(node => node.dateTime));
       assert.ok(dates.length >= 3); assert.deepEqual(dates, [...dates].sort());
@@ -199,6 +203,7 @@ try {
     await student.locator('.demo-more > summary').click();
     const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
     await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+    await preview.getByRole('button', { name: /今日やること.*を開く/ }).click();
     await preview.getByRole('link', { name: /終わった/, exact: false }).click();
     await preview.getByRole('region', { name: '準備の予定の操作', exact: true })
       .getByRole('button', { name: '終わった', exact: true }).click();

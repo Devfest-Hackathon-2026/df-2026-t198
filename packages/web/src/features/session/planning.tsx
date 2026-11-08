@@ -1,3 +1,4 @@
+import { ScrollFrame } from '../../shared/ui/scroll-frame';
 import { linkedCourses } from '../../../../core/src/course-links';
 import { useEffect, useRef, useState } from 'react';
 import type { PreparationCandidate } from '../../../../core/src/types';
@@ -54,8 +55,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
   const dates = Array.from({ length: weekendDeadline ? 7 : 5 }, (_, i) => {
     const day = new Date(monday); day.setUTCDate(day.getUTCDate() + i); return day.toISOString().slice(0, 10);
   });
-  return <div className="session-planning">
-    <p>準備は、課題に取り組む時間のことです。</p>
+  return <div className="session-planning td-stage" style={{ animationDelay: '200ms' }}>
     <label className="session-topic">相談する課題
       <select value={task ? JSON.stringify(task.key) : ''} onChange={event => { setMessage(''); setSelected(event.target.value); setCandidate(null); }}>
         {!tasks.length && <option value="">次回までの課題がありません</option>}
@@ -73,8 +73,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
     {weeks.length > 1 && <nav className="session-weeks" aria-label="表示する週">{weeks.map(week =>
       <button key={week} aria-pressed={monday.toISOString().slice(0, 10) === week}
         onClick={() => setChosenWeek(week)}>{week.replaceAll('-', '/')}の週</button>)}</nav>}
-    <p className="scroll-hint">時間割は左右に動かせます。</p>
-    <div className="session-timetable-scroll" tabIndex={0} role="region" aria-label="授業と準備の候補"><table className="session-timetable">
+    <ScrollFrame className="session-timetable-scroll" label="授業と準備の候補"><table className="session-timetable">
       <caption>授業と準備の候補</caption>
       <thead><tr><th scope="col">時限</th>{dates.map((date, i) => <th scope="col" key={date}>
         {Number(date.slice(5, 7))}/{Number(date.slice(8))}（{'月火水木金土日'[i]}）
@@ -95,7 +94,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
               onSelect={() => setSelectedPlanId(plan.planId)} />)}
         </td>)}
       </tr>)}</tbody>
-    </table></div>
+    </table></ScrollFrame>
     {courses.some(course => !course.slots.length) && <section aria-label="曜日・時限がまだ分からない授業">
       <h2>曜日・時限がまだ分からない授業</h2>
       {courses.filter(course => !course.slots.length).map(course => <p key={JSON.stringify([course.system, course.courseId])}>
@@ -106,7 +105,6 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
       <PlanSummary plan={selectedPlan} assignments={data.assignments} /><span>{selectedPlan.period}限（日本時間）</span>
     </aside>}
     {task && !candidates.length && <p>この課題の候補にできるコマがありません。</p>}
-    <p className="muted">{own ? '授業以外の予定も確かめてください。' : '授業以外の予定は、学生と確かめてください。'}</p>
     {candidate && actions && <PlanForm key={JSON.stringify(candidate)} assignments={data.assignments} candidate={candidate}
       actions={actions} onSaved={() => { setCandidate(null); setMessage('準備の予定を入れました。'); }} />}
     {message && <p role="status">{message}</p>}

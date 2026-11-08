@@ -1,9 +1,9 @@
-import { Button } from '../../shared/ui/button';
+import { Button, TaskTable, DetailPanel, FetchState, Skeleton } from '../../shared/ui';
 import { ContextEditor } from './context-editor';
 import { linkedCourses } from '../../../../core/src/course-links';
 import { ManualAssignments, ManualAssignmentRow } from '../manual-assignments/components';
 import { manualAssignmentActions, type ManualAssignmentActions } from '../manual-assignments/api';
-import { entryId } from '../../shared/assignments/deadline-entries';
+import { entryBelongsTo, entryDisplayDeadline, entryId, entryTitle, type DeadlineEntry } from '../../shared/assignments/deadline-entries';
 import { planProgress } from '../plans/progress';
 import { LmsSourceLink } from '../../shared/assignments/lms-link';
 import { fetchStatus } from '../../shared/assignments/fetch-status';
@@ -32,7 +32,7 @@ export function SessionPage({ path = '/session' }: { path?: string }) {
   const [logoutBusy, setLogoutBusy] = useState(false);
   useEffect(() => services?.observeUser(current => { setUser(current); setReady(true); setError(''); }), [services]);
   if (!services) return <p role="status">面談画面の準備がまだできていません。画面を用意した担当者に確認してください。</p>;
-  if (!ready) return <p role="status">ログインを確かめています…</p>;
+  if (!ready) return <Skeleton label="ログイン状態を確かめています…" />;
   return <>
     <div className="session-account">
       {user && <Button className="logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void services.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}
@@ -110,7 +110,7 @@ function StudentSession({ uid, user, services, planning, displayName }: { uid: s
     const interval = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(interval);
   }, []);
-  if (state.status === 'loading') return <p role="status">面談の内容を開いています…</p>;
+  if (state.status === 'loading') return <Skeleton label="面談画面を開いています…" lines={6} />;
   if (state.status === 'denied') return <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>;
   if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。{uid === user.uid ? '接続を確かめて、画面を開き直してください。' : '学生を選び直してください。'}</p>;
   return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning}
@@ -130,7 +130,7 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
   </>;
   const base = `/session/${encodeURIComponent(uid)}`;
   return <OperationMessages>
-    <header className="session-heading">
+    <header className="session-heading td-stage">
       <div><h1>{own ? '自分の面談' : displayName ?? '学生'}</h1>
         {!own && !displayName && <p className="session-student-id">{uid}</p>}</div>
       <div className="session-dates">
@@ -138,21 +138,20 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
         <p>次回 <strong>{data.context.nextSessionAt ? formatMoment(data.context.nextSessionAt) : '日時を決めてください'}</strong></p>
       </div>
     </header>
-    <nav className="session-steps" aria-label="面談の段階">
+    <nav className="session-steps td-stage" style={{ animationDelay: '100ms' }} aria-label="面談の段階">
       <SessionLink href={base} aria-current={!planning ? 'step' : undefined}>① 確かめる</SessionLink>
       <span aria-hidden="true">→</span>
       <SessionLink href={`${base}/plan`} aria-current={planning ? 'step' : undefined}>② 相談する</SessionLink>
     </nav>
     <ContextEditor key={`${data.context.lastSessionAt}/${data.context.nextSessionAt}`} context={data.context} save={save} />
-    {!planning && <p>準備は、課題に取り組む時間のことです。</p>}
     {planning ? <SessionPlanning data={data} now={now} actions={actions} own={own} viewerUid={viewerUid} /> : <>
       <div className="session-updates">
         {data.fetchStates.map(state => {
           const { stale, failed } = fetchStatus(state, now.getTime());
           const label = { 'ynu-lms': 'YNU LMS', kulms: 'KULMS', kulasis: 'KULASIS', 'demo-lms': '体験用LMS' }[state.system];
-          if (stale || failed) return <p className="notice" key={state.system}>
+          if (stale || failed) return <FetchState state="error" title={label} key={state.system} detail={<p className="notice">
             {label}：{stale ? `${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。学生がLMSを開くと新しくなります。` :
-              '課題をすべて確認できていません。LMSを一緒に開いて確かめてください。'}</p>;
+              '課題をすべて確認できていません。LMSを一緒に開いて確かめてください。'}</p>} />;
           return <p key={state.system}>
             <strong>{state.system === 'ynu-lms' ? 'YNU' : label}</strong>{' '}
             {state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}
@@ -160,14 +159,14 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
         })}
       </div>
       <PlanList plans={data.plans} assignments={data.assignments} own={own} />
-      <div className="session-check">
+      <div className="session-check td-stage" style={{ animationDelay: '200ms' }}>
         {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>
           <ul className="panel session-rows">{promises.map(plan =>
             <li key={plan.planId}>{data.assignments.find(row => sameAssignment(row, plan.assignment))?.latest.title ?? '課題'}：
               <time dateTime={plan.startsAt}>{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time> {plan.period}限に準備 {planProgress(plan)}</li>)}</ul>
         </section>}
         <section aria-labelledby="session-changes"><h2 id="session-changes">前回の面談からの変化</h2>
-          {!data.context.lastSessionAt && <p>前回の面談日時を入れると、それ以降の変化が出ます。</p>}
+          {!data.context.lastSessionAt && <a href="#session-dates-editor">前回の面談日時を入れる</a>}
           {!!view.changes.length && <ul className="panel session-rows session-brief">{view.changes.slice(0, 5).map(change => <li key={change.changeId}>
             {changeLine(change)}
           </li>)}</ul>}
@@ -176,10 +175,9 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
           </ul></details>}
         </section>
         <section aria-labelledby="session-deadlines"><h2 id="session-deadlines">次の面談までの締切</h2>
-          {!data.context.nextSessionAt && <p>次の面談日時を決めると、この期間の締切が出ます。</p>}
-          {!!deadlines.length && <ul className="panel session-rows">{deadlines.map(entry => entry.kind === 'lms'
-            ? <SessionAssignment key={entryId(entry)} row={entry.row} data={data} />
-            : <ManualAssignmentRow key={entryId(entry)} row={entry.row} actions={manualActions} own={own} viewerUid={viewerUid} />)}</ul>}
+          {!data.context.nextSessionAt && <a href="#session-dates-editor">次の面談日時を決める</a>}
+          {!!deadlines.length && <SessionTaskTable entries={deadlines} data={data} now={now}
+            manualActions={manualActions} own={own} viewerUid={viewerUid} />}
         </section>
         {!!view.review.filter(row => !view.deadlines.includes(row)).length && <ul className="panel session-rows session-other-review"
           aria-label="締切を確かめる課題">
@@ -192,15 +190,31 @@ export function SessionDetails({ data, now, own, save, uid, planning, actions, m
     <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own={own} viewerUid={viewerUid} now={now.getTime()} />
   </OperationMessages>;
 }
+function SessionTaskTable({ entries, data, now, manualActions, own, viewerUid }: {
+  entries: DeadlineEntry[]; data: SessionData; now: Date; manualActions?: ManualAssignmentActions | undefined; own: boolean; viewerUid?: string | undefined;
+}) {
+  const [selected, setSelected] = useState('');
+  const entry = entries.find(item => entryId(item) === selected);
+  return <div className="session-task-workspace"><TaskTable caption="次の面談までの課題" selected={selected} onSelect={setSelected}
+    now={now.toISOString()} rows={entries.map(item => ({ id: entryId(item), title: entryTitle(item),
+      course: data.courses.find(course => entryBelongsTo(item, course))?.name ?? '授業の指定なし',
+      deadline: <ChangedDeadline value={entryDisplayDeadline(item) ? formatDeadline(entryDisplayDeadline(item)!) : '締切を確認できていません'} />,
+      note: item.kind === 'lms' && reviewDescription(item.row) ? <span className="session-review"><span className="review-tag">要確認</span> {reviewDescription(item.row)}</span> : undefined,
+    }))} />
+    {entry && <DetailPanel title="課題の詳細" actions={<Button variant="quiet" onClick={() => setSelected('')}>閉じる</Button>}
+      facts={[["課題", <ul key={selected}>{entry.kind === 'lms' ? <SessionAssignment key={selected} row={entry.row} data={data} open /> :
+        <ManualAssignmentRow row={entry.row} actions={manualActions} own={own} viewerUid={viewerUid} />}</ul>]]} />}
+  </div>;
+}
 function sameAssignment(row: LedgerAssignment, key: LedgerAssignment['key']) {
   return row.key.system === key.system && row.key.sourceId === key.sourceId;
 }
-export function SessionAssignment({ row, data }: { row: LedgerAssignment; data: SessionData }) {
+export function SessionAssignment({ row, data, open = false }: { row: LedgerAssignment; data: SessionData; open?: boolean }) {
   const course = data.courses.find(course => course.system === row.key.system && course.courseId === row.latest.courseId);
   const changes = data.changes.filter(change => sameAssignment(row, change.assignmentKey))
     .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
   const reason = reviewDescription(row);
-  return <li><details className="session-task"><summary><div>
+  return <li><details className="session-task" open={open}><summary><div>
     <span className="eyebrow">{course?.name ?? '授業'}</span>
     <h3>{row.latest.title}</h3>
     <ChangedDeadline value={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) :

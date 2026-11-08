@@ -20,7 +20,7 @@ try {
   await ready(`http://127.0.0.1:${apiPort}/api/health`, api);
   const web = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', webPort, '--strictPort'], true);
   await ready(env.KADAI_WEB_ORIGIN, web);
-  await finish(start('node', [process.argv.includes('--capture-landing-shots') ? 'packages/web/tests/capture-landing-shots.mjs' : process.argv.includes('--kulasis') ? 'packages/web/tests/kulasis.browser.mjs' : process.argv.includes('--judge-qa') ? 'packages/web/tests/judge-qa.browser.mjs' : process.argv.includes('--manual-assignments') ? 'packages/web/tests/manual-assignments.browser.mjs' : process.argv.includes('--demo-regression')
+  await finish(start('node', [process.argv.includes('--student-screens') ? 'packages/web/tests/student-screens.browser.mjs' : process.argv.includes('--capture-landing-shots') ? 'packages/web/tests/capture-landing-shots.mjs' : process.argv.includes('--kulasis') ? 'packages/web/tests/kulasis.browser.mjs' : process.argv.includes('--judge-qa') ? 'packages/web/tests/judge-qa.browser.mjs' : process.argv.includes('--manual-assignments') ? 'packages/web/tests/manual-assignments.browser.mjs' : process.argv.includes('--demo-regression')
     ? 'packages/web/tests/demo.browser.mjs' : 'packages/web/tests/plans.browser.mjs']));
 } finally {
   stop();

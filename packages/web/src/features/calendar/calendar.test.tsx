@@ -19,7 +19,7 @@ describe('体験用カレンダーの保存済み予定', () => {
   it('日本時間の今日から7列を出し、日付だけの締切に時刻を補わない', () => {
     const html = render(integration, true);
     expect(html).toContain('締切のカレンダー');
-    expect(html).toContain('体験用の予定です。Googleカレンダーには入りません。');
+    expect(html).toContain('体験用カレンダー');
     expect(html.match(/<th scope="col"/g)).toHaveLength(7);
     expect(html).toContain('11/6（金）');
     expect(cell(html, '2026-11-06')).toBeDefined();
@@ -34,7 +34,7 @@ describe('体験用カレンダーの保存済み予定', () => {
     const html = renderToStaticMarkup(<DemoCalendarView integration={{ ...integration,
       mockEvents: { timed: { itemKey: 'timed', generation: 1, revision: 1, event } } }}
       pending={false} now={now} courses={[{ name: '架空の授業' }]} />);
-    expect(cell(html, '2026-11-10')).toContain('<time>00:30</time> <strong>架空の課題</strong>');
+    expect(cell(html, '2026-11-10')).toContain('<time><span class="deadline">11/10 00:30</span></time> <strong>架空の課題</strong>');
     expect(cell(html, '2026-11-10')).toContain('<span class="muted">架空の授業</span>');
     expect(cell(html, '2026-11-09')).not.toContain('架空の課題');
   });

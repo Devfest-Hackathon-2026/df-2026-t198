@@ -1,0 +1,6 @@
+.notification-settings { margin-block: var(--space-6); padding: var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
+.notification-settings section { display: grid; gap: var(--space-3); padding-top: var(--space-4); }
+.notification-settings button { justify-self: start; margin: 0; }
+.notification-schedule { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2) var(--space-4); }
+.notification-schedule dt { color: var(--ink-muted); }
+.notification-schedule dd { margin: 0; }

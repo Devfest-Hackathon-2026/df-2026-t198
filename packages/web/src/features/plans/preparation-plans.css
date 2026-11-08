@@ -30,3 +30,13 @@
 .next-submission > p:last-child { color: var(--muted); margin-top: 14px; }
 
 .preparation-details > time, .preparation-list time { font-family: var(--mono); }
+
+.preparation-form { background: var(--sheet); border-radius: var(--radius-md); gap: var(--space-4); }
+.preparation-form .td-field { flex: 1 1 8rem; }
+.preparation-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); background: var(--sheet); padding: var(--space-4); gap: var(--space-2); }
+.preparation-list li > strong { grid-row: 2; grid-column: 1 / -1; font-size: 16px; }
+.preparation-list li > time { font-size: 14px; }
+.preparation-list li > span { font-size: 14px; color: var(--ink-muted); }
+.preparation-list .preparation-buttons { grid-column: 1 / -1; }
+.plan-confirmation .td-next { max-width: none; margin-block: var(--space-4); }
+@media (max-width: 850px) { .preparation-form .td-field { flex-basis: 100%; } }

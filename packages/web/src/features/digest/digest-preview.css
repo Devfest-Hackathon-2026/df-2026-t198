@@ -5,3 +5,13 @@
 .digest-preview [aria-busy="true"] { opacity: .65; pointer-events: none; }
 /* The preview keeps the server's mail content; only its on-page presentation changes. */
 .digest-preview a[href*="do=done"] { background: var(--ink) !important; color: var(--white) !important; }
+
+.digest-preview { padding: var(--space-4); border-radius: var(--radius-md); background: var(--sheet); }
+.digest-inbox-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--rule); margin-bottom: var(--space-4); }
+.digest-inbox-heading .todoku-logo { font-size: 22px; }
+.digest-preview .digest-envelope { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-4); text-align: left; width: 100%; padding: var(--space-4); margin-top: var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--accent-soft); }
+.digest-envelope strong { grid-column: 1; }
+.digest-envelope time { grid-column: 2; grid-row: 1; font-family: var(--font-mono); }
+.digest-preview .digest-open-mail { margin: var(--space-4) 0 0; padding: 0; }
+.digest-open-mail > header { padding: var(--space-4) 0; margin-bottom: var(--space-4); border-bottom: 1px solid var(--rule); }
+.digest-open-mail > header span { font-size: 14px; color: var(--ink-muted); }

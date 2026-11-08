@@ -127,7 +127,7 @@ try {
   assert.equal(oldDay, jstDay(oldDeadline));
   const today = jstDay(Date.now());
   assert.equal(Date.parse(`${oldDay}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`), 3 * 86400000);
-  assert.equal(await calendar.evaluate(node => node.getBoundingClientRect().bottom < globalThis.document.querySelector('.timetable').getBoundingClientRect().top), true);
+  assert.equal(await calendar.evaluate(node => node.getBoundingClientRect().top > globalThis.document.querySelector('.student-timetable').getBoundingClientRect().bottom), true);
   const initialTarget = (await calendarTarget()).data();
   assert.equal(initialTarget.mode, 'mock');
   assert.equal(initialTarget.executor, 'demo');
@@ -257,6 +257,7 @@ try {
   const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
   const done = preview.getByRole('link', { name: '✅ 終わった', exact: true });
+  await preview.getByRole('button', { name: /今日やること.*を開く/ }).click();
   await done.waitFor();
   const sampleId = new URL(await done.getAttribute('href')).searchParams.get('id');
   const sample = (await db.doc(`students/trial-student/plans/${sampleId}`).get()).data();

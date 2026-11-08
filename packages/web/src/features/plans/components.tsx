@@ -1,4 +1,4 @@
-import { Button } from '../../shared/ui/button';
+import { Button, Field, StatusChip } from '../../shared/ui';
 import type { PlanActions } from './api';
 import { actionMessage, planActionErrorMessage, planProgress } from './progress';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -59,12 +59,11 @@ export function PlanForm({ assignments, candidate, actions, onSaved }: {
     {candidate ? <p>{candidate.date.replaceAll('-', '/')} {candidate.period}限に準備</p> : <>
       <label>準備する課題<select name="assignment" required onChange={event => setSelectedAssignment(event.target.value)}>{choices.map(row => <option key={JSON.stringify(row.key)}
         value={JSON.stringify(row.key)}>{row.latest.title}</option>)}</select></label>
-      <label>準備する日<input name="date" type="date" required /></label>
-      <label>時間割の時限<input name="period" type="number" min="1" max="24" required onChange={event => setPeriod(Number(event.target.value))} /></label>
+      <Field label="準備する日" name="date" type="date" required />
+      <Field label="時間割の時限" name="period" type="number" min="1" max="24" required onChange={event => setPeriod(Number(event.target.value))} />
     </>}
-    <p className="muted">カレンダーに入れる時刻を指定してください（日本時間）。授業以外の予定も確かめてください。</p>
-    <label>開始時刻<input name="start" type="time" required value={start} onChange={event => setStart(event.target.value)} /></label>
-    <label>終了時刻<input name="end" type="time" required value={end} onChange={event => setEnd(event.target.value)} /></label>
+    <Field label="開始時刻" name="start" type="time" required value={start} onChange={event => setStart(event.target.value)} />
+    <Field label="終了時刻" name="end" type="time" required value={end} onChange={event => setEnd(event.target.value)} />
     {mismatch && <p className="notice">{period}限の時刻は{times[0]}〜{times[1]}です。指定した時刻がこのコマからはみ出しています。時限と時刻を確かめてください。</p>}
     <Button type="submit" busy={busy} busyLabel="保存中…">入れる</Button>
     {message && <p role="status">{message}</p>}
@@ -108,13 +107,12 @@ export function PlanList({ plans, actions, viewerUid, own, assignments }: { plan
     finally { setBusy(null); }
   }
   return <section className="preparation-list" aria-label="入れた準備の予定"><h2>入れた準備の予定</h2>
-    <p>日本時間です。{own ? 'どの準備の予定も外せます。' : '学生はどの準備の予定も外せます。'}</p>
     <div className="preparation-list-scroll" tabIndex={0} role="region" aria-label="準備の予定の一覧">
     <ul>{visible.map(plan => <li key={plan.planId}>
       <time dateTime={plan.startsAt}>{Number(plan.date.slice(5, 7))}/{Number(plan.date.slice(8))} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time>
       <span>{plan.period}限</span><strong>{plan.title}</strong>
       <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
-      <span>{planProgress(plan)}</span>
+      <span>{plan.status === 'done' ? <StatusChip status="done">{planProgress(plan)}</StatusChip> : planProgress(plan)}</span>
       <PlanDeadlineWarning plan={plan} assignments={assignments} />
       <div className="preparation-buttons">{own && actions?.act && plan.status === 'active' && <><Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'done'} busyLabel="記録中…" onClick={() => { void act(plan, 'done'); }}>終わった</Button>
         {Date.parse(plan.startsAt) > Date.now() && <Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'later'} busyLabel="記録中…" onClick={() => { void act(plan, 'later'); }}>後回し</Button>}</>}
