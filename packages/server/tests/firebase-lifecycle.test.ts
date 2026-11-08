@@ -52,7 +52,7 @@ it('still releases the owned app after Firestore termination fails and shares th
 it('rejects a mixed emulator configuration before creating any SDK app', () => {
   vi.stubEnv('FIRESTORE_EMULATOR_HOST', '127.0.0.1:8085');
   vi.stubEnv('GCLOUD_PROJECT', 'demo-kadai-hisho');
-  expect(() => firebaseDependencies()).toThrow();
+  expect(() => firebaseDependencies()).toThrow('invalid-emulator-environment');
   expect(getApps()).toEqual([]);
 });
 async function firebaseConfig(mode: 'json' | 'file', projectId: string) {
