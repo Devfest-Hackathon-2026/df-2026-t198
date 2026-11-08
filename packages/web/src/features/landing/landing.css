@@ -71,15 +71,22 @@ html.landing-scroll { scroll-behavior: smooth; }
 .landing .close-shot { min-height: var(--target); padding: 8px 20px; border: 1px solid var(--ink); border-radius: 100px; background: var(--paper); color: var(--ink); font: inherit; cursor: pointer; }
 .landing .shot-dialog img { display: block; width: 100%; height: auto; }
 html.landing-scroll:has(dialog[open]) { overflow: hidden; }
-.landing .entry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin-top: 52px; }
-.landing .entry-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; padding: 32px; border-top: 1px solid var(--ink); background: var(--white); }
-.landing .entry-panel .eyebrow { margin: 0; }
-.landing .entry-panel p { font-size: 15px; line-height: 2; max-width: 30em; }
-.landing .entry-kind { color: var(--muted); font-size: 14px; }
-.landing .text-link { min-height: var(--target); display: inline-flex; align-items: center; gap: 24px; font-size: 14px; }
-.landing .entry-panel .demo-login { border: 0; padding: 0; margin: 0; background: transparent; }
-.landing .entry-panel .demo-login button { margin: 16px 8px 0 0; border-radius: 100px; }
-.landing .entry-panel:has(.demo-login) .shared-fallback { display: none; }
+.landing .trial-entry { padding: 36px; background: var(--white); border-radius: var(--radius-md); }
+.landing .trial-route { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; padding: 0; margin: 0; list-style: none; }
+.landing .trial-route li { display: grid; gap: 8px; border-top: 1px solid var(--line-strong); padding-top: 16px; }
+.landing .trial-route .step-number { color: var(--accent-text); }
+.landing .trial-route li > span:not(.step-number) { font-size: 13px; color: var(--muted); }
+.landing .trial-route strong { font-size: 22px; }
+.landing .trial-launch { display: flex; align-items: center; gap: 32px; margin-top: 40px; }
+.landing .trial-launch h3 { font-size: 16px; }
+.landing .trial-entry .demo-login { margin: 0; border: 0; padding: 0; background: transparent; }
+.landing .trial-entry .demo-login button { min-height: 56px; padding: 14px 32px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 100px; font: 700 17px var(--jp); }
+/* One entry opens the shared student/supporter experience in /demo-lms. */
+.landing .trial-entry .demo-login button:nth-of-type(2) { display: none; }
+.landing .trial-entry:has(.demo-login) .shared-fallback { display: none; }
+.landing .trial-entry .shared-fallback { min-height: 56px; font-size: 17px; }
+.landing .judge-guide { margin-top: 24px; font-size: 13px; color: var(--muted); }
+.landing .judge-link { text-decoration: underline; }
 .landing .setup-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px; list-style: none; padding: 0; margin: 80px 0; }
 .landing .setup-steps li { display: grid; align-content: start; justify-items: start; gap: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
 .landing .setup-steps .pill { font-size: 13px; padding: 12px 18px; gap: 12px; color: var(--ink); }
@@ -93,22 +100,6 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 .landing .chapter-nav a[aria-current]::after { background: var(--ink); }
 .landing .chapter-nav a span { display: none; position: absolute; right: 28px; width: max-content; padding: 4px 12px; background: var(--paper); font-size: 12px; }
 .landing .chapter-nav a:is(:hover, :focus-visible) span { display: block; }
-/* Keep the existing interactive example until issue 225 supplies the shared demo. */
-.landing .local-demo { padding: 28px; border: 1px solid var(--line-strong); background: var(--sheet); color: var(--ink); border-radius: var(--radius-md); }
-.landing .local-demo .lab { font: 13px var(--mono); color: var(--muted); }
-.landing .mini { display: flex; gap: 24px; margin-top: 24px; }
-.landing .mc { min-width: 150px; padding: 18px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
-.landing .mc.hot { background: var(--accent); color: var(--white); }
-.landing .mc .cn { font-size: 14px; font-weight: 700; }
-.landing .mc :is(.old, .new) { font: 13px var(--mono); }
-.landing .mc .new { margin-top: auto; }
-.landing .mm { padding: 18px; border: 1px solid var(--line); font-size: 14px; }
-.landing .mm .mono { font: 12px var(--mono); }
-.landing .local-status { min-height: 26px; margin-top: 12px; font-size: 14px; }
-.landing .demo-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
-.landing .demo-actions button { padding: 10px 20px; min-height: var(--target); border: 1px solid var(--ink); border-radius: 100px; background: var(--sheet); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
-.landing .demo-actions button.on { background: var(--ink); color: var(--paper); }
-.landing .demo-actions button:disabled { opacity: .5; cursor: default; }
 @media (max-width: 700px) {
   .landing-header { padding: 24px; flex-wrap: wrap; }
   .landing-header .todoku-logo { font-size: 26px; }
@@ -133,17 +124,19 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing .chapter-nav { right: 2px; gap: 6px; }
   .landing .chapter-nav a { width: 18px; }
   .landing .section-heading { margin-bottom: 22px; }
-  .landing .entry-grid, .landing .setup-steps, .landing .privacy-list { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .landing .setup-steps, .landing .privacy-list { grid-template-columns: minmax(0, 1fr); gap: 36px; }
 
-  .landing .entry-panel { padding: 24px; }
+  .landing .trial-entry { padding: 24px 20px; }
+  .landing .trial-route { grid-template-columns: 1fr; gap: 20px; }
+  .landing .trial-route li { grid-template-columns: 32px 1fr; gap: 0 12px; padding-top: 12px; }
+  .landing .trial-route .step-number { grid-row: span 2; }
+  .landing .trial-route strong { font-size: 19px; }
+  .landing .trial-launch { flex-direction: column; align-items: stretch; gap: 14px; margin-top: 28px; }
+  .landing .trial-entry .demo-login button { width: 100%; padding-inline: 20px; }
+  .landing .judge-guide { margin-top: 22px; line-height: 1.8; }
   .landing .shot-dialog { padding: 16px; }
   .landing .setup-steps, .landing .privacy-list { margin: 40px 0; }
   .landing .privacy-list li { font-size: 16px; }
-  .landing .local-demo { padding: 18px; }
-  .landing .mini { gap: 10px; }
-  .landing .mc { min-width: 0; flex: 1; padding: 12px; }
-  .landing .mm { flex: 1; padding: 12px; min-width: 0; }
-  .landing .demo-actions button { width: 100%; }
   .landing-footer { flex-wrap: wrap; padding: 32px 24px; }
 }
 @media (prefers-reduced-motion: reduce) { html.landing-scroll { scroll-behavior: auto; } }

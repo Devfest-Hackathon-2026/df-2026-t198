@@ -32,48 +32,19 @@ function Screenshot({ name, alt, width, height, caption }: { name: string; alt: 
   </figure>;
 }
 
-function LocalDemo() {
-  const [step, setStep] = useState<'initial' | 'extended' | 'opened'>('initial');
-  const opened = step === 'opened';
-  return <section className="panel local-demo" aria-labelledby="local-demo-title">
-    <span className="lab">ログインなし・保存なし</span>
-    <h3 className="pt" id="local-demo-title">動く見本</h3>
-    <div className="mini" aria-live="polite" aria-atomic="true">
-      <div className={`mc${opened ? ' hot' : ''}`}>
-        <span className="cn">レポート作成法</span>
-        {opened && <s className="old">11/11</s>}
-        <span className="new">締切 {opened ? '11/12' : '11/11'}</span>
-      </div>
-      <div className="mm"><span className="mono">面談画面 ・ 支援担当</span><br />
-        <b>第1回レポート</b><br />
-        {opened ? '締切が 11/11 から 11/12 に変わりました' : '締切 11/11'}
-      </div>
-    </div>
-    <p className="local-status" role="status">{step === 'extended' ? 'LMS の締切が変わりました。まだ時間割は変わりません' : ''}</p>
-    <div className="btns demo-actions">
-      <button className="btn sm" disabled={step !== 'initial'} onClick={() => setStep('extended')}>① 先生が締切を延ばす</button>
-      <button className="btn sm on" disabled={step !== 'extended'} onClick={() => setStep('opened')}>② 学生が LMS を開く</button>
-      <button className="undo" onClick={() => setStep('initial')}>戻す</button>
-    </div>
-  </section>;
-}
-
 function DemoEntries() {
-  return <div className="entry-grid">
-    <section className="entry-panel" aria-labelledby="judge-title">
-      <span className="eyebrow" lang="en">For judges</span>
-      <h3 id="judge-title">審査員の方</h3>
-      <p>説明資料の体験用アカウントでログインしてください。</p>
-      <a className="pill primary" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
-      <a className="text-link" href="/session">面談画面を開く <span aria-hidden="true">↗</span></a>
-    </section>
-    <section className="entry-panel" aria-labelledby="shared-title">
-      <span className="eyebrow" lang="en">Try it now</span>
-      <h3 id="shared-title">その場で試す</h3>
-      <span className="entry-kind">共用の体験版</span>
-      <PublicDemoEntry />
-      <a className="pill shared-fallback" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
-    </section>
+  return <div className="trial-entry">
+    <ol className="trial-route" aria-label="体験の順序">
+      <li><span className="step-number">01</span><span>先生</span><strong>締切の変更</strong></li>
+      <li><span className="step-number">02</span><span>学生</span><strong>LMSを開く</strong></li>
+      <li><span className="step-number">03</span><span>時間割・面談</span><strong>締切の更新</strong></li>
+    </ol>
+    <div className="trial-launch">
+      <h3>共用の体験</h3>
+      <PublicDemoEntry showDescription={false} />
+      <a className="pill primary shared-fallback" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
+    </div>
+    <p className="judge-guide"><a className="judge-link" href="/demo-lms">審査員の方 <span aria-hidden="true">↗</span></a>：説明資料のリンクから入れます。</p>
   </div>;
 }
 
@@ -131,9 +102,7 @@ export function LandingPage() {
       </section>
 
       <section className="chapter try-section" id="try" aria-labelledby="try-title">
-        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Try ToDoku</span><h2 id="try-title">体験する</h2></div></Reveal>
-        {/* Replace the incumbent local example with issue 225's shared three-panel component after it merges. */}
-        <div id="landing-demo-slot"><Reveal><LocalDemo /></Reveal></div>
+        <Reveal><div className="section-heading"><span className="chapter-number">03</span><h2 id="try-title">体験する</h2></div></Reveal>
         <Reveal><DemoEntries /></Reveal>
         <a className="next-chapter" href="#start">使い始める <span aria-hidden="true">↓</span></a>
       </section>
