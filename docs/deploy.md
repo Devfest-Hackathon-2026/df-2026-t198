@@ -145,7 +145,7 @@ curl --fail-with-body https://project-00439085-4e2d-44c3-9a8.web.app/api/health
 
 ## 専用Gmailの通知準備（Issue #162、実行はorange）
 
-以下は未実行の手順。A1は仮採用で、orangeがD36案を確定してから実行する。資源・課金・権限・送信をこのPRで許可したとは扱わない。既定は送信無効。拡張の停止と移行状態の確定は別Issueで行う。
+D36のA1（専用Gmailからの送信）およびCloud Schedulerの毎分実行はorangeが決定し、2026-11-08に専用OAuth・Secret Manager 3項目・専用SA・Cloud Scheduler 1件の準備を完了した（実行記録は [2026-11-08-issue-152.md](records/2026-11-08-issue-152.md)。Issue #153 BE-02のもと、宛先が取れないときに送信しない既存実装を維持している）。ただし、以下の手順例にはOAuth Playground等の別手順や送信有効化も含まれるため、下記の手順例全体を実行済みとは扱わない。2026-11-08時点では一時的なlocalhostコールバックで更新トークンを取得し、`NOTIFICATION_SEND_ENABLED=false`（送信無効）を維持している。実メールの送受信確認、送信元表示名の実受信確認、拡張メールの停止、利用者の移行状態（`deliveryOwner` / `migrationState`）の切替は未実施。
 
 1. プロダクト専用のGoogle/Gmailアカウントを作る（個人用と分ける）。復旧手段を管理する。以後の同意ではこの送信元だけにログインする。
 2. 下記の画面でGmail APIを有効にし、Google Auth Platformの同意画面をExternal/Testingにする。テストユーザーは送信元1アカウントだけ。Web applicationのOAuthクライアントを作り、redirect URIに `https://developers.google.com/oauthplayground` を登録する。クライアントを拡張と共用しない。

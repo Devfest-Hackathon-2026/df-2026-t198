@@ -8,7 +8,7 @@
 
 〔作品〕
 
-注記：4つの分担は実装済み。取得・台帳・カレンダー・画面を通した確認はPLAN.mdのC43と[実機確認の記録](records/2026-11-07-c43-live.md)を参照。準備は自動の目安ではなく、D13・D25に沿って確定した予定を使う。通知はD30・D36案も参照し、下の列挙を全項目の実装済み一覧とは扱わない。
+注記：4つの分担は実装済み。取得・台帳・カレンダー・画面を通した確認はPLAN.mdのC43と[実機確認の記録](records/2026-11-07-c43-live.md)を参照。準備は自動の目安ではなく、D13・D25に沿って確定した予定を使う。通知はD30・D36も参照し、下の列挙を全項目の実装済み一覧とは扱わない。
 
 取得 → 台帳 → カレンダー → 面談画面 の4つに分ける。
 
@@ -41,7 +41,7 @@
 
 〔作品〕
 
-注記：D30で本人宛ての「今日やること」メールを追加し、D36案でその送信をクラウドへ移す方針を仮採用した。カレンダーの通知だけで済ませるという下の範囲を改めた。カレンダー予定は [calendar.ts](../packages/core/src/calendar.ts)、既存の拡張メールは [digest-browser.ts](../packages/extension/src/digest/browser.ts)。クラウドからの実受信はこの記録では確認済みと扱わない。
+注記：D30で本人宛ての「今日やること」メールを追加し、D36でその送信をクラウドへ移す方針（A1）を決定した。カレンダーの通知だけで済ませるという下の範囲を改めた。カレンダー予定は [calendar.ts](../packages/core/src/calendar.ts)、既存の拡張メールは [digest-browser.ts](../packages/extension/src/digest/browser.ts)。クラウドからの実受信はこの記録では確認済みと扱わない。
 
 通知の仕組みを自分たちで作らない。学生のスマホにはカレンダーの通知が既に届くので、予定の通知の時刻と回数を設定で決める。
 
@@ -114,7 +114,7 @@
 
 〔作品・進め方〕
 
-注記：基本構成の実装・配備の証拠はC14・C26・C31・C35。HTMLのライブラリはD18で選んだ。下の表の定義配布は末尾のIssue #71の注記のとおり未実装で、定義の異常を利用者より先に検知するCloud Logging / Error Reportingの専用経路も実装されていない（[取得診断](../packages/extension/src/collection-diagnostics.ts)は拡張内）。Googleの認可をサーバーに置かない範囲は、D36案では利用者の認可を指し、専用送信元の認可は別に扱う。
+注記：基本構成の実装・配備の証拠はC14・C26・C31・C35。HTMLのライブラリはD18で選んだ。下の表の定義配布は末尾のIssue #71の注記のとおり未実装で、定義の異常を利用者より先に検知するCloud Logging / Error Reportingの専用経路も実装されていない（[取得診断](../packages/extension/src/collection-diagnostics.ts)は拡張内）。Googleの認可をサーバーに置かない範囲は、D36では利用者の認可を指し、専用送信元の認可は別に扱う。
 
 コードの置き方：TypeScriptのmonorepo。`packages/core`（共通の核。ブラウザのDOMに頼らず、拡張機能の裏・Node.jsの試験・サーバーのどこでも同じコードが動く）、`packages/extension`、`packages/server`、`packages/web`、`lms-definitions/`（製品ごとの定義と、試験用の見本）。Manifest V3の拡張機能の裏にはDOMParserがないので、HTMLの読み取りは純粋なJavaScriptのライブラリで行う（実装のときに選び、理由を足す）。
 
@@ -142,7 +142,7 @@
 
 〔作品・進め方〕
 
-注記：D36案でサーバーからのメール送信を仮採用した。「サーバーはGoogleの許可もLMSの認証情報も持たない」は、利用者のGoogle認可・LMSの認証情報について維持し、専用送信元のGmail認可だけを別に持つ案とする。利用者のカレンダー更新は引き続き拡張が行う。削る順はD23で改めた。
+注記：D36でサーバーからのメール送信（A1）を決定した。「サーバーはGoogleの許可もLMSの認証情報も持たない」は、利用者のGoogle認可・LMSの認証情報について維持し、専用送信元のGmail認可だけを別に持つ。利用者のカレンダー更新は引き続き拡張が行う。削る順はD23で改めた。
 
 | 要件 | 中身 | 理由 |
 |---|---|---|
@@ -229,7 +229,7 @@ Discordから開発のエージェントを呼ぶ仕組み（Claude CodeのDisco
 
 〔作品・進め方〕
 
-注記：D36案で、サーバーは利用者のGoogle認可・LMSの認証情報を預からず、専用送信元のGmail認可だけを持つ方針を仮採用した。情報を持つ範囲は [data-shapes.md](data-shapes.md) を参照。架空の体験用LMSのお知らせ本文を体験用文書に置く例外はIssue #84の記録のとおりで、実物の本文や解析の受領記録への保存を許可しない。
+注記：D36で、サーバーは利用者のGoogle認可・LMSの認証情報を預からず、専用送信元のGmail認可だけを持つ方針（A1）を決定した。情報を持つ範囲は [data-shapes.md](data-shapes.md) を参照。架空の体験用LMSのお知らせ本文を体験用文書に置く例外はIssue #84の記録のとおりで、実物の本文や解析の受領記録への保存を許可しない。
 
 注記：下の「共有はいつでも取り消せる」は当初の目標。現在は運用で許可文書を失効・削除すると、その後の読み取りを拒否し、通知を受けた支援担当の画面を消して購読を止める（[session-watch.ts](../packages/web/src/features/session/watch.ts)、[firestore.rules](../firestore.rules)、C26）。学生が自分で取り消す画面・APIは未実装。通信が切れている間の即時検知や、すでに渡した情報の回収は保証しない。
 
@@ -533,7 +533,7 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 
 〔作品〕
 
-注記：D36案で「サーバーからは送らない」方針を改め、専用Gmailからのクラウド送信を仮採用した。既存の拡張メールは、実受信を確かめて切り替えるまで残す（Issue #152、[切替手順](deploy.md#拡張のメールからクラウド通知へ移すissue-163)）。以下の送り方と不採用理由は当時の記録。
+注記：D36で「サーバーからは送らない」方針を改め、専用Gmailからのクラウド送信（A1）を決定した。既存の拡張メールは、実受信を確かめて切り替えるまで残す（Issue #152、[切替手順](deploy.md#拡張のメールからクラウド通知へ移すissue-163)）。以下の送り方と不採用理由は当時の記録。
 
 - 決めた人：Sora（Issue #112の実装範囲、D29による合意）。CodexがAPIと保存を具体化。聞き取りの評価を受け、時刻と1つの動作を示すメール、学生本人の「終わった」「後回し」、支援担当が見る同じ進み具合を作る。個人の事情や聞き取りメモはrepoへ複写しない。
 - 選んだもの：既存のFirebase認証、Firestoreトランザクションと購読、カレンダーの同期キューを使う。サーバーは文面だけを作り、本人宛てのGmail送信は拡張の別Issue #113に置く。「終わった」はLMSへの提出とは別の準備の記録にする。APIと保存の正本は [data-shapes.md](data-shapes.md#今日やることと準備の記録issue-112)。
@@ -613,23 +613,25 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 〔作品〕
 
 - 決めた人：Codex。Issue #156 が指定した送り方に依らないN1〜N4を実装する。D36の送信元・認証・Cloud構成の決定はorangeに残し、この記録では確定しない。契約は [data-shapes.md](data-shapes.md#クラウド通知の共通部分issue-156送り方と切替は未接続)。
+
+注記（2026-11-08追記）：その後、D36の送信元・認証・Cloud構成はorangeがA1（専用Gmailからの送信）で確定した（詳細はD36および [2026-11-08-issue-152.md](records/2026-11-08-issue-152.md) を参照）。
 - 台帳は予約・開始・結果を分け、結果不明を再送しない。朝の補送は07:30〜08:00未満。準備前は日付をまたいで選ぶ。未受理のfailedも今回は自動再試行せず、未着の可能性を残して重複抑止を優先する。既存の拡張の同日補送と切替は変更しない。
 - 対象は上限付きcollection group読取と厳密なパス確認で列挙する。上限超過は固定エラーで止め、student親文書の存在や新しいindexを前提にしない。大量配信の仕組みは今回作らない。
 - OIDCは[Googleの検証要件](https://developers.google.com/identity/openid-connect/openid-connect#validatinganidtoken)と[SchedulerのHTTP認証](https://docs.cloud.google.com/scheduler/docs/http-target-auth)を参照。既存OSSのgoogle-auth-libraryも確認したが、直接依存の追加はorangeの追加合意が必要なため今回は追加せず、Node標準cryptoで固定Google公開鍵のRS256だけを検証する。汎用JWT実装やtokeninfoへの毎回問い合わせは採らない。署名とclaimは合成鍵で試験し、実Cloudのtoken/IAMは未確認。
 
-## D36案. 専用Gmailから本人へ通知する（2026-11-08、orangeが確定する）
+## D36. 専用Gmailから本人へ通知する（2026-11-08、orange決定）
 
 〔作品〕
 
-注記：送信部品 [mail-sender.ts](../packages/server/src/notifications/mail-sender.ts) と設定APIの実装は、送信元・認証・実行間隔の決定や実受信の証拠ではない。orangeの確定待ちのため案を維持する。
+注記：送信部品の実装は [mail-sender.ts](../packages/server/src/notifications/mail-sender.ts)、設定APIの実装は [settings.ts](../packages/server/src/notifications/settings.ts)、2026-11-08のCloud構成・Secret Manager・Cloud Schedulerの実行記録は [2026-11-08-issue-152.md](records/2026-11-08-issue-152.md) を参照。`sender.check` は `ready` だが、実メールの送信・API受理・本人の受信は未確認であり、この決定や準備は実受信の証拠ではない。
 
-- 状態：Issue #162に従ったSoraのA1仮採用。Codexは実装・手順を用意し、**orangeが確定する**。Cloud資源・secret・送信の準備は未実行。凍結条件はD35、今日の順序と切替の打ち切りは #152。
-- A1：専用Gmailのgmail.sendだけを同意し、そのrefresh tokenをSecret Managerの数字の版でCloud Runへ渡す。固定Fromから、Firebase Authで確認できた本人だけへTo 1件、CC/BCCなしで送る。多数の学生それぞれのOAuthを預からず、送信元1つの認可で準備できるため仮採用する。
+- 状態：Issue #153（D-03・第8節によるインフラ・認証・Cloud判断の委任）およびIssue #152に基づき、Issue #162のSoraのA1案とCloud Schedulerの毎分実行を**orangeが決定**。専用Web OAuth・Secret Manager 3項目・専用SA・Cloud Scheduler 1件（毎分）は2026-11-08に構成済み（`NOTIFICATION_SEND_ENABLED=false` を維持）。凍結条件はD35、当日の順序と切替の打ち切りは #152。
+- A1：専用Gmailのgmail.sendだけを同意し、そのrefresh tokenをSecret Managerの数字の版でCloud Runへ渡す。固定Fromから、Firebase Authで確認できた本人だけへTo 1件、CC/BCCなしで送る。多数の学生それぞれのOAuthを預からず、送信元1つの認可で準備できるため採用する。Googleの最終同意画面のアカウントは専用送信元の設定済み `NOTIFICATION_FROM` と目視で一致していたが、実メールのFrom表示名やAPI受理・本人受信は未実施（NOT_RUN）。
 - B（本人Gmailから本人へサーバー送信）は、利用者ごとのoffline同意・秘密の保存・失効/取消の管理と画面が必要なので今回は採らない。A2（専用ドメインとメール配信サービス）は、ドメイン・送信者検証・費用の判断が増えるので今回は採らない。長期運用なら再検討する。
 - 既存の公式Nodeクライアント [googleapis](https://github.com/googleapis/google-api-nodejs-client) も候補。今回は #162 の指定どおりNode標準fetchでtoken更新とGmail送信の2経路に限定し、依存を増やさない。一般的なOAuth登録フローやメール受信機能は作らない。
-- Testingの同意は7日で失効する。11/8の同意日時+7日が11/15 00:00 JSTを越えることを計算し、必要な稼働終了時刻まで足りるかorangeが確認する。11/10締切後〜11/14に手動更新する案は採らない。足りなければ凍結前に再同意か切替中止。[準備手順](deploy.md#専用gmailの通知準備issue-162実行はorange)を正本にする。
-- 毎分tickの読取は、利用者1人につきsnapshotの計画・課題・授業等だけで最大約500件×1,440回＝約72万件/人日。設定列挙、回収、送信直前の再読取・transaction再実行は別途加算される。これは実測や課金上限ではない。少人数のまま毎分で進めるか、時間外の読取削減か5分間隔にするかをorangeが確定する。今回のPRは#159の選別・時刻窓を変えない。
-- 宛先が取れないときは送信しない。既存の予約はleaseで回収し、窓内に再確認する。設定APIにはrecipient-unavailableを返すが、個別台帳に宛先や取得失敗の詳細は足さない。本人確認のない宛先への代替送信はしない。この扱いの確定もorangeに残す。
+- Testingの同意は7日で失効する。2026-11-08 22:06:19 JSTに同意し、提供元の `refresh_token_expires_in`（604,799秒）による期限の目安は2026-11-15 22:06:18 JST。11/14の終了を越える目安だが継続の保証ではない。11/10締切後〜11/14に手動再認可する案は採らない。[準備手順](deploy.md#専用gmailの通知準備issue-162実行はorange)と[実行記録](records/2026-11-08-issue-152.md)を正本にする。
+- Cloud Schedulerは毎分実行で構成した。毎分tickの読取に関する試算・リスク見積りとして、利用者1人につきsnapshotの計画・課題・授業等だけで上限目安が最大約500件×1,440回＝約72万件/人日となり、設定列挙、回収、送信直前の再読取・transaction再実行が別途加算される（`NOTIFICATION_SEND_ENABLED=false` のdry-runでも候補者のデータを読む実装であり、読取ゼロではない。実測値や費用上限ではない）。今回の構成は#159の選別・時刻窓を変えない。
+- Issue #153 BE-02（信頼できる本人確認情報から宛先を解決し、任意の代替宛先へは送らない制約）のもと、宛先が取れないときに送信しない既存実装を維持する（既存の予約はleaseで回収し、窓内に再確認する。設定APIにはrecipient-unavailableを返すが、個別台帳に宛先や取得失敗の詳細は足さない）。
 - 二重送信を避けるため設定APIではdeliveryOwner/migrationStateを変えない。移行済み・送信元利用可能・本人宛先確認済みの場合だけ本人が有効化できる。停止は送信元の失効中も受け付ける。failed/unknownの自動再送は追加せず、API受理と本人の受信を分ける。
 
 ## D37. サービス名をToDokuにする（2026-11-08、Issue #176）
