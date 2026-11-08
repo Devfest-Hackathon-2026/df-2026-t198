@@ -64,7 +64,7 @@ export function DemoPage() {
   return <div className="demo-shell"><header className="demo-header"><h1>ToDokuを試す</h1>
     {user && <Button className="demo-logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}</header>
     <p>ここで扱う授業と課題は架空のものです。</p>
-    {user === undefined ? <Skeleton label="ログインを確かめています…" /> : user ? <>
+    {user === undefined ? <Skeleton label="ログインの状態を確かめています…" /> : user ? <>
       <DemoWorkspace key={user.uid} user={user} />
     </> : <><PublicDemoEntry showDescription={false} /><form className="session-login" onSubmit={event => { void login(event); }}>
       <label>メールアドレス<input name="email" type="email" autoComplete="username" required /></label>
@@ -167,10 +167,10 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         return (await response.json() as { status: string }).status;
       }));
       if (results.some(result => result.status === 'rejected' && result.reason instanceof DemoRequestError &&
-        result.reason.code === 'public-demo-limit')) return '今日の共用の体験では、お知らせの読み取りを使い切りました';
+        result.reason.code === 'public-demo-limit')) return '共用の体験で、今日使えるお知らせの読み取りの回数を使い切りました';
       if (results.some(result => result.status === 'rejected' ||
         !['proposal', 'duplicate', 'abstained'].includes(result.value))) {
-        return '課題を確認しました。お知らせの確認は終わりませんでした。LMSのお知らせと課題ページの締切を見比べてください。';
+        return '課題を確認しました。お知らせは最後まで確認できませんでした。LMSのお知らせと課題ページの締切を見比べてください。';
       }
       setStage(stage >= 2 ? 3 : 1);
       return '課題を確認しました。';

@@ -28,7 +28,7 @@ export function PublicDemoEntry({ showDescription = true }: { showDescription?: 
     } catch { setFailed(true); setBusy(false); }
   }
   return <section className="demo-login" aria-label="共用の体験">
-    {showDescription && <p>誰でも使える共用の体験です。ほかの人と同じ画面を使うので、散らかっていたら『体験を最初からやり直す』を押してください。学生と支援担当を同時に見るには、別のブラウザか別の端末で開いてください。審査の方は、説明資料のアカウントを使ってください。</p>}
+    {showDescription && <p>誰でも使える共用の体験です。ほかの人と同じデータを使うので、前の人の操作が残っていたら『体験を最初からやり直す』を押してください。学生と支援担当を同時に見るには、別のブラウザか別の端末で開いてください。審査員の方は、説明資料のアカウントを使ってください。</p>}
     <Button disabled={busy} busy={busy && role === 'student'} busyLabel="ログイン中…" onClick={() => { void enter('student'); }}>学生として試す</Button>{' '}
     <Button disabled={busy} busy={busy && role === 'supporter'} busyLabel="ログイン中…" onClick={() => { void enter('supporter'); }}>支援担当として試す</Button>
     {failed && <p role="alert">共用の体験に入れませんでした。説明資料のアカウントか、紹介ページの動く見本をお使いください。</p>}

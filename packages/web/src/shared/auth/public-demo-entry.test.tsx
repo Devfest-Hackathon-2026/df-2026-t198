@@ -11,7 +11,7 @@ it('shows both roles and the shared-use guidance only when all four settings exi
   const html = renderToStaticMarkup(<PublicDemoEntry />);
   expect(html).toContain('学生として試す');
   expect(html).toContain('支援担当として試す');
-  expect(html).toContain('審査の方は、説明資料のアカウントを使ってください。');
+  expect(html).toContain('審査員の方は、説明資料のアカウントを使ってください。');
   expect(html).not.toContain('unit-test-only');
   for (const key of keys) {
     vi.stubEnv(key, '');

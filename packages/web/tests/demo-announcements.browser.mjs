@@ -86,7 +86,7 @@ try {
   await page.screenshot({ path: `${evidence}/demo-narrow.png`, fullPage: true });
   // Unavailable parsing cannot roll back or hide the successful observation.
   await page.route('**/api/v1/announcements', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"unavailable"}' }), { times: 1 });
-  await open.click(); await status('課題を確認しました。お知らせの確認は終わりませんでした');
+  await open.click(); await status('課題を確認しました。お知らせは最後まで確認できませんでした');
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await status('体験を最初の状態に戻しました');
