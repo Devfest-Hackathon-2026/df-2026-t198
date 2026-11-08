@@ -1,0 +1,40 @@
+{
+  "widths": [
+    1280,
+    390
+  ],
+  "dialogs": 4,
+  "entryRoles": 2,
+  "localDemoStates": 4,
+  "reducedMotion": true,
+  "splash": true,
+  "existingRoutes": 6,
+  "errors": [],
+  "candidateSha256": {
+    "packages/web/src/features/landing/page.tsx": "cb4f81318e409e2260e778fadb0edbabb0f8c33e3338047cc53a53bd147fdb13",
+    "packages/web/src/features/landing/landing.css": "4d85e9d8956a146e955eca47d44e12f43a109abd54e13b9593082d8abd4ffbe4",
+    "packages/web/src/app.tsx": "58535277644b804b4f9dfeea25e2531960f07fae77d5eb175d630caa1688c67d",
+    "packages/web/tests/landing.browser.mjs": "d7187ebe87ea64b3d96348fa31e716eeb08f749db262728e48b0592647d6b409"
+  },
+  "judgeQa": {
+    "passed": 28,
+    "total": 28,
+    "baseline": "24/28 before upstream PR 230; the final run uses merged PR 230"
+  },
+  "sixChecks": "passed on 2026-11-09; samples 17/17; local fixture comparison skipped",
+  "copyReview": {
+    "kuchiguse": "reviewed; team-approved hero preserved",
+    "argon": "inherited names, label/content mismatch and redundant explanation corrected; spacing and nav labels retained",
+    "yomiyasu": "lint/diff/verify executed; new synthetic task number reviewed as fictional copy"
+  },
+  "remaining": [
+    "replace landing-demo-slot with shared component after issue 225 merges",
+    "recapture existing product screenshots after issues 225 and 226"
+  ],
+  "m6": {
+    "passed": 8,
+    "total": 8,
+    "environment": "local emulators and mock calendar only"
+  },
+  "publicEntry": "browser back and repeat entry passed; login failures, both roles, update, quota and reset passed"
+}
