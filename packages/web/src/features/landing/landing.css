@@ -11,7 +11,7 @@ html.landing-scroll { scroll-behavior: smooth; }
 .landing-header .todoku-logo { font-size: 30px; }
 .landing-header nav { display: flex; gap: 30px; padding: 14px 30px; background: var(--white); border-radius: 100px; font-size: 14px; font-weight: 700; }
 .landing-home { display: inline-flex; }
-.landing .chapter { position: relative; box-sizing: border-box; min-height: 100svh; padding: 90px 8vw 70px; }
+.landing .chapter { position: relative; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; min-height: 100svh; padding: 56px 8vw 88px; }
 .landing .hero { display: grid; grid-template-columns: 47% 53%; align-items: center; gap: 16px; overflow: clip; padding: 160px 6vw 100px; }
 .landing .hero-copy { position: relative; z-index: 1; }
 .landing .hero h1 { font-size: clamp(30px, 3.4vw, 48px); line-height: 1.55; letter-spacing: -.04em; }
@@ -40,11 +40,12 @@ html.landing-scroll { scroll-behavior: smooth; }
 .landing .pill { display: inline-flex; align-items: center; justify-content: space-between; gap: 28px; min-height: var(--target); padding: 12px 26px; box-sizing: border-box; border: 1px solid var(--ink); border-radius: 100px; font-size: 15px; font-weight: 700; background: var(--paper); }
 .landing .pill.primary { background: var(--ink); color: var(--paper); }
 .landing .pill span { font-size: 21px; }
-.landing .next-chapter { display: flex; align-items: center; gap: 32px; width: fit-content; margin: 42px 0 0 auto; font-size: 14px; }
+.landing .next-chapter { display: flex; align-items: center; gap: 32px; width: fit-content; position: absolute; bottom: 24px; right: 8vw; margin: 0; font-size: 14px; }
 .landing .next-chapter span { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid currentColor; border-radius: 50%; font-size: 20px; }
 .landing .hero > .next-chapter { position: absolute; bottom: 34px; right: 8vw; }
-.landing .section-heading { margin-bottom: 46px; }
+.landing .section-heading { margin-bottom: 28px; }
 .landing .section-heading p { max-width: 30em; margin-top: 22px; font-size: 16px; line-height: 2; }
+.landing .chapter-number { display: block; margin-bottom: 8px; font: 500 13px/1.5 var(--mono); }
 .landing .eyebrow { display: block; margin-bottom: 12px; color: var(--muted); font: 600 13px/1.5 var(--mono); letter-spacing: .04em; }
 .landing .how-section { background: var(--accent); color: var(--white); }
 .landing .how-section .eyebrow { color: inherit; }
@@ -54,13 +55,14 @@ html.landing-scroll { scroll-behavior: smooth; }
 .landing .start-section .eyebrow { color: inherit; }
 .landing .privacy-section { min-height: 80svh; background: var(--accent-soft); }
 .landing .product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; align-items: start; }
-.landing .product-grid > :nth-child(2) { margin-top: 90px; }
+.landing .product-grid > * { min-width: 0; }
 .landing .product-label { display: flex; gap: 18px; align-items: center; }
 .landing .step-number { font: 500 20px/1.5 var(--mono); }
-.landing .product-shot { margin-top: 22px; }
-.landing .shot-trigger { display: block; width: 100%; padding: 0; border: 0; color: inherit; background: transparent; text-align: left; font: inherit; cursor: zoom-in; }
-.landing .shot { display: block; width: 100%; height: auto; border: 1px solid var(--line-strong); border-radius: var(--radius-md); box-sizing: border-box; background: var(--white); }
-.landing .shot-caption { display: flex; justify-content: space-between; margin-top: 14px; font-size: 13px; }
+.landing .product-shot { margin-top: 16px; }
+.landing .shot-trigger { position: relative; display: block; width: 100%; padding: 0; border: 0; color: inherit; background: transparent; text-align: left; font: inherit; cursor: zoom-in; }
+.landing .shot { display: block; width: 100%; height: min(34svh, 300px); object-fit: contain; object-position: top; border: 1px solid var(--line-strong); border-radius: var(--radius-md); box-sizing: border-box; background: var(--white); }
+.landing .product-shot figcaption { margin-top: 12px; font-size: 14px; line-height: 1.8; }
+.landing .shot-zoom { position: absolute; right: 8px; bottom: 8px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); color: var(--ink); }
 .landing .shot-dialog { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 30px; box-sizing: border-box; border: 0; background: transparent; color: var(--ink); }
 .landing .shot-dialog[open] { display: grid; place-items: center; }
 .landing .shot-dialog::backdrop { background: var(--ink); opacity: .88; }
@@ -111,7 +113,14 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing-header { padding: 24px; flex-wrap: wrap; }
   .landing-header .todoku-logo { font-size: 26px; }
   .landing-header nav { padding: 12px 18px; gap: 18px; flex-wrap: wrap; font-size: 12px; }
-  .landing .chapter { padding: 64px 24px 40px; }
+  .landing .chapter { padding: 40px 24px 84px; }
+  .landing h2 { font-size: 30px; }
+  .landing h3 { font-size: 18px; }
+  .landing .next-chapter { right: 24px; bottom: 18px; }
+  .landing .product-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .landing .product-shot { margin-top: 10px; }
+  .landing .shot { height: 20svh; }
+  .landing .product-shot figcaption { margin-top: 8px; font-size: 13px; }
   .landing .hero { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 24px; padding: 130px 24px 80px; }
   .landing .hero h1 { font-size: clamp(25px, 7.2vw, 38px); line-height: 1.5; letter-spacing: -.04em; }
   .landing .hero-lead { margin-top: 14px; font-size: 14px; line-height: 1.8; }
@@ -123,9 +132,9 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing .hero > .next-chapter { right: 24px; bottom: 18px; }
   .landing .chapter-nav { right: 2px; gap: 6px; }
   .landing .chapter-nav a { width: 18px; }
-  .landing .section-heading { margin-bottom: 30px; }
-  .landing .product-grid, .landing .entry-grid, .landing .setup-steps, .landing .privacy-list { grid-template-columns: minmax(0, 1fr); gap: 36px; }
-  .landing .product-grid > :nth-child(2) { margin-top: 12px; }
+  .landing .section-heading { margin-bottom: 22px; }
+  .landing .entry-grid, .landing .setup-steps, .landing .privacy-list { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+
   .landing .entry-panel { padding: 24px; }
   .landing .shot-dialog { padding: 16px; }
   .landing .setup-steps, .landing .privacy-list { margin: 40px 0; }

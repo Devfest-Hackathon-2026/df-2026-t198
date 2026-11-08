@@ -13,13 +13,14 @@ const chapters = [
   { id: 'start', label: '使い始める' }, { id: 'privacy', label: '情報の扱い' },
 ];
 
-function Screenshot({ name, alt, width, height }: { name: string; alt: string; width: number; height: number }) {
+function Screenshot({ name, alt, width, height, caption }: { name: string; alt: string; width: number; height: number; caption: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   return <figure className="product-shot">
     <button className="shot-trigger" type="button" aria-label={`${alt}を拡大する`} onClick={() => dialog.current?.showModal()}>
       <img className="shot" src={`/landing/${name}.png`} alt={alt} width={width} height={height} loading="lazy" />
-      <span className="shot-caption">{alt}<span aria-hidden="true"> ↗</span></span>
+      <span className="shot-zoom" aria-hidden="true">↗</span>
     </button>
+    <figcaption>{caption}</figcaption>
     <dialog ref={dialog} className="shot-dialog" aria-label={alt} onClick={event => {
       if (event.target === event.currentTarget) dialog.current?.close();
     }}>
@@ -112,10 +113,10 @@ export function LandingPage() {
       </section>
 
       <section className="chapter how-section" id="how" aria-labelledby="how-title">
-        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">How it works</span><h2 id="how-title">しくみ</h2><p>LMSの課題と締切を時間割とGoogle カレンダーに入れ、その日にやることを毎朝メールで送ります。</p></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="how-title">しくみ</h2></div></Reveal>
         <div className="product-grid">
-          <Reveal><div className="product-label"><span className="step-number">01</span><h3>LMSの課題</h3></div><Screenshot name="lms" alt="体験用LMSの授業一覧" width={868} height={535} /></Reveal>
-          <Reveal order={1}><div className="product-label"><span className="step-number">02</span><h3>時間割と締切の変更</h3></div><Screenshot name="updated" alt="締切変更後の学生画面" width={884} height={635} /></Reveal>
+          <Reveal><div className="product-label"><span className="step-number">01</span><h3>LMSの課題</h3></div><Screenshot name="lms" alt="体験用LMSの授業一覧" width={868} height={535} caption="LMSを開くと、授業ごとの課題を集めます。" /></Reveal>
+          <Reveal order={1}><div className="product-label"><span className="step-number">02</span><h3>時間割と締切の変更</h3></div><Screenshot name="updated" alt="締切変更後の学生画面" width={884} height={635} caption="変わった締切を、時間割とGoogle カレンダーに反映します。" /></Reveal>
         </div>
         <a className="next-chapter" href="#people">使う人 <span aria-hidden="true">↓</span></a>
       </section>
@@ -123,8 +124,8 @@ export function LandingPage() {
       <section className="chapter people-section" id="people" aria-labelledby="people-title">
         <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Who it is for</span><h2 id="people-title">使う人</h2></div></Reveal>
         <div className="product-grid">
-          <Reveal><h3>学生</h3><Screenshot name="student" alt="学生の時間割" width={884} height={635} /></Reveal>
-          <Reveal order={1}><h3>支援担当（カウンセラーなど）</h3><Screenshot name="session" alt="支援担当の面談画面" width={1072} height={1005} /></Reveal>
+          <Reveal><h3>学生</h3><Screenshot name="student" alt="学生の時間割" width={884} height={635} caption="締切の変更が、いつもの時間割に出ます。" /></Reveal>
+          <Reveal order={1}><h3>支援担当（カウンセラーなど）</h3><Screenshot name="session" alt="支援担当の面談画面" width={1072} height={1005} caption="前回の面談から変わった課題を確かめられます。" /></Reveal>
         </div>
         <a className="next-chapter" href="#try">体験する <span aria-hidden="true">↓</span></a>
       </section>
