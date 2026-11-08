@@ -4,6 +4,7 @@ import { PublicDemoEntry } from '../../shared/auth/public-demo-entry';
 import { TodokuLogo } from '../../shared/ui/todoku-logo';
 import './landing.css';
 import { HeroVisual } from './hero-visual';
+import { Mechanism } from './mechanism';
 import { settleChapters } from './chapter-scroll';
 
 const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
@@ -85,10 +86,7 @@ export function LandingPage() {
 
       <section className="chapter how-section" id="how" aria-labelledby="how-title">
         <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="how-title">しくみ</h2></div></Reveal>
-        <div className="product-grid">
-          <Reveal><div className="product-label"><span className="step-number">01</span><h3>LMSの課題</h3></div><Screenshot name="lms" alt="体験用LMSの授業一覧" width={868} height={535} caption="LMSを開くと、授業ごとの課題を集めます。" /></Reveal>
-          <Reveal order={1}><div className="product-label"><span className="step-number">02</span><h3>時間割と締切の変更</h3></div><Screenshot name="updated" alt="締切変更後の学生画面" width={884} height={635} caption="変わった締切を、時間割とGoogle カレンダーに反映します。" /></Reveal>
-        </div>
+        <Mechanism />
         <a className="next-chapter" href="#people">使う人 <span aria-hidden="true">↓</span></a>
       </section>
 
