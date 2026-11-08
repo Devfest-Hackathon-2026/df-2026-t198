@@ -10,7 +10,7 @@ import { useDeadlineChanges } from '../../shared/assignments/deadline-change';
 import { dayInZone } from '../../shared/assignments/deadline-format';
 import type { ReactNode } from 'react';
 import type { StudentCourse } from '../../shared/assignments/types';
-import { courseColor } from '../../shared/course-color';
+import { useCourseColors } from '../../shared/course-color-context';
 import { calendarCourses } from './course-colors';
 
 function eventDay(event: DeadlineEvent) {
@@ -28,6 +28,7 @@ function eventTime(event: DeadlineEvent) {
 export function DemoCalendarView({ integration, pending, now = Date.now(), submitted = new Set<string>(), courses = [], courseByItem = new Map() }: {
   integration: CalendarIntegration; pending: boolean; now?: number; submitted?: ReadonlySet<string>; courses?: Pick<StudentCourse, 'name'>[]; courseByItem?: ReadonlyMap<string, StudentCourse>;
 }) {
+  const courseColor = useCourseColors();
   const scroll = useRef<HTMLDivElement>(null);
   const edges = useScrollEdges(scroll);
   const [selectedDay, setSelectedDay] = useState('');

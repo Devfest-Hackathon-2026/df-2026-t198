@@ -2,7 +2,8 @@ import { Fragment, useId, useState, type ReactNode } from 'react';
 import { Button, type ButtonProps } from './button';
 import { StatusChip, type Status } from './status';
 import { ScrollFrame } from './scroll-frame';
-import { courseColor, type CourseIdentity } from '../course-color';
+import type { CourseIdentity } from '../course-color';
+import { useCourseColors } from '../course-color-context';
 
 export interface DeadlineTextProps { due?: string | null | undefined; now?: string | undefined }
 export function DeadlineText({ due, now = new Date().toISOString() }: DeadlineTextProps) {
@@ -19,6 +20,7 @@ export function DeadlineText({ due, now = new Date().toISOString() }: DeadlineTe
 }
 export interface TaskRowProps extends DeadlineTextProps { course: string; courseIdentity?: CourseIdentity | undefined; title: string; status?: Status; changed?: boolean; href?: string; deadline?: ReactNode; onSelect?: (() => void) | undefined }
 export function TaskRow({ course, courseIdentity, title, due, now, status, changed, href, deadline, onSelect }: TaskRowProps) {
+  const courseColor = useCourseColors();
   const content = <><span className="td-taskrow-course">{course}</span><span className="td-taskrow-title">{title}</span>
     <span className="td-taskrow-side">{changed && <StatusChip status="changed" />}
       {status && (!changed || status !== 'changed') && <StatusChip status={status} />}
@@ -40,6 +42,7 @@ export function NextAction({ course, title, step, due, now, actionLabel = 'LMS�
 export interface TaskTableRow { id: string; course: string; courseIdentity?: CourseIdentity | undefined; title: string; due?: string | null; status?: Status; remaining?: string; deadline?: ReactNode; note?: ReactNode }
 export interface TaskTableProps { rows: TaskTableRow[]; now?: string; selected?: string; caption?: string; onSelect?: (id: string) => void }
 export function TaskTable({ rows, now, selected, caption = '課題', onSelect }: TaskTableProps) {
+  const courseColor = useCourseColors();
   const [local, setLocal] = useState<string>();
   const hasStatus = rows.some(row => row.status);
   const hasRemaining = rows.some(row => row.remaining);

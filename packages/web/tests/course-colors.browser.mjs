@@ -19,6 +19,14 @@ async function shot(page, name, width) {
 }
 const tone = locator => locator.evaluate(element => ({ index: element.getAttribute('data-course-color'),
   band: globalThis.getComputedStyle(element).getPropertyValue('--course-band').trim() }));
+async function courseTones(elements, labelSelector) {
+  return elements.evaluateAll((rows, selector) => rows.map(element => ({
+    name: element.querySelector(selector).textContent.trim(), index: element.getAttribute('data-course-color'),
+  })), labelSelector);
+}
+function matchesTimetable(rows, colors) {
+  for (const { name, index } of rows) assert.equal(index, colors[name], `${name} matches the full-list timetable allocation`);
+}
 try {
   await mkdir(evidence, { recursive: true });
   for (const width of [1280, 390]) {
@@ -38,6 +46,7 @@ try {
     await switchPane('学生');
     await pane('student').getByText('書き方を書くレポート', { exact: true }).waitFor();
     const demoTone = phase === 'after' ? await tone(pane('student').locator('[data-course-color]').first()) : null;
+    const demoStudentTones = phase === 'after' ? await courseTones(pane('student').locator('.demo-observed-task'), '.course-label') : [];
     await shot(page, 'demo-student', width);
     await switchPane('支援担当');
     if (phase === 'after') {
@@ -46,6 +55,7 @@ try {
       checks.push(`${width}: demo student/supporter share a course color; LMS has no course colors`);
     }
     await shot(page, 'demo-supporter', width);
+    const demoSupporterTones = phase === 'after' ? await courseTones(pane('supporter').locator('.session-task'), '.course-label') : [];
 
     await page.getByText('先生役の操作・メールの見本', { exact: true }).click();
     const preview = page.getByRole('region', { name: '今日やることのメール', exact: true });
@@ -73,6 +83,18 @@ try {
       assert.deepEqual(await tone(course), demoTone);
       assert.notEqual(await course.evaluate(element => globalThis.getComputedStyle(element).backgroundColor), 'rgba(0, 0, 0, 0)');
       checks.push(`${width}: timetable and deadline row match the demo course`);
+      const timetableRows = await courseTones(page.locator('.course-cell'), 'strong');
+      const colors = Object.fromEntries(timetableRows.map(({ name, index }) => [name, index]));
+      assert.deepEqual(Object.keys(colors).sort(), ['レポートの書き方の書き方', 'キャンパス植物図鑑演習', 'Re:線形代数',
+        '学食経済学', '自転車置き場の社会学', '90分の数理'].sort());
+      assert.equal(new Set(Object.values(colors)).size, 6, 'all six demo courses use distinct colors');
+      matchesTimetable(demoStudentTones, colors);
+      matchesTimetable(demoSupporterTones, colors);
+      matchesTimetable(await courseTones(page.locator('.td-taskrow[data-course-color]'), '.td-taskrow-course'), colors);
+      matchesTimetable(await courseTones(page.locator('.calendar-event[data-course-color]'), '.muted'), colors);
+      checks.push(`${width}: all six timetable courses have different colors; filtered demo panes, deadline rows and calendar match`);
+      // Keep the entire allocation to compare with the session's smaller deadline subset.
+      page.courseColors = colors;
       const plan = page.locator('.preparation-cell').first();
       await plan.waitFor();
       assert.equal(await plan.getAttribute('data-course-color'), null);
@@ -98,6 +120,17 @@ try {
       checks.push(`${width}: session table/detail match the course; table frame fits its contents`);
     }
     await shot(page, 'session', width);
+    if (phase === 'after') {
+      matchesTimetable(await courseTones(table.locator('tbody tr[data-course-color]'), '.course-label'), page.courseColors);
+      await page.goto(`${base}/session/trial-student/plan`);
+      await page.locator('.session-course').first().waitFor();
+      const sessionCourses = await page.locator('.session-course').evaluateAll(rows => rows.map(element => ({
+        name: element.firstChild.textContent.trim(), index: element.getAttribute('data-course-color'),
+      })));
+      assert.equal(sessionCourses.length, 6);
+      matchesTimetable(sessionCourses, page.courseColors);
+      checks.push(`${width}: session deadline subset and planning timetable use the student's full-list colors`);
+    }
     await context.close();
   }
   assert.deepEqual(errors, []);

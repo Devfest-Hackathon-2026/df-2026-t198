@@ -21,7 +21,7 @@ import { firebase } from '../../shared/firebase';
 import { watchAccount, type StudentState } from './data';
 import { type StudentCourse, type StudentData } from '../../shared/assignments/types';
 import { NotificationSettingsPanel } from '../notifications/settings';
-import { courseColor } from '../../shared/course-color';
+import { CourseColorProvider, useCourseColors } from '../../shared/course-color-context';
 
 export const courseKey = (course: StudentCourse) => JSON.stringify([course.system, course.courseId]);
 const belongsTo = (item: LedgerAssignment, course: StudentCourse) =>
@@ -64,7 +64,12 @@ function AssignmentRow({ item, courseName }: { item: LedgerAssignment; courseNam
     <LmsSourceLink item={item} courseName={courseName} />
   </li>;
 }
-export function StudentView({ data, now = Date.now(), calendar = false, actions, manualActions, planLink }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode }) {
+interface StudentViewProps { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode }
+export function StudentView(props: StudentViewProps) {
+  return <CourseColorProvider courses={props.data.courses}><StudentContent {...props} /></CourseColorProvider>;
+}
+function StudentContent({ data, now = Date.now(), calendar = false, actions, manualActions, planLink }: StudentViewProps) {
+  const courseColor = useCourseColors();
   data = { ...data, courses: linkedCourses(data.courses) };
   const [tab, setTab] = useState(planLink ? 'preparation' : 'deadlines');
   const [selected, setSelected] = useState<string | null>(null);

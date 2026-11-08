@@ -9,6 +9,7 @@ import type { DemoAccount, DemoData, Observation } from '@kadai-hisho/core';
 import { firebase } from '../../shared/firebase';
 import { DemoPages } from './pages';
 import { DemoTriptych } from './triptych';
+import { CourseColorProvider } from '../../shared/course-color-context';
 import { DemoObserved, useDemoObserved } from './observed';
 import { Staged } from '../../shared/ui/motion';
 import { readDemoAnnouncements, readDemoObservation } from './reader';
@@ -228,8 +229,10 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       <LongWait busy={blocked} afterThree={operation === 'open' ? '課題とお知らせを確認しています…' : 'LMSの変更を待っています…'}
         afterTen="まだ応答を待っています。接続を確かめて、この画面でお待ちください。" />
     </div>
-    <DemoTriptych waiting={sourceAhead} lms={<div ref={pages}><DemoPages data={data} /></div>}
-      student={<DemoObserved state={observed} role="student" />} supporter={<DemoObserved state={observed} role="supporter" />} />
+    <CourseColorProvider courses={observed.data.courses}>
+      <DemoTriptych waiting={sourceAhead} lms={<div ref={pages}><DemoPages data={data} /></div>}
+        student={<DemoObserved state={observed} role="student" />} supporter={<DemoObserved state={observed} role="supporter" />} />
+    </CourseColorProvider>
     <div className="demo-secondary"><a href="/student" target="_blank" rel="noreferrer">学生の画面を開く</a>
       <a href="/session">面談を開く</a>
       {stage !== 0 && stage !== 2 && openButton}

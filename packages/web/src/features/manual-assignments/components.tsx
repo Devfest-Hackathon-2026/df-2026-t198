@@ -7,7 +7,7 @@ import type { StudentCourse } from '../../shared/assignments/types';
 import { formatDeadline } from '../../shared/assignments/deadline-format';
 import { manualAssignmentEnded } from '../../shared/assignments/deadline-entries';
 import './manual-assignments.css';
-import { courseColor } from '../../shared/course-color';
+import { useCourseColors } from '../../shared/course-color-context';
 
 export const manualAuthor = (row: ManualAssignment) => `手で入れた課題（${row.createdByRole === 'supporter' ? '支援担当' : '学生'}が入れました）`;
 
@@ -59,6 +59,7 @@ export function ManualAssignmentForm({ courses, actions, course }: {
 export function ManualAssignmentRow({ row, actions, own, viewerUid }: {
   row: ManualAssignment; actions?: ManualAssignmentActions | undefined; own: boolean; viewerUid?: string | undefined;
 }) {
+  const courseColor = useCourseColors();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function remove() {

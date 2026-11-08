@@ -2,7 +2,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
 import type { CalendarIntegration, CalendarItem, ManualAssignment } from '@kadai-hisho/core';
 import { studentFixture } from '../../shared/testing/student-fixture';
-import { courseColor } from '../../shared/course-color';
+import { assignCourseColors, courseIdentityKey } from '../../shared/course-color';
+import { CourseColorProvider } from '../../shared/course-color-context';
 import { calendarCourses } from './course-colors';
 import { DemoCalendarView } from './calendar';
 
@@ -34,10 +35,12 @@ it('resolves same-name courses by saved source identities and leaves preparation
       summary: `${data.courses[0]!.name}：${row.itemKey}`, description: '', start: { date: '2026-11-12' }, end: { date: '2026-11-13' },
       transparency: 'transparent', reminders: { useDefault: true },
     } }])) };
-  const html = renderToStaticMarkup(<DemoCalendarView integration={integration} pending={false} now={Date.parse('2026-11-09')}
-    courses={data.courses} courseByItem={map} />);
+  const colors = assignCourseColors(data.courses);
+  const html = renderToStaticMarkup(<CourseColorProvider courses={data.courses}>
+    <DemoCalendarView integration={integration} pending={false} now={Date.parse('2026-11-09')}
+      courses={data.courses} courseByItem={map} /></CourseColorProvider>);
   expect(html.match(/data-course-color=/g)).toHaveLength(3);
-  expect(html).toContain(`data-course-color="${courseColor(data.courses[0])}"`);
-  expect(html).toContain(`data-course-color="${courseColor(data.courses[1])}"`);
+  expect(html).toContain(`data-course-color="${colors.get(courseIdentityKey(data.courses[0]!))}"`);
+  expect(html).toContain(`data-course-color="${colors.get(courseIdentityKey(data.courses[1]!))}"`);
   expect(html).toContain(data.courses[0]!.name);
 });

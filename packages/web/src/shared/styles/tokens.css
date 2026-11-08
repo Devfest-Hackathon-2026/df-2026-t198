@@ -50,22 +50,23 @@
 
 .app {
   /* Course categories: soft background / solid band. Keep status colors separate. */
-  --course-0-soft: #eef3fa;
-  --course-0-band: #42689a;
-  --course-1-soft: #eaf5f1;
-  --course-1-band: #367467;
-  --course-2-soft: #f3f5e8;
-  --course-2-band: #6b7338;
-  --course-3-soft: #faf3e4;
-  --course-3-band: #8b682e;
-  --course-4-soft: #f9f0f6;
-  --course-4-band: #8a5979;
-  --course-5-soft: #f0f4f7;
-  --course-5-band: #566e82;
-  --course-6-soft: #eff6eb;
-  --course-6-band: #507b45;
-  --course-7-soft: #f3f0fa;
-  --course-7-band: #716093;
+  /* Blue, teal, green, ochre, pink, purple, sky, brown. L*≈94 preserves the fixed change text's AA contrast. */
+  --course-0-soft: #e6eefe;
+  --course-0-band: #2f63b6;
+  --course-1-soft: #caf6ef;
+  --course-1-band: #147b69;
+  --course-2-soft: #d5f6d5;
+  --course-2-band: #39803a;
+  --course-3-soft: #faefa7;
+  --course-3-band: #8a751c;
+  --course-4-soft: #fde8f4;
+  --course-4-band: #a34882;
+  --course-5-soft: #f4eafd;
+  --course-5-band: #7e50aa;
+  --course-6-soft: #d4f3fd;
+  --course-6-band: #237b99;
+  --course-7-soft: #f6ecdf;
+  --course-7-band: #816342;
   --paper: #f7f8f4;
   --sheet: #ffffff;
   --rule: #cbd7e6;

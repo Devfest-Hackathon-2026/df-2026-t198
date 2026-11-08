@@ -23,7 +23,7 @@ import { ChangedDeadline } from '../../shared/assignments/deadline-change';
 import { missingDeadlineText } from '../../shared/assignments/review-reason';
 import { DemoLogin } from '../../shared/auth/demo-login';
 import { OperationMessages } from '../../shared/ui/operation-messages';
-import { courseColor } from '../../shared/course-color';
+import { CourseColorProvider, useCourseColors } from '../../shared/course-color-context';
 
 export function SessionPage({ path = '/session' }: { path?: string }) {
   const [services] = useState(() => { try { return getSessionServices(); } catch { return null; } });
@@ -117,9 +117,13 @@ function StudentSession({ uid, user, services, planning, displayName }: { uid: s
   return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning}
     displayName={displayName} actions={planActions(user, uid)} manualActions={manualAssignmentActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
 }
-export function SessionDetails({ data, now, own, save, uid, planning, actions, manualActions, viewerUid, displayName }: {
+interface SessionDetailsProps {
   data: SessionData; now: Date; own: boolean; uid: string; planning: boolean;
-  actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; viewerUid?: string | undefined; displayName?: string | undefined; save: (context: SessionContext) => Promise<void> }) {
+  actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; viewerUid?: string | undefined; displayName?: string | undefined; save: (context: SessionContext) => Promise<void> }
+export function SessionDetails(props: SessionDetailsProps) {
+  return <CourseColorProvider courses={props.data.courses}><SessionContent {...props} /></CourseColorProvider>;
+}
+function SessionContent({ data, now, own, save, uid, planning, actions, manualActions, viewerUid, displayName }: SessionDetailsProps) {
   data = { ...data, courses: linkedCourses(data.courses) };
   const view = buildSessionView(data, now);
   const deadlines = sessionDeadlineEntries(data, now);
@@ -212,6 +216,7 @@ function sameAssignment(row: LedgerAssignment, key: LedgerAssignment['key']) {
   return row.key.system === key.system && row.key.sourceId === key.sourceId;
 }
 export function SessionAssignment({ row, data, open = false }: { row: LedgerAssignment; data: SessionData; open?: boolean }) {
+  const courseColor = useCourseColors();
   const course = data.courses.find(course => course.system === row.key.system && course.courseId === row.latest.courseId);
   const changes = data.changes.filter(change => sameAssignment(row, change.assignmentKey))
     .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));

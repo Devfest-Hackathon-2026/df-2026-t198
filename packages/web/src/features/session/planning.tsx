@@ -1,5 +1,5 @@
 import { ScrollFrame } from '../../shared/ui/scroll-frame';
-import { courseColor } from '../../shared/course-color';
+import { useCourseColors } from '../../shared/course-color-context';
 import { linkedCourses } from '../../../../core/src/course-links';
 import { useEffect, useRef, useState } from 'react';
 import type { PreparationCandidate } from '../../../../core/src/types';
@@ -13,6 +13,7 @@ import { deadlineEntries, entryBelongsTo, entryTitle } from '../../shared/assign
 export function SessionPlanning({ data, now, actions, own = false, viewerUid }: {
   data: SessionData; now: Date; actions?: PlanActions | undefined; own?: boolean; viewerUid?: string | undefined;
 }) {
+  const courseColor = useCourseColors();
   data = { ...data, courses: linkedCourses(data.courses) };
   const [candidate, setCandidate] = useState<PreparationCandidate | null>(null);
   const [message, setMessage] = useOperationMessage();
