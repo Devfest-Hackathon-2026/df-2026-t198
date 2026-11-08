@@ -53,7 +53,7 @@ export function DemoFlowPreview({ autoPlay = true }: { autoPlay?: boolean }) {
       <Button variant="quiet" onClick={() => setPlaying(value => !value)} disabled={reduced}>{playing && !reduced ? '一時停止する' : '自動再生する'}</Button>
       <Button variant="quiet" data-demo-next onClick={() => { setPlaying(false); setStage(value => (value + 1) % 4); }}>次へ進む</Button>
     </div>
-    <DemoTriptych waiting={stage === 2} lms={task(stage >= 2)}
+    <DemoTriptych key={stage === 0 ? 'initial' : 'flow'} waiting={stage === 2} lms={task(stage >= 2)}
       student={stage ? task(stage === 3) : <p className="demo-empty-view">LMSを開く前</p>}
       supporter={stage ? task(stage === 3) : <p className="demo-empty-view">LMSを開く前</p>} />
   </div>;

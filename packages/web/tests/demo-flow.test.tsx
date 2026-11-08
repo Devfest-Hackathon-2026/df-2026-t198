@@ -30,6 +30,9 @@ it('autoplays source-only extension before either observed view changes, without
     }
     await act(async () => { vi.advanceTimersByTime(3000); });
     for (const role of ['lms', 'student', 'supporter']) expect(pane(role).textContent).toContain('11/13');
+    await act(async () => { vi.advanceTimersByTime(3000); });
+    expect(pane('lms').querySelector('s')).toBeNull();
+    expect(pane('lms').textContent).not.toContain('11/13');
     expect(fetch).not.toHaveBeenCalled();
   } finally { await act(async () => root.unmount()); }
 });
