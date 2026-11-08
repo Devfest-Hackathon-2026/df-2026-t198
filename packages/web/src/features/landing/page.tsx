@@ -108,12 +108,13 @@ export function LandingPage() {
       </section>
 
       <section className="chapter start-section" id="start" aria-labelledby="start-title">
-        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Getting started</span><h2 id="start-title">使い始める</h2></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">04</span><h2 id="start-title">使い始める</h2></div></Reveal>
         <Reveal><ol className="setup-steps">
           <li><span className="step-number">01</span><h3>Chrome 拡張</h3><a className="pill" href={`${repository}#手元で動かす`}>開発版の導入手順を開く <span aria-hidden="true">↗</span></a></li>
           <li><span className="step-number">02</span><h3>Google ログイン</h3><a className="pill" href="/student">学生画面を開く <span aria-hidden="true">↗</span></a></li>
-          <li><span className="step-number">03</span><h3>対応しているLMS</h3><p>横浜国立大学のLMS</p></li>
-        </ol></Reveal>
+        </ol>
+          <div className="lms-support"><h3>対応しているLMS</h3><ul className="supported-lms"><li>横浜国立大学</li></ul></div>
+        </Reveal>
         <a className="next-chapter" href="#privacy">情報の扱い <span aria-hidden="true">↓</span></a>
       </section>
 

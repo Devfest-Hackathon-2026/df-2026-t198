@@ -87,9 +87,12 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 .landing .trial-entry .shared-fallback { min-height: 56px; font-size: 17px; }
 .landing .judge-guide { margin-top: 24px; font-size: 13px; color: var(--muted); }
 .landing .judge-link { text-decoration: underline; }
-.landing .setup-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px; list-style: none; padding: 0; margin: 80px 0; }
+.landing .setup-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; list-style: none; padding: 0; margin: 0 0 36px; }
 .landing .setup-steps li { display: grid; align-content: start; justify-items: start; gap: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
 .landing .setup-steps .pill { font-size: 13px; padding: 12px 18px; gap: 12px; color: var(--ink); }
+.landing .lms-support { display: flex; align-items: baseline; gap: 36px; padding-top: 24px; border-top: 1px solid var(--line-strong); }
+.landing .lms-support h3 { font-size: 16px; }
+.landing .supported-lms { list-style: none; padding: 0; margin: 0; font-size: 20px; }
 .landing .privacy-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; list-style: none; padding: 0; margin: 60px 0; }
 .landing .privacy-list li { padding-top: 22px; border-top: 1px solid var(--ink); font-size: 18px; }
 .landing-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 40px 8vw; font: 12px/1.8 var(--mono); }
@@ -135,7 +138,11 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing .trial-entry .demo-login button { width: 100%; padding-inline: 20px; }
   .landing .judge-guide { margin-top: 22px; line-height: 1.8; }
   .landing .shot-dialog { padding: 16px; }
-  .landing .setup-steps, .landing .privacy-list { margin: 40px 0; }
+  .landing .setup-steps { margin: 0 0 28px; gap: 28px; }
+  .landing .setup-steps li { gap: 12px; padding-top: 16px; }
+  .landing .lms-support { flex-direction: column; gap: 12px; }
+  .landing .supported-lms { font-size: 18px; }
+  .landing .privacy-list { margin: 32px 0; }
   .landing .privacy-list li { font-size: 16px; }
   .landing-footer { flex-wrap: wrap; padding: 32px 24px; }
 }
