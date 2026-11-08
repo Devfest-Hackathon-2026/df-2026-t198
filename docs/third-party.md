@@ -117,3 +117,18 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 | [Google Cloud: Cloud Run Node.js samples](https://github.com/GoogleCloudPlatform/nodejs-docs-samples/tree/main/run) | ローカル・単体・通し試験・配備を分ける検証 | Apache-2.0 |
 
 方針の参照に限り、外部のコード・文書原文・テンプレートは複製していない。スキルのインストールや実行依存の追加も行っていない。
+
+## 実行環境の仕様調査（Issue #196、2026-11-08）
+
+本調査では仕様と既存事例を参照したのみで、原文や外部コードのコピーは行っていません。
+
+| 出典 | 参照内容 | ライセンス・備考 |
+| --- | --- | --- |
+| [Cloud Run コンテナランタイム契約](https://docs.cloud.google.com/run/docs/container-contract) | Cloud Run PORT / `0.0.0.0` / SIGTERM 10秒 | Google文書 CC BY 4.0（ページ末尾確認済）。code samplesはApache 2.0（コピーなし） |
+| [Node.js HTTP API ドキュメント](https://nodejs.org/api/http.html) | Node 26 `server.close` / `closeAllConnections` | 公式文書の参照のみ（コード複製なし、文書ライセンスは今回未確認） |
+| [Firebase Auth Emulator 接続ガイド](https://firebase.google.com/docs/emulator-suite/connect_auth) | Auth emulator変数とunsigned token、本番混入禁止 | 文書 CC BY 4.0（確認済）、サンプル複製なし |
+| [Cloud Firestore リアルタイムアップデート取得ガイド](https://firebase.google.com/docs/firestore/query-data/listen) | Firestore listener解除 | 文書 CC BY 4.0（確認済）、サンプル複製なし |
+| [Firebase Admin Node.js SDK `deleteApp` リファレンス](https://firebase.google.com/docs/reference/admin/node/firebase-admin.app#deleteapp) | Admin app local資源解放 | 公式API文書の参照のみ（本文ライセンスはこの段階で個別未確認） |
+| [Firebase Hosting と Cloud Run の統合ガイド](https://firebase.google.com/docs/hosting/cloud-run) | Hosting 60秒上限 | 文書 CC BY 4.0（確認済）、サンプル複製なし |
+| [Google Gen AI SDK `HttpOptions` リファレンス](https://googleapis.github.io/js-genai/release_docs/interfaces/types.HttpOptions.html) | SDK通信timeout | 文書は参照のみ（文書ライセンスは未確認。既存依存 `@google/genai` 2.32.0 本体はApache 2.0として既存出典欄で確認済） |
+| [Google Cloud Node.js Buildpacks ドキュメント](https://docs.cloud.google.com/docs/buildpacks/nodejs) | Procfile直接起動とbuild挙動 | 文書 CC BY 4.0（確認済）、サンプル複製なし |

@@ -229,3 +229,17 @@ gcloud run services update kadai-hisho-api --project "$KADAI_PROJECT" --region a
 自然時刻の朝と準備前で、予定時刻・処理開始・API受理・本人Gmailの受信を別々に記録する。PC/Chromeを閉じた条件、停止、失効、結果不明も確かめる。Gmailの401/403は接続のやり直し、429は未受理、5xx/応答喪失/不完全な成功応答は結果不明。いずれも送信POSTを自動再送しない。invalid_grant等で止まった送信元は、凍結前に再同意・固定版更新・revision更新で復旧する。
 
 公式資料：[Gmail送信API](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/send)、[エラー](https://developers.google.com/workspace/gmail/api/guides/handle-errors)、[offline access](https://developers.google.com/identity/protocols/oauth2/web-server#offline)、[Testingの7日期限](https://developers.google.com/identity/protocols/oauth2#expiration)、[Cloud Runのsecret](https://docs.cloud.google.com/run/docs/configuring/services/secrets)、[SchedulerのOIDC](https://docs.cloud.google.com/scheduler/docs/http-target-auth)。
+
+## 実行環境の境界（Issue #196）
+
+### 終了処理
+
+Cloud RunはSIGTERM送信の10秒後にSIGKILLを送る仕様です。Nodeサーバーは通常のSIGTERM/SIGINT受信時に一度だけ終了処理を実行し、新規受付停止、進行中HTTPリクエストの完了待ち、使用中Firestoreの`terminate`、対応するFirebase appの解放を順に行います（全appやバックエンドデータの削除は行いません）。アプリ側の終了期限は10秒未満に収める実装上の選択として9秒に設定し、期限超過や解放失敗時はexit code 1で終了します。期限超過時は進行中の処理を完了できない場合があり、強制終了時のDB書込みやメール配信の取消・成功は保証されません。実Cloud環境でのSIGTERM試験は未実施です。
+
+### 本番とローカルの分離
+
+サーバーで`FIREBASE_AUTH_EMULATOR_HOST`または`FIRESTORE_EMULATOR_HOST`を設定する場合は、両方をループバックホスト（`127.0.0.1`、`localhost`、`[::1]`）と1〜65535のポートで指定し、appと環境のproject IDを同じ`demo-*`へ揃えてください。`NODE_ENV=production`または`K_SERVICE`の設定時はエミュレーター設定を拒否し、環境変数値をエラーに出力せずSDK初期化前に停止するため、本番環境へエミュレーター変数を持ち込まないでください。Webエミュレーターは、Vite DEV実行時かつページhostnameが`127.0.0.1`または`localhost`でポートが有効な場合のみ`demo-kadai-hisho`へ接続します。productionビルドでのエミュレーター指定、非ループバック、無効なポートの場合は本番へフォールバックせず既存の準備中表示となり、通常のFirebase公開設定欠落時のnull/準備中動作は維持されます。
+
+### 通信期限と購読
+
+Firebase Hostingの同期リクエスト上限（60秒）に合わせ、HTTPに組み込むGemini SDKの通信タイムアウトは45秒としています（評価CLI等の既定120秒、試行1回、予算の予約/settle、model-error扱いは維持）。45秒はSDK通信の上限であり、ADCやFirestoreのreserve/settle等を含むHTTP全体が60秒以内に終わる保証ではありません。実Geminiの待ち時間計測および本番配備は未実施です。また、カレンダー/メール見本のFirestoreリスナーで失敗した場合は兄弟リスナーも停止し、遅延コールバックとpending responseを無視します（通常時のデザイン・文言・操作は変わりません）。

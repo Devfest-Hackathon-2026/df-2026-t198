@@ -1,18 +1,18 @@
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { resolveFirebaseConfig } from './firebase-config';
 
-const emulator = import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true';
-const projectId = emulator ? 'demo-kadai-hisho' : import.meta.env.VITE_FIREBASE_PROJECT_ID;
-const apiKey = emulator ? 'demo-key' : import.meta.env.VITE_FIREBASE_API_KEY;
-const authDomain = emulator ? 'localhost' : import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
-export const firebase = projectId && apiKey && authDomain ? (() => {
-  const app = initializeApp({ projectId, apiKey, authDomain });
+const config = resolveFirebaseConfig(import.meta.env, typeof window === 'undefined' ? '' : window.location?.hostname ?? '');
+export const firebase = config ? (() => {
+  const app = initializeApp(config.options);
   const auth = getAuth(app);
+  if (config.emulator) {
+    connectAuthEmulator(auth, `http://127.0.0.1:${config.emulator.authPort}`, { disableWarnings: true });
+  }
   const db = getFirestore(app);
-  if (emulator) {
-    connectAuthEmulator(auth, `http://127.0.0.1:${import.meta.env.VITE_AUTH_EMULATOR_PORT || '9099'}`, { disableWarnings: true });
-    connectFirestoreEmulator(db, '127.0.0.1', Number(import.meta.env.VITE_FIRESTORE_EMULATOR_PORT || '8085'));
+  if (config.emulator) {
+    connectFirestoreEmulator(db, '127.0.0.1', config.emulator.firestorePort);
   }
   return { auth, db, login: () => signInWithPopup(auth, new GoogleAuthProvider()), logout: () => signOut(auth) };
 })() : null;

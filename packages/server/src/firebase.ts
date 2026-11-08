@@ -1,4 +1,5 @@
-import { getApps, initializeApp } from 'firebase-admin/app';
+import { deleteApp, getApps, initializeApp } from 'firebase-admin/app';
+import { assertEmulatorEnvironment } from './runtime/environment.js';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createDemoCalendarSync } from './demo/calendar.js';
@@ -19,12 +20,22 @@ import { createSchedulerVerifier } from './notifications/auth.js';
 import { mailSenderFromEnvironment } from './notifications/mail-sender.js';
 import { createNotificationSettingsStore } from './notifications/settings.js';
 
+const shutdowns = new WeakMap<ObservationDependencies, () => Promise<void>>();
+
+export function closeFirebaseDependencies(dependencies: ObservationDependencies): Promise<void> {
+  const shutdown = shutdowns.get(dependencies);
+  return shutdown ? shutdown() : Promise.reject(new Error('firebase-runtime-not-initialized'));
+}
+
 export function firebaseDependencies() {
-  const app = getApps()[0] ?? initializeApp();
+  const existing = getApps().find(current => current.name === '[DEFAULT]');
+  const configuredProject = existing?.options.projectId ?? process.env['GOOGLE_CLOUD_PROJECT'] ?? process.env['GCLOUD_PROJECT'];
+  assertEmulatorEnvironment(process.env, configuredProject);
+  const app = existing ?? initializeApp();
+  const project = app.options.projectId ?? configuredProject;
   const db = getFirestore(app);
   const saveObservation = createObservationStore(db);
   const syncDemoCalendar = createDemoCalendarSync(db);
-  const project = app.options.projectId ?? process.env['GOOGLE_CLOUD_PROJECT'] ?? process.env['GCLOUD_PROJECT'];
   const sender = mailSenderFromEnvironment();
   const resolveRecipient = async (uid: string) => {
     try {
@@ -56,7 +67,7 @@ export function firebaseDependencies() {
   };
   if (process.env['ENABLE_DEMO_ANNOUNCEMENTS'] === 'true' && project) {
     dependencies.announcements = createAnnouncementStore(db, publicDemo =>
-      createGeminiModel(project, createRuntimeBudget(db, new Date(), publicDemo)));
+      createGeminiModel(project, createRuntimeBudget(db, new Date(), publicDemo), undefined, { timeoutMs: 45_000 }));
   }
   const audience = process.env['NOTIFICATION_OIDC_AUDIENCE'];
   const serviceAccount = process.env['NOTIFICATION_SCHEDULER_SERVICE_ACCOUNT'];
@@ -70,5 +81,10 @@ export function firebaseDependencies() {
       }),
     };
   }
+  let closing: Promise<void> | undefined;
+  shutdowns.set(dependencies, () => closing ??= (async () => {
+    try { await db.terminate(); }
+    finally { await deleteApp(app); }
+  })());
   return dependencies;
 }

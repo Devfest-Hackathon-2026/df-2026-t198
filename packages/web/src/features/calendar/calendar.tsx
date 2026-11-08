@@ -77,11 +77,15 @@ export function DemoCalendar({ fallback, now, assignments = [], courses }: { fal
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!firebase) return;
+    let mounted = true;
     let stopData = () => {};
     const stopAuth = onAuthStateChanged(firebase.auth, user => {
+      if (!mounted) return;
       stopData(); setValue(null); setFailed(false);
       if (!user) return;
       let active = true;
+      const stops: (() => void)[] = [];
+      stopData = () => { active = false; stops.splice(0).forEach(stop => stop()); };
       let integration: CalendarIntegration | undefined;
       let items: CalendarItem[] | undefined;
       let integrationReceived = false;
@@ -91,23 +95,23 @@ export function DemoCalendar({ fallback, now, assignments = [], courses }: { fal
           integration: integration ?? null, pending: items.some(item => item.appliedRevision !== item.desiredRevision), items,
         } : null);
       };
-      const fail = () => { if (active) { active = false; setValue(null); setFailed(true); } };
+      const fail = () => { if (active) { stopData(); setValue(null); setFailed(true); } };
       const options = { includeMetadataChanges: true };
-      const stops = [
-        onSnapshot(doc(firebase!.db, 'students', user.uid, 'integrations', 'calendar'), options, snapshot => {
-          if (!active) return;
-          if (snapshot.metadata.fromCache) { setValue(null); return; }
-          integration = snapshot.data() as CalendarIntegration | undefined; integrationReceived = true; publish();
-        }, fail),
-        onSnapshot(collection(firebase!.db, 'students', user.uid, 'calendarItems'), options, snapshot => {
-          if (!active) return;
-          if (snapshot.metadata.fromCache) { setValue(null); return; }
-          items = snapshot.docs.map(item => item.data() as CalendarItem); publish();
-        }, fail),
-      ];
-      stopData = () => { active = false; stops.forEach(stop => stop()); };
+      const watchIntegration = onSnapshot(doc(firebase!.db, 'students', user.uid, 'integrations', 'calendar'), options, snapshot => {
+        if (!active) return;
+        if (snapshot.metadata.fromCache) { setValue(null); return; }
+        integration = snapshot.data() as CalendarIntegration | undefined; integrationReceived = true; publish();
+      }, fail);
+      if (!active) { watchIntegration(); return; }
+      stops.push(watchIntegration);
+      const watchItems = onSnapshot(collection(firebase!.db, 'students', user.uid, 'calendarItems'), options, snapshot => {
+        if (!active) return;
+        if (snapshot.metadata.fromCache) { setValue(null); return; }
+        items = snapshot.docs.map(item => item.data() as CalendarItem); publish();
+      }, fail);
+      if (!active) watchItems(); else stops.push(watchItems);
     });
-    return () => { stopAuth(); stopData(); };
+    return () => { mounted = false; stopAuth(); stopData(); };
   }, []);
   if (failed) return <>{fallback}<p role="alert">カレンダーを開けませんでした。接続を確かめてください。</p></>;
   return value ? value.integration?.mode === 'mock'
