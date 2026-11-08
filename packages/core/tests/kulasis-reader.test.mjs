@@ -69,3 +69,14 @@ it.each(['https://www.k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp'])('keeps timet
 it.each(['http://k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp:444', 'https://k.kyoto-u.ac.jp.example.test', 'https://user@k.kyoto-u.ac.jp'])('rejects an unapproved KULASIS URL: %s', origin => {
   expect(kulasisBase(origin + '/student/la/top', parseUrl)).toBeUndefined();
 });
+it.each(['tool', 'tool-reset'])('reads the KULMS site from an authenticated %s destination', kind => {
+  for (const suffix of ['', '/']) expect(kulmsSiteFromUrl(`https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-site/${kind}/fictional-tool${suffix}`, parseUrl)).toBe('fictional-site');
+});
+it.each(['tool', 'tool-reset'])('rejects unsafe or unrecognized %s destination variants', kind => {
+  const url = `https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-site/${kind}/fictional-tool`;
+  for (const value of [url + '?sid=fictional', url + '#fictional', url + '/extra', url.replace('https://', 'http://'),
+    url.replace('https://', 'https://user@'), url.replace('.ac.jp/', '.ac.jp.example.test/'),
+    url.replace('fictional-tool', 'part%2Fother'), url.replace('fictional-tool', ''), url.replace(`/${kind}/`, '/page/')]) {
+    expect(kulmsSiteFromUrl(value, parseUrl)).toBeUndefined();
+  }
+});

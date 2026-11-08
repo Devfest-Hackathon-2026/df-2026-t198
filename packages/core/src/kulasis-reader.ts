@@ -131,7 +131,7 @@ export function kulmsSiteFromUrl(value: string, parseUrl: KulasisUrlParser): str
   try {
     const url = parseUrl(value);
     if (url.origin !== KULMS_ORIGIN || url.username || url.password || url.search || url.hash) return;
-    const match = /^\/portal\/site\/([^/]+)\/?$/.exec(url.pathname);
+    const match = /^\/portal\/site\/([^/]+)(?:\/(?:tool|tool-reset)\/[\w-]{1,200})?\/?$/.exec(url.pathname);
     const id = match ? decodeURIComponent(match[1]!) : '';
     return id && id.length <= 200 && /^[\w-]+$/.test(id) ? id : undefined;
   } catch { return; }
