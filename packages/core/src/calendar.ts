@@ -1,12 +1,27 @@
+import { assignmentLmsLink } from './lms-link.js';
 import { manualDeadline } from './manual-assignment.js';
 import type { CalendarDesired, CalendarItem, CalendarReport, DeadlineEvent, LedgerAssignment, PreparationPlan, ManualAssignment } from './types.js';
 
-export function deadlineDesired(assignment: LedgerAssignment, courseName: string): CalendarDesired {
+type CalendarLinkOptions = {
+  navigation?: Parameters<typeof assignmentLmsLink>[3];
+  parseUrl: Parameters<typeof assignmentLmsLink>[4];
+};
+
+export function deadlineDesired(assignment: LedgerAssignment, courseName: string, linkOptions?: CalendarLinkOptions): CalendarDesired {
   const deadline = assignment.officialDeadline?.deadline;
   if (assignment.presenceState === 'cancelled' || assignment.presenceState === 'ended' || !deadline || (deadline.kind !== 'date' && deadline.kind !== 'datetime')) {
     return { state: 'deleted' };
   }
-  const lines = [`締切：${deadline.dueText}`, `LMSで開く：${assignment.latest.url}`];
+  const link = linkOptions && assignmentLmsLink(assignment.latest.url, courseName, assignment.latest.title,
+    linkOptions.navigation, linkOptions.parseUrl);
+  const lines = [`締切：${deadline.dueText}`];
+  if (link) {
+    lines.push(`LMSで開く：${link.url}`);
+    if (link.route) lines.push(`道順：${link.route}`);
+  }
+  if (assignment.reviewReasons.some(r => r.kind === 'unreadable-deadline')) {
+    lines.push('要確認：今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。');
+  }
   const conflictDates = assignment.reviewReasons.filter(r => r.kind === 'conflicting-deadline')
     .flatMap(r => r.detail.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})/g)?.slice(0, 1) ?? []);
   if (conflictDates.length) lines.push(`要確認：課題の欄 ${deadline.kind === 'date' ? deadline.date : deadline.dueAt} ／ お知らせ ${[...new Set(conflictDates)].join('、')}`);
@@ -50,9 +65,9 @@ function desiredSignature(desired: CalendarDesired): string {
 }
 
 export function reconcileCalendarItem(previous: CalendarItem | undefined, itemKey: string,
-  assignment: LedgerAssignment, courseName: string, calendarId: string | null, newEventId: () => string): CalendarItem | undefined {
+  assignment: LedgerAssignment, courseName: string, calendarId: string | null, newEventId: () => string, linkOptions?: CalendarLinkOptions): CalendarItem | undefined {
   return reconcileDesiredCalendarItem(previous, { itemKey, kind: 'deadline', sourceKey: assignment.key },
-    deadlineDesired(assignment, courseName), calendarId, newEventId);
+    deadlineDesired(assignment, courseName, linkOptions), calendarId, newEventId);
 }
 
 export function preparationDesired(plan: PreparationPlan): CalendarDesired {

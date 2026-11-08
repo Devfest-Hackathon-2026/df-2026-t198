@@ -66,6 +66,81 @@ describe.skipIf(process.env['RUN_OBSERVATION_EMULATOR_TESTS'] !== '1')('calendar
     await send(101); expect((await ref.get()).updateTime).toEqual(before);
     expect((await request('calendar-sync', { calendarId: 'different@group.calendar.google.com' })).status).toBe(409);
   }, 20_000);
+  it('upgrades a synced YNU link once and keeps the event identity after acknowledgement and another observation', async () => {
+    owner = await account();
+    await send(301, body => {
+      body.system = 'ynu-lms';
+      body.definitionId = 'coursepower';
+      body.assignments[0]!.url = 'https://example.invalid/lms/corsColl/linkKyozaiTitle';
+    });
+    const uid = (await getAuth(app).verifyIdToken(owner)).uid;
+    const key = documentKey('ynu-lms', 'fictional/task');
+    const student = db.doc(`students/${uid}`);
+    const ref = student.collection('calendarItems').doc(key);
+    const created = (await ref.get()).data() as CalendarItem;
+    const description = '締切：11月12日\nLMSで開く：https://example.invalid/lms/homeHoml/doIndex\n道順：ホーム › 架空の演習 › 架空のレポート';
+    expect(created.desired).toMatchObject({ state: 'present', event: { description } });
+    await request('calendar-sync', { calendarId: 'synthetic3@group.calendar.google.com' });
+    const synced = (await pending()).items[0]!;
+    await request('calendar-sync', report(synced));
+    // Represent a previously applied event from before the description fix.
+    if (synced.desired.state !== 'present') throw new Error('present-event-required');
+    await ref.update({ desired: { state: 'present', event: { ...synced.desired.event,
+      description: '締切：11月12日\nLMSで開く：https://example.invalid/lms/corsColl/linkKyozaiTitle',
+    } } });
+    const updated = (await pending()).items;
+    expect(updated).toHaveLength(1);
+    expect(updated[0]).toMatchObject({ eventId: synced.eventId, generation: synced.generation,
+      desiredRevision: synced.desiredRevision + 1, appliedRevision: synced.desiredRevision,
+      desired: { state: 'present', event: { description } } });
+    const beforeRetry = (await ref.get()).updateTime;
+    expect((await pending()).items).toEqual(updated);
+    expect((await ref.get()).updateTime).toEqual(beforeRetry);
+    await request('calendar-sync', report(updated[0]!));
+    expect((await pending()).items).toHaveLength(0);
+    const afterReport = (await ref.get()).updateTime;
+    expect((await pending()).items).toHaveLength(0);
+    expect((await ref.get()).updateTime).toEqual(afterReport);
+    await send(302, body => {
+      body.system = 'ynu-lms';
+      body.definitionId = 'coursepower';
+      body.assignments[0]!.url = 'https://example.invalid/lms/corsColl/linkKyozaiTitle';
+    });
+    expect((await pending()).items).toHaveLength(0);
+    expect((await ref.get()).data()).toMatchObject({ eventId: synced.eventId, generation: synced.generation,
+      desiredRevision: synced.desiredRevision + 1, appliedRevision: synced.desiredRevision + 1 });
+    expect((await student.collection('calendarItems').get()).size).toBe(1);
+  }, 20_000);
+  it('upgrades the unreadable-deadline explanation once while retaining the last known date', async () => {
+    owner = await account();
+    await send(401);
+    await request('calendar-sync', { calendarId: 'synthetic4@group.calendar.google.com' });
+    await send(402, body => {
+      body.assignments[0]!.deadline = { kind: 'unreadable', dueText: '', timeZone: 'Asia/Tokyo' };
+    });
+    const uid = (await getAuth(app).verifyIdToken(owner)).uid;
+    const student = db.doc(`students/${uid}`);
+    const key = documentKey('demo-lms', 'fictional/task');
+    const ref = student.collection('calendarItems').doc(key);
+    const current = (await pending()).items[0]!;
+    await request('calendar-sync', report(current));
+    if (current.desired.state !== 'present') throw new Error('present-event-required');
+    // Preserve the old title and date; only the missing explanation differs.
+    await ref.update({ desired: { state: 'present', event: { ...current.desired.event,
+      description: '締切：11月12日\nLMSで開く：https://example.invalid/tasks/1',
+    } } });
+    const updated = (await pending()).items[0]!;
+    expect(updated).toMatchObject({ eventId: current.eventId, generation: current.generation,
+      desiredRevision: current.desiredRevision + 1, appliedRevision: current.desiredRevision,
+      desired: { state: 'present', event: { summary: '【要確認】架空の演習：架空のレポート',
+        description: '締切：11月12日\nLMSで開く：https://example.invalid/tasks/1\n要確認：今回、締切を読めませんでした。前に確認できた締切があれば、そのまま出しています。',
+        start: { date: '2026-11-12' }, end: { date: '2026-11-13' },
+      } } });
+    expect((await pending()).items).toEqual([updated]);
+    await request('calendar-sync', report(updated));
+    expect((await pending()).items).toHaveLength(0);
+    expect((await student.collection('calendarItems').get()).size).toBe(1);
+  }, 20_000);
   it('ignores stale successes and duplicate reports, retains deletion until acknowledged, then regenerates', async () => {
     owner = await account();
     await send(201);
