@@ -28,9 +28,9 @@ try {
     await page.locator('.shot').evaluateAll(images => Promise.all(images.map(image => image.decode())));
     assert.equal(await page.getByLabel('パスワード').count(), 0);
     await page.locator('.td-splash').waitFor({ state: 'hidden' });
-    await page.getByText('支援担当が見られるのは、共有の許可がある学生だけです', { exact: true }).waitFor();
+    await page.getByText('支援担当が見られるのは、共有を許可した学生の情報だけです', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: '学生として試す', exact: true }).count(), 0);
-    await page.getByText('審査の方', { exact: true }).waitFor();
+    await page.getByText('審査員の方', { exact: true }).waitFor();
     assert.equal(await page.locator('main > section.chapter').count(), 6);
     assert.equal(await page.locator('.hero h1 span').count(), 2);
     if (width === 1280) {

@@ -14,7 +14,7 @@ it('offers the local example and judge guidance without shared demo settings', (
     expect(html).toContain(section);
   }
   expect(html).toContain('ログインなし');
-  expect(html).toContain('審査の方');
+  expect(html).toContain('審査員の方');
   expect(html).toContain('href="/demo-lms"');
   expect(html).not.toContain('学生として試す');
   expect(html).not.toContain('支援担当として試す');
@@ -42,7 +42,7 @@ it('reuses both shared entry roles without exposing configured values as text', 
 it('uses the approved hero sentence and separate, equally placed entry roles', () => {
   const html = renderToStaticMarkup(<LandingPage />);
   expect(html).toContain('<span>学生がすることは、</span><span>いつものLMSを<br class="hero-mobile-break"/>開くことだけです</span>');
-  expect(html).toContain('lang="en">Your coursework, connected.');
+  expect(html).not.toContain('Your coursework');
   expect(html).toContain('aria-labelledby="judge-title"');
   expect(html).toContain('aria-labelledby="shared-title"');
   expect(html).toContain('id="landing-demo-slot"');
@@ -55,7 +55,7 @@ it('opens all four synthetic screenshots in named dialogs instead of navigating 
   expect(html.match(/<dialog /g)).toHaveLength(4);
   expect(html.match(/拡大表示を閉じる/g)).toHaveLength(4);
   expect(html).not.toMatch(/<a[^>]*href="\/landing\//);
-  for (const label of ['体験用LMSの授業一覧', '締切が変わった学生画面', '学生の時間割', '支援担当の面談画面']) {
+  for (const label of ['体験用LMSの授業一覧', '締切変更後の学生画面', '学生の時間割', '支援担当の面談画面']) {
     expect(html).toContain(`aria-label="${label}を拡大する"`);
   }
 });

@@ -59,7 +59,7 @@ function DemoEntries() {
   return <div className="entry-grid">
     <section className="entry-panel" aria-labelledby="judge-title">
       <span className="eyebrow" lang="en">For judges</span>
-      <h3 id="judge-title">審査の方</h3>
+      <h3 id="judge-title">審査員の方</h3>
       <p>説明資料の体験用アカウントでログインしてください。</p>
       <a className="pill primary" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
       <a className="text-link" href="/session">面談画面を開く <span aria-hidden="true">↗</span></a>
@@ -95,23 +95,22 @@ export function LandingPage() {
       <a className="landing-home" href="/" aria-label="ToDoku ホーム"><TodokuLogo /></a>
       <nav aria-label="目次"><a href="#how">しくみ</a><a href="#people">使う人</a><a href="#try">体験する</a><a href="#start">使い始める</a></nav>
     </header>
-    <nav className="chapter-nav" aria-label="今の章">{chapters.map(chapter => <a key={chapter.id} href={`#${chapter.id}`} aria-label={chapter.label} aria-current={current === chapter.id ? 'location' : undefined}><span>{chapter.label}</span></a>)}</nav>
+    <nav className="chapter-nav" aria-label="現在地">{chapters.map(chapter => <a key={chapter.id} href={`#${chapter.id}`} aria-label={chapter.label} aria-current={current === chapter.id ? 'location' : undefined}><span>{chapter.label}</span></a>)}</nav>
     <main>
       <section className="hero chapter" id="home" aria-labelledby="landing-title">
         <div className="hero-mark" aria-hidden="true"><TodokuLogo /></div>
         <Staged className="hero-copy">
           <h1 id="landing-title"><span>学生がすることは、</span><span>いつものLMSを<br className="hero-mobile-break" />開くことだけです</span></h1>
           <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="pill" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
-          <p className="hero-english" lang="en">Your coursework, connected.</p>
         </Staged>
         <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter how-section" id="how" aria-labelledby="how-title">
-        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">How it works</span><h2 id="how-title">しくみ</h2><p>LMSの課題と締切を、時間割・Google カレンダー・朝のGmailにまとめます。</p></div></Reveal>
+        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">How it works</span><h2 id="how-title">しくみ</h2><p>LMSの課題と締切を時間割とGoogle カレンダーに入れ、その日にやることを毎朝メールで送ります。</p></div></Reveal>
         <div className="product-grid">
           <Reveal><div className="product-label"><span className="step-number">01</span><h3>LMSの課題</h3></div><Screenshot name="lms" alt="体験用LMSの授業一覧" width={868} height={535} /></Reveal>
-          <Reveal order={1}><div className="product-label"><span className="step-number">02</span><h3>時間割と締切の変更</h3></div><Screenshot name="updated" alt="締切が変わった学生画面" width={884} height={635} /></Reveal>
+          <Reveal order={1}><div className="product-label"><span className="step-number">02</span><h3>時間割と締切の変更</h3></div><Screenshot name="updated" alt="締切変更後の学生画面" width={884} height={635} /></Reveal>
         </div>
         <a className="next-chapter" href="#people">使う人 <span aria-hidden="true">↓</span></a>
       </section>
@@ -145,7 +144,7 @@ export function LandingPage() {
 
       <section className="chapter privacy-section" id="privacy" aria-labelledby="privacy-title">
         <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Privacy</span><h2 id="privacy-title">情報の扱い</h2></div>
-          <ul className="privacy-list"><li>LMS のパスワードを預かりません</li><li>LMS に提出や書き込みをしません</li><li>メールは本人にだけ届きます</li><li>支援担当が見られるのは、共有の許可がある学生だけです</li></ul>
+          <ul className="privacy-list"><li>LMS のパスワードを預かりません</li><li>LMS に提出や書き込みをしません</li><li>メールは本人にだけ届きます</li><li>支援担当が見られるのは、共有を許可した学生の情報だけです</li></ul>
         </Reveal>
         <a className="pill" href="#home">トップに戻る <span aria-hidden="true">↑</span></a>
       </section>
