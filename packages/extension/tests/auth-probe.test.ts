@@ -140,6 +140,17 @@ describe('auth and Calendar probe contract', () => {
     vi.restoreAllMocks();
   });
 
+  it.each([400, 401, 403])('allows a later retry when calendar creation is rejected with HTTP %s', async (status) => {
+    const f = fixture();
+    vi.mocked(f.deps.request).mockResolvedValueOnce({ status });
+    const first = await createProbe(f.deps).run();
+    expect(first.steps.at(-1)).toMatchObject({ status: 'error', code: 'calendar-http' });
+    expect(f.state()).toBeUndefined();
+    const second = await createProbe(f.deps).run();
+    expect(second.steps.at(-1)).toMatchObject({ status: 'ok', code: 'created' });
+    expect(f.calendarCount()).toBe(1);
+  });
+
   it('does not create another calendar after an ambiguous network failure', async () => {
     const f = fixture();
     vi.mocked(f.deps.request).mockRejectedValueOnce(new Error(token));
@@ -149,6 +160,34 @@ describe('auth and Calendar probe contract', () => {
     expect(second.steps.at(-1)?.code).toBe('calendar-recovery-required');
     expect(f.deps.request).toHaveBeenCalledTimes(1);
     expect(JSON.stringify([first, second])).not.toContain(token);
+  });
+
+  it.each([408, 500, 503])('keeps the recovery stop after an uncertain HTTP %s', async (status) => {
+    const f = fixture();
+    vi.mocked(f.deps.request).mockResolvedValueOnce({ status });
+    await createProbe(f.deps).run();
+    expect(f.state()?.calendar.status).toBe('creating');
+    expect((await createProbe(f.deps).run()).steps.at(-1)?.code).toBe('calendar-recovery-required');
+    expect(f.deps.request).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the recovery stop when a successful calendar response has no ID', async () => {
+    const f = fixture();
+    vi.mocked(f.deps.request).mockResolvedValueOnce({ status: 200, data: {} });
+    expect((await createProbe(f.deps).run()).steps.at(-1)?.code).toBe('calendar-response');
+    expect((await createProbe(f.deps).run()).steps.at(-1)?.code).toBe('calendar-recovery-required');
+    expect(f.deps.request).toHaveBeenCalledTimes(1);
+  });
+
+  it('retains a ready calendar after an event request is rejected', async () => {
+    const f = fixture();
+    await createProbe(f.deps).run();
+    const saved = structuredClone(f.state());
+    vi.mocked(f.deps.request).mockResolvedValueOnce({ status: 403 });
+    expect((await createProbe(f.deps).run()).steps.at(-1)?.code).toBe('calendar-http');
+    expect(f.state()).toEqual(saved);
+    expect((await createProbe(f.deps).run()).steps.at(-1)?.code).toBe('already-exists');
+    expect(f.calendarCount()).toBe(1);
   });
 
   it('does not accept a 409 without a matching live event', async () => {
