@@ -7,6 +7,7 @@ import type { StudentCourse } from '../../shared/assignments/types';
 import { formatDeadline } from '../../shared/assignments/deadline-format';
 import { manualAssignmentEnded } from '../../shared/assignments/deadline-entries';
 import './manual-assignments.css';
+import { useCourseColors } from '../../shared/course-color-context';
 
 export const manualAuthor = (row: ManualAssignment) => `手で入れた課題（${row.createdByRole === 'supporter' ? '支援担当' : '学生'}が入れました）`;
 
@@ -58,6 +59,7 @@ export function ManualAssignmentForm({ courses, actions, course }: {
 export function ManualAssignmentRow({ row, actions, own, viewerUid }: {
   row: ManualAssignment; actions?: ManualAssignmentActions | undefined; own: boolean; viewerUid?: string | undefined;
 }) {
+  const courseColor = useCourseColors();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   async function remove() {
@@ -67,8 +69,8 @@ export function ManualAssignmentRow({ row, actions, own, viewerUid }: {
     catch { setError('削除を確認できませんでした。接続と共有の許可を確かめて、もう一度お試しください。'); }
     finally { setBusy(false); }
   }
-  return <li className="manual-assignment" data-manual-id={row.manualAssignmentId}>
-    <h3>{row.title}</h3><p><time>{formatDeadline(manualDeadline(row))}</time>{row.courseName && <span className="muted"> {row.courseName}</span>}</p>
+  return <li className="manual-assignment" data-course-color={courseColor(row.course)} data-manual-id={row.manualAssignmentId}>
+    <h3>{row.title}</h3><p><time>{formatDeadline(manualDeadline(row))}</time>{row.courseName && <span className="muted course-label"> {row.courseName}</span>}</p>
     <p className="manual-author">{manualAuthor(row)}</p>{row.memo && <p className="manual-memo">{row.memo}</p>}
     {actions && (own || row.createdBy === viewerUid) && <Button busy={busy} busyLabel="消しています…" aria-label={`${row.title}を消す`}
       onClick={() => { void remove(); }}>消す</Button>}
