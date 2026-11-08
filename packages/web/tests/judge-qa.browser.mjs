@@ -200,6 +200,7 @@ try {
     });
     await student.goto(`${base}/demo-lms`); await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
     await student.screenshot({ path: `${evidence}/demo-lms-${width}.png`, fullPage: true });
+    await student.locator('.demo-more > summary').click();
     const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
     await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
     await preview.getByRole('button', { name: /今日やること.*を開く/ }).click();

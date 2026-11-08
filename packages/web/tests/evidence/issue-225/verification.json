@@ -1,0 +1,53 @@
+{
+  "validatedSourceCommit": "e30eea1cd031fedc4a0dfb5fb1d8eb0ce560a1c5",
+  "baseCommit": "3446f0df848e1e4356634f9f5c29f239ed997f17",
+  "environment": "local Auth/Firestore emulators + Chromium; fictional data; mock calendar",
+  "sixChecks": "pass",
+  "packageTests": {
+    "core": 274,
+    "extension": 509,
+    "web": 150,
+    "server": 312
+  },
+  "unitEmulatorTestsSkipped": {
+    "web": 2,
+    "server": 128
+  },
+  "samples": {
+    "passed": 17,
+    "localComparison": "skipped; local materials absent"
+  },
+  "m6": {
+    "passed": 8,
+    "total": 8
+  },
+  "flow": "flow.json",
+  "judgeQa": {
+    "passed": 28,
+    "total": 28,
+    "evidence": "judge-qa.json"
+  },
+  "announcements": "pass; fake Gemini only",
+  "publicDemo": "pass; local emulators only",
+  "wording": {
+    "kuchiguse": "reviewed; no slogan, contrast or metaphor added",
+    "yomiyasuLint": 0,
+    "argon": "gemini-4-argon-high; reviewed changed labels and errors"
+  },
+  "limits": [
+    "No deployment or live Google calendar verification.",
+    "No real mail sent.",
+    "Human review and merge remain."
+  ],
+  "sourceSha256": {
+    "packages/web/src/features/demo/demo.css": "f838bb1e018111a298f43f6e40b001c3175a112971cf2c6b5f928388f1f1e703",
+    "packages/web/src/features/demo/observed.tsx": "5e3bb963236ae920bd44636f7f0acd48af4a0599bee6e84bf472ca22e102eb45",
+    "packages/web/src/features/demo/page.tsx": "8147f4891b12f36e62c4fa9b024acbae4cc7e5e0fd78e6188f0bd37b00e51459",
+    "packages/web/src/features/demo/pages.tsx": "8ebe38431c2e80b152973fbb0d9fa098a992541b4bd18affb67ecefbab3eaee0",
+    "packages/web/src/features/demo/reader.ts": "cb616a05ce21be9656f073edbc60c7e66fbd8a7ed83be863e54f4ea29ab67479",
+    "packages/web/src/features/demo/triptych.tsx": "a20d5545a64553831a109d19a57e482979c3608838950328e4df188d4d6432f3",
+    "packages/web/src/features/session/page.tsx": "ba4ccff0747ce022745a6380c9cbbcc9912f06355584af0af1441494bc15db88",
+    "packages/web/src/shared/auth/public-demo-entry.tsx": "045cdfe247e09ffd2c7398f8d5fa564f6ab8bbc8365a9fc8f00f2c355c4e5efe",
+    "packages/web/src/shared/use-pathname.ts": "956372ed6dbac6c5020b9a41449e70e29b807a61b41c7a7b438c0491334b220b"
+  }
+}

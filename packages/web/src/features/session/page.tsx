@@ -209,7 +209,7 @@ function SessionTaskTable({ entries, data, now, manualActions, own, viewerUid }:
 function sameAssignment(row: LedgerAssignment, key: LedgerAssignment['key']) {
   return row.key.system === key.system && row.key.sourceId === key.sourceId;
 }
-function SessionAssignment({ row, data, open = false }: { row: LedgerAssignment; data: SessionData; open?: boolean }) {
+export function SessionAssignment({ row, data, open = false }: { row: LedgerAssignment; data: SessionData; open?: boolean }) {
   const course = data.courses.find(course => course.system === row.key.system && course.courseId === row.latest.courseId);
   const changes = data.changes.filter(change => sameAssignment(row, change.assignmentKey))
     .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
