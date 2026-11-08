@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deleteApp, getApps, initializeApp } from 'firebase-admin/app';
+import { readFileSync } from 'node:fs';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { Observation } from '@kadai-hisho/core/ledger';
@@ -9,6 +10,7 @@ import { documentKey } from '../src/observations/store.js';
 import { observation } from './observation-fixture.js';
 import kulasis from '../../../lms-definitions/kulasis/samples/observation.expected.json' with { type: 'json' };
 import kulms from '../../../lms-definitions/kulms/samples/observation.expected.json' with { type: 'json' };
+import { collectKulasisObservation } from '../../extension/src/kulasis-collection.js';
 
 const enabled = process.env['RUN_OBSERVATION_EMULATOR_TESTS'] === '1';
 describe.skipIf(!enabled)('observation API with Auth and Firestore emulators', () => {
@@ -95,6 +97,26 @@ describe.skipIf(!enabled)('observation API with Auth and Firestore emulators', (
     await post({ ...catalog, observationId: '18000000-0000-4000-8000-000000000014', catalogCourses: [] }, user.token);
     expect((await courseRef.get()).data()).toMatchObject({ currentTerm: false, url: catalog.catalogCourses[0]!.url });
     expect(await take('assignments')).toEqual(tasks);
+  });
+
+  it('preserves confirmed timetable mappings and success time after a failed KULMS lookup', async () => {
+    const user = await account();
+    const catalog = structuredClone(kulasis) as Observation;
+    expect((await post(catalog, user.token)).status).toBe(200);
+    const root = db.collection('students').doc(user.uid);
+    const take = async () => (await root.collection('courses').get()).docs.map(doc => ({ data: doc.data(), time: doc.updateTime.toMillis() }));
+    const before = await take();
+    const sample = readFileSync(new URL('../../../lms-definitions/kulasis/samples/timetable.cp932.html', import.meta.url));
+    const support = readFileSync(new URL('../../../lms-definitions/kulasis/samples/support.html', import.meta.url), 'utf8');
+    const failed = await collectKulasisObservation({ pageUrl: 'https://www.k.kyoto-u.ac.jp/student/la/top',
+      observationId: '21800000-0000-4000-8000-000000000001', fetchedAt: '2030-11-09T00:00:00Z',
+      signal: new AbortController().signal, fetcher: async url => new Response(String(url).includes('/entry/') ? sample : support),
+      resolveSite: async () => { throw new Error('detail-unavailable'); } });
+    expect(failed).toMatchObject({ catalogCourses: [], failures: [{ courseId: null, kind: 'http' }] });
+    expect((await post(failed, user.token)).status).toBe(200);
+    expect(await take()).toEqual(before);
+    expect((await root.collection('fetchStates').doc('kulasis').get()).data()).toMatchObject({
+      lastResult: 'failed', lastSucceededAt: catalog.fetchedAt, lastAttemptedAt: failed.fetchedAt });
   });
 
   it('persists new, changed, missing, restored and detail-failed observations atomically', async () => {

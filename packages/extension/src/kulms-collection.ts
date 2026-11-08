@@ -92,8 +92,8 @@ export async function collectKulmsObservation(options: Options): Promise<Observa
       } catch (error) {
         active(); courseFailure = failure(error, course.courseId);
       }
-      const hasFutureDeadline = assignments.some(a => a.deadline.kind === 'datetime' && Date.parse(a.deadline.dueAt) >= Date.parse(options.fetchedAt));
-      if (selectTerm && !priority.has(course.courseId) && !hasFutureDeadline && !courseFailure) continue;
+      // A missing/unreadable deadline is not evidence of an old term. Ended IDs must reach the ledger too.
+      if (selectTerm && !priority.has(course.courseId) && !assignments.length && !result.endedSourceIds.length && !courseFailure) continue;
       if (observation.catalogCourses.length >= 100) {
         // No courseResult for omitted sites: their stored tasks must not accrue missing counts.
         observation.failures.push({ courseId: course.courseId, kind: 'parse', detail: 'course-limit' });

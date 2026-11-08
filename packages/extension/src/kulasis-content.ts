@@ -8,6 +8,7 @@ if (typeof window !== 'undefined' && isKulasisOrigin(window.location.origin)) st
     template.innerHTML = html;
     return template.innerHTML;
   }, resolveSite: async code => {
-    const reply = await chrome.runtime.sendMessage({ type: 'kulasis-resolve-site', code }) as { siteId?: string };
+    const reply = await chrome.runtime.sendMessage({ type: 'kulasis-resolve-site', code }) as { ok?: boolean; siteId?: string };
+    if (!reply?.ok || !reply.siteId) throw new Error('detail-unavailable');
     return reply?.siteId;
   } }));

@@ -48,6 +48,11 @@ it('uses the current academic half in Japan, including January and the April bou
     expect(opts.fetcher.mock.calls[0]?.[0]).toBe(base + '/entry/' + path);
   }
 });
+it.each(['support/top?no=fictional-no-1', 'oh/top', 'syllabus/top'])('fetches the department timetable when starting from %s', async page => {
+  const opts = { ...options(), pageUrl: `${base}/${page}` };
+  await collectKulasisObservation(opts);
+  expect(opts.fetcher.mock.calls[0][0]).toBe(`${base}/entry/kouki`);
+});
 it.each(['<meta http-equiv="refresh" content="0;url=/student/logout">', '<form><input type="password"></form>'])('does not publish an empty timetable after logout', async html => {
   const opts = options(); opts.fetcher.mockResolvedValue(new Response(html));
   const result = await collectKulasisObservation(opts);
@@ -77,6 +82,15 @@ it('keeps classes separate if the destination cannot be identified', async () =>
   const result = await collectKulasisObservation(opts);
   expect(result.catalogCourses).toHaveLength(2);
   expect(result.catalogCourses.every(course => !course.kulmsSiteId)).toBe(true);
+});
+it('withholds a timetable after a failed mapping lookup so stored mappings are not overwritten', async () => {
+  const opts = options();
+  opts.fetcher.mockImplementation(async url => new Response(String(url).includes('/entry/') ? sample : String(url).endsWith('1') ? support : '<html></html>'));
+  opts.resolveSite.mockRejectedValue(new Error('detail-unavailable'));
+  const result = await collectKulasisObservation(opts);
+  expect(result.failures).toEqual([{ courseId: null, kind: 'http', detail: 'http-error' }]);
+  expect(result.catalogCourses).toEqual([]);
+  expect(parseObservation(result)).toEqual(result);
 });
 it('discards the catalog if the login expires while reading support pages', async () => {
   const opts = options(); opts.fetcher.mockImplementation(async url => new Response(String(url).includes('/entry/') ? sample : '<input type="password">'));

@@ -57,6 +57,12 @@ it('accepts department paths without deriving identifiers from names or login UR
   expect(kulmsSiteFromUrl('https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional-site', parseUrl)).toBe('fictional-site');
   for (const value of ['https://example.test/portal/site/fictional', 'https://lms.gakusei.kyoto-u.ac.jp/portal', 'https://lms.gakusei.kyoto-u.ac.jp/portal/site/fictional?sid=fictional']) expect(kulmsSiteFromUrl(value, parseUrl)).toBeUndefined();
 });
+it.each(['la', 'u/t'])('keeps page sections out of the %s department base', department => {
+  const departmentBase = `https://www.k.kyoto-u.ac.jp/student/${department}`;
+  for (const page of ['top', 'entry/kouki', 'support/top', 'oh/top', 'syllabus/top', 'global_notice/top']) {
+    expect(kulasisBase(`${departmentBase}/${page}`, parseUrl)).toBe(departmentBase);
+  }
+});
 it.each(['https://www.k.kyoto-u.ac.jp', 'https://k.kyoto-u.ac.jp'])('keeps timetable requests and support links on %s', origin => {
   const department = origin + '/student/la';
   expect(kulasisBase(department + '/top', parseUrl)).toBe(department);

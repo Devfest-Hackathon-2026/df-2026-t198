@@ -41,8 +41,8 @@ Discordは人が読むので、C番号やM番号には何のことかを添え�
 
 ### 取得：KULMS（Sakai）
 
-- [x] C08 〈エージェント〉 KULMSの課題の一覧を取り、同じ形の観測を作る（Issue #2・#179）。〔削れる〕 → `packages/extension/tests/kulms-collection.test.ts`・`kulms-worker.test.ts`・`kulms-content.test.ts`（架空JSON→観測・送信・ログイン切れ・学生優先・YNUとの同居）。実物・Cookieの持ち・今の学期への限定はorangeの確認待ち（[手順](docs/records/2026-11-08-issue-179.md)）。 Issue #180：`packages/extension/tests/kulms-limit.test.ts`（101件の優先・302件の上限・未知の属性・省略授業を2回送らなくても取消しない）。
-- [x] C09 〈エージェント〉 KULMSの読み取り方を `lms-definitions/` に置く。〔削れる〕 → `lms-definitions/kulms/definition.json`、`packages/core/tests/sakai-reader.test.ts`、固定した架空JSON・正解観測（Issue #179）。 Issue #180：`lms-definitions/kulms/definition.json` の既知のサイト種別・公開状態の読み取りと、`lms-definitions/kulasis/` の架空CP932見本を追加（[記録](docs/records/2026-11-08-issue-180.md)）。
+- [x] C08 〈エージェント〉 KULMSの課題の一覧を取り、同じ形の観測を作る（Issue #2・#179）。〔削れる〕 → `packages/extension/tests/kulms-collection.test.ts`・`kulms-worker.test.ts`・`kulms-content.test.ts`（架空JSON→観測・送信・ログイン切れ・学生優先・YNUとの同居）。実物・Cookieの持ち・今の学期への限定はorangeの確認待ち（[手順](docs/records/2026-11-08-issue-179.md)）。 Issue #180：`packages/extension/tests/kulms-limit.test.ts`（101件の優先・302件の上限・未知の属性・省略授業を2回送らなくても取消しない）。 Issue #218：`kulms-worker.test.ts`・`kulms-limit.test.ts` で失敗後の10分待機・worker再起動・締切不明と終了IDの維持、`observations.emulator.test.ts` で対応照会失敗後の保存済み時間割の維持を確認（[記録](docs/records/2026-11-09-issue-218.md)）。
+- [x] C09 〈エージェント〉 KULMSの読み取り方を `lms-definitions/` に置く。〔削れる〕 → `lms-definitions/kulms/definition.json`、`packages/core/tests/sakai-reader.test.ts`、固定した架空JSON・正解観測（Issue #179）。 Issue #180：`lms-definitions/kulms/definition.json` の既知のサイト種別・公開状態の読み取りと、`lms-definitions/kulasis/` の架空CP932見本を追加（[記録](docs/records/2026-11-08-issue-180.md)）。 Issue #218：`packages/core/tests/kulasis-reader.test.mjs` と `kulasis-collection.test.mjs` で、授業サポート・相談・シラバス画面からも正しい部局の時間割URLを使うことを確認（[記録](docs/records/2026-11-09-issue-218.md)）。
 
 ### 観測の送信と台帳
 
