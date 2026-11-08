@@ -96,7 +96,7 @@ export function LandingPage() {
       <div className="step">
         <span className="sn">01</span><h3 className="st">いつもの LMS を開く</h3>
         <p className="sd">学生はログインするだけです。拡張機能が、裏で全部の授業の課題を見に行きます。</p>
-        <a className="shot-link" href="/landing/lms.png"><img className="shot" src="/landing/lms.png" alt="体験用LMSに並ぶ架空の授業と課題" width="868" height="535" /></a>
+        <a className="shot-link" href="/landing/lms.png"><img className="shot" src="/landing/lms.png" alt="体験用LMSの授業一覧に並ぶ架空の6つの授業" width="868" height="535" /></a>
       </div>
       <div className="step">
         <span className="sn">02</span><h3 className="st">前回と比べる</h3>

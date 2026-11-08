@@ -258,7 +258,7 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 
 ## 今日やることと準備の記録（Issue #112）
 
-- `GET /api/v1/digest`：失効確認付きFirebase ID tokenの本人だけを読む。応答は `{ date, to, subject, text, html, empty, plans, assignments }`。`date` は日本時間の今日、`to` は検証済みtokenのメールだけ。メールが無ければ403。queryの学生ID・宛先は使わず、体験用の支援担当は403。送信は拡張の `digest-browser.ts` がGmail APIで行う（Issue #113）。
+- `GET /api/v1/digest`：失効確認付きFirebase ID tokenの本人だけを読む。応答は `{ date, to, subject, text, html, empty, plans, assignments }`。`date` は日本時間の今日、`to` は検証済みtokenのメールだけ。メールが無ければ403。queryの学生ID・宛先は使わず、体験用の支援担当は403。送信は拡張の `packages/extension/src/digest/browser.ts` がGmail APIで行う（Issue #113）。
 - `plans[]` は今日の `active` な準備の予定で、課題が提出済み・取消済み・終了済みのものは除く。各項目は `{ planId, date, period, startsAt, endsAt, title, courseName, deadline, url, status, doneUrl, laterUrl, subject, text, html }`。項目内の件名と本文はその予定1つ分のメール。件名は「13:00から：課題名の準備」の形で、朝のまとめの件名と分ける。`assignments[]` は48時間以内の未提出・取消/終了以外の課題で `{ title, courseName, deadline, url }`。準備を `done` にしても、LMSで未提出なら締切のまとめには残す。LMSの提出状態は変えない。
 - `deadline` は原文を外した `{ kind: 'datetime', dueAt, timeZone }` / `{ kind: 'date', date, timeZone }` / `{ kind: 'none' | 'unreadable', timeZone }` / `null`。日時は現在と48時間後の両端を含み、日付だけの場合はそのタイムゾーンの両端の日付を含む。時刻を補わない。課題本文・解説・お知らせ本文・締切の原文は本文にもJSONにも複写しない。課題名と授業名の連続する空白・改行は空白1つにまとめる。HTMLは文字とリンクをescapeする。`packages/core/src/mail-safety.ts` の `isSafeMailText` とURL検査で危険な値を含む課題だけを除き、ほかの課題は返す。同関数はHTMLの文字参照と連続するパーセント符号を最大5巡で復号・検査し、収束しなければ拒否する。拡張も同関数を使い、送信直前には現在の認証値を任意の第2引数に渡して、復号した文字列との一致も拒否する。認証値はサーバーには渡さない。送信対象が無ければ `empty: true`。
 - `doneUrl` / `laterUrl` は `<公開先>/student/plan?id=<予定ID>&do=done|later&rev=<revision>`。秘密の値は含まない。公開先はサーバー設定 `PUBLIC_WEB_ORIGIN`（末尾の `/` は除く）。未設定でもAPI全体は起動し、`GET /api/v1/digest` だけ503を返す。準備の操作と体験見本の作成は公開先を必要としないため使える。HTTPSのoriginだけを認め、エミュレーターだけ `http://127.0.0.1:<port>` も使える。要求のHostからは作らない。Webページを開き、未ログインならログインしてから、認証した本人の予定だけをPOSTで操作する。GET APIで書き込まない。
@@ -271,7 +271,7 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 
 ## 今日やることのメール送信（Issue #113）
 
-- 拡張の `digest-browser.ts` が、設定で本人が有効にした場合だけ `gmail.send` の許可を求め、Gmail APIの `users/me/messages/send` で認証済み本人宛てに送る。Googleの送信用トークンをサーバーに送らず、メールの読み取りもしない。設定はFirebase UIDと接続設定にひも付け、別の本人には引き継がない。
+- 拡張の `packages/extension/src/digest/browser.ts` が、設定で本人が有効にした場合だけ `gmail.send` の許可を求め、Gmail APIの `users/me/messages/send` で認証済み本人宛てに送る。Googleの送信用トークンをサーバーに送らず、メールの読み取りもしない。設定はFirebase UIDと接続設定にひも付け、別の本人には引き継がない。
 - 日本時間の7:30以降に朝のまとめを1回、今日の有効な準備の開始30分前から開始前までにその準備1件のメールを送る。Chromeの起動・拡張の実行・有効な認可が前提。予定の再取得は通常15分間隔で、送信対象の時刻にも本文を取得する。対象が空なら送らない。
 - 送信前に当日の送信記録を `chrome.storage.local` へ置く。応答が失われた場合も同じメールを自動再送せず、設定画面でGmailの確認を促す。メール本文は保存しない。朝のまとめ・準備ごとの送信と、無効化・本人変更・認可・本文の安全検査は `packages/extension/tests/digest-browser.test.mjs` で検証する。実際のGmailへの配信はこの試験の対象外。
 
