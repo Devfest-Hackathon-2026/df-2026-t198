@@ -35,17 +35,12 @@ function Screenshot({ name, alt, width, height, caption }: { name: string; alt: 
 
 function DemoEntries() {
   return <div className="trial-entry">
-    <ol className="trial-route" aria-label="体験の順序">
-      <li><span className="step-number">01</span><span>先生</span><strong>締切の変更</strong></li>
-      <li><span className="step-number">02</span><span>学生</span><strong>LMSを開く</strong></li>
-      <li><span className="step-number">03</span><span>時間割・面談</span><strong>締切の更新</strong></li>
-    </ol>
     <div className="trial-launch">
-      <h3>共用の体験</h3>
+      <h3>共用の体験版</h3>
       <PublicDemoEntry showDescription={false} />
       <a className="pill primary shared-fallback" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
     </div>
-    <p className="judge-guide"><a className="judge-link" href="/demo-lms">審査員の方 <span aria-hidden="true">↗</span></a>：説明資料のリンクから入れます。</p>
+    <p className="judge-guide"><a className="judge-link" href="/demo-lms">審査員の方 <span aria-hidden="true">↗</span></a>：説明資料のリンクから開けます。</p>
   </div>;
 }
 

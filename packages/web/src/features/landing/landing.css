@@ -72,12 +72,7 @@ html.landing-scroll { scroll-behavior: smooth; }
 .landing .shot-dialog img { display: block; width: 100%; height: auto; }
 html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 .landing .trial-entry { padding: 36px; background: var(--white); border-radius: var(--radius-md); }
-.landing .trial-route { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; padding: 0; margin: 0; list-style: none; }
-.landing .trial-route li { display: grid; gap: 8px; border-top: 1px solid var(--line-strong); padding-top: 16px; }
-.landing .trial-route .step-number { color: var(--accent-text); }
-.landing .trial-route li > span:not(.step-number) { font-size: 13px; color: var(--muted); }
-.landing .trial-route strong { font-size: 22px; }
-.landing .trial-launch { display: flex; align-items: center; gap: 32px; margin-top: 40px; }
+.landing .trial-launch { display: flex; align-items: center; gap: 32px; margin-top: 0; }
 .landing .trial-launch h3 { font-size: 16px; }
 .landing .trial-entry .demo-login { margin: 0; border: 0; padding: 0; background: transparent; }
 .landing .trial-entry .demo-login button { min-height: 56px; padding: 14px 32px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 100px; font: 700 17px var(--jp); }
@@ -132,11 +127,7 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing .setup-steps, .landing .privacy-list { grid-template-columns: minmax(0, 1fr); gap: 36px; }
 
   .landing .trial-entry { padding: 24px 20px; }
-  .landing .trial-route { grid-template-columns: 1fr; gap: 20px; }
-  .landing .trial-route li { grid-template-columns: 32px 1fr; gap: 0 12px; padding-top: 12px; }
-  .landing .trial-route .step-number { grid-row: span 2; }
-  .landing .trial-route strong { font-size: 19px; }
-  .landing .trial-launch { flex-direction: column; align-items: stretch; gap: 14px; margin-top: 28px; }
+  .landing .trial-launch { flex-direction: column; align-items: stretch; gap: 14px; margin-top: 0; }
   .landing .trial-entry .demo-login button { width: 100%; padding-inline: 20px; }
   .landing .judge-guide { margin-top: 22px; line-height: 1.8; }
   .landing .shot-dialog { padding: 16px; }
