@@ -9,6 +9,9 @@ if (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||
   !/^127\.0\.0\.1:\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST ?? '') ||
   !/^127\.0\.0\.1:\d+$/.test(process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '') ||
   !/^http:\/\/127\.0\.0\.1:\d+$/.test(process.env.KADAI_WEB_ORIGIN ?? '') || !process.env.KADAI_DEMO_PASSWORD) throw new Error('local-qa-required');
+// Match fixture dates to the optional browser clock when replaying another weekday.
+const now = process.env.KADAI_JUDGE_QA_NOW ? Date.parse(process.env.KADAI_JUDGE_QA_NOW) : Date.now();
+assert.ok(Number.isFinite(now), 'KADAI_JUDGE_QA_NOW must be a valid datetime');
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const requireServer = createRequire(new URL('../../server/package.json', import.meta.url));
 const { initializeApp, deleteApp } = requireServer('firebase-admin/app');
@@ -18,6 +21,11 @@ const browser = await chromium.launch({ headless: true });
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i130-browser';
 const base = process.env.KADAI_WEB_ORIGIN; const ref = db.doc('students/trial-student');
 const results = []; const errors = [];
+// Independent expected values for the demo's published timetable; do not read form values
+// or import the production table, so incorrect prefilling still fails this check.
+const periodTimes = [['08:50', '10:20'], ['10:30', '12:00'], ['13:00', '14:30'],
+  ['14:40', '16:10'], ['16:15', '17:45'], ['17:50', '19:20'], ['19:25', '20:55']];
+const selectedCandidates = [];
 async function check(name, run) {
   try { await run(); results.push({ name, status: 'pass' }); }
   catch (error) { results.push({ name, status: 'fail', reason: error.message.split('\n')[0] }); }
@@ -46,14 +54,17 @@ const list = page => page.getByRole('region', { name: '入れた準備の予定'
 try {
   await mkdir(evidence, { recursive: true });
   const demoRef = ref.collection('demo').doc('current'); const demo = (await demoRef.get()).data();
-  for (const course of demo.courses) for (const task of course.assignments) task.dueAt = new Date(Date.now() + (task.submission === 'submitted' ? 2 : 14) * 86400000).toISOString();
+  for (const course of demo.courses) for (const task of course.assignments) task.dueAt = new Date(now + (task.submission === 'submitted' ? 2 : 14) * 86400000).toISOString();
   await demoRef.set(demo);
-  await ref.collection('sessionContext').doc('current').update({ nextSessionAt: new Date(Date.now() + 15 * 86400000).toISOString() });
+  await ref.collection('sessionContext').doc('current').update({ nextSessionAt: new Date(now + 15 * 86400000).toISOString() });
   for (const width of [1280, 390]) {
     const studentContext = await browser.newContext({ viewport: { width, height: 900 } });
     const supporterContext = await browser.newContext({ viewport: { width, height: 900 } });
     const student = await studentContext.newPage(); const supporter = await supporterContext.newPage();
-    for (const page of [student, supporter]) { page.setDefaultTimeout(8000); page.on('pageerror', () => errors.push('browser-error')); }
+    for (const page of [student, supporter]) {
+      page.setDefaultTimeout(8000); page.on('pageerror', () => errors.push('browser-error'));
+      if (process.env.KADAI_JUDGE_QA_NOW) await page.clock.setFixedTime(new Date(now));
+    }
     await db.recursiveDelete(ref.collection('plans'));
     await login(student, 'student');
     await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
@@ -91,21 +102,29 @@ try {
     if (width === 390) await student.getByRole('tab', { name: '準備', exact: true }).click();
     await login(supporter, 'supporter');
     await supporter.goto(`${base}/session/trial-student/plan`); await supporter.locator('.session-candidate button').first().waitFor();
-    await supporter.locator('.session-candidate button').first().click();
+    const candidate = supporter.locator('.session-candidate button').first();
+    const label = await candidate.getAttribute('aria-label');
+    const match = /^(\d{4}-\d{2}-\d{2}) (\d+)限に入れる$/.exec(label ?? '');
+    assert.ok(match, 'candidate names its date and period');
+    const period = Number(match[2]);
+    assert.ok(periodTimes[period - 1], 'candidate has a known demo period');
+    const [start, end] = periodTimes[period - 1];
+    selectedCandidates.push({ width, date: match[1], period, start, end });
+    await candidate.click();
     const form = supporter.locator('.preparation-form'); await form.waitFor();
     await check(`${width}: candidate focuses its prefilled form and save button`, async () => {
-      assert.equal(await form.getByLabel('開始時刻', { exact: true }).inputValue(), '08:50');
-      assert.equal(await form.getByLabel('終了時刻', { exact: true }).inputValue(), '10:20');
+      assert.equal(await form.getByLabel('開始時刻', { exact: true }).inputValue(), start);
+      assert.equal(await form.getByLabel('終了時刻', { exact: true }).inputValue(), end);
       assert.equal(await form.evaluate(element => element.contains(globalThis.document.activeElement)), true);
       await inViewport(form.getByRole('button', { name: '入れる', exact: true }));
     });
     await supporter.screenshot({ path: `${evidence}/candidate-${width}.png`, fullPage: true });
     await check(`${width}: known period mismatch is explained`, async () => {
       await form.getByLabel('開始時刻', { exact: true }).fill('07:00');
-      await form.getByText(/1限の時刻は08:50〜10:20です/).waitFor();
+      await form.getByText(`${period}限の時刻は${start}〜${end}です。指定した時刻がこのコマからはみ出しています。時限と時刻を確かめてください。`, { exact: true }).waitFor();
     });
-    await form.getByLabel('開始時刻', { exact: true }).fill('08:50');
-    await form.getByLabel('終了時刻', { exact: true }).fill('10:20');
+    await form.getByLabel('開始時刻', { exact: true }).fill(start);
+    await form.getByLabel('終了時刻', { exact: true }).fill(end);
     await form.getByRole('button', { name: '入れる', exact: true }).click();
     await list(student).getByText('支援担当が入れました', { exact: true }).waitFor();
     await check(`${width}: supporter sees saved notice after form closes`, async () => {
@@ -114,7 +133,7 @@ try {
     const saved = (await ref.collection('plans').get()).docs[0].data();
     // Same title, shuffled document IDs, two times on the same day: sorting must use date then time.
     for (const [index, offset, start, end, period] of [[1, 5, '13:00', '14:30', 3], [2, 3, '13:00', '14:30', 3], [3, 3, '08:50', '10:20', 1]]) {
-      const date = new Date(Date.now() + offset * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+      const date = new Date(now + offset * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
       const planId = `13000000-0000-4000-8000-${String(index).padStart(12, '0')}`;
       await ref.collection('plans').doc(planId).set({ ...saved, planId, date, period,
         status: index === 1 ? 'done' : 'active', ...(index === 2 ? { laterResult: 'moved' } : {}),
@@ -197,7 +216,8 @@ try {
     await studentContext.close(); await supporterContext.close();
   }
   assert.deepEqual(errors, []);
-  await writeFile(`${evidence}/operations.json`, JSON.stringify({ results, browserErrors: errors.length }, null, 2));
+  assert.equal(results.length, 28, 'all existing QA checks ran');
+  await writeFile(`${evidence}/operations.json`, JSON.stringify({ now: new Date(now).toISOString(), selectedCandidates, results, browserErrors: errors.length }, null, 2));
   log(JSON.stringify({ passed: results.filter(result => result.status === 'pass').length, failed: results.filter(result => result.status === 'fail').length, results }));
   assert.equal(results.filter(result => result.status === 'fail').length, 0);
 } finally { await browser.close(); await db.terminate(); await deleteApp(app); }

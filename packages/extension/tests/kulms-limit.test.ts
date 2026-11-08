@@ -60,6 +60,42 @@ it('for a large catalog keeps mapped empty sites and unmatched sites with future
   expect(result.catalogCourses.map(c => c.courseId)).toEqual(['fictional-site-101', 'fictional-site-102']);
   expect(result.failures).toEqual([]); expect(parseObservation(result)).toEqual(result);
 });
+it.each([2, 103])('retains unreadable deadlines and ended IDs in an unmatched site among %s sites', async count => {
+  const { options, fetcher } = setup(count);
+  const original = fetcher.getMockImplementation()!;
+  const courseId = `fictional-site-${count - 1}`;
+  fetcher.mockImplementation(async (url, init) => {
+    if (!String(url).includes('/assignment/site/')) return original(url, init);
+    const items = String(url).endsWith(`${courseId}.json`)
+      ? [input.assignments.assignment_collection[2]!, input.assignments.assignment_collection[3]!, input.assignments.assignment_collection[5]!]
+        .map(row => ({ ...row, context: courseId })) : [];
+    return new Response(JSON.stringify({ assignment_collection: items }));
+  });
+  const prioritySiteIds = count === 2 ? ['fictional-site-0'] : [];
+  const result = await collectKulmsObservation({ ...options, prioritySiteIds });
+  expect(result.catalogCourses.map(c => c.courseId)).toEqual([...prioritySiteIds, courseId]);
+  expect(result.assignments.map(a => [a.sourceId, a.deadline.kind])).toEqual([
+    ['fictional-c', 'unreadable'], ['fictional-d', 'unreadable']]);
+  expect(result.courseResults.find(c => c.courseId === courseId)).toMatchObject({ listComplete: true,
+    seenSourceIds: ['fictional-c', 'fictional-d', 'fictional-ended'], endedSourceIds: ['fictional-ended'] });
+  expect(result.failures).toEqual([]); expect(parseObservation(result)).toEqual(result);
+  // The ended marker must reach an existing ledger entry rather than leaving it active forever.
+  const stored: Observation = { ...result, observationId: 'fictional-initial',
+    assignments: [{ ...result.assignments[0]!, sourceId: 'fictional-ended' }],
+    courseResults: [{ courseId, listComplete: true, seenSourceIds: ['fictional-ended'] }] };
+  const before = applyObservation([], stored, at).assignments;
+  expect(applyObservation(before, result, at).assignments.find(a => a.key.sourceId === 'fictional-ended')?.presenceState).toBe('ended');
+});
+it('retains an unmatched site containing only ended tasks', async () => {
+  const { options, fetcher } = setup(2);
+  const original = fetcher.getMockImplementation()!;
+  fetcher.mockImplementation(async (url, init) => String(url).endsWith('/assignment/site/fictional-site-1.json')
+    ? new Response(JSON.stringify({ assignment_collection: [{ ...input.assignments.assignment_collection[5], context: 'fictional-site-1' }] }))
+    : original(url, init));
+  const result = await collectKulmsObservation({ ...options, prioritySiteIds: ['fictional-site-0'] });
+  expect(result.courseResults.find(c => c.courseId === 'fictional-site-1')).toMatchObject({ listComplete: true, endedSourceIds: ['fictional-ended'] });
+  expect(result.failures).toEqual([]); expect(parseObservation(result)).toEqual(result);
+});
 it('bounds both failure and assignment arrays while leaving incomplete lists uncertified', async () => {
   const { options } = setup(302);
   const result = await collectKulmsObservation(options);

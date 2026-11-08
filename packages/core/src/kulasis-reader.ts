@@ -26,7 +26,7 @@ export function kulasisBase(value: string, parseUrl: KulasisUrlParser): string |
   try {
     const url = parseUrl(value);
     if (!isKulasisOrigin(url.origin) || url.username || url.password) return;
-    const path = /^\/student\/((?:[a-z]+\/)*[a-z]+)\/(?:top|(?:entry|support|global_notice|syllabus|oh)\/[^/]+|information_detail|information_attachment|course_mail_list)$/.exec(url.pathname);
+    const path = /^\/student\/((?:[a-z]+\/)*?[a-z]+)\/(?:top|(?:entry|support|global_notice|syllabus|oh)\/[^/]+|information_detail|information_attachment|course_mail_list)$/.exec(url.pathname);
     return path ? `${url.origin}/student/${path[1]}` : undefined;
   } catch { return; }
 }
