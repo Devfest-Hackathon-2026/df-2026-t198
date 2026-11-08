@@ -9,7 +9,7 @@
 <p>- 拡張機能のポップアップ：学生がブラウザの拡張機能から、自分の時間割を開ける。</p>
 <h2>判定の読み方</h2>
 <p><a href="https://github.com/shieikan/kadai-hisho/issues/37">Issue #37</a>、<a href="../../../docs/decisions.md">D12・D13</a>、<a href="../../../docs/ui-words.md">画面の言葉</a>に沿い、sanitize-artifactsで読み手に要る情報と制作の言葉を分けた。意味は初見で分かるか、必要はその画面の目的に要るか、視覚化は位置・色・大きさ・時間割の形で伝えられるかを示す。「条件付き」は問題や該当データがある場合だけ表示する。色だけでは状態を伝えない。</p>
-<p>出典の「学生A〜D」「面談A〜D」は<a href="../2026-11-06/index.html">前の8画像</a>と<a href="../2026-11-06/prompts/">各依頼文</a>、実装は<a href="../../../packages/web/src/student.tsx">学生画面</a>（#34）。共通要素は出典をまとめた。画像内の余計な注記や誤表記も判定対象。LMSの知らせとポップアップはD12とPLANが出典で、この8画像には独立した案がない。</p>
+<p>出典の「学生A〜D」「面談A〜D」は<a href="../2026-11-06/index.html">前の8画像</a>と<a href="../2026-11-06/prompts/">各依頼文</a>、実装は<a href="../../../packages/web/src/features/student/page.tsx">学生画面</a>（#34）。共通要素は出典をまとめた。画像内の余計な注記や誤表記も判定対象。LMSの知らせとポップアップはD12とPLANが出典で、この8画像には独立した案がない。</p>
 <h2>学生の時間割の判定</h2>
 <div class="table-scroll"><table>
 <tr><th>出典</th><th>要素</th><th>意味</th><th>必要</th><th>視覚化</th><th>判定</th><th>表示先・理由</th></tr>
