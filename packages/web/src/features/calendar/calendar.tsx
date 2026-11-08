@@ -4,12 +4,14 @@ import './calendar.css';
 import { useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, onSnapshot } from 'firebase/firestore';
-import type { CalendarIntegration, CalendarItem, DeadlineEvent, LedgerAssignment } from '@kadai-hisho/core';
+import type { CalendarIntegration, CalendarItem, DeadlineEvent, LedgerAssignment, ManualAssignment } from '@kadai-hisho/core';
 import { firebase } from '../../shared/firebase';
 import { useDeadlineChanges } from '../../shared/assignments/deadline-change';
 import { dayInZone } from '../../shared/assignments/deadline-format';
 import type { ReactNode } from 'react';
 import type { StudentCourse } from '../../shared/assignments/types';
+import { useCourseColors } from '../../shared/course-color-context';
+import { calendarCourses } from './course-colors';
 
 function eventDay(event: DeadlineEvent) {
   return 'date' in event.start ? event.start.date : dayInZone(new Date(event.start.dateTime), 'Asia/Tokyo');
@@ -23,9 +25,10 @@ function eventTime(event: DeadlineEvent) {
     timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).format(new Date(event.start.dateTime));
 }
-export function DemoCalendarView({ integration, pending, now = Date.now(), submitted = new Set<string>(), courses = [] }: {
-  integration: CalendarIntegration; pending: boolean; now?: number; submitted?: ReadonlySet<string>; courses?: Pick<StudentCourse, 'name'>[];
+export function DemoCalendarView({ integration, pending, now = Date.now(), submitted = new Set<string>(), courses = [], courseByItem = new Map() }: {
+  integration: CalendarIntegration; pending: boolean; now?: number; submitted?: ReadonlySet<string>; courses?: Pick<StudentCourse, 'name'>[]; courseByItem?: ReadonlyMap<string, StudentCourse>;
 }) {
+  const courseColor = useCourseColors();
   const scroll = useRef<HTMLDivElement>(null);
   const edges = useScrollEdges(scroll);
   const [selectedDay, setSelectedDay] = useState('');
@@ -67,15 +70,15 @@ export function DemoCalendarView({ integration, pending, now = Date.now(), submi
           const prefix = separator < 0 ? null : event.summary.slice(0, separator);
           const course = prefix === '準備' || courses.some(c => c.name === prefix || `【要確認】${c.name}` === prefix) ? prefix : null;
           const title = course ? event.summary.slice(separator + 1) : event.summary;
-          return <li key={id} className={`calendar-event${changed.has(id) ? ' changed' : ''}${submitted.has(itemKey) ? ' submitted' : ''}`}>
+          return <li key={id} data-course-color={courseColor(courseByItem.get(itemKey))} className={`calendar-event${changed.has(id) ? ' changed' : ''}${submitted.has(itemKey) ? ' submitted' : ''}`}>
             <time><ChangedDeadline value={labels.current.get(id)!.current} previous={labels.current.get(id)?.previous} highlight={changed.has(id)} /></time> <strong>{title}</strong>{course && <span className="muted">{course}</span>}
             {submitted.has(itemKey) && <span className="badge done">出せました</span>}
           </li>;
         })}</ul>
       </td>)}</tr></tbody></table>
     </ScrollFrame>
-    {!!outside.length && <details className="calendar-outside"><summary>{outside.map(([, { event }]) => `${dateLabel(eventDay(event))}：${event.summary}`).join('、')}</summary>{outside.map(([id, { event }]) =>
-      <p key={id}>{dateLabel(eventDay(event))}：{eventTime(event)} {event.summary}</p>)}</details>}
+    {!!outside.length && <details className="calendar-outside"><summary>{outside.map(([, { event }]) => `${dateLabel(eventDay(event))}：${event.summary}`).join('、')}</summary>{outside.map(([id, { event, itemKey }]) =>
+      <p key={id} data-course-color={courseColor(courseByItem.get(itemKey))}><span className="course-label">{dateLabel(eventDay(event))}：{eventTime(event)} {event.summary}</span></p>)}</details>}
     <p className="muted">体験用カレンダー</p>
   </section>;
 }
@@ -88,7 +91,7 @@ export function GoogleCalendarStatus({ integration, pending }: { integration: Ca
             : 'カレンダーへの変更が済んでいます。'}</p>
   </section>;
 }
-export function DemoCalendar({ fallback, now, assignments = [], courses }: { fallback?: ReactNode; now?: number; assignments?: LedgerAssignment[]; courses: StudentCourse[] }) {
+export function DemoCalendar({ fallback, now, assignments = [], courses, manual = [] }: { fallback?: ReactNode; now?: number; assignments?: LedgerAssignment[]; courses: StudentCourse[]; manual?: ManualAssignment[] }) {
   const [value, setValue] = useState<{ integration: CalendarIntegration | null; pending: boolean; items: CalendarItem[] } | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -132,6 +135,7 @@ export function DemoCalendar({ fallback, now, assignments = [], courses }: { fal
   if (failed) return <>{fallback}<p role="alert">カレンダーを開けませんでした。接続を確かめてください。</p></>;
   return value ? value.integration?.mode === 'mock'
     ? <DemoCalendarView integration={value.integration} pending={value.pending} now={now ?? Date.now()} courses={courses}
+      courseByItem={calendarCourses(value.items, assignments, courses, manual)}
       submitted={new Set(value.items.filter(item => item.kind === 'deadline' && assignments.some(row =>
         row.submission === 'submitted' &&
         row.key.system === item.sourceKey.system && row.key.sourceId === item.sourceKey.sourceId)).map(item => item.itemKey))} />

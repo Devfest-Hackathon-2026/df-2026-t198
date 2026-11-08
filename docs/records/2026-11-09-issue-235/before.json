@@ -1,0 +1,18 @@
+{
+  "phase": "before",
+  "passed": 0,
+  "checks": [],
+  "heights": [
+    {
+      "width": 1280,
+      "frame": 434,
+      "table": 138
+    },
+    {
+      "width": 390,
+      "frame": 140,
+      "table": 138
+    }
+  ],
+  "browserErrors": 0
+}

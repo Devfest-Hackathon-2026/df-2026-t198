@@ -49,6 +49,24 @@
 }
 
 .app {
+  /* Course categories: soft background / solid band. Keep status colors separate. */
+  /* Blue, teal, green, ochre, pink, purple, sky, brown. L*≈94 preserves the fixed change text's AA contrast. */
+  --course-0-soft: #e6eefe;
+  --course-0-band: #2f63b6;
+  --course-1-soft: #caf6ef;
+  --course-1-band: #147b69;
+  --course-2-soft: #d5f6d5;
+  --course-2-band: #39803a;
+  --course-3-soft: #faefa7;
+  --course-3-band: #8a751c;
+  --course-4-soft: #fde8f4;
+  --course-4-band: #a34882;
+  --course-5-soft: #f4eafd;
+  --course-5-band: #7e50aa;
+  --course-6-soft: #d4f3fd;
+  --course-6-band: #237b99;
+  --course-7-soft: #f6ecdf;
+  --course-7-band: #816342;
   --paper: #f7f8f4;
   --sheet: #ffffff;
   --rule: #cbd7e6;
@@ -73,6 +91,15 @@
   --mono: var(--font-mono);
   --focus: var(--accent);
 }
+
+.app [data-course-color='0'] { --course-soft: var(--course-0-soft); --course-band: var(--course-0-band); }
+.app [data-course-color='1'] { --course-soft: var(--course-1-soft); --course-band: var(--course-1-band); }
+.app [data-course-color='2'] { --course-soft: var(--course-2-soft); --course-band: var(--course-2-band); }
+.app [data-course-color='3'] { --course-soft: var(--course-3-soft); --course-band: var(--course-3-band); }
+.app [data-course-color='4'] { --course-soft: var(--course-4-soft); --course-band: var(--course-4-band); }
+.app [data-course-color='5'] { --course-soft: var(--course-5-soft); --course-band: var(--course-5-band); }
+.app [data-course-color='6'] { --course-soft: var(--course-6-soft); --course-band: var(--course-6-band); }
+.app [data-course-color='7'] { --course-soft: var(--course-7-soft); --course-band: var(--course-7-band); }
 
 .lms-skin {
   --paper: #f5f6f8;
