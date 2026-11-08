@@ -1,8 +1,13 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { acknowledgeCalendarItem, reconcileCalendarItem, type CalendarIntegration, type CalendarItem,
   type CalendarReport, type Course, type LedgerAssignment } from '@kadai-hisho/core/calendar';
 import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
 import { DemoForbidden } from '../demo/store.js';
+
+const navigationBySystem: Partial<Record<LedgerAssignment['key']['system'], { statefulSession: boolean; home: string }>> = {
+  'ynu-lms': JSON.parse(readFileSync(new URL('../../../../lms-definitions/coursepower/navigation.json', import.meta.url), 'utf8')),
+};
 
 export class CalendarConnectionConflict extends Error {}
 export interface CalendarStore {
@@ -20,7 +25,9 @@ export async function readCalendarState(tx: Transaction, student: DocumentRefere
 
 export function writeCalendarItem(tx: Transaction, student: DocumentReference, previous: CalendarItem | undefined,
   key: string, assignment: LedgerAssignment, courseName: string, calendarId: string | null) {
-  const next = reconcileCalendarItem(previous, key, assignment, courseName, calendarId, () => randomUUID().replaceAll('-', ''));
+  const next = reconcileCalendarItem(previous, key, assignment, courseName, calendarId, () => randomUUID().replaceAll('-', ''), {
+    navigation: navigationBySystem[assignment.key.system], parseUrl: (value, base) => new URL(value, base),
+  });
   if (next && next !== previous) tx.set(student.collection('calendarItems').doc(key), next);
   return next;
 }
