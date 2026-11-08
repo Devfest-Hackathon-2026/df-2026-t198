@@ -32,11 +32,12 @@ try {
     await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
     const envelope = preview.getByRole('button', { name: /今日やること.*を開く/ });
     await envelope.waitFor();
+    await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).waitFor();
     assert.equal(await preview.getByRole('link', { name: /終わった/ }).count(), 0);
-    await preview.screenshot({ path: `${evidence}/inbox-${width}.png` });
+    await preview.screenshot({ path: `${evidence}/inbox-${width}.png`, animations: 'disabled' });
     await envelope.click();
     await preview.getByRole('link', { name: /終わった/ }).waitFor();
-    await preview.screenshot({ path: `${evidence}/mail-${width}.png` });
+    await preview.screenshot({ path: `${evidence}/mail-${width}.png`, animations: 'disabled' });
     await preview.getByRole('button', { name: '受信箱に戻る', exact: true }).click();
     await envelope.waitFor(); pass(`${width}: inbox opens and closes without performing a plan action`);
 
@@ -53,20 +54,25 @@ try {
       await page.keyboard.press('Enter');
       await page.locator('.timetable').waitFor();
       assert.equal(await page.locator('.student-deadlines').isVisible(), false);
-      await page.screenshot({ path: `${evidence}/timetable-${width}.png`, fullPage: true });
+      await page.screenshot({ path: `${evidence}/timetable-${width}.png`, fullPage: true, animations: 'disabled' });
       await page.getByRole('tab', { name: '準備', exact: true }).click();
       await page.getByRole('region', { name: '入れた準備の予定', exact: true }).waitFor();
       assert.equal(await page.locator('.student-timetable').isVisible(), false);
-      await page.screenshot({ path: `${evidence}/preparation-${width}.png`, fullPage: true });
+      await page.screenshot({ path: `${evidence}/preparation-${width}.png`, fullPage: true, animations: 'disabled' });
       await page.getByRole('tab', { name: '締切', exact: true }).click();
     } else {
       const deadlines = await page.locator('.student-deadlines').boundingBox();
       const timetable = await page.locator('.student-timetable').boundingBox();
       assert.ok(deadlines.x + deadlines.width <= timetable.x);
       assert.equal(await page.getByRole('tablist').isVisible(), false);
+      // The navigation is only needed when seven days overflow their frame.
+      await page.locator('.student-calendar').evaluate(element => { element.style.maxWidth = '400px'; });
+      await page.locator('.calendar-navigation').waitFor();
+      await page.locator('.student-calendar').evaluate(element => { element.style.removeProperty('max-width'); });
+      await page.getByRole('region', { name: '締切のカレンダー', exact: true }).locator('.calendar-navigation').waitFor({ state: 'detached' });
     }
     await fits(page);
-    await page.screenshot({ path: `${evidence}/student-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `${evidence}/student-${width}.png`, fullPage: true, animations: 'disabled' });
     pass(`${width}: timetable and preparation are reachable in the specified desktop/mobile layout`);
 
     await page.goto(`${base}/session/trial-student`);
@@ -77,7 +83,7 @@ try {
     await page.locator('.td-detail').waitFor();
     await page.locator('.td-detail').getByRole('link', { name: /LMSで見る/ }).waitFor();
     await fits(page);
-    await page.screenshot({ path: `${evidence}/session-${width}.png`, fullPage: true });
+    await page.screenshot({ path: `${evidence}/session-${width}.png`, fullPage: true, animations: 'disabled' });
     await page.locator('.td-detail').getByRole('button', { name: '閉じる', exact: true }).click();
     assert.equal(await page.locator('.td-detail').count(), 0);
     pass(`${width}: task table selects and closes the source detail panel`);

@@ -77,16 +77,17 @@ try {
         const submitted = calendar.locator('.calendar-event.submitted').filter({ has: student.getByText(title, { exact: true }) });
         await submitted.getByText('出せました', { exact: true }).waitFor();
         const day = await submitted.evaluate(element => element.closest('[data-date]').dataset.date);
-        await calendar.getByRole('button', { name: `${Number(day.slice(5, 7))}/${Number(day.slice(8))}の締切へ`, exact: true }).click();
+        if (width === 390) await calendar.getByRole('button', { name: `${Number(day.slice(5, 7))}/${Number(day.slice(8))}の締切へ`, exact: true }).click();
+        else assert.equal(await calendar.locator('.calendar-navigation').count(), 0);
         assert.equal(await submitted.evaluate(element => {
           const box = element.getBoundingClientRect(); const parent = element.closest('.calendar-scroll').getBoundingClientRect();
           return box.left >= parent.left && box.right <= parent.right;
         }), true, 'the selected deadline is horizontally visible');
       }
       assert.equal(await calendar.locator('.calendar-event.submitted').count(), 2);
-      await calendar.getByRole('button', { name: '今日へ', exact: true }).click();
+      if (width === 390) await calendar.getByRole('button', { name: '今日へ', exact: true }).click();
       assert.equal(await calendar.locator('.calendar-scroll').evaluate(element => Math.round(element.scrollLeft)), 0);
-      assert.equal(await calendar.locator('.td-scroll-frame').getAttribute('data-right'), 'true');
+      assert.equal(await calendar.locator('.td-scroll-frame').getAttribute('data-right'), String(width === 390));
       assert.equal(await student.locator('.scroll-hint').count(), 0);
       assert.equal(await student.getByText('朱色は、今変わった締切の目印です。しばらくすると元の色に戻ります。', { exact: true }).count(), 0);
     });

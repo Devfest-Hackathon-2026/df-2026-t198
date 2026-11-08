@@ -126,7 +126,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
   return <OperationMessages>
     <div className="student-workspace">
     {planLink}
-    <div className="student-heading"><h1>時間割と課題</h1></div>
+    <div className="student-heading td-stage"><h1>時間割と課題</h1></div>
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
@@ -139,10 +139,8 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
     {!data.assignments.length && !hasManual && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
     <div className="student-mobile-tabs"><Tabs label="学生の画面" value={tab} onChange={setTab}
       items={[{ value: 'deadlines', label: '締切' }, { value: 'timetable', label: '時間割' }, { value: 'preparation', label: '準備' }]} /></div>
-    <div className="student-overview" data-tab={tab}>
-    <div className="student-deadlines">{upcomingList}
-      {calendar && <DemoCalendar courses={data.courses} assignments={data.assignments} now={now} />}
-    </div>
+    <div className="student-overview td-stage" style={{ animationDelay: '100ms' }} data-tab={tab}>
+    <div className="student-deadlines">{upcomingList}</div>
     <section className="student-timetable" aria-label="時間割"><h2>時間割</h2>
     <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
       <div><ScrollFrame scrollRef={timetable} className="timetable-scroll" label="授業と次の締切"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
@@ -187,6 +185,7 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
       <PlanForm assignments={data.assignments} actions={actions} /></details>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own />
     </section>
+    {calendar && <div className="student-calendar"><DemoCalendar courses={data.courses} assignments={data.assignments} now={now} /></div>}
     </div>
     <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own now={now} />
     </div>
@@ -211,7 +210,7 @@ export function StudentPage() {
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
           {client.auth.currentUser && <><NotificationSettingsPanel key={client.auth.currentUser.uid} user={client.auth.currentUser} />
-            <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a></>}</> : state.status === 'error' ? <FetchState state="error" title="課題を開けませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を開いています…" lines={6} />}</>}
+            <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a></>}</> : state.status === 'error' ? <FetchState state="error" title="課題を表示できませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を読み込んでいます…" lines={6} />}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;
 }

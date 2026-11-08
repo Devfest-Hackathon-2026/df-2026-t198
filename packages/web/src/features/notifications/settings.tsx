@@ -66,7 +66,7 @@ export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | '
     <summary>メール通知の設定</summary>
     <section aria-label="メール通知の設定">
       <dl className="notification-schedule"><dt>朝のまとめ</dt><dd>07:30</dd><dt>準備の通知</dt><dd>開始30分前</dd><dt>宛先</dt><dd>ログイン中の本人</dd></dl>
-      {!view && busy && <Skeleton label="通知の状態を開いています…" />}
+      {!view && busy && <Skeleton label="通知の状態を確かめています…" />}
       {view && <>
         <p>メール通知：{view.settings.enabled ? '有効' : '停止中'}</p>
         {availabilityText[view.availability] && <p className="notice">{availabilityText[view.availability]}</p>}

@@ -3,6 +3,7 @@
 .student-overview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: var(--space-6); align-items: start; }
 .student-deadlines { grid-column: 1; grid-row: 1; min-width: 0; }
 .student-timetable { grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
+.student-calendar { grid-column: 1 / -1; grid-row: 3; min-width: 0; }
 .student-preparation { grid-column: 1; grid-row: 2; min-width: 0; }
 .student-workspace .upcoming { margin-bottom: var(--space-6); }
 .student-workspace .upcoming li { padding: 0; border: 0; }
@@ -10,7 +11,7 @@
 .student-workspace .td-taskrow:hover { background: var(--sheet); }
 .student-workspace .td-taskrow-title { font-weight: 700; }
 .student-workspace .td-taskrow-side { max-width: 10rem; }
-.student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr); }
+.student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr) minmax(14rem, .8fr); }
 .student-workspace .timetable-scroll { border: 0; }
 .student-workspace .course-panel { padding: var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
 .student-workspace .course-panel h2 { font-size: 22px; }
@@ -19,9 +20,10 @@
 .student-mobile-tabs { display: none; }
 .student-workspace .preparation-add { margin: 0 0 var(--space-4); }
 @media (max-width: 850px) {
+  .student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr); }
   .student-mobile-tabs { display: block; margin-bottom: var(--space-6); }
   .student-overview { display: block; }
-  .student-overview[data-tab='deadlines'] > :not(.student-deadlines),
+  .student-overview[data-tab='deadlines'] > :not(.student-deadlines, .student-calendar),
   .student-overview[data-tab='timetable'] > :not(.student-timetable),
   .student-overview[data-tab='preparation'] > :not(.student-preparation) { display: none; }
   .student-workspace .td-taskrow-side { max-width: none; }

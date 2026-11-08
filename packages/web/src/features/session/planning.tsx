@@ -55,7 +55,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
   const dates = Array.from({ length: weekendDeadline ? 7 : 5 }, (_, i) => {
     const day = new Date(monday); day.setUTCDate(day.getUTCDate() + i); return day.toISOString().slice(0, 10);
   });
-  return <div className="session-planning">
+  return <div className="session-planning td-stage" style={{ animationDelay: '200ms' }}>
     <label className="session-topic">相談する課題
       <select value={task ? JSON.stringify(task.key) : ''} onChange={event => { setMessage(''); setSelected(event.target.value); setCandidate(null); }}>
         {!tasks.length && <option value="">次回までの課題がありません</option>}

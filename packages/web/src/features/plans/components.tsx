@@ -1,4 +1,4 @@
-import { Button, Field } from '../../shared/ui';
+import { Button, Field, StatusChip } from '../../shared/ui';
 import type { PlanActions } from './api';
 import { actionMessage, planActionErrorMessage, planProgress } from './progress';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -112,7 +112,7 @@ export function PlanList({ plans, actions, viewerUid, own, assignments }: { plan
       <time dateTime={plan.startsAt}>{Number(plan.date.slice(5, 7))}/{Number(plan.date.slice(8))} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time>
       <span>{plan.period}限</span><strong>{plan.title}</strong>
       <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
-      <span>{planProgress(plan)}</span>
+      <span>{plan.status === 'done' ? <StatusChip status="done">{planProgress(plan)}</StatusChip> : planProgress(plan)}</span>
       <PlanDeadlineWarning plan={plan} assignments={assignments} />
       <div className="preparation-buttons">{own && actions?.act && plan.status === 'active' && <><Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'done'} busyLabel="記録中…" onClick={() => { void act(plan, 'done'); }}>終わった</Button>
         {Date.parse(plan.startsAt) > Date.now() && <Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'later'} busyLabel="記録中…" onClick={() => { void act(plan, 'later'); }}>後回し</Button>}</>}

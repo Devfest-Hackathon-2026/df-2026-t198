@@ -61,7 +61,7 @@ try {
     await entry.click();
     await student.getByLabel('メールアドレス').waitFor();
   }
-  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
+  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談', '紹介']);
   assert.equal(await student.title(), 'ToDoku');
   assert.equal(await student.locator('.app-header > a').innerText(), 'ToDoku');
   await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();
@@ -127,7 +127,7 @@ try {
   assert.equal(oldDay, jstDay(oldDeadline));
   const today = jstDay(Date.now());
   assert.equal(Date.parse(`${oldDay}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`), 3 * 86400000);
-  assert.equal(await calendar.evaluate(node => node.getBoundingClientRect().right <= globalThis.document.querySelector('.student-timetable').getBoundingClientRect().left), true);
+  assert.equal(await calendar.evaluate(node => node.getBoundingClientRect().top > globalThis.document.querySelector('.student-timetable').getBoundingClientRect().bottom), true);
   const initialTarget = (await calendarTarget()).data();
   assert.equal(initialTarget.mode, 'mock');
   assert.equal(initialTarget.executor, 'demo');
@@ -256,6 +256,7 @@ try {
   const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
   const done = preview.getByRole('link', { name: '✅ 終わった', exact: true });
+  await preview.getByRole('button', { name: /今日やること.*を開く/ }).click();
   await done.waitFor();
   const sampleId = new URL(await done.getAttribute('href')).searchParams.get('id');
   const sample = (await db.doc(`students/trial-student/plans/${sampleId}`).get()).data();

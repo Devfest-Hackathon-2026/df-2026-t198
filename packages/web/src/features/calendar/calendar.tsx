@@ -58,7 +58,7 @@ export function DemoCalendarView({ integration, pending, now = Date.now(), submi
     {(edges.left || edges.right) && <div className="calendar-navigation"><button onClick={() => showDay(today)}>今日へ</button>
       {[...new Set(events.map(([, { event }]) => eventDay(event)))].filter(day => day !== today && days.includes(day)).map(day =>
         <button key={day} onClick={() => showDay(day)}>{dateLabel(day)}の締切へ</button>)}</div>}
-    <ScrollFrame scrollRef={scroll} className="calendar-scroll" label="今日から7日の締切">
+    <ScrollFrame scrollRef={scroll} className="calendar-scroll" label="今日から7日間の締切">
       <table className="deadline-week"><thead><tr>{days.map((day, i) => <th scope="col" key={day} aria-current={day === selectedDay ? 'date' : undefined} className={i === 0 ? 'calendar-today' : undefined}>
         <time dateTime={day}>{dateLabel(day)}（{'日月火水木金土'[new Date(`${day}T00:00:00Z`).getUTCDay()]}）</time>
       </th>)}</tr></thead><tbody><tr>{days.map((day, i) => <td key={day} data-date={day} className={i === 0 ? 'calendar-today' : undefined}>
