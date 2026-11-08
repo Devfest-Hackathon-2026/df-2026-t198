@@ -16,6 +16,8 @@ export function DigestPreview({ user }: { user: User }) {
   const [data, setData] = useState<Pick<StudentData, 'plans' | 'assignments' | 'courses'>>({ plans: [], assignments: [], courses: [] });
   useEffect(() => {
     let active = true; let request = 0;
+    const stops: (() => void)[] = [];
+    const stop = () => { active = false; request++; stops.splice(0).forEach(cancel => cancel()); };
     const load = async () => {
       const current = ++request;
       try {
@@ -25,12 +27,21 @@ export function DigestPreview({ user }: { user: User }) {
         if (active && current === request) setDigest(value);
       } catch { if (active && current === request) { setDigest(null); setMessage('メールの見本を開けませんでした。接続を確かめてください。'); } }
     };
-    const stop = (['plans', 'assignments', 'courses'] as const).map(name => onSnapshot(collection(firebase!.db, 'students', user.uid, name),
-      snapshot => {
-        if (!active) return;
-        setData(current => ({ ...current, [name]: snapshot.docs.map(doc => doc.data()) })); void load();
-      }, () => { request++; setActionLink(undefined); setDigest(null); setMessage('メールの見本を開けませんでした。'); }));
-    return () => { active = false; stop.forEach(cancel => cancel()); };
+    const fail = () => {
+      if (!active) return;
+      stop(); setActionLink(undefined); setDigest(null); setData({ plans: [], assignments: [], courses: [] });
+      setMessage('メールの見本を開けませんでした。');
+    };
+    for (const name of ['plans', 'assignments', 'courses'] as const) {
+      const unsubscribe = onSnapshot(collection(firebase!.db, 'students', user.uid, name),
+        snapshot => {
+          if (!active) return;
+          setData(current => ({ ...current, [name]: snapshot.docs.map(doc => doc.data()) })); void load();
+        }, fail);
+      if (!active) { unsubscribe(); break; }
+      stops.push(unsubscribe);
+    }
+    return stop;
   }, [user, version]);
   async function prepare() {
     if (busy) return; setBusy(true); setMessage('');

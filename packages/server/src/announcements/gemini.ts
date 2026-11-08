@@ -24,9 +24,11 @@ const schema = {
   }, required: ['announcementId', 'assignmentKey', 'proposedDueAt', 'quote', 'reason'],
 };
 export type Generate = (request: GenerateContentParameters) => Promise<GenerateContentResponse>;
-export function createGeminiModel(project: string, budget: Pick<EvaluationBudget, 'reserve' | 'settle'>, generate?: Generate): AnnouncementModel {
+export function createGeminiModel(project: string, budget: Pick<EvaluationBudget, 'reserve' | 'settle'>, generate?: Generate,
+  options: { timeoutMs?: number } = {}): AnnouncementModel {
+  const httpOptions = { timeout: options.timeoutMs ?? 120_000, retryOptions: { attempts: 1 } };
   const client = generate ? null : new GoogleGenAI({ vertexai: true, project, location: 'global',
-    httpOptions: { timeout: 120_000, retryOptions: { attempts: 1 } } });
+    httpOptions });
   const call = generate ?? ((request) => client!.models.generateContent(request));
   return {
     async generate(announcement: Announcement, candidates: readonly AssignmentCandidate[]) {
@@ -38,7 +40,7 @@ export function createGeminiModel(project: string, budget: Pick<EvaluationBudget
       const response = await call({ model: MODEL, contents,
         config: { systemInstruction: SYSTEM, responseMimeType: 'application/json', responseJsonSchema: schema,
           maxOutputTokens: MAX_OUTPUT, thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-          httpOptions: { retryOptions: { attempts: 1 }, timeout: 120_000 } } });
+          httpOptions } });
       const u = response.usageMetadata;
       if (!u || u.promptTokenCount === undefined || u.totalTokenCount === undefined) throw new Error('usage-missing');
       const usage = { inputTokens: u.promptTokenCount, outputTokens: u.totalTokenCount - u.promptTokenCount,

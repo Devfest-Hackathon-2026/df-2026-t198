@@ -41,11 +41,8 @@ export function getSessionServices(): SessionServices | null {
   if (services !== undefined) return services;
   const connection = firebase;
   if (!connection) { services = null; return null; }
-  const local = import.meta.env.DEV && import.meta.env['VITE_USE_FIREBASE_EMULATORS'] === 'true';
-  if (local && !['127.0.0.1', 'localhost'].includes(window.location.hostname)) {
-    throw new Error('local-demo-required');
-  }
   const { auth, db } = connection;
+  const local = Boolean(auth.emulatorConfig);
   async function api(user: User, path: string, context?: SessionContext) {
     const response = await fetch(path, { method: context ? 'PUT' : 'GET', cache: 'no-store', headers: {
       Authorization: `Bearer ${await user.getIdToken()}`, ...(context ? { 'Content-Type': 'application/json' } : {}),
