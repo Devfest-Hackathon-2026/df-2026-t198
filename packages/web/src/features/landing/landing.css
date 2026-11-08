@@ -12,15 +12,31 @@ html.landing-scroll { scroll-behavior: smooth; }
 .landing-header nav { display: flex; gap: 30px; padding: 14px 30px; background: var(--white); border-radius: 100px; font-size: 14px; font-weight: 700; }
 .landing-home { display: inline-flex; }
 .landing .chapter { position: relative; box-sizing: border-box; min-height: 100svh; padding: 90px 8vw 70px; }
-.landing .hero { min-height: 100svh; display: flex; align-items: center; overflow: clip; padding-top: 180px; padding-bottom: 150px; }
-.landing .hero-copy { position: relative; z-index: 1; width: 100%; }
-.landing .hero h1 { font-size: clamp(30px, 3.8vw, 60px); line-height: 1.65; letter-spacing: -.04em; }
+.landing .hero { display: grid; grid-template-columns: 47% 53%; align-items: center; gap: 16px; overflow: clip; padding: 160px 6vw 100px; }
+.landing .hero-copy { position: relative; z-index: 1; }
+.landing .hero h1 { font-size: clamp(30px, 3.4vw, 48px); line-height: 1.55; letter-spacing: -.04em; }
 .landing .hero h1 span { display: block; }
-.landing .hero-mobile-break { display: none; }
-.landing .hero-mark { position: absolute; right: 12%; top: 8%; transform: rotate(-12deg); opacity: .13; pointer-events: none; }
-.landing .hero-mark .todoku-logo > span { display: none; }
-.landing .hero-mark svg { width: clamp(300px, 36vw, 560px); height: auto; color: var(--accent); }
-.landing .hero-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 36px; }
+.landing .hero-lead { max-width: 28em; margin-top: 24px; font-size: 16px; line-height: 1.9; }
+.landing .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 28px; }
+.landing .hero-visual { position: relative; min-width: 0; height: 490px; }
+.landing .visual-canvas { position: relative; width: 640px; height: 490px; }
+.landing .grid { position: absolute; top: 20px; left: 20px; width: 640px; display: grid; grid-template-columns: 36px repeat(5, minmax(0, 1fr)); border-top: 1.5px solid var(--ink); }
+.landing .gh { height: 32px; display: grid; place-items: center; font: 12px var(--mono); color: var(--muted); border-bottom: 1px solid var(--line); }
+.landing .gp { height: 90px; padding-top: 12px; box-sizing: border-box; text-align: center; font: 12px var(--mono); color: var(--muted); border-bottom: 1px solid var(--line); }
+.landing .gc { height: 90px; padding: 5px; box-sizing: border-box; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); }
+.landing .cell { height: 100%; box-sizing: border-box; padding: 8px; background: var(--surface); display: flex; flex-direction: column; }
+.landing .cn { font-size: 12px; font-weight: 700; line-height: 1.4; }
+.landing .nx { margin-top: auto; font: 11px var(--mono); color: var(--muted); }
+.landing .cell.hot { background: var(--accent); color: var(--white); }
+.landing .cell.hot .nx { color: inherit; }
+.landing .wire { position: absolute; left: 112px; top: 232px; width: 2px; height: 102px; background: var(--accent); }
+.landing .mail { position: absolute; left: 0; top: 334px; width: 400px; box-sizing: border-box; padding: 16px 20px; background: var(--white); border: 1px solid var(--ink); }
+.landing .mh { display: flex; justify-content: space-between; color: var(--muted); font: 11px var(--mono); }
+.landing .ms { margin-top: 8px; font-size: 18px; font-weight: 700; }
+.landing .mi { margin-top: 6px; font-size: 13px; }
+.landing .mb { display: flex; gap: 8px; margin-top: 12px; }
+.landing .mb span { border: 1px solid var(--ink); padding: 4px 10px; font-size: 12px; }
+.landing .mb .on { background: var(--ink); color: var(--white); }
 .landing .pill { display: inline-flex; align-items: center; justify-content: space-between; gap: 28px; min-height: var(--target); padding: 12px 26px; box-sizing: border-box; border: 1px solid var(--ink); border-radius: 100px; font-size: 15px; font-weight: 700; background: var(--paper); }
 .landing .pill.primary { background: var(--ink); color: var(--paper); }
 .landing .pill span { font-size: 21px; }
@@ -96,13 +112,15 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing-header .todoku-logo { font-size: 26px; }
   .landing-header nav { padding: 12px 18px; gap: 18px; flex-wrap: wrap; font-size: 12px; }
   .landing .chapter { padding: 64px 24px 40px; }
-  .landing .hero { min-height: 100svh; padding: 210px 24px 130px; align-items: flex-start; }
-  .landing .hero-mobile-break { display: initial; }
-  .landing .hero h1 { font-size: clamp(25px, 6.8vw, 42px); line-height: 1.8; letter-spacing: -.04em; }
-  .landing .hero-mark { top: 200px; right: -40px; }
-  .landing .hero-mark svg { width: 290px; }
-  .landing .hero-actions { flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 30px; }
-  .landing .hero > .next-chapter { right: 24px; }
+  .landing .hero { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 24px; padding: 130px 24px 80px; }
+  .landing .hero h1 { font-size: clamp(25px, 7.2vw, 38px); line-height: 1.5; letter-spacing: -.04em; }
+  .landing .hero-lead { margin-top: 14px; font-size: 14px; line-height: 1.8; }
+  .landing .hero-actions { gap: 12px; margin-top: 18px; }
+  .landing .hero-actions .pill { padding: 10px 16px; gap: 12px; font-size: 13px; }
+  .landing .hero-actions .text-link { font-size: 12px; gap: 8px; }
+  .landing .hero-visual { flex: none; height: 260px; }
+  .landing .visual-canvas { transform: scale(.53); transform-origin: top left; }
+  .landing .hero > .next-chapter { right: 24px; bottom: 18px; }
   .landing .chapter-nav { right: 2px; gap: 6px; }
   .landing .chapter-nav a { width: 18px; }
   .landing .section-heading { margin-bottom: 30px; }

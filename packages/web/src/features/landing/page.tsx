@@ -3,6 +3,7 @@ import { Reveal, Splash, Staged } from '../../shared/ui/motion';
 import { PublicDemoEntry } from '../../shared/auth/public-demo-entry';
 import { TodokuLogo } from '../../shared/ui/todoku-logo';
 import './landing.css';
+import { HeroVisual } from './hero-visual';
 import { settleChapters } from './chapter-scroll';
 
 const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
@@ -101,11 +102,12 @@ export function LandingPage() {
     <nav className="chapter-nav" aria-label="現在地">{chapters.map(chapter => <a key={chapter.id} href={`#${chapter.id}`} aria-label={chapter.label} aria-current={current === chapter.id ? 'location' : undefined}><span>{chapter.label}</span></a>)}</nav>
     <main>
       <section className="hero chapter" id="home" aria-labelledby="landing-title">
-        <div className="hero-mark" aria-hidden="true"><TodokuLogo /></div>
         <Staged className="hero-copy">
-          <h1 id="landing-title"><span>学生がすることは、</span><span>いつものLMSを<br className="hero-mobile-break" />開くことだけです</span></h1>
-          <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="pill" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
+          <h1 id="landing-title"><span>学生がすることは、</span><span>いつものLMSを</span><span>開くことだけです</span></h1>
+          <p className="hero-lead">授業ごとの課題と締切をまとめ、その日にやることを毎朝メールで届けます。</p>
+          <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="text-link" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
         </Staged>
+        <HeroVisual />
         <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
       </section>
 
