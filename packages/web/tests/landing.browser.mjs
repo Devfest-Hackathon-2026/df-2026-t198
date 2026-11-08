@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL } from 'node:url';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { log } from 'node:console';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const base = 'http://127.0.0.1:5182';
-const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i182-evidence';
+const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i224-evidence';
 await mkdir(evidence, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
@@ -27,33 +27,52 @@ try {
     await page.evaluate(() => globalThis.document.fonts.ready);
     await page.locator('.shot').evaluateAll(images => Promise.all(images.map(image => image.decode())));
     assert.equal(await page.getByLabel('パスワード').count(), 0);
-    await page.getByText('共有の許可がある学生の授業と課題が、面談画面に出ます。面談の前に、何が変わったかを確かめられます。', { exact: true }).waitFor();
+    await page.locator('.td-splash').waitFor({ state: 'hidden' });
     await page.getByText('支援担当が見られるのは、共有の許可がある学生だけです', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: '学生として試す', exact: true }).count(), 0);
-    await page.getByText('審査の方へ', { exact: true }).waitFor();
-    assert.equal(await page.locator('main section.sec > h2').count(), 5);
-    assert.equal(await page.locator('.vis[aria-hidden="true"] .cell').count(), 6);
-    await noOverflow();
-    const hero = await page.locator('.hero').boundingBox();
-    const mail = await page.locator('.hero .mail').boundingBox();
-    assert(mail.y + mail.height < hero.y + hero.height, `Mail card must fit inside the hero at ${width}px`);
-    if (width === 390) {
-      const visual = await page.locator('.hero .vis').boundingBox();
-      assert(mail.y + mail.height <= visual.y + visual.height, 'Mail card must contribute to the mobile illustration height');
+    await page.getByText('審査の方', { exact: true }).waitFor();
+    assert.equal(await page.locator('main > section.chapter').count(), 6);
+    assert.equal(await page.locator('.hero h1 span').count(), 2);
+    if (width === 1280) {
+      const title = await page.locator('.hero h1').evaluate(el => ({ height: el.getBoundingClientRect().height, line: parseFloat(globalThis.getComputedStyle(el).lineHeight) }));
+      assert(Math.abs(title.height - title.line * 2) < 2, 'approved sentence occupies two desktop lines');
     }
+    await noOverflow();
+    for (const reveal of await page.locator('.td-reveal').all()) {
+      await reveal.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+      assert.equal(await reveal.evaluate(el => globalThis.getComputedStyle(el).opacity), '1');
+    }
+    const panels = page.locator('.entry-panel');
+    const left = await panels.nth(0).boundingBox(); const right = await panels.nth(1).boundingBox();
+    assert(Math.abs(left.width - right.width) < 1, 'judge/shared entries have the same width');
+    if (width === 1280) assert(Math.abs(left.height - right.height) < 1, 'desktop entries have the same height');
+    else assert(right.y >= left.y + left.height, 'mobile entries retain reading order');
+    await page.evaluate(() => globalThis.scrollTo(0, 0));
+    await page.waitForTimeout(600);
+    assert.equal(await page.locator('.landing-home').isVisible(), true);
+    assert.equal(await page.locator('.landing-home').evaluate(el => el.getBoundingClientRect().top >= 0), true, 'home logo remains in the opening viewport');
+    await page.screenshot({ path: `${evidence}/hero-${width}.png` });
     await page.screenshot({ path: `${evidence}/after-${width}.png`, fullPage: true });
+    // Native modal: no navigation, close button, Esc, backdrop, focus and scroll restoration.
+    for (const trigger of await page.getByRole('button', { name: /を拡大する$/ }).all()) {
+      await trigger.scrollIntoViewIfNeeded(); await page.waitForTimeout(600);
+      const before = await page.evaluate(() => globalThis.scrollY); const url = page.url();
+      await trigger.click();
+      const modal = page.getByRole('dialog'); await modal.waitFor();
+      assert.equal(page.url(), url);
+      assert.equal(await modal.locator('img').evaluate(el => el.complete && el.naturalWidth > 0), true);
+      await page.getByRole('button', { name: '拡大表示を閉じる', exact: true }).click();
+      await modal.waitFor({ state: 'hidden' });
+      assert.equal(await trigger.evaluate(el => el === globalThis.document.activeElement), true);
+      assert(Math.abs(await page.evaluate(() => globalThis.scrollY) - before) < 2, 'closing restores scroll');
+      await trigger.click(); await page.keyboard.press('Escape'); await modal.waitFor({ state: 'hidden' });
+      await trigger.click(); await modal.click({ position: { x: 2, y: 2 } }); await modal.waitFor({ state: 'hidden' });
+      await noOverflow();
+    }
     await page.getByRole('link', { name: '体験版を開く', exact: true }).click();
     assert.equal(new URL(page.url()).hash, '#try');
-    if (width === 390) {
-      const buttons = page.locator('.hero .btn');
-      const first = await buttons.nth(0).boundingBox();
-      const second = await buttons.nth(1).boundingBox();
-      assert(second.y >= first.y + first.height);
-      assert.equal(await page.locator('.grid .gh:visible').allTextContents().then(text => text.join(',')), ',月,火,水');
-      await page.getByRole('link', { name: '目次', exact: true }).click();
-      await page.getByRole('navigation', { name: '目次' }).getByRole('link', { name: 'しくみ', exact: true }).click();
-      assert.equal(new URL(page.url()).hash, '#how');
-    }
+    await page.waitForFunction(() => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === '#try');
     const demo = page.getByRole('region', { name: '動く見本', exact: true });
     const extend = demo.getByRole('button', { name: '① 先生が締切を延ばす', exact: true });
     const open = demo.getByRole('button', { name: '② 学生が LMS を開く', exact: true });
@@ -100,6 +119,7 @@ try {
     assert.deepEqual(await storage(), initialStorage);
     await page.reload();
     await initial();
+    assert.equal(await page.locator('.td-splash').count(), 0, 'splash is skipped on repeat visits');
     await page.getByRole('link', { name: '自分の大学で使う', exact: true }).click();
     assert.equal(new URL(page.url()).hash, '#start');
     for (const link of await page.locator('a[href^="#"]').all()) {
@@ -115,6 +135,9 @@ try {
     assert.equal(await page.locator('.landing').count(), 0);
     assert.deepEqual(await page.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
     assert.equal(await page.locator('.todoku-logo svg').count(), 1);
+    assert.equal(await page.locator('.app-home').getAttribute('href'), '/student');
+    assert.equal(await page.getByRole('link', { name: 'ToDokuの紹介ページ', exact: true }).getAttribute('href'), '/');
+    assert.equal(await page.evaluate(() => globalThis.document.documentElement.classList.contains('landing-scroll')), false);
     if (path.startsWith('/session')) {
       await page.getByRole('status').filter({ hasText: '面談画面の準備がまだできていません' }).waitFor();
     } else if (path.startsWith('/student')) {
@@ -125,6 +148,18 @@ try {
   }
   await page.goto(`${base}/does-not-exist`);
   await page.getByRole('heading', { name: 'ページが見つかりません', exact: true }).waitFor();
+  const reduced = await browser.newPage({ reducedMotion: 'reduce' });
+  await reduced.goto(base);
+  assert.equal(await reduced.locator('.td-splash').count(), 0);
+  assert.equal(await reduced.locator('html').evaluate(el => globalThis.getComputedStyle(el).scrollSnapType), 'none');
+  for (const reveal of await reduced.locator('.td-reveal').all()) assert.equal(await reveal.evaluate(el => globalThis.getComputedStyle(el).opacity), '1');
+  await reduced.close();
+  const firstVisit = await browser.newPage();
+  await firstVisit.goto(base); await firstVisit.getByRole('button', { name: '紹介を開く', exact: true }).click();
+  assert.equal(await firstVisit.locator('.td-splash').count(), 0);
+  await firstVisit.reload(); assert.equal(await firstVisit.locator('.td-splash').count(), 0);
+  await firstVisit.close();
   assert.deepEqual(errors, []);
+  await writeFile(`${evidence}/verification.json`, JSON.stringify({ widths: [1280, 390], dialogs: 4, entryRoles: 2, localDemoStates: 4, reducedMotion: true, splash: true, existingRoutes: 6, errors }, null, 2));
   log('Landing: anonymous entry, four local states, no requests/storage changes, 1280/390px, anchors, images and existing routes passed.');
 } finally { await browser.close(); }

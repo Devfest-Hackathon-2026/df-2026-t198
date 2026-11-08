@@ -1,10 +1,33 @@
-import { Splash } from '../../shared/ui/motion';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Reveal, Splash, Staged } from '../../shared/ui/motion';
 import { PublicDemoEntry } from '../../shared/auth/public-demo-entry';
 import { TodokuLogo } from '../../shared/ui/todoku-logo';
 import './landing.css';
 
 const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
+const chapters = [
+  { id: 'home', label: 'トップ' }, { id: 'how', label: 'しくみ' },
+  { id: 'people', label: '使う人' }, { id: 'try', label: '体験する' },
+  { id: 'start', label: '使い始める' }, { id: 'privacy', label: '預からないもの' },
+];
+
+function Screenshot({ name, alt, width, height }: { name: string; alt: string; width: number; height: number }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  return <figure className="product-shot">
+    <button className="shot-trigger" type="button" aria-label={`${alt}を拡大する`} onClick={() => dialog.current?.showModal()}>
+      <img className="shot" src={`/landing/${name}.png`} alt={alt} width={width} height={height} loading="lazy" />
+      <span className="shot-caption">{alt}<span aria-hidden="true"> ↗</span></span>
+    </button>
+    <dialog ref={dialog} className="shot-dialog" aria-label={alt} onClick={event => {
+      if (event.target === event.currentTarget) dialog.current?.close();
+    }}>
+      <div className="shot-dialog-content">
+        <form method="dialog"><button className="close-shot" aria-label="拡大表示を閉じる">閉じる <span aria-hidden="true">×</span></button></form>
+        <img src={`/landing/${name}.png`} alt={alt} width={width} height={height} />
+      </div>
+    </dialog>
+  </figure>;
+}
 
 function LocalDemo() {
   const [step, setStep] = useState<'initial' | 'extended' | 'opened'>('initial');
@@ -33,145 +56,96 @@ function LocalDemo() {
   </section>;
 }
 
-function SharedDemo() {
-  return <section className="panel shared-demo" aria-labelledby="shared-demo-title">
-    <span className="lab">本物の体験版</span>
-    <h3 className="pt" id="shared-demo-title">共用の体験版<span className="tag">架空の授業</span></h3>
-    <p className="pd shared-description">誰でも使える共用の体験です。延長、お知らせの読み取り（Gemini）、面談画面の変化まで、本物の画面で試せます。</p>
-    <PublicDemoEntry />
-    <p className="note"><b>審査の方へ</b> 説明資料に書いた体験用アカウントで入ってください。ほかの人の操作と混ざりません。</p>
-    <a className="demo-lms-link" href="/demo-lms">体験用LMSを開く</a>
-  </section>;
+function DemoEntries() {
+  return <div className="entry-grid">
+    <section className="entry-panel" aria-labelledby="judge-title">
+      <span className="eyebrow" lang="en">For judges</span>
+      <h3 id="judge-title">審査の方</h3>
+      <p>説明資料の体験用アカウントでログインしてください。</p>
+      <a className="pill primary" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
+      <a className="text-link" href="/session">面談画面を開く <span aria-hidden="true">↗</span></a>
+    </section>
+    <section className="entry-panel" aria-labelledby="shared-title">
+      <span className="eyebrow" lang="en">Try it now</span>
+      <h3 id="shared-title">その場で試す</h3>
+      <span className="entry-kind">共用の体験版</span>
+      <PublicDemoEntry />
+      <a className="pill shared-fallback" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
+    </section>
+  </div>;
 }
 
 export function LandingPage() {
+  const [current, setCurrent] = useState('home');
+  useEffect(() => {
+    document.documentElement.classList.add('landing-scroll');
+    const observer = new IntersectionObserver(entries => {
+      const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible) setCurrent(visible.target.id);
+    }, { rootMargin: '-15% 0px -40% 0px', threshold: [0, .1, .3] });
+    for (const chapter of chapters) { const section = document.getElementById(chapter.id); if (section) observer.observe(section); }
+    return () => { observer.disconnect(); document.documentElement.classList.remove('landing-scroll'); };
+  }, []);
   return <div className="landing brand"><Splash />
-  <header className="top">
-    <a className="brand" href="/" aria-label="ToDoku ホーム"><TodokuLogo /></a>
-    <a className="menu" href="#contents">目次</a>
-    <nav className="nav" id="contents" aria-label="目次"><a href="#how">しくみ</a><a href="#try">体験する</a><a href="#start">使い始める</a><a href={repository}>GitHub</a></nav>
-  </header>
+    <header className="landing-header">
+      <a className="landing-home" href="/" aria-label="ToDoku ホーム"><TodokuLogo /></a>
+      <nav aria-label="目次"><a href="#how">しくみ</a><a href="#people">使う人</a><a href="#try">体験する</a><a href="#start">使い始める</a></nav>
+    </header>
+    <nav className="chapter-nav" aria-label="今の章">{chapters.map(chapter => <a key={chapter.id} href={`#${chapter.id}`} aria-label={chapter.label} aria-current={current === chapter.id ? 'location' : undefined}><span>{chapter.label}</span></a>)}</nav>
+    <main>
+      <section className="hero chapter" id="home" aria-labelledby="landing-title">
+        <div className="hero-mark" aria-hidden="true"><TodokuLogo /></div>
+        <Staged className="hero-copy">
+          <h1 id="landing-title"><span>学生がすることは、</span><span>いつものLMSを<wbr />開くことだけです</span></h1>
+          <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="pill" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
+          <p className="hero-english" lang="en">Your coursework, connected.</p>
+        </Staged>
+        <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
+      </section>
 
-  <main>
-  <section className="hero" aria-labelledby="landing-title">
-    <div className="hl">
-      <div className="lab">大学の課題のための Chrome 拡張と Web の画面</div>
-      <h1 className="h1" id="landing-title">学生がすることは、<br />いつもの LMS を<br />開くことだけです。</h1>
-      <p className="lead">開くたびに、全部の授業の課題が集まります。締切は時間割と Google カレンダーに入り、次にやることは朝に Gmail で届きます。<span className="pc-only">支援担当の面談画面にも、同じ状況が出ます。</span></p>
-      <div className="btns"><a className="btn on" href="#try">体験版を開く</a><a className="btn" href="#start">自分の大学で使う</a>
-      </div>
-    </div>
-    <div className="vis" aria-hidden="true">
-    <div className="grid">
-      <div className="gh"></div><div className="gh">月</div><div className="gh">火</div><div className="gh">水</div><div className="gh">木</div><div className="gh">金</div>
-      <div className="gp">1</div><div className="gc"></div>
-      <div className="gc"><div className="cell"><span className="cn">Re:線形代数</span><span className="nx">締切 11/18</span></div></div>
-      <div className="gc"><div className="cell"><span className="cn">自転車置き場の社会学</span><span className="nx">締切 11/19</span></div></div>
-      <div className="gc"></div><div className="gc"></div>
-      <div className="gp">2</div>
-      <div className="gc"><div className="cell hot"><span className="cn">レポートの書き方の書き方</span><span className="nx">締切 11/11</span></div></div>
-      <div className="gc"></div><div className="gc"></div><div className="gc"></div>
-      <div className="gc"><div className="cell"><span className="cn">90分の数理</span><span className="nx">課題なし</span></div></div>
-      <div className="gp">3</div><div className="gc"></div><div className="gc"></div>
-      <div className="gc"><div className="cell"><span className="cn">学食経済学</span><span className="nx">提出済み</span></div></div>
-      <div className="gc"></div><div className="gc"></div>
-      <div className="gp">4</div><div className="gc"></div><div className="gc"></div><div className="gc"></div>
-      <div className="gc"><div className="cell"><span className="cn">キャンパス植物図鑑演習</span><span className="nx">課題なし</span></div></div>
-      <div className="gc"></div>
-    </div>
-    <div className="wire"></div>
-    <div className="mail">
-      <div className="mh"><span>7:30 ・ ToDoku</span><span>Gmail</span></div>
-      <p className="ms">今日やること（11/10）</p>
-      <p className="mi">16:20から：書き方を書くレポートの準備</p>
-      <div className="mb"><span className="on">終わった</span><span>後回し</span></div>
-    </div>
-    </div>
-  </section>
+      <section className="chapter how-section" id="how" aria-labelledby="how-title">
+        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">How it works</span><h2 id="how-title">しくみ</h2><p>LMSの課題と締切を、時間割・Google カレンダー・朝のGmailにまとめます。</p></div></Reveal>
+        <div className="product-grid">
+          <Reveal><div className="product-label"><span className="step-number">01</span><h3>LMSの課題</h3></div><Screenshot name="lms" alt="体験用LMSの授業一覧" width={868} height={535} /></Reveal>
+          <Reveal order={1}><div className="product-label"><span className="step-number">02</span><h3>時間割と締切の変更</h3></div><Screenshot name="updated" alt="締切が変わった学生画面" width={884} height={635} /></Reveal>
+        </div>
+        <a className="next-chapter" href="#people">使う人 <span aria-hidden="true">↓</span></a>
+      </section>
 
-  <section className="sec" id="how" aria-labelledby="how-title">
-    <div className="lab"><b>01</b>しくみ</div>
-    <h2 className="sh" id="how-title">LMS を開くと、3つのことが起きます</h2>
-    <div className="bar"></div>
-    <div className="steps">
-      <div className="step">
-        <span className="sn">01</span><h3 className="st">いつもの LMS を開く</h3>
-        <p className="sd">学生はログインするだけです。拡張機能が、裏で全部の授業の課題を見に行きます。</p>
-        <a className="shot-link" href="/landing/lms.png"><img className="shot" src="/landing/lms.png" alt="体験用LMSの授業一覧に並ぶ架空の6つの授業" width="868" height="535" /></a>
-      </div>
-      <div className="step">
-        <span className="sn">02</span><h3 className="st">前回と比べる</h3>
-        <p className="sd">増えた課題と、延びた締切を記録します。変わったところは朱で示します。</p>
-        <a className="shot-link" href="/landing/updated.png"><img className="shot" src="/landing/updated.png" alt="締切の変更後の学生画面の時間割" width="884" height="635" /></a>
-      </div>
-      <div className="step">
-        <span className="sn">03</span><h3 className="st">いつもの場所に届く</h3>
-        <p className="sd">時間割、Google カレンダー、朝の Gmail、面談画面に、同じ内容が出ます。</p>
-      </div>
-    </div>
-  </section>
+      <section className="chapter people-section" id="people" aria-labelledby="people-title">
+        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Who it is for</span><h2 id="people-title">使う人</h2></div></Reveal>
+        <div className="product-grid">
+          <Reveal><h3>学生</h3><Screenshot name="student" alt="学生の時間割" width={884} height={635} /></Reveal>
+          <Reveal order={1}><h3>支援担当（カウンセラーなど）</h3><Screenshot name="session" alt="支援担当の面談画面" width={1072} height={1005} /></Reveal>
+        </div>
+        <a className="next-chapter" href="#try">体験する <span aria-hidden="true">↓</span></a>
+      </section>
 
-  <section className="sec" id="people" aria-labelledby="people-title">
-    <div className="lab"><b>02</b>使う人</div>
-    <h2 className="sh" id="people-title">学生と、学生を支える人のために</h2>
-    <div className="bar"></div>
-    <div className="two">
-      <div className="who">
-        <h3 className="st">学生</h3>
-        <p className="sd">時間割の各コマに、次の締切が出ます。朝のメールの［終わった］か［後回し］を押せば、予定が動きます。</p>
-        <a className="shot-link" href="/landing/student.png"><img className="shot" src="/landing/student.png" alt="架空の6つの授業が並ぶ学生画面の時間割" width="884" height="635" /></a>
-      </div>
-      <div className="who">
-        <h3 className="st">支援担当（カウンセラーなど）</h3>
-        <p className="sd">共有の許可がある学生の授業と課題が、面談画面に出ます。面談の前に、何が変わったかを確かめられます。</p>
-        <a className="shot-link" href="/landing/session.png"><img className="shot" src="/landing/session.png" alt="田中太郎さんの架空の締切の変更と次回面談までの課題" width="1072" height="1005" /></a>
-      </div>
-    </div>
-  </section>
+      <section className="chapter try-section" id="try" aria-labelledby="try-title">
+        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Try ToDoku</span><h2 id="try-title">体験する</h2></div></Reveal>
+        {/* Replace the incumbent local example with issue 225's shared three-panel component after it merges. */}
+        <div id="landing-demo-slot"><Reveal><LocalDemo /></Reveal></div>
+        <Reveal><DemoEntries /></Reveal>
+        <a className="next-chapter" href="#start">使い始める <span aria-hidden="true">↓</span></a>
+      </section>
 
-  <section className="sec" id="try" aria-labelledby="try-title">
-    <div className="lab"><b>03</b>体験する</div>
-    <h2 className="sh" id="try-title">架空の大学で、そのまま試せます</h2>
-    <div className="bar"></div>
-    <div className="try">
-      <LocalDemo />
-      <SharedDemo />
-    </div>
-  </section>
+      <section className="chapter start-section" id="start" aria-labelledby="start-title">
+        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Getting started</span><h2 id="start-title">使い始める</h2></div></Reveal>
+        <Reveal><ol className="setup-steps">
+          <li><span className="step-number">01</span><h3>Chrome 拡張</h3><a className="pill" href={`${repository}#手元で動かす`}>開発版の導入手順を開く <span aria-hidden="true">↗</span></a></li>
+          <li><span className="step-number">02</span><h3>Google ログイン</h3><a className="pill" href="/student">学生画面を開く <span aria-hidden="true">↗</span></a></li>
+          <li><span className="step-number">03</span><h3>対応しているLMS</h3><p>横浜国立大学</p></li>
+        </ol></Reveal>
+        <a className="next-chapter" href="#privacy">預からないもの <span aria-hidden="true">↓</span></a>
+      </section>
 
-  <section className="sec" id="start" aria-labelledby="start-title">
-    <div className="lab"><b>04</b>使い始める</div>
-    <h2 className="sh" id="start-title">新しく登録する手順はありません</h2>
-    <div className="bar"></div>
-    <div className="start">
-      <div className="step">
-        <span className="sn">01</span><h3 className="st">Chrome 拡張を入れる</h3>
-        <p className="sd">今は開発版を手で入れます。手順は <a href={`${repository}#手元で動かす`}>GitHub</a> に書いています。</p>
-      </div>
-      <div className="step">
-        <span className="sn">02</span><h3 className="st">Google でログインする</h3>
-        <p className="sd">アカウントを作る手順はありません。Google のアカウントで、そのまま使い始めます。</p>
-      </div>
-      <div className="step">
-        <span className="sn">03</span><h3 className="st">いつもの LMS を開く</h3>
-        <p className="sd">今は横浜国立大学の LMS で動きます。ほかの LMS は、読み取り方の定義を足して広げます。</p>
-      </div>
-    </div>
-  </section>
-
-  <section className="sec" id="privacy" aria-labelledby="privacy-title">
-    <div className="lab"><b>05</b>預からないもの</div>
-    <h2 className="sh" id="privacy-title">大学のアカウントに手を触れません</h2>
-    <div className="bar"></div>
-    <div className="safe">
-      <div className="sf">LMS のパスワードを預かりません</div>
-      <div className="sf">LMS に提出や書き込みをしません</div>
-      <div className="sf">メールは本人にだけ届きます</div>
-      <div className="sf">支援担当が見られるのは、共有の許可がある学生だけです</div>
-    </div>
-  </section>
-
-  </main>
-  <footer className="foot"><span>ToDoku ・ TEAM ORANGE ・ DEVFEST GDGoC JAPAN HACKATHON 2026</span><a href={repository}>GitHub</a></footer>
+      <section className="chapter privacy-section" id="privacy" aria-labelledby="privacy-title">
+        <Reveal><div className="section-heading"><span className="eyebrow" lang="en">Privacy</span><h2 id="privacy-title">預からないもの</h2></div>
+          <ul className="privacy-list"><li>LMS のパスワードを預かりません</li><li>LMS に提出や書き込みをしません</li><li>メールは本人にだけ届きます</li><li>支援担当が見られるのは、共有の許可がある学生だけです</li></ul>
+        </Reveal>
+        <a className="pill" href="#home">トップに戻る <span aria-hidden="true">↑</span></a>
+      </section>
+    </main>
+    <footer className="landing-footer"><a href="/" aria-label="ToDoku ホーム"><TodokuLogo /></a><span>TEAM ORANGE<br />DEVFEST GDGoC JAPAN HACKATHON 2026</span><a href={repository}>GitHub ↗</a></footer>
   </div>;
 }
