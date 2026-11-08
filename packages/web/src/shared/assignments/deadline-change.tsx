@@ -30,11 +30,13 @@ export function useDeadlineChanges(values: ReadonlyMap<string, string>) {
   return changed;
 }
 
-export function ChangedDeadline({ value }: { value: string }) {
+export function ChangedDeadline({ value, previous, highlight }: { value: string; previous?: string | undefined; highlight?: boolean }) {
   const changed = useDeadlineChanges(new Map([['deadline', value]]));
   const [display, setDisplay] = useState<{ current: string; previous?: string }>({ current: value });
   if (display.current !== value) setDisplay({ current: value, previous: display.current });
-  return <span className={`deadline${changed.has('deadline') ? ' changed' : ''}`}>{value}
-    {changed.has('deadline') && display.previous && <s className="previous-deadline" aria-hidden="true">{display.previous}</s>}
+  const active = highlight ?? changed.has('deadline');
+  const before = previous ?? display.previous;
+  return <span className={`deadline${active ? ' changed' : ''}`}>
+    {active && before && <s className="previous-deadline" aria-label="変更前">{before}</s>}{value}
   </span>;
 }

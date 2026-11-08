@@ -28,7 +28,7 @@ for (const screen of ['student', 'session'] as const) it.each([
   expect(finished.includes(task.title)).toBe(ended);
   expect(html).toContain(task.memo);
   expect(html).toContain(task.title);
-  if (screen === 'student') expect(student.includes('締切の近い課題')).toBe(!ended);
+  if (screen === 'student') expect(student.includes('今週の締切')).toBe(!ended);
   else {
     const deadlines = session.match(/<section aria-labelledby="session-deadlines">(.*?)<\/section>/)![1]!;
     expect(deadlines.includes(task.title)).toBe(!ended);

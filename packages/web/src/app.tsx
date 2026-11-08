@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { NetworkProgress } from './shared/ui/loading';
 import { LandingPage } from './features/landing/page';
-import { TodokuLogo } from './shared/ui/todoku-logo';
+import { AppHome } from './shared/auth/app-home';
 import { StudentPage } from './features/student/page';
 import { SessionPage } from './features/session/page';
 import { usePathname } from './shared/use-pathname';
@@ -26,11 +26,12 @@ function Route({ path }: { path: string }) {
   return (
     <div className="app app-shell">
       <header className="app-header">
-        <a className="app-home" href="/student"><TodokuLogo /></a>
+        <AppHome />
         <nav aria-label="画面">
           <a href="/demo-lms" aria-current={path === '/demo-lms' ? 'page' : undefined}>体験用LMS</a>
           <a href="/student" aria-current={path === '/student' || path === '/student/plan' ? 'page' : undefined}>学生</a>
           <a href="/session" aria-current={session ? 'page' : undefined}>面談</a>
+          <a href="/">紹介</a>
         </nav>
       </header>
       <main>

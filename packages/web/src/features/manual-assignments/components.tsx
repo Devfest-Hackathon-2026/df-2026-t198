@@ -1,4 +1,4 @@
-import { Button } from '../../shared/ui/button';
+import { Button, Field } from '../../shared/ui';
 import type { ManualAssignmentActions } from './api';
 import { useRef, useState, type FormEvent } from 'react';
 import { manualDeadline } from '@kadai-hisho/core';
@@ -43,15 +43,14 @@ export function ManualAssignmentForm({ courses, actions, course }: {
     } finally { setBusy(false); }
   }
   return <form className="manual-assignment-form" onSubmit={event => { void submit(event); }}>
-    <p>LMSにない課題を入れられます。日付と時刻は日本時間です。学生はどの課題も消せます。</p>
-    <label>課題の名前<input name="title" required maxLength={160} /></label>
-    <label>締切の日付<input name="date" type="date" required /></label>
-    <label>締切の時刻（任意）<input name="time" type="time" /></label>
+    <Field label="課題の名前" name="title" required maxLength={160} />
+    <Field label="締切の日付" name="date" type="date" required />
+    <Field label="締切の時刻（任意）" name="time" type="time" />
     <label>授業（任意）<select aria-label="授業（任意）" name="course" defaultValue={course ? JSON.stringify([course.system, course.courseId]) : ''}>
       <option value="">授業を選ばない</option>{courses.map(c => <option key={JSON.stringify([c.system, c.courseId])}
         value={JSON.stringify([c.system, c.courseId])}>{c.name}</option>)}
     </select></label>
-    <label>メモ（任意・300文字まで）<input name="memo" maxLength={300} /></label>
+    <Field label="メモ（任意・300文字まで）" name="memo" maxLength={300} />
     <Button type="submit" busy={busy} busyLabel="保存中…">課題を入れる</Button>
     {message && <p role="status">{message}</p>}
   </form>;

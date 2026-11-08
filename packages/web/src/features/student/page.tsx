@@ -1,4 +1,6 @@
-import { Button } from '../../shared/ui/button';
+import { Button, TaskRow, Tabs, FetchState, Skeleton } from '../../shared/ui';
+import { ScrollFrame } from '../../shared/ui/scroll-frame';
+import './student.css';
 import { linkedCourses } from '../../../../core/src/course-links';
 import { ManualAssignments, ManualAssignmentForm, ManualAssignmentRow, manualAuthor } from '../manual-assignments/components';
 import { manualAssignmentActions, type ManualAssignmentActions } from '../manual-assignments/api';
@@ -63,6 +65,7 @@ function AssignmentRow({ item, courseName }: { item: LedgerAssignment; courseNam
 }
 export function StudentView({ data, now = Date.now(), calendar = false, actions, manualActions, planLink }: { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode }) {
   data = { ...data, courses: linkedCourses(data.courses) };
+  const [tab, setTab] = useState(planLink ? 'preparation' : 'deadlines');
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
@@ -98,30 +101,51 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
   const courseEntries = (owner: StudentCourse) => entries.filter(item => entryBelongsTo(item, owner));
   const changed = useDeadlineChanges(new Map(courses.map(c => [courseKey(c),
     deadlineText(courseEntries(c)[0] ? entryDisplayDeadline(courseEntries(c)[0]!) : undefined)])));
-  const upcomingList = !!upcoming.length && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">締切の近い課題</h2>
-      <ul>{upcoming.slice(0, 3).map(item => {
-        const owner = data.courses.find(c => entryBelongsTo(item, c));
-        return <li key={entryId(item)}>{owner ? <button onClick={() => select(owner)} aria-controls="course-assignments">
-          <strong>{deadlineText(entryDeadline(item))}</strong> {entryTitle(item)}<span className="muted">{owner.name}</span>{item.kind === 'manual' && <small>{manualAuthor(item.row)}</small>}
-        </button> : <span>{deadlineText(entryDeadline(item))} {entryTitle(item)}{item.kind === 'manual' && <small className="manual-author"> {manualAuthor(item.row)}</small>}</span>}</li>;
-      })}</ul></section>;
+  const monday = new Date(new Date(now).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }) + 'T00:00:00Z');
+  monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
+  const weekStart = monday.toISOString().slice(0, 10);
+  const sunday = new Date(monday); sunday.setUTCDate(sunday.getUTCDate() + 6);
+  const weekEnd = sunday.toISOString().slice(0, 10);
+  const inWeek = (item: (typeof upcoming)[number]) => {
+    const deadline = entryDeadline(item);
+    const day = deadline?.kind === 'date' ? deadline.date : deadline?.kind === 'datetime'
+      ? new Date(deadline.dueAt).toLocaleDateString('sv-SE', { timeZone: deadline.timeZone }) : '';
+    return day >= weekStart && day <= weekEnd;
+  };
+  const taskRows = (items: typeof upcoming) => <ul className="td-tasklist">{items.map(item => {
+      const owner = data.courses.find(c => entryBelongsTo(item, c));
+      return <li key={entryId(item)}><TaskRow course={owner?.name ?? '手で入れた課題'} title={entryTitle(item)}
+        deadline={<ChangedDeadline value={deadlineText(entryDisplayDeadline(item))} />}
+        onSelect={owner ? () => select(owner) : undefined} />
+        {item.kind === 'manual' && <small className="manual-author">{manualAuthor(item.row)}</small>}</li>;
+    })}</ul>;
+  const upcomingList = !!upcoming.length && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">今週の締切</h2>
+    {taskRows(upcoming.filter(inWeek))}
+    {!!upcoming.filter(item => !inWeek(item)).length && <details className="other-deadlines"><summary>その他の締切</summary>{taskRows(upcoming.filter(item => !inWeek(item)))}</details>}
+    </section>;
   return <OperationMessages>
+    <div className="student-workspace">
     {planLink}
-    <div className="student-heading"><h1>時間割と課題</h1><p>LMSは、大学の授業支援システムです。準備は、課題に取り組む時間のことです。</p>
-      {changed.size > 0 && <p className="muted">朱色は、今変わった締切の目印です。しばらくすると元の色に戻ります。</p>}</div>
+    <div className="student-heading"><h1>時間割と課題</h1></div>
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
       const { stale, failed } = fetchStatus(state, now);
       const label = { 'ynu-lms': 'YNU LMS', kulms: 'KULMS', kulasis: 'KULASIS', 'demo-lms': '体験用LMS' }[state.system];
-      return stale || failed ? <p className="notice" key={state.system}>
+      return stale || failed ? <FetchState state="error" key={state.system} title={label} detail={<p className="notice">
         {label}：{stale ? `${new Date(last!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。LMSを開くと新しくなります。` :
-          '課題をすべて確認できていません。LMSを開いて確かめてください。'}</p> : null;
+          '課題をすべて確認できていません。LMSを開いて確かめてください。'}</p>} /> : null;
     })}
     {!data.assignments.length && !hasManual && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
-    {calendar ? <>{hasManual && upcomingList}<DemoCalendar courses={data.courses} assignments={data.assignments} fallback={hasManual ? undefined : upcomingList} now={now} /></> : upcomingList}
+    <div className="student-mobile-tabs"><Tabs label="学生の画面" value={tab} onChange={setTab}
+      items={[{ value: 'deadlines', label: '締切' }, { value: 'timetable', label: '時間割' }, { value: 'preparation', label: '準備' }]} /></div>
+    <div className="student-overview" data-tab={tab}>
+    <div className="student-deadlines">{upcomingList}
+      {calendar && <DemoCalendar courses={data.courses} assignments={data.assignments} now={now} />}
+    </div>
+    <section className="student-timetable" aria-label="時間割"><h2>時間割</h2>
     <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
-      <div><p className="scroll-hint">時間割は左右に動かせます。</p><div ref={timetable} className="timetable-scroll" tabIndex={0} role="region" aria-label="授業と次の締切"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
+      <div><ScrollFrame scrollRef={timetable} className="timetable-scroll" label="授業と次の締切"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
         <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d} data-weekday={d + 1}>{'月火水木金土日'[d]}</th>)}</tr></thead>
         <tbody>{Array.from({ length: periods }, (_, p) => <tr key={p}><th scope="row">{p + 1}限</th>
           {Array.from({ length: days }, (_, d) => <td key={d}>{courses.filter(c =>
@@ -129,14 +153,14 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
             const next = courseEntries(c)[0];
             return <button className={`course-cell${changed.has(courseKey(c)) ? ' changed' : ''}`} key={courseKey(c)} onClick={() => select(c)}
               aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
-              <strong>{c.name}</strong>{next && <><span>{deadlineText(entryDisplayDeadline(next))}</span><span>{entryTitle(next)}</span>{next.kind === 'manual' && <small>手で入れた課題</small>}
+              <strong>{c.name}</strong>{next && <><span><ChangedDeadline value={deadlineText(entryDisplayDeadline(next))} /></span><span>{entryTitle(next)}</span>{next.kind === 'manual' && <small>手で入れた課題</small>}
                 {next.kind === 'lms' && (next.row.reviewReasons.length > 0 || next.row.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.row.reviewReasons[0]?.kind === 'unreadable-deadline'
                   ? missingDeadlineText(next.row.latest.deadline) ?? '締切を確認できていません。' : next.row.reviewReasons[0] ? reviewReasonText(next.row.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
           })}{plans.filter(plan => (new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7) === d + 1 && plan.period === p + 1)
             .map(plan => <PlanCell key={plan.planId} plan={plan} assignments={data.assignments} selected={plan.planId === selectedPlanId}
               onSelect={() => { setSelected(null); setSelectedPlanId(plan.planId); }} />)}</td>)}</tr>)}</tbody>
-      </table></div>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
+      </table></ScrollFrame>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
         <button className="plain-button" key={courseKey(c)} onClick={() => select(c)} aria-controls="course-assignments">{c.name}</button>)}</section>}</div>
       {course && <aside ref={panel} tabIndex={-1} className="course-panel" id="course-assignments" aria-label={`${course.name}の課題`}>
         <div className="panel-heading"><h2>{course.name}</h2><button onClick={() => setSelected(null)}>閉じる</button></div>
@@ -157,10 +181,15 @@ export function StudentView({ data, now = Date.now(), calendar = false, actions,
         <PlanSummary plan={selectedPlan} assignments={data.assignments} /><span>{selectedPlan.period}限（日本時間）</span>
       </aside>}
     </div>
+    </section>
+    <section className="student-preparation" aria-label="準備"><h2>準備の予定</h2>
     {actions && <details className="preparation-add"><summary>準備の予定を入れる</summary>
       <PlanForm assignments={data.assignments} actions={actions} /></details>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own />
+    </section>
+    </div>
     <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own now={now} />
+    </div>
   </OperationMessages>;
 }
 export function StudentPage() {
@@ -182,8 +211,7 @@ export function StudentPage() {
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
           {client.auth.currentUser && <><NotificationSettingsPanel key={client.auth.currentUser.uid} user={client.auth.currentUser} />
-            <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a></>}</> : <p role="status">{state.status === 'error'
-          ? '課題を開けませんでした。接続を確かめて、画面を開き直してください。' : '課題を開いています…'}</p>}</>}
+            <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a></>}</> : state.status === 'error' ? <FetchState state="error" title="課題を開けませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を開いています…" lines={6} />}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;
 }

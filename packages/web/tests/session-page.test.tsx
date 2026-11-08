@@ -97,8 +97,11 @@ it('separates checking from planning and opens source details only inside the as
   expect(host.querySelector('#session-deadlines')?.parentElement?.textContent).toContain('数学のレポート');
   expect(host.querySelector('#session-changes')?.parentElement?.textContent).toContain('課題が出ました');
   expect(host.querySelector('#session-decisions')).toBeNull();
-  expect(host.querySelector('table')).toBeNull();
-  expect(host.querySelector('.session-task:not([open]) a')?.textContent).toContain('LMSで見る');
+  expect(host.querySelector('.td-table')).not.toBeNull();
+  expect(host.querySelector('.session-timetable')).toBeNull();
+  expect(host.querySelector('.td-detail')).toBeNull();
+  await click('数学のレポート');
+  expect(host.querySelector('.td-detail .session-task a')?.textContent).toContain('LMSで見る');
   expect(host.querySelector('.session-task summary')?.textContent).toContain('要確認');
   expect(host.textContent).not.toContain('共有を許可した学生の授業と課題を出しています。');
   await click('② 相談する');
@@ -134,6 +137,7 @@ it.each([false, true])('explains a literal missing LMS date and preserves the pr
   if (!known) row.officialDeadline = null;
   const before = JSON.stringify(row);
   await open(); await click('学生 student-a');
+  if (known) await click('数学のレポート');
   const summary = host.querySelector('.session-task summary')?.textContent;
   expect(summary).toContain('LMSに締切日時の記載がありません（表示「-」）');
   expect(summary).toContain('要確認');
@@ -157,7 +161,7 @@ it('removes all displayed student data on revocation and on logout', async () =>
 it('lets students read their own session and edit their session dates', async () => {
   holder.services!.students = async () => [];
   await open(); await click('自分の面談を見る');
-  expect(host.textContent).toContain('次の面談日時を決めると');
+  expect(host.textContent).toContain('次の面談日時を決める');
   expect(host.textContent).toContain('面談日時を変える');
 });
 

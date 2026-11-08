@@ -1,4 +1,4 @@
-import { Button } from '../../shared/ui/button';
+import { NextAction } from '../../shared/ui';
 import { performPlanAction, PlanActionError, type PlanActionResponse } from './api';
 import { useEffect, useRef, useState } from 'react';
 import { useOperationMessage } from '../../shared/ui/operation-messages';
@@ -34,7 +34,7 @@ export function NextSubmission({ plan, assignments, courses }: Pick<StudentData,
   return <section className="next-submission" aria-label="次は提出"><h2>次は提出</h2><h3>{courseName}：{task.latest.title}</h3>
     <p className="submission-deadline">締切 {task.officialDeadline ? formatDeadline(task.officialDeadline.deadline) : 'LMSで確かめてください'}</p>
     <LmsSourceLink item={task} courseName={courseName} label="LMSを開く" />
-    <p>提出済みかどうかは、次にLMSを開いたときに確かめます。提出済みと分かると「次は提出」から消えます。</p></section>;
+</section>;
 }
 type PlanLinkData = Pick<StudentData, 'assignments' | 'courses' | 'plans'>;
 export function PlanLinkAction({ user, data, link }: { user: User; data: PlanLinkData; link?: string }) {
@@ -86,14 +86,16 @@ function PlanConfirmation({ user, data, id, action, revision }: {
     } finally { inFlight.current = false; }
   }
   return <section className="notice plan-confirmation" aria-label="準備の予定の操作"><h2>準備の記録を確認</h2>
-    {plan ? <><h3>{course ? `${course.name}：` : ''}{task?.latest.title ?? plan.title}</h3>
-      <p>準備の日時：{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}（日本時間）</p>
-      <p role={message ? undefined : 'status'}>{state === 'idle' ? currentPlanMessage(plan) : `今の状態：${plan.status === 'cancelled' ? '予定を外した' : planProgress(plan) || 'まだ'}`}</p>
+    {plan ? <>{!canConfirm && <><h3>{course ? `${course.name}：` : ''}{task?.latest.title ?? plan.title}</h3>
+      <p>準備の日時：{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}（日本時間）</p></>}
+      <p role={message ? undefined : 'status'}>{state === 'idle' && plan.status !== 'active' ? currentPlanMessage(plan) : `今の状態：${plan.status === 'cancelled' ? '予定を外した' : planProgress(plan) || 'まだ'}`}</p>
       {stale && state === 'idle' && <p>このリンクが作られた後に予定が変わっています。変更していません。時間割で確かめてください。</p>}</> :
       <p role="status">本人の準備の予定を見つけられませんでした。本人のアカウントと時間割を確かめてください。</p>}
-    {canConfirm && <p>「{action === 'done' ? '終わった' : '後回し'}」を押すと記録します。LMSへの提出は別に行ってください。</p>}
-    {(canConfirm || state === 'busy' || state === 'retry') && <Button busy={state === 'busy'} busyLabel="確認中…" onClick={() => { void confirm(); }}>
-      {state === 'retry' ? 'もう一度試す' : action === 'done' ? '終わった' : '後回し'}</Button>}
+    {(plan && (canConfirm || state === 'busy' || state === 'retry')) && <NextAction course={course?.name ?? '準備'} title={task?.latest.title ?? plan.title}
+      step={`${plan.date.replaceAll('-', '/')} ${plan.startsAt.slice(11, 16)}〜${plan.endsAt.slice(11, 16)}（日本時間）`}
+      deadline={<span className="td-deadline">締切 {task?.officialDeadline ? formatDeadline(task.officialDeadline.deadline) : 'LMSで確かめてください'}</span>}
+      actionLabel={state === 'retry' ? 'もう一度試す' : action === 'done' ? '終わった' : '後回し'}
+      busy={state === 'busy'} busyLabel="確認中…" onStart={() => { void confirm(); }} />}
     {message && <p role="status">{message}</p>}
     <NextSubmission plan={plan} assignments={data.assignments} courses={data.courses} />
     <a href="/student">時間割を見る</a></section>;

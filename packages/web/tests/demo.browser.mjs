@@ -127,7 +127,7 @@ try {
   assert.equal(oldDay, jstDay(oldDeadline));
   const today = jstDay(Date.now());
   assert.equal(Date.parse(`${oldDay}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`), 3 * 86400000);
-  assert.equal(await calendar.evaluate(node => node.getBoundingClientRect().bottom < globalThis.document.querySelector('.timetable').getBoundingClientRect().top), true);
+  assert.equal(await calendar.evaluate(node => node.getBoundingClientRect().right <= globalThis.document.querySelector('.student-timetable').getBoundingClientRect().left), true);
   const initialTarget = (await calendarTarget()).data();
   assert.equal(initialTarget.mode, 'mock');
   assert.equal(initialTarget.executor, 'demo');

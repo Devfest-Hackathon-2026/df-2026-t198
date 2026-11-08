@@ -14,13 +14,13 @@ describe('学生が締切を確かめる画面', () => {
     const html = renderToStaticMarkup(<StudentView data={data} />);
     expect(html).not.toContain('架空の線形代数');
     expect(html).not.toContain('終了したレポート');
-    expect(html).not.toContain('締切の近い課題');
+    expect(html).not.toContain('今週の締切');
   });
   it('前の学期でも残っている締切は一覧に出し、時間割には出さない', () => {
     const data = studentFixture();
     data.courses[0]!.currentTerm = false;
     const html = renderToStaticMarkup(<StudentView data={data} />);
-    expect(html).toContain('締切の近い課題');
+    expect(html).toContain('今週の締切');
     expect(html).toContain('レポートA');
     expect(html).toContain('レポートB');
     expect(html.match(/架空の線形代数/g)).toHaveLength(2); // 締切の一覧だけ

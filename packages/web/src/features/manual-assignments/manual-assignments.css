@@ -11,3 +11,8 @@
 @media (max-width: 600px) {
   .manual-assignment-form label { width: 100%; }
 }
+
+.manual-assignment-form { border-radius: var(--radius-md); background: var(--sheet); gap: var(--space-4); }
+.manual-assignment-form .td-field { flex: 1 1 12rem; }
+.manual-assignment { background: var(--sheet); border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); padding: var(--space-4); }
+@media (max-width: 600px) { .manual-assignment-form .td-field { flex-basis: 100%; } }

@@ -1,4 +1,5 @@
-import { Button } from '../../shared/ui/button';
+import { Button, Skeleton } from '../../shared/ui';
+import './settings.css';
 import { serverFetch } from '../../shared/network';
 import { useEffect, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
@@ -64,14 +65,14 @@ export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | '
   return <details className="notification-settings">
     <summary>メール通知の設定</summary>
     <section aria-label="メール通知の設定">
-      <p>有効にすると、Googleでログインしている本人に、朝7:30のまとめと準備を始める30分前のメールを送ります。</p>
+      <dl className="notification-schedule"><dt>朝のまとめ</dt><dd>07:30</dd><dt>準備の通知</dt><dd>開始30分前</dd><dt>宛先</dt><dd>ログイン中の本人</dd></dl>
+      {!view && busy && <Skeleton label="通知の状態を開いています…" />}
       {view && <>
-        <p>クラウドからの通知：{view.settings.enabled ? '有効' : '停止中'}</p>
+        <p>メール通知：{view.settings.enabled ? '有効' : '停止中'}</p>
         {availabilityText[view.availability] && <p className="notice">{availabilityText[view.availability]}</p>}
         <Button className="plain-button" busy={busy} busyLabel="保存中…" disabled={busy || (!view.settings.enabled && view.availability !== 'ready')}
           onClick={() => void request({ enabled: !view.settings.enabled, version: view.settings.version })}>
           {view.settings.enabled ? '通知を停止する' : '通知を有効にする'}</Button>
-        <p className="muted">設定の保存だけではメールは送られません。停止する前に送信を始めたメールは届くことがあります。</p>
         <p>{view.status ? statusText[view.status.state] : 'まだ送信の記録はありません。'}</p>
         {view.status?.errorCode === 'authorization-required' && <p>送信元の接続をやり直す必要があります。運営が確認します。</p>}
         {view.status?.lastAcceptedAt && <p>最後に送信サービスが受け付けた日時：{dateText(view.status.lastAcceptedAt)}（日本時間）</p>}

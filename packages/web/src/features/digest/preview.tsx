@@ -1,4 +1,5 @@
-import { Button } from '../../shared/ui/button';
+import { Button, Skeleton } from '../../shared/ui';
+import { TodokuLogo } from '../../shared/ui/todoku-logo';
 import { serverFetch } from '../../shared/network';
 import { useEffect, useState, type MouseEvent } from 'react';
 import type { User } from 'firebase/auth';
@@ -11,6 +12,7 @@ import type { StudentData } from '../../shared/assignments/types';
 import { useOperationMessage } from '../../shared/ui/operation-messages';
 interface Preview { subject: string; html: string; empty: boolean }
 export function DigestPreview({ user }: { user: User }) {
+  const [opened, setOpened] = useState(false);
   const [digest, setDigest] = useState<Preview | null>(null);
   const [message, setMessage] = useOperationMessage(); const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
@@ -72,10 +74,16 @@ export function DigestPreview({ user }: { user: User }) {
   }
 
   return <section className="digest-preview" aria-label="今日やることのメール"><h2>今日やることのメール</h2>
-    <p>今日の準備と次に提出する課題、締切の近い課題を知らせるメールの見本です。ここからメールは送りません。</p>
+    <div className="digest-inbox-heading"><TodokuLogo /><span>受信箱（見本）</span></div>
     <Button busy={busy} busyLabel="準備中…" onClick={() => { void prepare(); }}>今日の準備の見本を用意する</Button>
-    {digest && !digest.empty && <><h3>{digest.subject}</h3>
-      <div aria-busy={busy} onClick={click} dangerouslySetInnerHTML={{ __html: digest.html }} /></>}
+    {digest && !digest.empty && <>
+      {!opened ? <button className="digest-envelope" onClick={() => setOpened(true)} aria-label={`${digest.subject}を開く`}>
+        <span>ToDoku</span><strong>{digest.subject}</strong><time>07:30</time>
+      </button> : <article className="digest-open-mail"><Button variant="quiet" onClick={() => setOpened(false)}>受信箱に戻る</Button>
+        <header><h3>{digest.subject}</h3><span>ToDoku · 今日 07:30（見本）</span></header>
+        <div aria-busy={busy} onClick={click} dangerouslySetInnerHTML={{ __html: digest.html }} /></article>}
+    </>}
+    {!digest && !message && <Skeleton label="メールの見本を開いています…" />}
     {actionLink && <PlanLinkAction user={user} data={data} link={actionLink} />}
     {digest?.empty && <p>今日の準備や次に提出する課題、近い締切がない日は、メールを送りません。</p>}
     {message && <p role="status">{message}</p>}
