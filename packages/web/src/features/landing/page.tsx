@@ -95,13 +95,13 @@ export function LandingPage() {
       </section>
 
       <section className="chapter try-section" id="try" aria-labelledby="try-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">03</span><h2 id="try-title">体験する</h2></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">03</span><h2 id="try-title">体験</h2></div></Reveal>
         <Reveal><DemoEntries /></Reveal>
         <a className="next-chapter" href="#start">使い始める <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter start-section" id="start" aria-labelledby="start-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">04</span><h2 id="start-title">使い始める</h2></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">04</span><h2 id="start-title">導入</h2></div></Reveal>
         <Reveal><ol className="setup-steps">
           <li><span className="step-number">01</span><h3>Chrome 拡張</h3><a className="pill" href={`${repository}#手元で動かす`}>開発版の導入手順を開く <span aria-hidden="true">↗</span></a></li>
           <li><span className="step-number">02</span><h3>Google ログイン</h3><a className="pill" href="/student">学生画面を開く <span aria-hidden="true">↗</span></a></li>
