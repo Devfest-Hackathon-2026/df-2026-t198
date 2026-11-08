@@ -71,10 +71,12 @@ try {
   // The server selects and reserves the separate public budget; no real model is used.
   const day = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
   await db.doc(`publicAnnouncementUsage/${day}`).set({ yen: 3000, calls: 12 });
+  await student.locator('.demo-more > summary').click();
   await student.getByRole('button', { name: 'お知らせを出す', exact: true }).first().click();
   await student.getByRole('status').filter({ hasText: 'お知らせを出しました' }).waitFor();
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
-  await student.getByRole('status').filter({ hasText: '今日の共用の体験では、お知らせの読み取りを使い切りました' }).waitFor();
+  await student.getByRole('status').filter({ hasText: '共用の体験で、今日使えるお知らせの読み取りの回数を使い切りました' }).waitFor();
+  student.once('dialog', dialog => dialog.accept());
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
   assert.deepEqual((await db.doc(`publicAnnouncementUsage/${day}`).get()).data(), { yen: 3000, calls: 12 });
