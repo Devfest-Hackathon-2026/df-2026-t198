@@ -11,24 +11,41 @@ html.landing-scroll { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
 .landing-header .todoku-logo { font-size: 30px; }
 .landing-header nav { display: flex; gap: 30px; padding: 14px 30px; background: var(--white); border-radius: 100px; font-size: 14px; font-weight: 700; }
 .landing-home { display: inline-flex; }
-.landing .chapter { position: relative; box-sizing: border-box; min-height: 100svh; padding: 90px 8vw 70px; scroll-snap-align: start; }
-.landing .hero { min-height: 100svh; display: flex; align-items: center; overflow: clip; padding-top: 180px; padding-bottom: 150px; }
-.landing .hero-copy { position: relative; z-index: 1; width: 100%; }
-.landing .hero h1 { font-size: clamp(30px, 3.8vw, 60px); line-height: 1.65; letter-spacing: -.04em; }
+.landing .chapter { position: relative; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; min-height: 100svh; padding: 56px 8vw 88px; scroll-snap-align: start; }
+.landing .hero { display: grid; grid-template-columns: 47% 53%; align-items: center; gap: 16px; overflow: clip; padding: 160px 6vw 100px; }
+.landing .hero-copy { position: relative; z-index: 1; }
+.landing .hero h1 { font-size: clamp(30px, 3.4vw, 48px); line-height: 1.55; letter-spacing: -.04em; }
 .landing .hero h1 span { display: block; }
-.landing .hero-mobile-break { display: none; }
-.landing .hero-mark { position: absolute; right: 12%; top: 8%; transform: rotate(-12deg); opacity: .13; pointer-events: none; }
-.landing .hero-mark .todoku-logo > span { display: none; }
-.landing .hero-mark svg { width: clamp(300px, 36vw, 560px); height: auto; color: var(--accent); }
-.landing .hero-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 36px; }
+.landing .hero-lead { max-width: 28em; margin-top: 24px; font-size: 16px; line-height: 1.9; }
+.landing .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 28px; }
+.landing .hero-visual { position: relative; min-width: 0; height: 490px; }
+.landing .visual-canvas { position: relative; width: 640px; height: 490px; }
+.landing .grid { position: absolute; top: 20px; left: 20px; width: 640px; display: grid; grid-template-columns: 36px repeat(5, minmax(0, 1fr)); border-top: 1.5px solid var(--ink); }
+.landing .gh { height: 32px; display: grid; place-items: center; font: 12px var(--mono); color: var(--muted); border-bottom: 1px solid var(--line); }
+.landing .gp { height: 90px; padding-top: 12px; box-sizing: border-box; text-align: center; font: 12px var(--mono); color: var(--muted); border-bottom: 1px solid var(--line); }
+.landing .gc { height: 90px; padding: 5px; box-sizing: border-box; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); }
+.landing .cell { height: 100%; box-sizing: border-box; padding: 8px; background: var(--surface); display: flex; flex-direction: column; }
+.landing .cn { font-size: 12px; font-weight: 700; line-height: 1.4; }
+.landing .nx { margin-top: auto; font: 11px var(--mono); color: var(--muted); }
+.landing .cell.hot { background: var(--accent); color: var(--white); }
+.landing .cell.hot .nx { color: inherit; }
+.landing .wire { position: absolute; left: 112px; top: 232px; width: 2px; height: 102px; background: var(--accent); }
+.landing .mail { position: absolute; left: 0; top: 334px; width: 400px; box-sizing: border-box; padding: 16px 20px; background: var(--white); border: 1px solid var(--ink); }
+.landing .mh { display: flex; justify-content: space-between; color: var(--muted); font: 11px var(--mono); }
+.landing .ms { margin-top: 8px; font-size: 18px; font-weight: 700; }
+.landing .mi { margin-top: 6px; font-size: 13px; }
+.landing .mb { display: flex; gap: 8px; margin-top: 12px; }
+.landing .mb span { border: 1px solid var(--ink); padding: 4px 10px; font-size: 12px; }
+.landing .mb .on { background: var(--ink); color: var(--white); }
 .landing .pill { display: inline-flex; align-items: center; justify-content: space-between; gap: 28px; min-height: var(--target); padding: 12px 26px; box-sizing: border-box; border: 1px solid var(--ink); border-radius: 100px; font-size: 15px; font-weight: 700; background: var(--paper); }
 .landing .pill.primary { background: var(--ink); color: var(--paper); }
 .landing .pill span { font-size: 21px; }
-.landing .next-chapter { display: flex; align-items: center; gap: 32px; width: fit-content; margin: 42px 0 0 auto; font-size: 14px; }
+.landing .next-chapter { display: flex; align-items: center; gap: 32px; width: fit-content; position: absolute; bottom: 24px; right: 8vw; margin: 0; font-size: 14px; }
 .landing .next-chapter span { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid currentColor; border-radius: 50%; font-size: 20px; }
 .landing .hero > .next-chapter { position: absolute; bottom: 34px; right: 8vw; }
-.landing .section-heading { margin-bottom: 46px; }
+.landing .section-heading { margin-bottom: 28px; }
 .landing .section-heading p { max-width: 30em; margin-top: 22px; font-size: 16px; line-height: 2; }
+.landing .chapter-number { display: block; margin-bottom: 8px; font: 500 13px/1.5 var(--mono); }
 .landing .eyebrow { display: block; margin-bottom: 12px; color: var(--muted); font: 600 13px/1.5 var(--mono); letter-spacing: .04em; }
 .landing .how-section { background: var(--accent); color: var(--white); }
 .landing .how-section .eyebrow { color: inherit; }
@@ -36,15 +53,16 @@ html.landing-scroll { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
 .landing .try-section { background: var(--paper); }
 .landing .start-section { background: var(--ink); color: var(--paper); }
 .landing .start-section .eyebrow { color: inherit; }
-.landing .privacy-section { min-height: 80svh; background: var(--accent-soft); }
+.landing .privacy-section { background: var(--accent-soft); }
 .landing .product-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; align-items: start; }
-.landing .product-grid > :nth-child(2) { margin-top: 90px; }
+.landing .product-grid > * { min-width: 0; }
 .landing .product-label { display: flex; gap: 18px; align-items: center; }
 .landing .step-number { font: 500 20px/1.5 var(--mono); }
-.landing .product-shot { margin-top: 22px; }
-.landing .shot-trigger { display: block; width: 100%; padding: 0; border: 0; color: inherit; background: transparent; text-align: left; font: inherit; cursor: zoom-in; }
-.landing .shot { display: block; width: 100%; height: auto; border: 1px solid var(--line-strong); border-radius: var(--radius-md); box-sizing: border-box; background: var(--white); }
-.landing .shot-caption { display: flex; justify-content: space-between; margin-top: 14px; font-size: 13px; }
+.landing .product-shot { margin-top: 16px; }
+.landing .shot-trigger { position: relative; display: block; width: 100%; padding: 0; border: 0; color: inherit; background: transparent; text-align: left; font: inherit; cursor: zoom-in; }
+.landing .shot { display: block; width: 100%; height: min(34svh, 300px); object-fit: contain; object-position: top; border: 1px solid var(--line-strong); border-radius: var(--radius-md); box-sizing: border-box; background: var(--white); }
+.landing .product-shot figcaption { margin-top: 12px; font-size: 14px; line-height: 1.8; }
+.landing .shot-zoom { position: absolute; right: 8px; bottom: 8px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--paper); color: var(--ink); }
 .landing .shot-dialog { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 30px; box-sizing: border-box; border: 0; background: transparent; color: var(--ink); }
 .landing .shot-dialog[open] { display: grid; place-items: center; }
 .landing .shot-dialog::backdrop { background: var(--ink); opacity: .88; }
@@ -53,20 +71,27 @@ html.landing-scroll { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
 .landing .close-shot { min-height: var(--target); padding: 8px 20px; border: 1px solid var(--ink); border-radius: 100px; background: var(--paper); color: var(--ink); font: inherit; cursor: pointer; }
 .landing .shot-dialog img { display: block; width: 100%; height: auto; }
 html.landing-scroll:has(dialog[open]) { overflow: hidden; }
-.landing .entry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin-top: 52px; }
-.landing .entry-panel { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; padding: 32px; border-top: 1px solid var(--ink); background: var(--white); }
-.landing .entry-panel .eyebrow { margin: 0; }
-.landing .entry-panel p { font-size: 15px; line-height: 2; max-width: 30em; }
-.landing .entry-kind { color: var(--muted); font-size: 14px; }
-.landing .text-link { min-height: var(--target); display: inline-flex; align-items: center; gap: 24px; font-size: 14px; }
-.landing .entry-panel .demo-login { border: 0; padding: 0; margin: 0; background: transparent; }
-.landing .entry-panel .demo-login button { margin: 16px 8px 0 0; border-radius: 100px; }
-.landing .entry-panel:has(.demo-login) .shared-fallback { display: none; }
-.landing .setup-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px; list-style: none; padding: 0; margin: 80px 0; }
+.landing .trial-entry { padding: 56px; background: var(--white); border-radius: var(--radius-md); }
+.landing .trial-launch { display: flex; align-items: center; gap: 32px; margin-top: 0; }
+.landing .trial-launch h3 { font-size: 32px; }
+.landing .trial-entry .demo-login { margin: 0; border: 0; padding: 0; background: transparent; }
+.landing .trial-entry .demo-login button { min-height: 64px; padding: 14px 32px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 100px; font: 700 17px var(--jp); }
+/* One entry opens the shared student/supporter experience in /demo-lms. */
+.landing .trial-entry .demo-login button:nth-of-type(2) { display: none; }
+.landing .trial-entry:has(.demo-login) .shared-fallback { display: none; }
+.landing .trial-entry .shared-fallback { min-height: 64px; font-size: 17px; }
+.landing .judge-guide { margin-top: 24px; font-size: 13px; color: var(--muted); }
+.landing .judge-link { text-decoration: underline; }
+.landing .setup-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; list-style: none; padding: 0; margin: 0 0 36px; }
 .landing .setup-steps li { display: grid; align-content: start; justify-items: start; gap: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
 .landing .setup-steps .pill { font-size: 13px; padding: 12px 18px; gap: 12px; color: var(--ink); }
-.landing .privacy-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; list-style: none; padding: 0; margin: 60px 0; }
-.landing .privacy-list li { padding-top: 22px; border-top: 1px solid var(--ink); font-size: 18px; }
+.landing .lms-support { display: flex; align-items: baseline; gap: 36px; padding-top: 24px; border-top: 1px solid var(--line-strong); }
+.landing .lms-support h3 { font-size: 16px; }
+.landing .supported-lms { list-style: none; padding: 0; margin: 0; font-size: 20px; }
+.landing .privacy-list { display: grid; gap: 0; list-style: none; padding: 0; margin: 0 0 32px; counter-reset: privacy; }
+.landing .privacy-list li { display: flex; align-items: baseline; gap: 24px; padding: 22px 0; border-top: 1px solid var(--ink); font-size: 19px; }
+.landing .privacy-list li::before { counter-increment: privacy; content: "0" counter(privacy); flex: none; font: 13px var(--mono); color: var(--accent-text); }
+.landing .privacy-section > .pill { align-self: flex-start; }
 .landing-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 40px 8vw; font: 12px/1.8 var(--mono); }
 .landing-footer .todoku-logo { font-size: 28px; }
 .landing .chapter-nav { position: fixed; z-index: 5; right: 20px; top: 50%; display: grid; gap: 8px; transform: translateY(-50%); }
@@ -75,48 +100,44 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 .landing .chapter-nav a[aria-current]::after { background: var(--ink); }
 .landing .chapter-nav a span { display: none; position: absolute; right: 28px; width: max-content; padding: 4px 12px; background: var(--paper); font-size: 12px; }
 .landing .chapter-nav a:is(:hover, :focus-visible) span { display: block; }
-/* Keep the existing interactive example until issue 225 supplies the shared demo. */
-.landing .local-demo { padding: 28px; border: 1px solid var(--line-strong); background: var(--sheet); color: var(--ink); border-radius: var(--radius-md); }
-.landing .local-demo .lab { font: 13px var(--mono); color: var(--muted); }
-.landing .mini { display: flex; gap: 24px; margin-top: 24px; }
-.landing .mc { min-width: 150px; padding: 18px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; }
-.landing .mc.hot { background: var(--accent); color: var(--white); }
-.landing .mc .cn { font-size: 14px; font-weight: 700; }
-.landing .mc :is(.old, .new) { font: 13px var(--mono); }
-.landing .mc .new { margin-top: auto; }
-.landing .mm { padding: 18px; border: 1px solid var(--line); font-size: 14px; }
-.landing .mm .mono { font: 12px var(--mono); }
-.landing .local-status { min-height: 26px; margin-top: 12px; font-size: 14px; }
-.landing .demo-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
-.landing .demo-actions button { padding: 10px 20px; min-height: var(--target); border: 1px solid var(--ink); border-radius: 100px; background: var(--sheet); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
-.landing .demo-actions button.on { background: var(--ink); color: var(--paper); }
-.landing .demo-actions button:disabled { opacity: .5; cursor: default; }
 @media (max-width: 700px) {
   .landing-header { padding: 24px; flex-wrap: wrap; }
   .landing-header .todoku-logo { font-size: 26px; }
   .landing-header nav { padding: 12px 18px; gap: 18px; flex-wrap: wrap; font-size: 12px; }
-  .landing .chapter { padding: 64px 24px 40px; }
-  .landing .hero { min-height: 100svh; padding: 210px 24px 130px; align-items: flex-start; }
-  .landing .hero-mobile-break { display: initial; }
-  .landing .hero h1 { font-size: clamp(25px, 6.8vw, 42px); line-height: 1.8; letter-spacing: -.04em; }
-  .landing .hero-mark { top: 200px; right: -40px; }
-  .landing .hero-mark svg { width: 290px; }
-  .landing .hero-actions { flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 30px; }
-  .landing .hero > .next-chapter { right: 24px; }
+  .landing .chapter { padding: 40px 24px 84px; }
+  .landing h2 { font-size: 30px; }
+  .landing h3 { font-size: 18px; }
+  .landing .next-chapter { right: 24px; bottom: 18px; }
+  .landing .product-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .landing .product-shot { margin-top: 10px; }
+  .landing .shot { height: 20svh; }
+  .landing .product-shot figcaption { margin-top: 8px; font-size: 13px; }
+  .landing .hero { display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 24px; padding: 130px 24px 80px; }
+  .landing .hero h1 { font-size: clamp(25px, 7.2vw, 38px); line-height: 1.5; letter-spacing: -.04em; }
+  .landing .hero-lead { margin-top: 14px; font-size: 14px; line-height: 1.8; }
+  .landing .hero-actions { gap: 12px; margin-top: 18px; }
+  .landing .hero-actions .pill { padding: 10px 16px; gap: 12px; font-size: 13px; }
+  .landing .hero-actions .text-link { font-size: 12px; gap: 8px; }
+  .landing .hero-visual { flex: none; height: 260px; }
+  .landing .visual-canvas { transform: scale(.53); transform-origin: top left; }
+  .landing .hero > .next-chapter { right: 24px; bottom: 18px; }
   .landing .chapter-nav { right: 2px; gap: 6px; }
   .landing .chapter-nav a { width: 18px; }
-  .landing .section-heading { margin-bottom: 30px; }
-  .landing .product-grid, .landing .entry-grid, .landing .setup-steps, .landing .privacy-list { grid-template-columns: minmax(0, 1fr); gap: 36px; }
-  .landing .product-grid > :nth-child(2) { margin-top: 12px; }
-  .landing .entry-panel { padding: 24px; }
+  .landing .section-heading { margin-bottom: 22px; }
+  .landing .setup-steps, .landing .privacy-list { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+
+  .landing .trial-entry { padding: 32px 24px; }
+  .landing .trial-launch h3 { font-size: 24px; }
+  .landing .trial-launch { flex-direction: column; align-items: stretch; gap: 14px; margin-top: 0; }
+  .landing .trial-entry .demo-login button { width: 100%; padding-inline: 20px; }
+  .landing .judge-guide { margin-top: 22px; line-height: 1.8; }
   .landing .shot-dialog { padding: 16px; }
-  .landing .setup-steps, .landing .privacy-list { margin: 40px 0; }
-  .landing .privacy-list li { font-size: 16px; }
-  .landing .local-demo { padding: 18px; }
-  .landing .mini { gap: 10px; }
-  .landing .mc { min-width: 0; flex: 1; padding: 12px; }
-  .landing .mm { flex: 1; padding: 12px; min-width: 0; }
-  .landing .demo-actions button { width: 100%; }
+  .landing .setup-steps { margin: 0 0 28px; gap: 28px; }
+  .landing .setup-steps li { gap: 12px; padding-top: 16px; }
+  .landing .lms-support { flex-direction: column; gap: 12px; }
+  .landing .supported-lms { font-size: 18px; }
+  .landing .privacy-list { margin: 0 0 28px; gap: 0; }
+  .landing .privacy-list li { font-size: 15px; gap: 16px; padding: 20px 0; }
   .landing-footer { flex-wrap: wrap; padding: 32px 24px; }
 }
 @media (prefers-reduced-motion: reduce) { html.landing-scroll { scroll-snap-type: none; scroll-behavior: auto; } }

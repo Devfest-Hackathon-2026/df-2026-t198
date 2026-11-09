@@ -1,0 +1,63 @@
+.landing .mechanism { position: relative; }
+.landing .flow-source { display: grid; grid-template-columns: .85fr 44px 1.3fr; align-items: center; }
+.landing .flow-label { font: 12px/1.5 var(--mono); }
+.landing .flow-teacher { padding: 24px; border: 1px solid currentColor; border-radius: var(--radius-md); }
+.landing .flow-teacher h3 { margin: 8px 0; }
+.landing .flow-notice { min-height: 3.6em; font-size: 15px; }
+.landing .flow-teacher.is-issued { background: var(--paper); color: var(--ink); }
+.landing .flow-arrow { text-align: center; font-size: 26px; }
+.landing .flow-lms { background: var(--sheet); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius-md); overflow: hidden; }
+.landing .flow-lms-header { display: flex; justify-content: space-between; gap: 12px; padding: 8px 16px; background: var(--accent); color: var(--on-ink); font-size: 13px; }
+.landing .flow-lms-body { display: grid; gap: 6px; padding: 12px 16px; font-size: 14px; }
+.landing .flow-lms-notice { padding-bottom: 6px; border-bottom: 1px solid var(--rule); font-size: 12px; }
+.landing .flow-open { padding: 4px 10px; background: var(--done-soft); font-size: 12px; }
+.landing .flow-open.is-open { background: var(--accent-soft); color: var(--accent); }
+.landing .flow-deadline { display: flex; flex-wrap: wrap; gap: 2px 8px; font: 12px/1.6 var(--mono); }
+.landing .flow-deadline s { color: var(--ink-muted); }
+.landing .flow-deadline s + strong { color: var(--change-text); }
+.landing .flow-bridge { display: flex; align-items: center; gap: 16px; padding: 14px 0; font-size: 13px; }
+.landing .flow-bridge > span:first-child { font-size: 24px; }
+.landing .flow-status { margin-left: auto; }
+.landing .flow-destinations { display: grid; grid-template-columns: 1fr 1fr .9fr; gap: 16px; }
+.landing :is(.flow-schedule, .flow-supporter) { min-width: 0; background: var(--paper); color: var(--ink); border-radius: var(--radius-md); padding: 14px; }
+.landing .flow-destinations h3 { font-size: 16px; margin-bottom: 12px; }
+.landing .flow-days { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font: 11px/1.6 var(--mono); }
+.landing .flow-days span { padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.landing .flow-track { position: relative; padding-top: 8px; height: 92px; }
+.landing .flow-event { box-sizing: border-box; width: calc(50% - 4px); height: 84px; padding: 8px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: 11px; line-height: 1.5; transition: transform 1200ms ease-in-out; }
+.landing .flow-event > span:first-child { display: block; margin-bottom: 4px; }
+.landing .is-moved .flow-event { transform: translateX(calc(100% + 8px)); }
+.landing .flow-event .flow-deadline { font-size: 10px; }
+.landing .flow-supporter { display: flex; flex-direction: column; gap: 8px; border: 2px solid transparent; font-size: 12px; }
+.landing .flow-supporter h3 { margin: 0; }
+.landing .flow-supporter.is-updated { border-color: var(--change-text); }
+.landing .flow-replay { display: block; margin: 12px 0 0 auto; min-height: var(--target); padding: 4px 8px; border: 0; background: transparent; color: inherit; font: 13px var(--jp); text-decoration: underline; cursor: pointer; }
+.landing .flow-replay:disabled { opacity: .55; cursor: default; }
+.landing .flow-replay[hidden] { display: none; }
+@media (max-width: 700px) {
+  .landing .flow-source { grid-template-columns: 1fr; gap: 8px; }
+  .landing .flow-teacher { padding: 10px 12px; }
+  .landing .flow-teacher h3 { display: inline; margin: 0 0 0 12px; font-size: 14px; }
+  .landing .flow-notice { min-height: 1.8em; font-size: 12px; }
+  .landing .flow-arrow { display: none; }
+  .landing .flow-lms-header { padding: 6px 12px; font-size: 11px; }
+  .landing .flow-lms-body { gap: 4px; padding: 8px 12px; font-size: 12px; }
+  .landing .flow-lms-body .flow-label { display: none; }
+  .landing .flow-lms-notice, .landing .flow-open { font-size: 11px; }
+  .landing .flow-bridge { flex-wrap: wrap; gap: 4px 12px; padding: 8px 0; font-size: 11px; }
+  .landing .flow-status { flex-basis: 100%; margin: 0; min-height: 1.8em; }
+  .landing .flow-destinations { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .landing .flow-schedule { padding: 10px 8px; }
+  .landing .flow-destinations h3 { font-size: 12px; margin-bottom: 8px; }
+  .landing .flow-days { gap: 4px; font-size: 9px; }
+  .landing .flow-event { width: calc(50% - 2px); height: 108px; padding: 4px; font-size: 10px; }
+  .landing .flow-event .flow-deadline { font-size: 9px; }
+  .landing .flow-track { height: 108px; }
+  .landing .is-moved .flow-event { transform: translateX(calc(100% + 4px)); }
+  .landing .flow-supporter { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px 10px; font-size: 10px; }
+  .landing .flow-supporter h3 { margin: 0; }
+  .landing .flow-replay { margin-top: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing .flow-event { transition: none; }
+}

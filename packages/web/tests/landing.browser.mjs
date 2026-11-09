@@ -5,7 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { log } from 'node:console';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const base = 'http://127.0.0.1:5182';
+const base = process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5182';
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i224-evidence';
 await mkdir(evidence, { recursive: true });
 const browser = await chromium.launch({ headless: true });
@@ -13,15 +13,11 @@ const page = await browser.newPage();
 const errors = [];
 page.on('pageerror', () => errors.push('browser-error'));
 page.setDefaultTimeout(15000);
-const storage = () => page.evaluate(async () => ({
-  local: { ...globalThis.localStorage }, session: { ...globalThis.sessionStorage },
-  databases: (await globalThis.indexedDB.databases()).map(({ name, version }) => ({ name, version })),
-}));
 const noOverflow = async () => assert.equal(await page.evaluate(() =>
   globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
 try {
   for (const width of [1280, 390]) {
-    await page.setViewportSize({ width, height: 900 });
+    await page.setViewportSize({ width, height: width === 1280 ? 800 : 844 });
     await page.goto(base);
     await page.getByRole('heading', { level: 1 }).waitFor();
     await page.evaluate(() => globalThis.document.fonts.ready);
@@ -30,24 +26,21 @@ try {
     await page.locator('.td-splash').waitFor({ state: 'hidden' });
     await page.getByText('支援担当が見られるのは、共有を許可した学生の情報だけです', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: '学生として試す', exact: true }).count(), 0);
-    await page.getByText('審査員の方', { exact: true }).waitFor();
+    await page.getByRole('link', { name: '審査員の方', exact: true }).waitFor();
     assert.equal(await page.locator('main > section.chapter').count(), 6);
-    assert.equal(await page.locator('.hero h1 span').count(), 2);
+    assert.equal(await page.locator('.hero h1 span').count(), 3);
     if (width === 1280) {
       const title = await page.locator('.hero h1').evaluate(el => ({ height: el.getBoundingClientRect().height, line: parseFloat(globalThis.getComputedStyle(el).lineHeight) }));
-      assert(Math.abs(title.height - title.line * 2) < 2, 'approved sentence occupies two desktop lines');
+      assert(Math.abs(title.height - title.line * 3) < 2, 'approved sentence occupies three desktop lines from the restored hero');
     }
+    assert.equal(await page.locator('html').evaluate(el => globalThis.getComputedStyle(el).scrollSnapType), 'y mandatory');
+    assert.deepEqual(await page.locator('.chapter').evaluateAll(nodes => nodes.map(node => globalThis.getComputedStyle(node).scrollSnapAlign)), Array(6).fill('start'));
     await noOverflow();
     for (const reveal of await page.locator('.td-reveal').all()) {
       await reveal.scrollIntoViewIfNeeded();
       await page.waitForFunction(el => globalThis.getComputedStyle(el).opacity === '1', await reveal.elementHandle());
       assert.equal(await reveal.evaluate(el => globalThis.getComputedStyle(el).opacity), '1');
     }
-    const panels = page.locator('.entry-panel');
-    const left = await panels.nth(0).boundingBox(); const right = await panels.nth(1).boundingBox();
-    assert(Math.abs(left.width - right.width) < 1, 'judge/shared entries have the same width');
-    if (width === 1280) assert(Math.abs(left.height - right.height) < 1, 'desktop entries have the same height');
-    else assert(right.y >= left.y + left.height, 'mobile entries retain reading order');
     await page.evaluate(() => globalThis.scrollTo(0, 0));
     await page.waitForTimeout(600);
     await page.waitForFunction(() => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === '#home');
@@ -74,52 +67,10 @@ try {
     await page.getByRole('link', { name: '体験版を開く', exact: true }).click();
     assert.equal(new URL(page.url()).hash, '#try');
     await page.waitForFunction(() => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === '#try');
-    const demo = page.getByRole('region', { name: '動く見本', exact: true });
-    const extend = demo.getByRole('button', { name: '① 先生が締切を延ばす', exact: true });
-    const open = demo.getByRole('button', { name: '② 学生が LMS を開く', exact: true });
-    const reset = demo.getByRole('button', { name: '戻す', exact: true });
-    const initialStorage = await storage();
-    const requests = [];
-    const record = request => requests.push(request.method());
-    page.on('request', record);
-    async function initial() {
-      assert.equal(await demo.locator('.hot').count(), 0);
-      assert.equal(await demo.locator('s').count(), 0);
-      assert.match(await demo.locator('.mc').innerText(), /締切 11\/11/);
-      assert.equal(await open.isDisabled(), true);
-      assert.equal(await extend.isEnabled(), true);
-    }
-    await initial();
-    await extend.click();
-    assert.equal(await demo.getByRole('status').innerText(), 'LMS の締切が変わりました。まだ時間割は変わりません');
-    assert.equal(await demo.locator('.hot, s').count(), 0);
-    assert.match(await demo.locator('.mc').innerText(), /締切 11\/11/);
-    assert.doesNotMatch(await demo.locator('.mm').innerText(), /に変わりました/);
-    assert.equal(await extend.isDisabled(), true);
-    await noOverflow();
-    await page.screenshot({ path: `${evidence}/extended-${width}.png`, fullPage: true });
-    // Reset also works before opening the LMS.
-    await reset.click();
-    await initial();
-    await extend.click();
-    await open.click();
-    assert.equal(await demo.locator('.hot').count(), 1);
-    assert.equal(await demo.locator('s').innerText(), '11/11');
-    assert.match(await demo.locator('.mc').innerText(), /締切 11\/12/);
-    assert.match(await demo.locator('.mm').innerText(), /締切が 11\/11 から 11\/12 に変わりました/);
-    assert.equal(await demo.locator('.hot').evaluate(node => globalThis.getComputedStyle(node).backgroundColor), 'rgb(217, 64, 43)');
-    await noOverflow();
-    await page.screenshot({ path: `${evidence}/opened-${width}.png`, fullPage: true });
-    await reset.click();
-    await initial();
-    assert.equal(await demo.getByRole('status').innerText(), '');
-    assert.doesNotMatch(await demo.locator('.mm').innerText(), /に変わりました/);
-    await page.evaluate(() => new Promise(resolve => globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(resolve))));
-    page.off('request', record);
-    assert.deepEqual(requests, []);
-    assert.deepEqual(await storage(), initialStorage);
+    assert.equal(await page.getByRole('region', { name: '動く見本', exact: true }).count(), 0);
+    assert.equal(await page.locator('#try .trial-launch a:visible, #try .trial-launch button:visible').count(), 1);
+    assert.equal(await page.locator('#try .judge-guide').count(), 1);
     await page.reload();
-    await initial();
     assert.equal(await page.locator('.td-splash').count(), 0, 'splash is skipped on repeat visits');
     await page.getByRole('link', { name: '自分の大学で使う', exact: true }).click();
     assert.equal(new URL(page.url()).hash, '#start');
@@ -140,11 +91,11 @@ try {
     assert.equal(await page.getByRole('link', { name: 'ToDokuの紹介ページ', exact: true }).getAttribute('href'), '/');
     assert.equal(await page.evaluate(() => globalThis.document.documentElement.classList.contains('landing-scroll')), false);
     if (path.startsWith('/session')) {
-      await page.getByRole('status').filter({ hasText: '面談画面の準備がまだできていません' }).waitFor();
+      await page.getByRole('heading', { name: '面談にログイン', exact: true }).waitFor();
     } else if (path.startsWith('/student')) {
       await page.getByRole('heading', { name: '時間割と課題', exact: true }).waitFor();
     } else {
-      await page.getByText('体験画面の準備中です。担当者に確認してください。', { exact: true }).waitFor();
+      await page.getByLabel('メールアドレス').waitFor();
     }
   }
   await page.goto(`${base}/does-not-exist`);
@@ -161,6 +112,6 @@ try {
   await firstVisit.reload(); assert.equal(await firstVisit.locator('.td-splash').count(), 0);
   await firstVisit.close();
   assert.deepEqual(errors, []);
-  await writeFile(`${evidence}/verification.json`, JSON.stringify({ widths: [1280, 390], dialogs: 4, entryRoles: 2, localDemoStates: 4, reducedMotion: true, splash: true, existingRoutes: 6, errors }, null, 2));
-  log('Landing: anonymous entry, four local states, no requests/storage changes, 1280/390px, anchors, images and existing routes passed.');
+  await writeFile(`${evidence}/verification.json`, JSON.stringify({ widths: [1280, 390], dialogs: 2, primaryEntries: 1, reducedMotion: true, splash: true, existingRoutes: 6, errors }, null, 2));
+  log('Landing: single trial entry, 1280/390px, anchors, two image dialogs and existing routes passed.');
 } finally { await browser.close(); }

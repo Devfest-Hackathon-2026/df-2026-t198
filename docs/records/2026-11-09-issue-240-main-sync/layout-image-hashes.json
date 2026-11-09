@@ -1,0 +1,54 @@
+{
+  "allFreshCapturesIdentical": true,
+  "count": 12,
+  "images": [
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-home-390.png",
+      "sha256": "8624c626726889700a31d889d134733bc0afdadbb338e0b38ca11e9e6ea0c66c"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-how-1280.png",
+      "sha256": "a750d1d0428104265e43e2c211357b9d8496cc8fa14ae4d75824f41749648925"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-try-1280.png",
+      "sha256": "e2d8e3c0a13068fcf08ba698173537d93e32c26ba6278001c3de0fb0a217d1b0"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-people-390.png",
+      "sha256": "1a951746411cf0109c82df856ddd33152ea0dc3584333ed3a62fe14bd2fe4bce"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-how-390.png",
+      "sha256": "2ea5b5bbc07472d084421ab3d305452f7a391b0feb32e2dca4695b92ea269e4c"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-people-1280.png",
+      "sha256": "5e8fcbb8ef7abb033abd6ebafc1a03ad4ba52891a2e8f4e8c8dbc31276df240a"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-start-1280.png",
+      "sha256": "9cba9927d30ab891364f2c3625486d8bd155baaaeed4995c9b38db973cbf818c"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-start-390.png",
+      "sha256": "62ee67a082ed1c3b285bf6f016f73f2f1b2f68d94e302f2918b4754055b997c5"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-home-1280.png",
+      "sha256": "9037bea5ef843f62f8dcc2e769baa13576cff53657ba56f1bfd4b7ad43efc710"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-privacy-1280.png",
+      "sha256": "53fac7d902c3deba7710eedf839fd24a1d394aeaf569584fff39303bffd25ccd"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-try-390.png",
+      "sha256": "128dac86f5f9b6687e72456dc85b30476ea38119703766097af095e4e8b22d30"
+    },
+    {
+      "file": "docs/records/2026-11-09-issue-240/after/after-privacy-390.png",
+      "sha256": "90dd8ad7e07b9ed5ea017813cdeaca46ee31b54277ef100c94f0d85f502933a5"
+    }
+  ]
+}
