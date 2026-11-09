@@ -24,7 +24,8 @@ it('hides empty and public sharing; retains the stopped supporter and the restor
   expect(render(data)).toContain('共有をやめる');
   expect(render(data)).toContain('架空の支援担当');
   expect(render({ ...data, supporters: [{ ...supporter, revoked: true }] })).toContain('もう一度共有する');
-  expect(render({ ...data, supporters: [{ uid: 'known-id', revoked: false }] })).toContain('支援担当（known-id）');
+  expect(render({ ...data, supporters: [{ uid: 'known-id', revoked: false }] })).toContain('支援担当');
+  expect(render({ ...data, supporters: [{ uid: 'known-id', revoked: false }] })).not.toContain('known-id');
 });
 it('uses an authenticated bodyless request, encodes the existing supporter and rejects unsuccessful writes', async () => {
   mocks.fetch.mockResolvedValue(response({}));

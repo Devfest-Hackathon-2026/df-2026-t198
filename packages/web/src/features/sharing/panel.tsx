@@ -58,7 +58,7 @@ export function SharingControls({ data, change }: { data: SharingData; change: (
   return <section className="student-sharing" aria-labelledby="sharing-title">
     <h2 id="sharing-title">共有している支援担当</h2>
     <ul>{data.supporters.map(supporter => <li key={supporter.uid}>
-      <span><strong>{supporter.displayName ?? `支援担当（${supporter.uid}）`}</strong>{supporter.revoked && <small>共有を停止中</small>}</span>
+      <span><strong>{supporter.displayName ?? '支援担当'}</strong>{supporter.revoked && <small>共有を停止中</small>}</span>
       <Button disabled={busy !== null} busy={busy === supporter.uid} busyLabel="変更中…" onClick={() => { void act(supporter); }}>
         {supporter.revoked ? 'もう一度共有する' : '共有をやめる'}
       </Button>
