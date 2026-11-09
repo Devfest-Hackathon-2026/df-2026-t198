@@ -102,8 +102,8 @@ export function LandingPage() {
       <section className="chapter features-section" id="features" aria-labelledby="features-title">
         <Reveal><div className="section-heading"><span className="chapter-number">02</span><h2 id="features-title">締切は、ふだん見る場所にも届きます</h2></div></Reveal>
         <Reveal><ul className="feature-list">
-          <li><FeatureIcon name="calendar" /><h3>Google カレンダー</h3><p>締切が予定として入り、締切が変わると予定も動きます。</p></li>
-          <li><FeatureIcon name="phone" /><h3>スマホのホーム画面</h3><p>ホーム画面に置いて、アプリのように時間割を開けます。</p></li>
+          <li><FeatureIcon name="calendar" /><h3>Google カレンダー</h3><p>本人の Google カレンダーに ToDoku 専用のカレンダーができ、課題の締切と準備の予定が入ります。</p></li>
+          <li><FeatureIcon name="phone" /><h3>スマホのホーム画面</h3><p>スマホのホーム画面に ToDoku を追加し、学生画面をすぐ開けます。課題の取り込みは PC の Chrome 拡張が担当します。</p></li>
           <li><FeatureIcon name="mail" /><h3>朝のメール</h3><p>課題がある朝 7:30 に、クラウドから本人へ送ります。PCを開いていなくても届きます。</p></li>
         </ul></Reveal>
         <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
