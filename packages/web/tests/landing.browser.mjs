@@ -5,7 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { log } from 'node:console';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const base = process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5182';
+const base = 'http://127.0.0.1:5182';
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i224-evidence';
 await mkdir(evidence, { recursive: true });
 const browser = await chromium.launch({ headless: true });
@@ -33,6 +33,8 @@ try {
       const title = await page.locator('.hero h1').evaluate(el => ({ height: el.getBoundingClientRect().height, line: parseFloat(globalThis.getComputedStyle(el).lineHeight) }));
       assert(Math.abs(title.height - title.line * 3) < 2, 'approved sentence occupies three desktop lines from the restored hero');
     }
+    assert.equal(await page.locator('html').evaluate(el => globalThis.getComputedStyle(el).scrollSnapType), 'y mandatory');
+    assert.deepEqual(await page.locator('.chapter').evaluateAll(nodes => nodes.map(node => globalThis.getComputedStyle(node).scrollSnapAlign)), Array(6).fill('start'));
     await noOverflow();
     for (const reveal of await page.locator('.td-reveal').all()) {
       await reveal.scrollIntoViewIfNeeded();

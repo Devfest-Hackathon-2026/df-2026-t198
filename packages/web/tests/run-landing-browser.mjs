@@ -32,7 +32,7 @@ try {
   const scripts = mode === '--capture' ? ['capture-landing-shots.mjs']
     : mode === '--layout' ? ['landing-chapters.browser.mjs']
     : mode === '--flow' ? ['landing-flow.browser.mjs']
-    : mode === '--dialogs' ? ['landing.browser.mjs', 'chapter-scroll.browser.mjs']
+    : mode === '--dialogs' ? ['landing.browser.mjs']
     : mode === '--qa' ? ['judge-qa.browser.mjs']
     : mode === '--m6' ? ['demo.browser.mjs']
     : mode === '--shared' ? ['landing-shared.browser.mjs']

@@ -5,7 +5,6 @@ import { TodokuLogo } from '../../shared/ui/todoku-logo';
 import './landing.css';
 import { HeroVisual } from './hero-visual';
 import { Mechanism } from './mechanism';
-import { settleChapters } from './chapter-scroll';
 
 const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
 const chapters = [
@@ -59,8 +58,7 @@ export function LandingPage() {
     }, { rootMargin: '-15% 0px -40% 0px', threshold: [0, .1, .3] });
     const sections = chapters.map(chapter => document.getElementById(chapter.id)).filter((section): section is HTMLElement => !!section);
     for (const section of sections) observer.observe(section);
-    const stopSettling = settleChapters(sections);
-    return () => { observer.disconnect(); stopSettling(); document.documentElement.classList.remove('landing-scroll'); };
+    return () => { observer.disconnect(); document.documentElement.classList.remove('landing-scroll'); };
   }, []);
   return <div className="landing brand"><Splash />
     <header className="landing-header">
