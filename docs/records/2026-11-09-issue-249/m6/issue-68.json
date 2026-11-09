@@ -1,0 +1,1 @@
+{"status":"pass","checks":["stale first login refreshes dates","fresh login preserves extension","four ordered stages, one main action and adjacent result","hidden markers keep h1 and reader boundaries","extension waits for source snapshot","400/403 discard pending; 500/network replay the same ID","reset clears derived data and leaves another pair unchanged","390px layout"]}
