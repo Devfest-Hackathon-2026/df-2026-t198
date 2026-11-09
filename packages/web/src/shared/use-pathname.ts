@@ -12,6 +12,7 @@ export function usePathname() {
       if (!document.startViewTransition || reducedMotion() || event.hasUAVisualTransition) { update(); return; }
       const transition = document.startViewTransition(() => flushSync(update));
       // A skipped animation must never interrupt navigation.
+      void transition.ready.catch(() => {});
       void transition.finished.catch(() => {});
     };
     window.addEventListener('popstate', changed);

@@ -2,7 +2,7 @@ import { json } from '../http/response.js';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ObservationDependencies } from '../http.js';
 import { InvalidPlan, parsePlan, validPlanId } from './input.js';
-import { PlanAfterDeadline, PlanConflict } from './store.js';
+import { PlanConflict } from './store.js';
 import { SessionForbidden } from '../sessions/store.js';
 
 function validUid(uid: string) { return uid.length > 0 && uid.length <= 128 && !uid.includes('/') && [...uid].every(c => c.charCodeAt(0) >= 32 && c.charCodeAt(0) !== 127) && uid !== '.' && uid !== '..'; }
@@ -33,8 +33,7 @@ export async function receivePlanRequest(request: IncomingMessage, response: Ser
     json(response, 200, await deps.plans.save(actor, student, id, input));
   } catch (error) {
     if (error instanceof SessionForbidden) json(response, 403, { error: 'forbidden' });
-    else if (error instanceof PlanAfterDeadline) json(response, 409, { error: 'plan-after-deadline' });
-    else if (error instanceof PlanConflict) json(response, 409, { error: 'plan-conflict' });
+    else if (error instanceof PlanConflict) json(response, 409, { error: error.code });
     else if (error instanceof InvalidPlan || error instanceof SyntaxError || error instanceof URIError) json(response, 400, { error: 'invalid-plan' });
     else json(response, 500, { error: 'internal-error' });
   }

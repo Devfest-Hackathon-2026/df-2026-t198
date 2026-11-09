@@ -20,6 +20,7 @@ async function fixture({ pageRoute = false, ...lmsOptions } = {}) {
   vi.resetModules(); vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2098-11-01T00:00:00Z'));
   let catalog = home(ids), release, held = false, course, detail = 0;
   const f = await fakeLms({ moveStudent: false, strictState: true, transformHome: () => catalog, ...lmsOptions });
+  const local = {};
   const state = { ynuSessionId: sid }, uploads = [], requests = [];
   const read = async (url, init) => {
     const fields = new URLSearchParams(init.body);
@@ -32,6 +33,7 @@ async function fixture({ pageRoute = false, ...lmsOptions } = {}) {
     return f.fetcher(url, init);
   };
   const fetcher = vi.fn(async (url, init) => {
+    if (url.endsWith('/api/v1/collection-policy')) return { ok: true, json: async () => ({ backgroundCollection: 'enabled' }) };
     if (url.startsWith('https://lms.ynu.ac.jp/')) {
       if (pageRoute) throw new Error('background-blocked');
       return read(url, init);
@@ -43,11 +45,10 @@ async function fixture({ pageRoute = false, ...lmsOptions } = {}) {
   vi.stubGlobal('chrome', { action: {}, tabs: { query: async () => [{ id: 7 }], get: async () => ({ status: 'complete' }),
     sendMessage: async (_tab, message) => message.type === 'ynu-read-page'
       ? { ok: true, page: await executeLmsRequest(message.operation, url, state.ynuSessionId, read, async () => {}) } : { ok: true },
-  }, storage: { session: { get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, globalThis.structuredClone(values)) },
-    local: { set: vi.fn() } } });
+  }, storage: { local: { get: async () => globalThis.structuredClone(local), set: vi.fn(async values => Object.assign(local, values)) }, session: { get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, globalThis.structuredClone(values)) } } });
   const realTimeout = globalThis.setTimeout;
   vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn, ms) => {
-    if (ms !== 250) return realTimeout(fn, ms);
+    if (ms !== 1500) return realTimeout(fn, ms);
     globalThis.queueMicrotask(fn); return 0;
   });
   let worker = await import('../src/collection-worker.js');
@@ -92,7 +93,7 @@ for (const pageRoute of [false, true]) it(`resumes only completed courses after 
   expect(parseObservation(observation)).toEqual(observation);
   expect(f.state.ynuFetchSummary).toMatchObject({ reusedCourses: 2, coursesComplete: 5 });
   expect(f.state.ynuFetchCheckpoint).toBeNull();
-  expect(globalThis.chrome.storage.local.set).not.toHaveBeenCalled();
+  expect(globalThis.chrome.storage.local.set).toHaveBeenCalledExactlyOnceWith({ 'ynuFetchCompletedAt:synthetic-user': expect.any(Number) });
 });
 
 for (const reason of ['expired', 'session', 'sent', 'account', 'clock-backward']) it(`starts from the first course when the checkpoint is ${reason}`, async () => {
@@ -112,14 +113,14 @@ it('reuses progress at exactly thirty minutes and clears it before starting the 
   vi.setSystemTime(new Date('2098-11-01T00:30:00Z'));
   const fetcher = globalThis.fetch, checkpointsAtSend = [];
   vi.stubGlobal('fetch', async (url, init) => {
-    if (url.startsWith('https://api.example.test/')) checkpointsAtSend.push(f.state.ynuFetchCheckpoint);
+    if (url.endsWith('/api/v1/observations')) checkpointsAtSend.push(f.state.ynuFetchCheckpoint);
     return fetcher(url, init);
   });
   expect((await f.run()).ok).toBe(true);
   expect(f.state.ynuFetchSummary.reusedCourses).toBe(2);
   expect(checkpointsAtSend).toEqual([null]);
   f.requests.length = 0;
-  vi.setSystemTime(new Date('2098-11-01T00:41:00Z'));
+  vi.setSystemTime(new Date('2098-11-01T06:30:00Z'));
   expect((await f.run()).ok).toBe(true);
   expect(f.requests.filter(r => r.kind === 'course').map(r => r.course)).toEqual(ids);
 });
@@ -152,7 +153,7 @@ it('does not reuse cached courses after an API response was lost', async () => {
   const f = await fixture(); await f.interrupt();
   const fetcher = globalThis.fetch;
   vi.stubGlobal('fetch', async (url, init) => {
-    if (url.startsWith('https://api.example.test/')) throw new Error('synthetic-lost-response');
+    if (url.endsWith('/api/v1/observations')) throw new Error('synthetic-lost-response');
     return fetcher(url, init);
   });
   expect((await f.run()).ok).toBe(false);

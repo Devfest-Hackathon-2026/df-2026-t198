@@ -1,0 +1,24 @@
+{
+  "status": "pass",
+  "operations": [
+    "server-composed morning email, safe action links, student and open supporter screen show the same active plan",
+    "student stale and failed notices explain the next action at 1280px and 390px",
+    "preview later action moves durable event with the same id; both open screens update without reload",
+    "same email link including reload cannot postpone the plan twice",
+    "old done link after postponement reports a conflict, preserves the plan and points to the student screen",
+    "student can postpone again using the current revision while the earlier email remains replay safe",
+    "B4: later, prepare a fresh sample, and finish it from today's email while the postponed plan remains intact",
+    "B1: the first email after completion reports the old plan's current state without a success claim",
+    "done preview button updates both session steps and student while preserving LMS submission, and duplicate link is stable",
+    "supporter account cannot execute student email actions",
+    "signed-out email link asks for login and resumes only after the owner authenticates",
+    "B4: prepare after completion creates a new active sample and retains the completed record",
+    "B2: student input after the deadline is rejected with a specific explanation and creates no plan",
+    "B2: earlier deadline preserves and warns on the existing plan in both screens, marks the timetable and refuses postponement beyond it",
+    "sample creation 409 explains the deadline cause without asking the student to reload the LMS",
+    "Issue #141: morning preview headings, unchanged buttons, one final note and submission stage; both screens use the definition home and route",
+    "Issue #157: open and reload preserve the active plan; explicit confirmation shows the submission step at 1280px and 390px",
+    "Issue #141: done link shows current deadline and direct demo destination; live submitted state removes the stage in the action screen and mail preview"
+  ],
+  "browserErrors": 0
+}

@@ -8,7 +8,7 @@ import { observation } from '../../server/tests/observation-fixture';
 import { emptySession, type SessionData } from '../src/features/session/model';
 import { formatDeadline } from '../src/shared/assignments/deadline-format';
 import type { SessionServices } from '../src/features/session/firebase';
-import { SessionPage } from '../src/features/session/page';
+import { SessionPage, SessionDetails } from '../src/features/session/page';
 import { usePathname } from '../src/shared/use-pathname';
 
 // Reuse the workspace's existing DOM parser for component tests; no browser automation or new dependency.
@@ -292,4 +292,60 @@ it('shows both deadline-change and review marks while excluding submitted work f
   expect(host.querySelector('.td-table .session-status-review')?.textContent).toBe('要確認');
   expect(host.querySelector('.session-supplement .session-status-done')?.textContent).toContain('出せました');
   expect(host.querySelector('.session-steps a')?.textContent).toContain('締切1件・変化3件');
+});
+
+it('counts the same available periods that the selected task can use, and refills after saving', async () => {
+  const now = new Date('2026-11-06T06:00:00Z');
+  const original = data['student-a']!.assignments[0]!;
+  const deadline = { kind: 'date' as const, date: '2026-11-10', dueText: '架空の日付', timeZone: 'Asia/Tokyo' };
+  const assignments = ['課題A', '課題B'].map(sourceId => ({ ...original, key: { ...original.key, system: 'demo-lms' as const, sourceId },
+    latest: { ...original.latest, title: sourceId, sourceId, deadline },
+    officialDeadline: { ...original.officialDeadline!, deadline } }));
+  const session: SessionData = { ...emptySession(), assignments,
+    context: { lastSessionAt: null, nextSessionAt: '2026-11-13T11:00:00+09:00' },
+    courses: [{ courseId: 'fictional', name: '架空の授業', system: 'demo-lms',
+      slots: [3, 4, 5].map(period => ({ weekday: 1 as const, period })) }] };
+  const render = () => act(async () => root.render(<SessionDetails data={session} now={now} own={false}
+    uid="fictional-student" planning save={save} />));
+  await render();
+  expect(host.querySelector('#session-plan-count')?.textContent).toBe('準備の候補 2コマ');
+  expect(host.querySelectorAll('.session-candidate')).toHaveLength(2);
+  session.plans.push({ assignment: assignments[1]!.key, date: '2026-11-09', period: 1,
+    startsAt: '2026-11-09T08:50:00+09:00', endsAt: '2026-11-09T10:20:00+09:00',
+    planId: 'fictional-a', title: '課題B', decidedOn: '2026-11-06', timeZone: 'Asia/Tokyo', confirmedBy: 'fictional-student',
+    createdByRole: 'student', confirmedAt: now.toISOString(), status: 'active', revision: 1, calendarItemKey: 'fictional-item-a' });
+  await render();
+  expect(host.querySelector('#session-plan-count')?.textContent).toBe('準備の候補 1コマ');
+  expect(host.querySelectorAll('.session-candidate')).toHaveLength(1);
+  session.plans.push({ ...session.plans[0]!, planId: 'fictional-b', calendarItemKey: 'fictional-item-b', period: 2,
+    startsAt: '2026-11-09T10:30:00+09:00', endsAt: '2026-11-09T12:00:00+09:00' });
+  await render();
+  expect(host.querySelector('#session-plan-count')?.textContent).toBe('準備の候補 0コマ');
+  expect(host.querySelectorAll('.session-candidate')).toHaveLength(0);
+  expect(host.textContent).toContain('この課題の候補にできるコマがありません。');
+});
+
+it('counts the selected task when only another task has preparation candidates', async () => {
+  const now = new Date('2026-11-09T08:00:00Z');
+  const original = data['student-a']!.assignments[0]!;
+  const assignments = ['2026-11-10', '2026-11-12'].map((date, index) => {
+    const sourceId = `task-${index}`;
+    const deadline = { kind: 'date' as const, date, dueText: '架空の日付', timeZone: 'Asia/Tokyo' };
+    return { ...original, key: { system: 'demo-lms' as const, sourceId },
+      latest: { ...original.latest, title: `課題${index}`, sourceId, deadline },
+      officialDeadline: { ...original.officialDeadline!, deadline } };
+  });
+  const session: SessionData = { ...emptySession(), assignments,
+    context: { lastSessionAt: null, nextSessionAt: '2026-11-13T11:00:00+09:00' } };
+  await act(async () => root.render(<SessionDetails data={session} now={now} own={false}
+    uid="fictional-student" planning save={save} />));
+  expect(host.querySelectorAll('.session-candidate')).toHaveLength(0);
+  expect(host.textContent).toContain('この課題の候補にできるコマがありません。');
+  expect(host.querySelector('#session-plan-count')?.textContent).toBe('準備の候補 0コマ');
+  await click('課題1');
+  expect(host.querySelectorAll('.session-candidate')).toHaveLength(2);
+  expect(host.querySelector('#session-plan-count')?.textContent).toBe('準備の候補 2コマ');
+  await click('課題0');
+  expect(host.querySelectorAll('.session-candidate')).toHaveLength(0);
+  expect(host.querySelector('#session-plan-count')?.textContent).toBe('準備の候補 0コマ');
 });

@@ -42,6 +42,22 @@ repoのルートをソースにし、buildpacksがコンテナを作る。ルー
 
 Cloud Runの入口は公開する。ヘルスチェックは認証なしで返し、観測APIは [データの形](data-shapes.md) に従ってFirebase ID tokenを検証する。この手順では観測の送信や台帳への書き込みは行わない。最小インスタンス数は0、最大は1とするが、ビルド・保存・リクエストの費用は発生しうる。
 
+## YNUの裏の取得を止める（Issue #267）
+
+`BACKGROUND_COLLECTION` は新しい拡張が取得前に読む停止設定。未設定または `enabled` で許可し、`paused` で止める。契約は [data-shapes.md](data-shapes.md#裏の取得の停止設定issue-267)、理由はD44を参照。APIが未配備・読めない場合も新しい拡張は取得しないため、APIを配備してから拡張を更新する。
+
+人が対象と実行を確認してから、既存のサービスの環境変数だけを更新する。ほかの環境変数は置き換えない。
+
+```sh
+gcloud run services update kadai-hisho-api \
+  --project project-00439085-4e2d-44c3-9a8 --region asia-northeast1 \
+  --update-env-vars BACKGROUND_COLLECTION=paused
+```
+
+反映後、既存サービスのURLで `GET /api/v1/collection-policy` が200・`{ "backgroundCollection": "paused" }` を返すことを確認する。取得が始まっていない状態で更新済みの拡張からLMSを開き、課題の取得が始まらず「取得できない」表示になることを確かめる。再開するときは同じコマンドの値を `BACKGROUND_COLLECTION=enabled` にし、APIのenabledを確認してからLMSを開き直す。既に成功後の6時間待機中なら、再開しても期限までは取り直さない。
+
+設定の変更は新しいCloud Runのリビジョンとして反映される。旧リビジョンにトラフィックが残っている場合は、停止設定のあるリビジョンへの切替を確認する。実行中の取得を中断する操作ではなく、旧版の拡張・KULMS・体験用LMSも対象外。Issue #267の実装作業ではデプロイも設定変更も実行しない。
+
 ## Hosting
 
 Cloud Runのデプロイが成功してから、ビルド済みのWeb画面を出す。`.firebaserc` の既定値はエミュレーター用なので、対象プロジェクトを毎回明記する。
