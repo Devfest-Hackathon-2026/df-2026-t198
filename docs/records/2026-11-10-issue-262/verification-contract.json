@@ -1,0 +1,28 @@
+{
+  "schema_version": 2,
+  "root": "../../..",
+  "recipient": "Sora",
+  "purpose": "人物の配色と5場面の静止した構図を比較し、次の制作に使う素材を選べる。",
+  "conditions": ["1280x720", "静止したSVG素材", "3配色と5場面を比較できる"],
+  "assumptions": ["ローカルのViteを起動済み", "PLAYWRIGHT_MODULEを手元の既存モジュールに設定する"],
+  "request": {
+    "reference": "Issue #262の最新コメントと本人の第1段階の依頼",
+    "source_refs": ["docs/records/2026-11-10-issue-262/implementation-plan.md"]
+  },
+  "plan_alignment": {"status": "checked", "reason": "素材と静止画の見本だけを作る。映像の動き・音・デプロイは含めない。"},
+  "artifact_paths": [
+    "packages/web/src/features/landing/story",
+    "packages/web/src/app.tsx",
+    "packages/web/src/shared/styles/tokens.css",
+    "packages/web/src/shared/ui/todoku-logo.tsx"
+  ],
+  "verification_paths": ["packages/web/tests/story-assets.browser.mjs", "packages/web/tests/story-assets.test.tsx"],
+  "intent_paths": ["docs/records/2026-11-10-issue-262/implementation-plan.md"],
+  "requirements": [
+    {"id": "preview", "operation": "1280x720で素材・3配色・5場面を開き、色と場面を選択して再読み込みする。", "expected_result": "URLと絵が一致し、文字と人物が欠けず、全素材が静止したSVGとして表示される。", "verification": "command", "evidence_required": true},
+    {"id": "appearance", "operation": "保存された各画像を読み、人物・机・時計・画面・背景の構図を確認する。", "expected_result": "3人の役と時刻、架空の締切変更と準備の予定を読み取れ、配色を比較できる。", "verification": "semantic", "review_evidence": ["1280x720の画像", "本人の依頼", "素材一覧と場面の構図"], "evidence_required": true}
+  ],
+  "commands": [
+    {"id": "browser-preview", "argv": ["node", "packages/web/tests/story-assets.browser.mjs"], "covers": ["preview"], "timeout_seconds": 60, "cwd": "."}
+  ]
+}
