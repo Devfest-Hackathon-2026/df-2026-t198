@@ -66,7 +66,7 @@ it('introduces the people before the mechanism and ends with the trial entry', (
   expect([...main.matchAll(/<section[^>]+id="([^"]+)"/g)].map(match => match[1]))
     .toEqual(['home', 'people', 'how', 'start', 'privacy', 'try']);
   expect(main.match(/class="trial-entry"/g)).toHaveLength(1);
-  expect(main).toContain('やることがある日は朝7:30にメールが届きます。');
+  expect(main).toContain('毎朝メールが届きます。');
   expect(main).toContain('次にやることを一緒に決められます。');
   expect(main).toContain('授業ごとの課題と締切を時間割にまとめ、支援担当と共有します。');
   expect(html.match(/class="flow-scene"/g)).toHaveLength(1);

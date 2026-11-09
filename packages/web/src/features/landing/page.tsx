@@ -69,7 +69,7 @@ export function LandingPage() {
       <section className="hero chapter" id="home" aria-labelledby="landing-title">
         <Staged className="hero-copy">
           <h1 id="landing-title"><span>学生がすることは、</span><span>いつものLMSを</span><span>開くことだけです</span></h1>
-          <p className="hero-lead">授業ごとの課題と締切を時間割にまとめ、支援担当と共有します。やることがある日は、朝7:30にメールで知らせます。</p>
+          <p className="hero-lead">授業ごとの課題と締切を時間割にまとめ、支援担当と共有します。毎朝メールが届きます。</p>
           <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="text-link" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
         </Staged>
         <HeroVisual />
@@ -79,7 +79,7 @@ export function LandingPage() {
       <section className="chapter people-section" id="people" aria-labelledby="people-title">
         <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="people-title">課題を一か所にまとめ、支援担当と共有します</h2></div></Reveal>
         <div className="product-grid people-grid">
-          <Reveal><div className="person-statement"><h3>学生</h3><p><span>課題と締切が時間割にまとまり、</span><span>やることがある日は朝7:30にメールが届きます。</span></p></div>
+          <Reveal><div className="person-statement"><h3>学生</h3><p><span>課題と締切が時間割にまとまり、</span><span>毎朝メールが届きます。</span></p></div>
             <div className="person-thumb"><Screenshot name="student" alt="学生の時間割" width={685} height={496} caption="学生の時間割" /></div>
           </Reveal>
           <Reveal order={1}><div className="person-statement"><h3>支援担当（カウンセラーなど）</h3><p><span>学生と同じ課題の一覧を見て、</span><span>次にやることを一緒に決められます。</span></p></div>
