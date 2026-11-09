@@ -1,6 +1,6 @@
 import type { CalendarItem, PreparationPlanInput } from '@kadai-hisho/core';
 import { randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { createPlanStore } from '../src/plans/store.js';
 import { createDemoCalendarSync } from '../src/demo/calendar.js';
@@ -45,6 +45,11 @@ describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A prepar
       expect(result.status).toBe(200);
     }
   });
+  beforeEach(async () => {
+    // Each case owns its plans; a previous case must not reserve its time window.
+    await fixture.db.recursiveDelete(plans());
+    await fixture.db.recursiveDelete(items());
+  });
   afterAll(async () => { await fixture?.close(); });
   it('rejects a new plan after the deadline with a fixed code and no partial writes (B2)', async () => {
     const id = randomUUID();
@@ -67,11 +72,87 @@ describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A prepar
       [{ kind: 'unreadable' }, '2030-11-18', '17:00', 200],
     ] as const) {
       await task.update({ 'officialDeadline.deadline': { ...deadline, dueText: '架空', timeZone: 'Asia/Tokyo' } });
-      const response = await request(student, student, randomUUID(), 'PUT', { ...input, date,
+      const id = randomUUID();
+      const response = await request(student, student, id, 'PUT', { ...input, date,
         startsAt: `${date}T${start}:00+09:00`, endsAt: `${date}T23:59:00+09:00` });
       expect(response.status).toBe(status);
+      if (status === 200) expect((await request(student, student, id, 'DELETE')).status).toBe(200);
     }
     await task.update({ 'officialDeadline.deadline': { kind: 'date', date: '2030-11-15', dueText: '架空', timeZone: 'Asia/Tokyo' } });
+  });
+  async function secondAssignment() {
+    const key = { system: 'demo-lms' as const, sourceId: 'fictional/other-task' };
+    const original = await fixture.db.doc(`students/${student}/assignments/${documentKey(input.assignment.system, input.assignment.sourceId)}`).get();
+    await fixture.db.doc(`students/${student}/assignments/${documentKey(key.system, key.sourceId)}`).set({
+      ...original.data(), key, latest: { ...original.data()!['latest'], sourceId: key.sourceId, title: '別の課題' },
+    });
+    return key;
+  }
+  it.each([
+    ['same interval', '13:00', '14:30', 4],
+    ['partial overlap across period labels', '14:20', '14:40', 4],
+    ['contained short interval', '13:10', '13:20', 3],
+  ])('rejects another assignment with %s without partial writes', async (_name, start, end, period) => {
+    const assignment = await secondAssignment();
+    expect((await request(student, student, randomUUID())).status).toBe(200);
+    const before = (await items().get()).docs.map(doc => doc.data());
+    const id = randomUUID();
+    const response = await request(supporter, student, id, 'PUT', { ...input, assignment, period,
+      startsAt: `${input.date}T${start}:00+09:00`, endsAt: `${input.date}T${end}:00+09:00` });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'plan-overlap' });
+    expect((await plans().doc(id).get()).exists).toBe(false);
+    expect((await items().get()).docs.map(doc => doc.data())).toEqual(before);
+  });
+  it('allows adjacent and disjoint short plans even within the same labelled period', async () => {
+    const assignment = await secondAssignment();
+    // All three are within period 3; touching endpoints do not overlap.
+    for (const [start, end] of [['13:00', '13:10'], ['13:10', '13:20'], ['13:30', '13:40']]) {
+      expect((await request(student, student, randomUUID(), 'PUT', { ...input, assignment,
+        startsAt: `${input.date}T${start}:00+09:00`, endsAt: `${input.date}T${end}:00+09:00` })).status).toBe(200);
+    }
+    expect((await plans().get()).size).toBe(3);
+  });
+  it.each([
+    ['class', { period: 2 }, 'plan-class-conflict'],
+    ['past', { date: '2000-11-11', startsAt: '2000-11-11T13:00:00+09:00', endsAt: '2000-11-11T14:30:00+09:00' }, 'plan-in-past'],
+    ['missing assignment', { assignment: { ...input.assignment, sourceId: 'missing' } }, 'plan-assignment-unavailable'],
+  ])('explains a %s rejection without partial writes', async (_name, patch, code) => {
+    const id = randomUUID(); const before = (await items().get()).docs.map(doc => doc.data());
+    const response = await request(student, student, id, 'PUT', { ...input, ...patch });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: code });
+    expect((await plans().doc(id).get()).exists).toBe(false);
+    expect((await items().get()).docs.map(doc => doc.data())).toEqual(before);
+  });
+  it.each([{ submission: 'submitted' }, { presenceState: 'cancelled' }])('explains an unavailable assignment: %j', async patch => {
+    const ref = fixture.db.doc(`students/${student}/assignments/${documentKey(input.assignment.system, input.assignment.sourceId)}`);
+    const original = (await ref.get()).data()!;
+    try {
+      await ref.update(patch);
+      const response = await request(student, student, randomUUID());
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: 'plan-assignment-unavailable' });
+      expect((await plans().get()).empty).toBe(true);
+      expect((await items().get()).empty).toBe(true);
+    } finally { await ref.set(original); }
+  });
+  it('allows the same time after another assignment plan is cancelled', async () => {
+    const assignment = await secondAssignment(); const id = randomUUID();
+    expect((await request(student, student, id)).status).toBe(200);
+    expect((await request(student, student, id, 'DELETE')).status).toBe(200);
+    expect((await request(supporter, student, randomUUID(), 'PUT', { ...input, assignment })).status).toBe(200);
+  });
+  it('saves only one of concurrent overlapping plans with different IDs and assignments', async () => {
+    const assignment = await secondAssignment();
+    const responses = await Promise.all([
+      request(student, student, randomUUID()),
+      request(supporter, student, randomUUID(), 'PUT', { ...input, assignment }),
+    ]);
+    expect(responses.map(response => response.status).sort()).toEqual([200, 409]);
+    const saved = (await plans().get()).docs.map(doc => doc.data());
+    expect(saved).toHaveLength(1);
+    expect((await items().get()).docs.filter(doc => doc.data()['kind'] === 'preparation')).toHaveLength(1);
   });
   it('allows the supporter to add once, shows the author, and lets the student remove it from the mock destination', async () => {
     const id = randomUUID();
@@ -89,12 +170,16 @@ describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A prepar
     const before = (await plans().doc(id).get()).updateTime;
     expect((await request(supporter, student, id)).status).toBe(200);
     expect((await plans().doc(id).get()).updateTime).toEqual(before);
-    expect((await request(supporter, student, id, 'PUT', { ...input, period: 4 })).status).toBe(409);
+    const mismatch = await request(supporter, student, id, 'PUT', { ...input, period: 4 });
+    expect(mismatch.status).toBe(409);
+    expect(await mismatch.json()).toEqual({ error: 'plan-conflict' });
     expect((await request(student, student, id, 'DELETE')).status).toBe(200);
     expect((await plans().doc(id).get()).data()).toMatchObject({ status: 'cancelled', revision: 2 });
     expect((await target()).data()!['mockEvents'][calendar['eventId']]).toBeUndefined();
     expect((await request(student, student, id, 'DELETE')).status).toBe(200);
-    expect((await request(supporter, student, id)).status).toBe(409); // Delayed create cannot undo removal.
+    const delayed = await request(supporter, student, id);
+    expect(delayed.status).toBe(409); // Delayed create cannot undo removal.
+    expect(await delayed.json()).toEqual({ error: 'plan-conflict' });
     expect((await plans().doc(id).get()).data()!['status']).toBe('cancelled');
   });
   it('allows self-created plans, rejects outsiders and revoked supporters without partial writes', async () => {

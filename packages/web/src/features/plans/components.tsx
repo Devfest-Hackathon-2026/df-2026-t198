@@ -1,5 +1,6 @@
 import { Button, Field, StatusChip } from '../../shared/ui';
 import type { PlanActions } from './api';
+import { planErrorMessage } from './errors';
 import { actionMessage, planActionErrorMessage, planProgress } from './progress';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { preparationPeriodTimes } from '@kadai-hisho/core';
@@ -47,14 +48,10 @@ export function PlanForm({ assignments, candidate, actions, onSaved }: {
       element.reset(); setStart(''); setEnd(''); setPeriod(0); attempt.current = null;
       setMessage('準備の予定を入れました。'); onSaved?.();
     } catch (error) {
-      setMessage(error instanceof Error && error.message === 'plan-after-deadline'
-        ? '締切より後の予定は入れられません。締切までの日時を選んでください。'
-        : error instanceof Error && error.message === 'plan-conflict'
-        ? 'この準備の予定は入れられませんでした。授業のあるコマや過ぎた時刻でないか、予定を外していないか確かめてください。'
-        : '保存を確認できませんでした。接続と共有の許可を確かめて、同じ内容でもう一度お試しください。');
+      setMessage(planErrorMessage(error, '保存を確認できませんでした。接続と共有の許可を確かめて、同じ内容でもう一度お試しください。'));
     } finally { setBusy(false); }
   }
-  if (!choices.length) return null;
+  if (!choices.length) return message ? <p role="status">{message}</p> : null;
   return <form ref={element} className="preparation-form" onChange={() => setMessage('')} onSubmit={event => { void submit(event); }}>
     {candidate ? <p>{candidate.date.replaceAll('-', '/')} {candidate.period}限に準備</p> : <>
       <label>準備する課題<select name="assignment" required onChange={event => setSelectedAssignment(event.target.value)}>{choices.map(row => <option key={JSON.stringify(row.key)}

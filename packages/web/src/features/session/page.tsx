@@ -11,7 +11,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { AssignmentChange, LedgerAssignment, SessionContext } from '../../../../core/src/types';
 import { getSessionServices, type SessionServices } from './firebase';
-import { preparationCandidates, sessionDeadlineEntries, buildSessionView, changeDescription, emptySession, reviewDescription, type SessionData } from './model';
+import { sessionPlanningView, sessionDeadlineEntries, buildSessionView, changeDescription, emptySession, reviewDescription, type SessionData } from './model';
 import { dayInZone, formatDeadline, formatMoment } from '../../shared/assignments/deadline-format';
 import { watchSession, type SessionState } from './watch';
 import { SessionLink, sessionRoute } from './route';
@@ -127,10 +127,8 @@ function SessionContent({ data, now, own, save, uid, planning, actions, manualAc
   data = { ...data, courses: linkedCourses(data.courses) };
   const view = buildSessionView(data, now);
   const deadlines = sessionDeadlineEntries(data, now);
-  const slots = new Set(preparationCandidates(data, now).filter(candidate => !data.plans.some(plan =>
-    plan.status === 'active' && plan.date === candidate.date && plan.period === candidate.period &&
-    plan.assignment.system === candidate.assignment.system && plan.assignment.sourceId === candidate.assignment.sourceId))
-    .map(candidate => `${candidate.date}/${candidate.period}`)).size;
+  const [selectedAssignment, setSelectedAssignment] = useState('');
+  const slots = sessionPlanningView(data, now, selectedAssignment).candidates.length;
   const promises = data.plans.filter(plan => plan.status !== 'cancelled' && data.context.lastSessionAt &&
     plan.decidedOn === dayInZone(new Date(data.context.lastSessionAt), 'Asia/Tokyo')).sort(comparePreparationPlans);
   const changeLine = (change: AssignmentChange) => <>
@@ -172,7 +170,8 @@ function SessionContent({ data, now, own, save, uid, planning, actions, manualAc
         })}
       </div></section>
     </div>
-    {planning ? <SessionPlanning data={data} now={now} actions={actions} own={own} viewerUid={viewerUid} /> : <>
+    {planning ? <SessionPlanning data={data} now={now} actions={actions} own={own} viewerUid={viewerUid}
+      selectedAssignment={selectedAssignment} onSelectAssignment={setSelectedAssignment} /> : <>
       <div className="session-check td-stage" style={{ animationDelay: '200ms' }}>
         <div className="session-primary"><section aria-labelledby="session-deadlines"><h2 id="session-deadlines">次の面談までの締切 <span className="session-count" aria-hidden="true">{deadlines.length}件</span></h2>
           {!data.context.nextSessionAt && <a href="#session-dates-editor">次の面談日時を決める</a>}

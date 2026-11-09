@@ -63,7 +63,7 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
           return deadline?.kind === 'datetime' ? Date.parse(deadline.dueAt) : Infinity;
         };
         const task = unfinished.sort((a, b) => dueAt(a) - dueAt(b) || a.key.sourceId.localeCompare(b.key.sourceId))[0];
-        if (!task) throw new PlanConflict();
+        if (!task) throw new PlanConflict('plan-assignment-unavailable');
         const courses = (await tx.get(student.collection('courses'))).docs.map(doc => doc.data() as Course).filter(course => course.currentTerm !== false);
         const periods = preparationPeriodTimes['demo-lms']!;
         const available = [1, 2, 3, 4, 5].filter(p => !courses.some(course => course.slots.some(slot => slot.weekday === weekday && slot.period === p)) &&
@@ -122,7 +122,7 @@ export function createDigestStore(db: Firestore, syncDemo: (uid: string) => Prom
         if (receipt.exists) return { outcome: 'unchanged' as const, plan: old, demo };
         if (old.revision !== revision || old.status !== 'active') throw new PlanActionConflict(old);
         const assignment = (await tx.get(student.collection('assignments').doc(documentKey(old.assignment.system, old.assignment.sourceId)))).data() as LedgerAssignment | undefined;
-        if (!assignment || assignment.submission === 'submitted' || assignment.presenceState === 'cancelled' || assignment.presenceState === 'ended') throw new PlanConflict();
+        if (!assignment || assignment.submission === 'submitted' || assignment.presenceState === 'cancelled' || assignment.presenceState === 'ended') throw new PlanConflict('plan-assignment-unavailable');
         const itemRef = student.collection('calendarItems').doc(old.calendarItemKey);
         const previous = (await tx.get(itemRef)).data() as CalendarItem | undefined;
         const integration = (await tx.get(student.collection('integrations').doc('calendar'))).data() as CalendarIntegration | undefined;
