@@ -10,6 +10,7 @@ afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 async function runFake(options, pageRoute = false) {
   vi.resetModules();
   const f = await fakeLms(options);
+  const local = {};
   const state = { ynuSessionId: 'synthetic-session' }, observations = [];
   const send = vi.fn(async (_tab, { operation }) => {
     try { return { ok: true, page: await fRequest(operation) }; }
@@ -19,10 +20,11 @@ async function runFake(options, pageRoute = false) {
   const url = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session';
   const fRequest = op => executeLmsRequest(op, url, state.ynuSessionId, f.fetcher, async () => {});
   vi.stubGlobal('chrome', { tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: (tab, message, target) =>
-    message.type === 'ynu-read-page' ? send(tab, message, target) : Promise.resolve({ ok: true }) }, action: {}, storage: { session: {
+    message.type === 'ynu-read-page' ? send(tab, message, target) : Promise.resolve({ ok: true }) }, action: {}, storage: { local: { get: async () => globalThis.structuredClone(local), set: vi.fn(async values => Object.assign(local, values)) }, session: {
     get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, globalThis.structuredClone(values)),
   } } });
   vi.stubGlobal('fetch', vi.fn(async (url, init) => {
+    if (url.endsWith('/api/v1/collection-policy')) return { ok: true, json: async () => ({ backgroundCollection: 'enabled' }) };
     if (url.startsWith('https://lms.ynu.ac.jp/')) {
       if (pageRoute) throw new Error('synthetic-blocked');
       return f.fetcher(url, init);
