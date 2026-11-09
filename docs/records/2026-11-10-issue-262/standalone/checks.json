@@ -1,0 +1,43 @@
+{
+  "sourceCommit": "32c756a7c845dfc1828ae1e8bf8ae7ea06b62948",
+  "checks": {
+    "jst": {
+      "typecheck": 0,
+      "lint": 0,
+      "test": 0,
+      "build": 0,
+      "progress": 0,
+      "samples": 0,
+      "qa": 0,
+      "m6": 0,
+      "public-demo": 0,
+      "landing": 0
+    },
+    "utc": {
+      "typecheck": 0,
+      "lint": 0,
+      "test": 0,
+      "build": 0,
+      "progress": 0,
+      "samples": 0,
+      "qa": 0,
+      "m6": 0,
+      "public-demo": 0,
+      "landing": 0
+    }
+  },
+  "qa": {
+    "jst": "28/28",
+    "utc": "28/28"
+  },
+  "m6": {
+    "jst": "8/8",
+    "utc": "8/8"
+  },
+  "storyBrowser": {
+    "jst": "pass",
+    "utc": "pass"
+  },
+  "assetsBrowser": "pass",
+  "samples": 17
+}
