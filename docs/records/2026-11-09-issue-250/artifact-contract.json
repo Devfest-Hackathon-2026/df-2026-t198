@@ -1,0 +1,148 @@
+{
+  "schema_version": 2,
+  "root": "../../..",
+  "recipient": "紹介ページを見る学生・支援担当・審査員とPRの見直し役",
+  "purpose": "用途を最初の絵で知り、学生と支援担当の画面を見て、LMSから締切変更を取り込む順序を理解し、体験版に進める。",
+  "conditions": [
+    "1280×800と390×844",
+    "架空のデータだけ",
+    "主見出しと補足文とキービジュアルを保持",
+    "CSS scroll snap",
+    "先生→LMS→取り込み→学生→支援担当の5段・各1.6〜2秒・最後は全体で停止"
+  ],
+  "assumptions": [
+    "Auth/Firestoreエミュレーターを使う",
+    "公開先・実LMS・実Googleカレンダーは今回の対象外"
+  ],
+  "request": {
+    "reference": "docs/records/2026-11-09-issue-250/intent.md",
+    "source_refs": [
+      "docs/records/2026-11-09-issue-250/intent.md",
+      "docs/ui-words.md"
+    ]
+  },
+  "plan_alignment": {
+    "status": "checked",
+    "reason": "Issue #250で指定された並び・主役の切り替え・最後の帯だけを変え、既存の共有入口と画像と機能を再利用する。"
+  },
+  "artifact_paths": [
+    "packages/web/src/features/landing/hero-visual.tsx",
+    "packages/web/src/features/landing/page.tsx",
+    "packages/web/src/features/landing/landing.css",
+    "packages/web/src/features/landing/mechanism.tsx",
+    "packages/web/src/features/landing/mechanism.css",
+    "packages/web/public/landing/student.png",
+    "packages/web/public/landing/session.png"
+  ],
+  "verification_paths": [
+    "packages/web/tests/verify-landing.mjs",
+    "packages/web/tests/run-landing-browser.mjs",
+    "packages/web/tests/landing.browser.mjs",
+    "packages/web/tests/landing-chapters.browser.mjs",
+    "packages/web/tests/landing-flow.browser.mjs",
+    "packages/web/tests/landing-shared.browser.mjs",
+    "packages/web/tests/helpers/local-processes.mjs",
+    "scripts/run-emulators.mjs"
+  ],
+  "intent_paths": [
+    "docs/records/2026-11-09-issue-250/intent.md",
+    "docs/ui-words.md"
+  ],
+  "requirements": [
+    {
+      "id": "layout",
+      "operation": "両サイズで6章を順に開く。",
+      "expected_result": "トップ→使う人→しくみ→導入→情報の扱い→最後の体験版入口の順で、各章の高さが画面以下、内容と操作が見え、横にはみ出さず、動きを減らす設定で静止する。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "flow",
+      "operation": "しくみの章に入り、最後まで見てから再生する。",
+      "expected_result": "先生→LMS→学生が開いて取り込み→同じ予定の移動→支援担当の5枚が1枚ずつ図全体の大きさで各1.6〜2秒、最後は5枚全体で停止。再生とreduced motionが使え、通信・保存はない。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "entry",
+      "operation": "共用の入口を押し、戻ってもう一度押す。",
+      "expected_result": "主な入口1つから体験用LMSへ入り、戻った後も使える。未設定ビルドではLMSリンクがある。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "dialogs",
+      "operation": "画像を拡大し、閉じる・Esc・背景で閉じ、章や既存ページへ移動する。",
+      "expected_result": "画像が見え、フォーカスとスクロールが戻り、既存の入口も開く。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "reading",
+      "operation": "両サイズの全章の写し、図の最終状態、再撮影した両画面を読み比べる。",
+      "expected_result": "最初の主見出しと絵を保ち、学生の締切と朝のメール、支援担当の前回からの変化、LMSを開いてから両者が更新される順序、最後の入口が分かる。各カードの文字も枠内に収まる。",
+      "verification": "semantic",
+      "review_evidence": [
+        "全12章の写し",
+        "5段ずつの主役の写しと最終状態",
+        "元の主見出し・補足文・hero-visual.tsxとの差分",
+        "既存の共用入口の往復と拡大操作"
+      ],
+      "evidence_required": true
+    }
+  ],
+  "commands": [
+    {
+      "id": "entry",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "entry"
+      ],
+      "covers": [
+        "entry"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "layout",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "layout"
+      ],
+      "covers": [
+        "layout"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "flow",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "flow"
+      ],
+      "covers": [
+        "flow"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "dialogs",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "dialogs"
+      ],
+      "covers": [
+        "dialogs"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    }
+  ]
+}
