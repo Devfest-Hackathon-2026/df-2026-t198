@@ -58,31 +58,26 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid, se
   });
   // The saved notice sits in the cell that was just filled; other messages stay below the table.
   const nearCell = message === savedMessage && saved !== null && dates.includes(saved.date) && saved.period <= periods;
-  return <div className="session-planning td-stage" style={{ animationDelay: '200ms' }}>
-    <label className="session-topic">相談する課題
+  return <><div className="session-planning td-stage" style={{ animationDelay: '200ms' }}>
+    <div className="rd-planning-head"><label className="session-topic">相談する課題
       <select value={task ? JSON.stringify(task.key) : ''} onChange={event => { setMessage(''); selectAssignment(event.target.value); setCandidate(null); }}>
         {!tasks.length && <option value="">次回までの課題がありません</option>}
         {tasks.map(row => <option key={JSON.stringify(row.key)} value={JSON.stringify(row.key)}>{row.latest.title}</option>)}
       </select>
     </label>
-    {!!view.review.length && <section className="session-decisions" aria-labelledby="session-decisions">
-      <h2 id="session-decisions">今日決めること</h2>
-      <ul>{view.review.map(row => <li key={JSON.stringify(row.key)}><button
-        onClick={() => { selectAssignment(JSON.stringify(row.key)); setCandidate(null); }}>{row.latest.title}</button>{' '}
-        <span className="review-tag">要確認</span> {reviewDescription(row)}</li>)}</ul>
-    </section>}
     {deadlineDate && deadline && <p>締切 {formatDeadline(deadline)}{' '}
       {weekOf(deadlineDate) !== monday.toISOString().slice(0, 10) && <button onClick={() => setChosenWeek(weekOf(deadlineDate))}>締切の週を見る</button>}</p>}
     {weeks.length > 1 && <nav className="session-weeks" aria-label="表示する週">{weeks.map(week =>
       <button key={week} aria-pressed={monday.toISOString().slice(0, 10) === week}
         onClick={() => setChosenWeek(week)}>{week.replaceAll('-', '/')}の週</button>)}</nav>}
+    </div>
     <ScrollFrame className="session-timetable-scroll" label="授業と準備の候補"><table className="session-timetable">
       <caption>授業と準備の候補</caption>
-      <thead><tr><th scope="col">時限</th>{dates.map((date, i) => <th scope="col" key={date}>
-        {Number(date.slice(5, 7))}/{Number(date.slice(8))}（{'月火水木金土日'[i]}）
+      <thead><tr><th scope="col">時限</th>{dates.map((date, i) => <th scope="col" key={date} className={date === dayInZone(now, 'Asia/Tokyo') ? 'rd-is-today' : undefined}>
+        {Number(date.slice(5, 7))}/{Number(date.slice(8))}（{'月火水木金土日'[i]}）{date === dayInZone(now, 'Asia/Tokyo') && '今日'}
         {date === deadlineDate && deadline && <span className="session-deadline">締切 {formatDeadline(deadline)}</span>}</th>)}</tr></thead>
       <tbody>{Array.from({ length: periods }, (_, i) => <tr key={i}><th scope="row">{i + 1}限</th>
-        {dates.map((date, d) => <td key={date}>
+        {dates.map((date, d) => <td key={date} className={date === dayInZone(now, 'Asia/Tokyo') ? 'rd-is-today' : undefined}>
           {courses.filter(course => course.slots.some(slot => slot.weekday === d + 1 && slot.period === i + 1))
             .map(course => {
               const next = entries.find(entry => entryBelongsTo(entry, course));
@@ -99,6 +94,17 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid, se
         </td>)}
       </tr>)}</tbody>
     </table></ScrollFrame>
+    <p className="rd-plan-legend" aria-label="時間割の凡例">
+      <span><i className="rd-legend-course" aria-hidden="true" />授業</span>
+      <span><i className="rd-legend-candidate" aria-hidden="true" />準備の候補（空いているコマ）</span>
+      <span><i className="rd-legend-preparation" aria-hidden="true" />入れた準備の予定</span>
+    </p>
+    {!!view.review.length && <section className="session-decisions" aria-labelledby="session-decisions">
+      <h2 id="session-decisions">今日決めること</h2>
+      <ul>{view.review.map(row => <li key={JSON.stringify(row.key)}><button
+        onClick={() => { selectAssignment(JSON.stringify(row.key)); setCandidate(null); }}>{row.latest.title}</button>{' '}
+        <span className="review-tag">要確認</span> {reviewDescription(row)}</li>)}</ul>
+    </section>}
     {courses.some(course => !course.slots.length) && <section aria-label="曜日・時限がまだ分からない授業">
       <h2>曜日・時限がまだ分からない授業</h2>
       {courses.filter(course => !course.slots.length).map(course => <p key={JSON.stringify([course.system, course.courseId])}>
@@ -112,6 +118,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid, se
     {candidate && actions && <PlanForm key={JSON.stringify(candidate)} assignments={data.assignments} candidate={candidate}
       actions={actions} onSaved={() => { setSaved(candidate); setCandidate(null); setMessage(savedMessage); }} />}
     {message && !nearCell && <p role="status">{message}</p>}
+  </div>
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own={own} viewerUid={viewerUid} />
-  </div>;
+  </>;
 }
