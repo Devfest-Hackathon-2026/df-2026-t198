@@ -1,6 +1,6 @@
 import { storyScenes } from './scenes';
 
-export const mechanismSteps = [
+export const storySteps = [
   { ...storyScenes[0], duration: 4800, lines: ['先生がLMSで締切を', '11/12から11/13に延ばします。'] },
   { ...storyScenes[1], duration: 6000, lines: ['LMSを開くと、拡張が変更を読み取り、', 'ToDokuとスマホのカレンダーに届きます。'] },
   { ...storyScenes[2], duration: 4000, lines: ['共有を許可した課題の変更を、', '支援担当も同じ締切で確かめます。'] },
@@ -19,3 +19,8 @@ export const storyCues: readonly (readonly { at: number; sound: StoryCue }[])[] 
   [{ at: 3000, sound: 'schedule' }, { at: 3300, sound: 'notify' }, { at: 5350, sound: 'clock' }],
   [{ at: 1000, sound: 'notify' }], [], [],
 ];
+
+export type StoryStep = ((typeof storyScenes)[number] | { id: 'summary'; title: string } | { id: 'eyecatch'; title: string }) & { duration: number; lines: readonly string[] };
+// All four clock transitions are included; only the final morning hold is shorter.
+export const shortStorySteps: readonly StoryStep[] = storySteps.slice(0, 5).map(item =>
+  item.id === 'morning' ? { ...item, duration: 3800 } : item);

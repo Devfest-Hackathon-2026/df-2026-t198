@@ -49,7 +49,7 @@
 }
 
 /* SVG story materials. */
-:root {
+.story-slides, .story-assets-page {
   --story-ink: #252D32;
   --story-teacher: #292C31;
   --story-student: #16386C;

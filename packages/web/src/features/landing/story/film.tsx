@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { StoryBrand } from './props';
 import { StoryActionScreen } from './film-screen';
 import { StoryRoomStage, clockFocus } from './room';
-import { mechanismSteps, transitionDuration } from './timeline';
+import { storySteps, transitionDuration, type StoryStep } from './timeline';
 import type { StorySceneId } from './scenes';
 
 function Summary() {
@@ -23,14 +23,14 @@ function Summary() {
   </div>;
 }
 
-export function MechanismFilm({ step, elapsed, still = false }: { step: number; elapsed: number; still?: boolean }) {
-  const item = mechanismSteps[step] ?? mechanismSteps[0];
+export function StoryFilm({ step, elapsed, still = false, steps = storySteps }: { step: number; elapsed: number; still?: boolean; steps?: readonly StoryStep[] }) {
+  const item = steps[step] ?? steps[0]!;
   if (item.id === 'eyecatch') return <div className="story-film story-eyecatch" data-scene="eyecatch">
     <svg viewBox="0 0 600 250" role="img" aria-label="ToDokuのロゴと名前"><StoryBrand x={98} y={82} scale={1.3} /></svg>
   </div>;
   if (item.id === 'summary') return <div className="story-film" data-scene="summary"><Summary /></div>;
   // Clock transitions occupy the end of a scene. Manual navigation starts at a stable frame.
-  const next = mechanismSteps[step + 1];
+  const next = steps[step + 1];
   const progress = !still && next && 'hour' in next ? Math.max(0, (elapsed - (item.duration - transitionDuration)) / transitionDuration) : 0;
   const swapped = progress >= .5;
   const shown = swapped && next && 'hour' in next ? next : item;

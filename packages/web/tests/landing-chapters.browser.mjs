@@ -41,9 +41,9 @@ try {
       assert.equal(await page.locator('#try a.judge-link').count(), 1);
       assert.equal(await page.locator('#try .local-demo, #try .entry-grid, #try .trial-route').count(), 0);
       assert.equal(await page.locator('#try .trial-launch a:visible, #try .trial-launch button:visible').count(), 1);
-      assert.equal(await page.locator('.flow-static-item').count(), 7);
-      assert.deepEqual(await page.locator('.flow-static-item h3').allTextContents(), ['先生がLMSの締切を延ばす', '学生がいつもどおりLMSを開く', '支援担当が締切の変化を確かめる', '2人で準備の予定を決める', '朝のメールで今日の予定を知る', '変更と準備の予定がつながる', 'ToDoku']);
-      assert.equal(await page.locator('.flow-static-item .flow-description span').count(), 14);
+      assert.equal(await page.locator('.flow-static-item').count(), 6);
+      assert.deepEqual(await page.locator('.flow-static-item h3').allTextContents(), ['先生の締切変更', '学生のLMS閲覧', 'ToDokuへの取り込み', '予定の更新', '面談画面の変化', '翌朝のメール']);
+      assert.equal(await page.locator('.flow-static-item .flow-description span').count(), 12);
       assert.equal(await page.locator('html').evaluate(el => globalThis.getComputedStyle(el).scrollBehavior), 'auto');
       assert.equal(await page.locator('.landing').evaluate(el => el.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running').length), 0);
     }

@@ -1,15 +1,15 @@
 import { expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { MechanismFilm } from '../src/features/landing/story/film';
+import { StoryFilm } from '../src/features/landing/story/film';
 import { StoryActionScreen } from '../src/features/landing/story/film-screen';
 import { StoryRoomStage } from '../src/features/landing/story/room';
-import { mechanismSteps } from '../src/features/landing/story/timeline';
+import { storySteps, shortStorySteps } from '../src/features/landing/story/timeline';
 
 it('ends the five agreed scenes with a summary and a logo-only eyecatch in about thirty seconds', () => {
-  expect(mechanismSteps.map(item => item.id)).toEqual(['office', 'bedroom', 'consultation', 'meeting', 'morning', 'summary', 'eyecatch']);
-  expect(mechanismSteps.reduce((sum, item) => sum + item.duration, 0)).toBeGreaterThanOrEqual(30000);
-  expect(mechanismSteps.reduce((sum, item) => sum + item.duration, 0)).toBeLessThanOrEqual(35000);
-  const html = renderToStaticMarkup(<MechanismFilm step={6} elapsed={0} />);
+  expect(storySteps.map(item => item.id)).toEqual(['office', 'bedroom', 'consultation', 'meeting', 'morning', 'summary', 'eyecatch']);
+  expect(storySteps.reduce((sum, item) => sum + item.duration, 0)).toBeGreaterThanOrEqual(30000);
+  expect(storySteps.reduce((sum, item) => sum + item.duration, 0)).toBeLessThanOrEqual(35000);
+  const html = renderToStaticMarkup(<StoryFilm step={6} elapsed={0} />);
   expect(html).toContain('ToDokuのロゴと名前');
   expect(html).not.toContain('data-role=');
   expect(html).not.toContain('コピー');
@@ -54,7 +54,7 @@ it('can render each completed scene independently with no previous-room state', 
     ['meeting', ['student', 'supporter']], ['morning', ['student']],
   ] as const;
   for (const [index, [scene, roles]] of cases.entries()) {
-    const html = renderToStaticMarkup(<MechanismFilm step={index} elapsed={3500} still />);
+    const html = renderToStaticMarkup(<StoryFilm step={index} elapsed={3500} still />);
     expect([...html.matchAll(/data-room="([^"]+)"/g)].map(match => match[1])).toEqual([scene]);
     expect([...html.matchAll(/data-role="([^"]+)"/g)].map(match => match[1])).toEqual(roles);
     expect(html).not.toMatch(/<img|<image|<foreignObject/);
@@ -62,14 +62,24 @@ it('can render each completed scene independently with no previous-room state', 
 });
 
 it('zooms into a clock and replaces the room before pulling out', () => {
-  const before = renderToStaticMarkup(<MechanismFilm step={0} elapsed={4000} />);
-  const after = renderToStaticMarkup(<MechanismFilm step={0} elapsed={4500} />);
+  const before = renderToStaticMarkup(<StoryFilm step={0} elapsed={4000} />);
+  const after = renderToStaticMarkup(<StoryFilm step={0} elapsed={4500} />);
   expect(before).toContain('data-room="office"');
   expect(after).toContain('data-room="bedroom"');
   expect(after).toContain('data-transition="true"');
 });
 
 it('advances the consultation clock from 10:00 to 10:30 without inserting another day', () => {
-  const halfway = renderToStaticMarkup(<MechanismFilm step={2} elapsed={3450} />);
+  const halfway = renderToStaticMarkup(<StoryFilm step={2} elapsed={3450} />);
   expect(/data-time="([^"]+)"/.exec(halfway)?.[1]).toBe('10:15');
+});
+
+it('keeps all five story scenes and their clock transitions within a 25-second short edition', () => {
+  expect(shortStorySteps.map(item => item.id)).toEqual(['office', 'bedroom', 'consultation', 'meeting', 'morning']);
+  expect(shortStorySteps.reduce((sum, item) => sum + item.duration, 0)).toBe(25000);
+  expect(storySteps.reduce((sum, item) => sum + item.duration, 0)).toBe(32400);
+  const html = renderToStaticMarkup(<StoryFilm steps={shortStorySteps} step={4} elapsed={3750} />);
+  expect(html).toContain('今日やること');
+  expect(html).toContain('data-transition="false"');
+  expect(html).not.toContain('data-scene="summary"');
 });

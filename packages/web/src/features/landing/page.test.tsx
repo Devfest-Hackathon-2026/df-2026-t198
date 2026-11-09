@@ -69,8 +69,9 @@ it('introduces the people before the mechanism and ends with the trial entry', (
   expect(main).toContain('時間割・カレンダーの締切と朝のメール');
   expect(main).toContain('前回の面談から変わった課題');
   expect(main).toContain('授業ごとの課題と締切をまとめ、その日にやることを毎朝メールで届けます。');
-  expect(html).toContain('data-scene="office"');
+  expect(html.match(/class="flow-scene"/g)).toHaveLength(1);
+  expect(html.match(/data-task="report"/g)).toHaveLength(1);
   const progress = html.slice(html.indexOf('role="progressbar"'));
-  expect(progress.match(/<i /g)).toHaveLength(7);
+  expect(progress.match(/<i /g)).toHaveLength(6);
   for (const label of ['前の段へ', '次の段へ', '一時停止する']) expect(html).toContain(`aria-label="${label}"`);
 });
