@@ -8,6 +8,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import type { DemoAccount, DemoData, Observation } from '@kadai-hisho/core';
 import { firebase } from '../../shared/firebase';
 import { DemoPages } from './pages';
+import { useDemoScreen } from './screen-flow';
 import { DemoTriptych } from './triptych';
 import { CourseColorProvider } from '../../shared/course-color-context';
 import { DemoObserved, useDemoObserved } from './observed';
@@ -149,6 +150,17 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   const [mailOpen, setMailOpen] = useState(0);
   const showMail = mailOpen > 0;
   const observed = useDemoObserved(user);
+  const tasks = data.courses.flatMap(course => course.assignments).filter(task => task.submission !== 'submitted');
+  const sourceAhead = observed.status === 'ready' && observed.data.assignments.length > 0 && tasks.some(task => {
+    const due = observed.data.assignments.find(row => row.key.sourceId === task.sourceId)?.officialDeadline?.deadline;
+    return due?.kind === 'datetime' && Date.parse(due.dueAt) !== Date.parse(task.dueAt);
+  });
+  const observedReady = observed.status === 'ready' && tasks.every(task => {
+    const due = observed.data.assignments.find(row => row.key.sourceId === task.sourceId)?.officialDeadline?.deadline;
+    return due?.kind === 'datetime' && Date.parse(due.dueAt) === Date.parse(task.dueAt);
+  });
+  const screen = useDemoScreen(observedReady);
+  const extensionTicket = useRef<number | null>(null);
   const [awaiting, setAwaiting] = useState<{ dates: { sourceId: string; dueAt: string }[]; announcementIds?: string[]; message: string; next?: 'read' | 'reset' } | null>(null);
   const [message, setMessage] = useOperationMessage();
   const [error, setError] = useOperationMessage();
@@ -160,8 +172,8 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       JSON.stringify((data.announcements ?? []).map(item => item.announcement.announcementId)) === JSON.stringify(awaiting.announcementIds)) && awaiting.dates.every(expected => data.courses.some(course => course.assignments.some(task =>
       task.sourceId === expected.sourceId && task.dueAt === expected.dueAt)))) {
       setMessage(awaiting.message); setAwaiting(null);
-      if (awaiting.next === 'read') { setStage(2); setAutoRead(true); }
-      if (awaiting.next === 'reset') { setStage(0); setMailOpen(0); }
+      if (awaiting.next === 'read') { setStage(2); setAutoRead(true); screen.changed(extensionTicket.current!); }
+      if (awaiting.next === 'reset') { setStage(0); setMailOpen(0); screen.reset(); }
     }
   }, [awaiting, data]);
   const blocked = busy || awaiting !== null;
@@ -176,7 +188,10 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         : '操作が終わりませんでした。接続を確かめて、もう一度お試しください。'); }
     finally { if (active.current) setBusy(false); }
   }
-  const open = () => {
+  const open = (automaticRead = false) => {
+    if (blocked) return;
+    const extended = automaticRead && extensionTicket.current !== null;
+    const operationTicket = extended ? extensionTicket.current! : screen.begin();
     setAutoRead(false);
     return action(async () => {
       pending.current ??= readDemoObservation(pages.current!, window.location.origin, crypto.randomUUID(), new Date().toISOString());
@@ -197,18 +212,20 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         !['proposal', 'duplicate', 'abstained'].includes(result.value))) {
         return '課題を確認しました。お知らせは最後まで確認できませんでした。LMSのお知らせと課題ページの締切を見比べてください。';
       }
+      screen.complete(operationTicket, extended);
+      extensionTicket.current = null;
       setStage(stage >= 2 ? 3 : 1);
       return '課題を確認しました。';
     });
   };
   useEffect(() => {
     if (!autoRead || blocked) return;
-    const timer = window.setTimeout(() => { void open(); }, 3000);
+    const timer = window.setTimeout(() => { void open(true); }, 3000);
     return () => window.clearTimeout(timer);
   }, [autoRead, blocked, data]);
-  const tasks = data.courses.flatMap(course => course.assignments).filter(task => task.submission !== 'submitted');
   const hero = tasks[0];
   const extend = (task: typeof tasks[number]) => action(async () => {
+    extensionTicket.current = screen.begin();
     const response = await post(user, '/api/v1/demo/extend', { sourceId: task.sourceId, expectedDueAt: task.dueAt });
     const expected = await response.json() as { sourceId: string; dueAt: string };
     window.location.hash = `detail-${task.sourceId}`;
@@ -221,10 +238,6 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   const openButton = <Button variant={stage === 0 || stage === 2 ? 'primary' : 'quiet'} disabled={blocked}
     busy={blocked && operation === 'open'} busyLabel="確認中…" onClick={() => { void open(); }}>LMSを開く</Button>;
   const result = message ? <p role="status">{message}</p> : error ? <p role="alert">{error}</p> : null;
-  const sourceAhead = observed.status === 'ready' && observed.data.assignments.length > 0 && tasks.some(task => {
-    const due = observed.data.assignments.find(row => row.key.sourceId === task.sourceId)?.officialDeadline?.deadline;
-    return due?.kind === 'datetime' && Date.parse(due.dueAt) !== Date.parse(task.dueAt);
-  });
   return <Staged>
     <div className="demo-flow-header"><ol className="demo-steps" aria-label="体験の段階">
       {['LMSを開く', '先生が締切を延ばす', '学生と支援担当の画面', '朝のメール'].map((label, index) =>
@@ -232,7 +245,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
           <span aria-hidden="true">{index < stage ? '✓' : index + 1}</span>{label}</li>)}
     </ol><Button variant="quiet" disabled={blocked} busy={blocked && operation === 'reset'} busyLabel="やり直しています…" onClick={() => {
       if (!window.confirm('体験を最初の状態に戻しますか？')) return;
-      setAutoRead(false);
+      setAutoRead(false); screen.reset(); extensionTicket.current = null;
       void action(async () => {
         const response = await post(user, '/api/v1/demo/reset', { onlyIfStale: false });
         const result = await response.json() as { data: DemoData };
@@ -261,7 +274,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         afterTen="まだ応答を待っています。接続を確かめて、この画面でお待ちください。" />
     </div>
     <CourseColorProvider courses={observed.data.courses}>
-      <DemoTriptych waiting={sourceAhead} lms={<div ref={pages}><DemoPages data={data} /></div>}
+      <DemoTriptych screen={screen} waiting={sourceAhead} lms={<div ref={pages}><DemoPages data={data} /></div>}
         student={<DemoObserved state={observed} role="student" />} supporter={<DemoObserved state={observed} role="supporter" />} />
     </CourseColorProvider>
     <div className="demo-secondary"><a href="/student" target="_blank" rel="noreferrer">学生の画面を開く</a>

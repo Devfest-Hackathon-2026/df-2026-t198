@@ -84,6 +84,7 @@ try {
   assert.equal(await nonDemoNotice.count(), 0);
   await login(student, 'student');
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
+  await student.getByRole('button', { name: '3つ並べて見る', exact: true }).click();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
   await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
