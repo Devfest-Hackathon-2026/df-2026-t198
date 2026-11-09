@@ -86,7 +86,9 @@ try {
     await page.goto(`${base}${path}`);
     await page.locator('.app-header').waitFor();
     assert.equal(await page.locator('.landing').count(), 0);
-    assert.deepEqual(await page.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
+    // Issue #249 separates session access from the general student and demo pages.
+    const expectedNavigation = path.startsWith('/session') ? ['体験用LMS', '学生', '面談'] : ['体験用LMS', '学生'];
+    assert.deepEqual(await page.locator('.app-header nav a').allTextContents(), expectedNavigation);
     assert.equal(await page.locator('.todoku-logo svg').count(), 1);
     assert.equal(await page.locator('.app-home').getAttribute('href'), '/student');
     assert.equal(await page.getByRole('link', { name: 'ToDokuの紹介ページ', exact: true }).getAttribute('href'), '/');

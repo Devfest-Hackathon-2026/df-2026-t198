@@ -1,0 +1,14 @@
+{
+  "status": "pass",
+  "checks": [
+    "student login alone shows the session assignment component",
+    "source-only state keeps both observed views and ledger unchanged",
+    "automatic LMS open sends the rendered DOM observation",
+    "both views show old and new deadlines",
+    "390px switches one pane at a time without overflow",
+    "morning email opens",
+    "hash back restores each LMS level",
+    "reset cancellation keeps data; confirmed reset returns to first stage and clears ledger"
+  ],
+  "browserErrors": []
+}

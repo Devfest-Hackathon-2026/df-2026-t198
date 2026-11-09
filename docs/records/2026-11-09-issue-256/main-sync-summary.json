@@ -1,0 +1,35 @@
+{
+  "scope": "main bcd1e6a integration; separate local Auth/Firestore emulators",
+  "judgeQA": {
+    "passed": 28,
+    "failed": 0,
+    "details": "main-sync/qa/operations.json"
+  },
+  "M6": {
+    "passed": 8,
+    "total": 8,
+    "details": "main-sync/m6/m6.json"
+  },
+  "publicDemo": {
+    "command": "pnpm test:public-demo:browser",
+    "exitCode": 0,
+    "observed": "role buttons, fixed login failures, extension -> LMS -> live supporter update, quota message and reset passed"
+  },
+  "sixChecks": {
+    "exitCode": 0,
+    "core": 274,
+    "extension": 509,
+    "server": 319,
+    "web": 218,
+    "samples": 17
+  },
+  "landing": {
+    "exitCode": 0,
+    "details": "main-sync/landing/verification.json",
+    "existingRoutes": 6
+  },
+  "sharedEntry": {
+    "exitCode": 0,
+    "details": "main-sync/entry/shared-entry.json"
+  }
+}

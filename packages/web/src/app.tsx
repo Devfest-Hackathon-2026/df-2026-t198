@@ -6,6 +6,7 @@ import { StudentPage } from './features/student/page';
 import { SessionPage } from './features/session/page';
 import { usePathname } from './shared/use-pathname';
 import { DemoPage } from './features/demo/page';
+import { MechanismSlides } from './features/landing/mechanism';
 import { useSessionAccess } from './shared/auth/session-access';
 
 const UiGallery = import.meta.env.DEV ? lazy(() => import('./shared/ui/gallery')) : null;
@@ -15,6 +16,7 @@ export function App() {
   return <><NetworkProgress /><Route path={path} /></>;
 }
 function Route({ path }: { path: string }) {
+  if (path === '/slides/mechanism') return <MechanismSlides />;
   if (path === '/dev/ui' && UiGallery) return <Suspense fallback={<p role="status">見本を開いています…</p>}><UiGallery /></Suspense>;
   if (path === '/') return <LandingPage />;
   return <AppShell path={path} />;

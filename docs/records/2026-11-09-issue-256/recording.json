@@ -1,0 +1,17 @@
+{
+  "programs": [],
+  "stream_groups": [],
+  "streams": [
+    {
+      "width": 1280,
+      "height": 720
+    }
+  ],
+  "format": {
+    "duration": "31.000000"
+  },
+  "files": {
+    "out/issue-256/mechanism.mp4": "47ca695a043040b5426743c17b983c90d8c904f4d710e819f599d5a02e16efba",
+    "out/issue-256/mechanism.webm": "dc59903428f487d965b234c9fa77ee3a7b00bde5220fcc972a8563dca77d2024"
+  }
+}

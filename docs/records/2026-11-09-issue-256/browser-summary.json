@@ -1,0 +1,26 @@
+{
+  "scope": "local Auth/Firestore emulators + Chromium; separate fresh emulators per runner",
+  "judgeQA": {
+    "passed": 28,
+    "failed": 0,
+    "details": "qa/operations.json"
+  },
+  "M6": {
+    "passed": 8,
+    "total": 8,
+    "details": "m6/m6.json"
+  },
+  "publicDemo": {
+    "command": "pnpm test:public-demo:browser",
+    "exitCode": 0,
+    "observed": "role buttons, fixed login failures, extension -> LMS -> live supporter update, quota message and reset passed"
+  },
+  "landing": {
+    "exitCode": 0,
+    "details": "landing/verification.json"
+  },
+  "sharedEntry": {
+    "exitCode": 0,
+    "details": "entry/shared-entry.json"
+  }
+}

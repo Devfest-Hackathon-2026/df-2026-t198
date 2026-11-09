@@ -1,117 +1,107 @@
-.landing .mechanism { position: relative; }
-.landing .flow-progress { display: flex; align-items: center; gap: 16px; min-height: 40px; margin-bottom: 12px; font: 13px/1.6 var(--jp); }
-.landing .flow-progress > span:first-child { min-width: 3em; font-family: var(--mono); }
-.landing .flow-dots { display: flex; gap: 7px; }
-.landing .flow-dots i { width: 5px; height: 5px; border: 1px solid currentColor; border-radius: 50%; }
-.landing .flow-dots i.is-past { background: currentColor; }
-.landing .flow-status { margin-left: auto; }
-.landing .flow-board { position: relative; height: 400px; }
-.landing .flow-card { position: absolute; top: 0; left: 0; box-sizing: border-box; width: 100%; height: 100%; display: grid; place-items: center; padding: 32px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--paper); color: var(--ink); opacity: 0; transform: scale(.86); visibility: hidden; transition: opacity 550ms ease, transform 550ms ease, left 550ms ease, top 550ms ease, width 550ms ease, height 550ms ease, visibility 550ms; }
-.landing .flow-card.is-active { opacity: 1; transform: scale(1); visibility: visible; z-index: 1; }
-.landing .flow-content { box-sizing: border-box; width: min(100%, 720px); min-width: 0; }
-.landing .flow-label { display: block; margin-bottom: 12px; font: 13px/1.5 var(--mono); }
-.landing .flow-card h3 { margin-bottom: 20px; font-size: 32px; }
-.landing .flow-notice { max-width: 24em; font-size: 28px; line-height: 1.8; }
-.landing .flow-teacher .flow-content { padding-left: 28px; border-left: 4px solid var(--accent); }
-.landing .flow-lms .flow-content { border: 1px solid var(--rule); background: var(--sheet); }
-.landing .flow-lms-header { display: flex; justify-content: space-between; gap: 12px; padding: 12px 20px; background: var(--accent); color: var(--on-ink); font-size: 14px; }
-.landing .flow-lms-body { display: grid; gap: 12px; padding: 20px; font-size: 18px; }
-.landing .flow-lms-body h3 { margin: 0; }
-.landing .flow-lms-body .flow-label { margin: 0; }
-.landing .flow-lms-notice { padding-bottom: 10px; border-bottom: 1px solid var(--rule); font-size: 14px; }
-.landing .flow-deadline { display: flex; flex-wrap: wrap; gap: 2px 10px; font: 18px/1.6 var(--mono); }
-.landing .flow-deadline s { color: var(--ink-muted); }
-.landing .flow-deadline s + strong { color: var(--change-text); }
-.landing .flow-open { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 24px; background: var(--accent-soft); color: var(--accent-text); font-size: 24px; }
-.landing .flow-schedules { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.landing .flow-schedule { min-width: 0; }
-.landing .flow-schedule h4 { margin: 0 0 12px; font-size: 18px; }
-.landing .flow-days { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font: 13px/1.6 var(--mono); }
-.landing .flow-days span { padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
-.landing .flow-track { position: relative; padding-top: 8px; height: 128px; }
-.landing .flow-event { box-sizing: border-box; width: calc(50% - 4px); height: 128px; padding: 8px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: 13px; line-height: 1.5; transition: transform 1200ms ease-in-out; }
-.landing .flow-event > span:first-child { display: block; margin-bottom: 6px; }
-.landing .flow-event .flow-deadline { font-size: 12px; }
-.landing .is-moved .flow-event { transform: translateX(calc(100% + 8px)); }
-.landing .flow-change { display: grid; gap: 16px; padding: 24px; border: 2px solid var(--line-strong); font-size: 22px; }
-.landing .flow-change.is-updated { border-color: var(--change-text); }
-.landing .flow-replay { display: block; margin: 12px 0 0 auto; min-height: var(--target); padding: 4px 8px; border: 0; background: transparent; color: inherit; font: 13px var(--jp); text-decoration: underline; cursor: pointer; }
-.landing .flow-replay:disabled { opacity: .55; cursor: default; }
-.landing .flow-replay[hidden] { display: none; }
-/* The same five cards shrink into their places; events keep their DOM identity. */
-.landing .is-overview .flow-card { left: var(--x); top: var(--y); width: var(--w); height: var(--h); padding: 14px; opacity: 1; transform: scale(1); visibility: visible; }
-.landing .flow-teacher { --x: 0%; --y: 0%; --w: 30%; --h: 44%; }
-.landing .flow-lms { --x: 32%; --y: 0%; --w: 36%; --h: 44%; }
-.landing .flow-import { --x: 70%; --y: 0%; --w: 30%; --h: 44%; }
-.landing .flow-student { --x: 0%; --y: 48%; --w: 64%; --h: 52%; }
-.landing .flow-supporter { --x: 66%; --y: 48%; --w: 34%; --h: 52%; }
-.landing .is-overview .flow-label { margin-bottom: 6px; font-size: 11px; }
-.landing .is-overview .flow-card h3 { margin-bottom: 8px; font-size: 17px; }
-.landing .is-overview .flow-notice { font-size: 15px; }
-.landing .is-overview .flow-teacher .flow-content { padding-left: 12px; }
-.landing .is-overview .flow-lms-header { padding: 4px 8px; font-size: 10px; }
-.landing .is-overview .flow-lms-body { padding: 8px; gap: 4px; font-size: 11px; }
-.landing .is-overview .flow-lms-body h3 { display: none; }
-.landing .is-overview .flow-lms-notice { padding-bottom: 4px; font-size: 10px; }
-.landing .is-overview .flow-deadline { font-size: 12px; }
-.landing .is-overview .flow-open { padding: 12px; gap: 8px; font-size: 14px; }
-.landing .is-overview .flow-student .flow-content { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; }
-.landing .is-overview .flow-student :is(.flow-label, h3) { margin: 0; }
-.landing .is-overview .flow-schedules { grid-column: 1 / -1; gap: 16px; margin-top: 8px; }
-.landing .is-overview .flow-schedule h4 { margin-bottom: 4px; font-size: 13px; }
-.landing .is-overview .flow-days { font-size: 11px; }
-.landing .is-overview .flow-days span { padding-bottom: 4px; }
-.landing .is-overview .flow-track { height: 80px; }
-.landing .is-overview .flow-event { height: 80px; font-size: 11px; }
-.landing .is-overview .flow-event .flow-deadline { font-size: 10px; }
-.landing .is-overview .flow-change { gap: 8px; padding: 12px; font-size: 14px; }
+.mechanism { min-width: 0; color: var(--ink); font-family: var(--jp); touch-action: pan-y; }
+.flow-slide { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); align-items: center; gap: 32px; }
+.flow-board { position: relative; min-width: 0; aspect-ratio: 720 / 520; border-radius: 20px; background: var(--paper); overflow: hidden; }
+.flow-scene { display: block; width: 100%; height: 100%; overflow: visible; font-family: var(--jp); }
+.flow-scene text { fill: var(--ink); }
+.scene-label { font-size: 19px; font-weight: 700; }
+.scene-small, .scene-old { font-size: 17px; }
+.scene-date { font-size: 21px; font-weight: 700; fill: var(--accent-text) !important; }
+.scene-halo { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; opacity: 0; transition: opacity 1s ease-in-out; }
+.is-focus > .scene-halo { opacity: 1; }
+.scene-shell { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+.scene-screen { fill: var(--white); transition: fill 1s ease-in-out; }
+.flow-scene-2 .scene-device.is-focus .scene-screen { fill: var(--accent-soft); }
+.scene-base { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+.scene-rule, .scene-wire { fill: none; stroke: var(--line-strong); stroke-width: 2; }
+.scene-wire { stroke-dasharray: 5 8; }
+.scene-strike { stroke: var(--ink); stroke-width: 2; }
+.mechanism[data-playing='true'] .flow-scene-1 .scene-date,
+.mechanism[data-playing='true'] .flow-scene-1 .scene-strike { animation: mechanism-deadline 1s ease-in-out both; }
+.scene-hub, .scene-extension rect { fill: var(--accent); }
+.scene-logo { fill: var(--white); }
+.flow-scene .scene-hub-label, .flow-scene .scene-extension text { fill: var(--white); font-size: 18px; }
+.scene-event { transition: translate 1s ease-in-out; }
+.scene-event rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
+.scene-event text { font-size: 17px; }
+.scene-event.is-moved { translate: 72px 0; }
+.scene-mail rect { fill: var(--accent-soft); }
+.scene-envelope { fill: none; stroke: var(--accent); stroke-width: 3; }
+.scene-mail { animation: mechanism-mail 1s ease-in-out both; }
+.flow-task { position: absolute; left: 39.5%; top: 4%; width: 22%; box-sizing: border-box; padding: 10px; border: 2px solid var(--accent); border-radius: 10px; background: var(--white); color: var(--ink); font-size: 12px; line-height: 1.5; box-shadow: 4px 5px 0 var(--surface); transition: left 1s ease-in-out, top 1s ease-in-out, transform 1s ease-in-out; }
+.flow-task > span { display: block; margin-bottom: 4px; color: var(--muted); }
+.flow-task strong { display: block; font-size: clamp(12px, 1.25vw, 17px); }
+.flow-task strong span { display: block; }
+.flow-task-date { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-family: var(--mono); }
+.flow-task-date b { color: var(--accent-text); }
+/* The card waits in the empty space next to the device in focus, so it never covers a device, the hub or a label. */
+.flow-scene-2 .flow-task, .flow-scene-4 .flow-task, .flow-scene-6 .flow-task { left: 41%; top: 68%; }
+.flow-scene-3 .flow-task { transform: scale(1.02); }
+.flow-copy { min-width: 0; color: var(--white); }
+.flow-number { font: 500 16px/1.5 var(--mono); }
+.mechanism .flow-status h3 { margin: 16px 0; font-size: clamp(21px, 2.2vw, 30px); line-height: 1.5; }
+.mechanism .flow-description { margin: 0; font-size: 14px; line-height: 1.9; }
+.flow-description span { display: block; white-space: nowrap; }
+.flow-controls { display: flex; gap: 8px; margin-top: 28px; }
+.flow-controls button { min-width: 70px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--white); border-radius: 100px; background: var(--paper); color: var(--ink); font: 700 13px var(--jp); cursor: pointer; }
+.flow-controls button:disabled { opacity: .5; cursor: default; }
+.flow-controls button:focus-visible, .mechanism:focus-visible { outline: 3px solid var(--marker); outline-offset: 4px; }
+.flow-play-state { display: block; min-height: 22px; margin-top: 12px; font-size: 12px; }
+.mechanism .flow-progress { display: flex; gap: 8px; height: 5px; margin-top: 24px; }
+.flow-progress > span { flex: 1; overflow: hidden; background: var(--accent-soft); border-radius: 10px; }
+.flow-progress i { display: block; height: 100%; background: var(--ink); transform: scaleX(0); transform-origin: left; }
+.flow-progress .is-past i { transform: scaleX(1); }
+.flow-progress .is-current i { animation: mechanism-progress 5s linear both; }
+.flow-static-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.flow-static-item { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; border-radius: 12px; background: var(--paper); }
+.flow-static-item .flow-board { width: 100px; height: 100px; aspect-ratio: auto; }
+.flow-static-item .flow-number { font-size: 11px; }
+.flow-static-item h3 { margin: 2px 0 5px; font-size: 15px; line-height: 1.5; }
+.flow-static-item .flow-description { font-size: 11px; }
+.mechanism-slides { display: grid; place-items: center; width: 100%; min-height: 100svh; padding: 0; background: var(--ink); }
+.mechanism-slide-frame { position: relative; width: min(100vw, 177.7778svh); aspect-ratio: 16 / 9; overflow: hidden; background: var(--accent); }
+.mechanism-slide-canvas { position: absolute; inset: 0 auto auto 0; box-sizing: border-box; display: grid; align-items: center; width: 1280px; height: 720px; padding: 64px; transform-origin: top left; }
+@keyframes mechanism-progress { to { transform: scaleX(1); } }
+@keyframes mechanism-mail { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes mechanism-deadline { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 700px) {
-  .landing .flow-progress { flex-wrap: wrap; gap: 6px 12px; min-height: 56px; font-size: 12px; }
-  .landing .flow-status { flex-basis: 100%; margin: 0; }
-  .landing .flow-board { height: 500px; }
-  .landing .flow-card { padding: 20px; }
-  .landing .flow-card h3 { font-size: 24px; }
-  .landing .flow-notice { font-size: 24px; }
-  .landing .flow-lms-header { padding: 8px 12px; font-size: 12px; }
-  .landing .flow-lms-body { padding: 16px 12px; font-size: 16px; }
-  .landing .flow-open { flex-direction: column; padding: 20px; font-size: 20px; }
-  .landing .flow-schedules { grid-template-columns: 1fr; gap: 24px; }
-  .landing .flow-schedule h4 { font-size: 15px; }
-  .landing .flow-track, .landing .flow-event { height: 108px; }
-  .landing .flow-event { font-size: 12px; }
-  .landing .flow-event .flow-deadline { font-size: 11px; }
-  .landing .flow-change { padding: 16px; font-size: 18px; }
-  .landing .is-overview .flow-card { padding: 10px; }
-  .landing .flow-teacher { --x: 0%; --y: 0%; --w: 48%; --h: 28%; }
-  .landing .flow-lms { --x: 51%; --y: 0%; --w: 49%; --h: 28%; }
-  .landing .flow-import { --x: 0%; --y: 30%; --w: 100%; --h: 15%; }
-  .landing .flow-student { --x: 0%; --y: 47%; --w: 100%; --h: 32%; }
-  .landing .flow-supporter { --x: 0%; --y: 81%; --w: 100%; --h: 19%; }
-  .landing .is-overview .flow-card h3 { font-size: 13px; margin-bottom: 4px; }
-  .landing .is-overview .flow-label { font-size: 10px; margin-bottom: 4px; }
-  .landing .is-overview .flow-notice { font-size: 12px; }
-  .landing .is-overview .flow-teacher .flow-content { padding-left: 8px; }
-  .landing .is-overview .flow-lms-header { font-size: 9px; padding: 3px 4px; }
-  .landing .is-overview .flow-lms-header span, .landing .is-overview .flow-lms-notice { display: none; }
-  .landing .is-overview .flow-lms-body { padding: 4px; font-size: 10px; }
-  .landing .is-overview .flow-lms .flow-deadline { font-size: 10px; }
-  .landing .is-overview .flow-open { flex-direction: row; padding: 4px 8px; font-size: 12px; }
-  .landing .is-overview :is(.flow-import, .flow-student) .flow-content { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; }
-  .landing .is-overview :is(.flow-import, .flow-student) :is(.flow-label, h3) { margin: 0; }
-  .landing .is-overview .flow-import .flow-open { grid-column: 1 / -1; margin-top: 4px; padding: 0; }
-  .landing .is-overview .flow-schedules { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
-  .landing .is-overview .flow-schedule h4 { font-size: 11px; }
-  .landing .is-overview .flow-days { font-size: 9px; }
-  .landing .is-overview .flow-track { padding-top: 4px; height: 66px; }
-  .landing .is-overview .flow-event { height: 66px; padding: 4px; font-size: 9px; }
-  .landing .is-overview .flow-event .flow-deadline { font-size: 9px; }
-  .landing .is-overview .flow-event > span:first-child { margin-bottom: 2px; }
-  .landing .is-overview .flow-change { border-width: 0; border-left-width: 2px; padding: 0 8px; gap: 2px; font-size: 11px; }
-  .landing .is-overview .flow-supporter .flow-content { display: grid; grid-template-columns: 1fr 1.1fr; column-gap: 8px; }
-  .landing .is-overview .flow-supporter .flow-label { grid-column: 1; }
-  .landing .is-overview .flow-supporter h3 { grid-column: 1; }
-  .landing .is-overview .flow-change { grid-column: 2; grid-row: 1 / 3; }
+  .flow-slide { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .flow-task { padding: 8px; font-size: 10px; }
+  .flow-task strong { font-size: 12px; }
+  .flow-task-date { gap: 6px; font-size: 10px; }
+  .flow-task { left: 38.5%; width: 25%; padding: 4px 5px; }
+  .flow-task > span, .flow-task strong span { display: none; }
+  .flow-task strong { font-size: 10px; }
+  .flow-task-date { gap: 4px; margin-top: 2px; font-size: 9px; }
+  .flow-scene-2 .flow-task, .flow-scene-4 .flow-task, .flow-scene-6 .flow-task { left: 40%; }
+  .flow-copy { padding-inline: 2px; }
+  .mechanism .flow-status h3 { margin: 8px 0; font-size: 22px; }
+  .mechanism .flow-description { font-size: 13px; line-height: 1.8; }
+  .flow-controls { margin-top: 18px; }
+  .flow-controls button { flex: 1; }
+  .flow-play-state { margin-top: 8px; }
+  .mechanism .flow-progress { margin-top: 16px; }
+  .flow-static-grid { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .flow-static-item { grid-template-columns: 70px minmax(0, 1fr); gap: 8px; padding: 6px; }
+  .flow-static-item .flow-board { width: 70px; height: 70px; border-radius: 6px; }
+  .flow-static-item h3 { margin: 0 0 3px; font-size: 13px; }
+  .flow-static-item .flow-description { font-size: 10px; line-height: 1.7; }
+  .flow-static-item .flow-number { font-size: 10px; }
 }
+/* Keep the recording composition at 1280×720; resize the complete canvas on small screens. */
+.mechanism-slides .flow-slide { grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 32px; }
+.mechanism-slides .flow-task { left: 39.5%; width: 22%; padding: 10px; font-size: 12px; }
+.mechanism-slides .flow-scene-2 .flow-task, .mechanism-slides .flow-scene-4 .flow-task, .mechanism-slides .flow-scene-6 .flow-task { left: 41%; }
+.mechanism-slides .flow-task strong { font-size: 17px; }
+.mechanism-slides .flow-task-date { gap: 10px; font-size: 12px; }
+.mechanism-slides .flow-status h3 { margin: 16px 0; font-size: 30px; }
+.mechanism-slides .flow-description { font-size: 14px; line-height: 1.9; }
+.mechanism-slides .flow-controls { margin-top: 28px; }
+.mechanism-slides .flow-controls button { flex: none; }
+.mechanism-slides .flow-progress { margin-top: 24px; }
+.mechanism-slides .flow-static-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mechanism-slides .flow-static-item { grid-template-columns: 100px minmax(0, 1fr); padding: 10px; gap: 12px; }
+.mechanism-slides .flow-static-item .flow-board { width: 100px; height: 100px; }
+.mechanism-slides .flow-static-item .flow-description { font-size: 11px; }
 @media (prefers-reduced-motion: reduce) {
-  .landing .flow-card, .landing .flow-event { transition: none; }
+  .mechanism *, .mechanism *::before, .mechanism *::after { animation: none !important; transition: none !important; }
 }
