@@ -5,16 +5,21 @@ import { log } from 'node:console';
 import { readFile, stat, mkdir, writeFile } from 'node:fs/promises';
 import { URL } from 'node:url';
 
-const projectId = 'project-00439085-4e2d-44c3-9a8';
-const origin = `https://${projectId}.web.app`;
+const local = process.argv[2] === '--verify-local-demo';
+if (local && (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||
+  process.env.FIRESTORE_EMULATOR_HOST !== '127.0.0.1:8085' ||
+  process.env.FIREBASE_AUTH_EMULATOR_HOST !== '127.0.0.1:9099')) throw new Error('local-emulators-required');
+const projectId = local ? 'demo-kadai-hisho' : 'project-00439085-4e2d-44c3-9a8';
+const origin = local ? 'http://127.0.0.1:5177' : `https://${projectId}.web.app`;
 const credentials = new URL('../../../fixtures-local/demo-accounts.local.json', import.meta.url);
 let browser;
 let phase = 'explicit-live-verification-required';
 const responses = [];
 try {
-  assert.deepEqual(process.argv.slice(2), ['--verify-live-demo']);
-  assert.equal((await stat(credentials)).mode & 0o777, 0o600);
-  const accounts = JSON.parse(await readFile(credentials, 'utf8'));
+  assert.deepEqual(process.argv.slice(2), [local ? '--verify-local-demo' : '--verify-live-demo']);
+  if (!local) assert.equal((await stat(credentials)).mode & 0o777, 0o600);
+  const accounts = local ? { projectId, origin, pairs: JSON.parse(process.env.KADAI_LOCAL_DEMO_PAIRS) }
+    : JSON.parse(await readFile(credentials, 'utf8'));
   assert.equal(accounts.projectId, projectId);
   assert.equal(accounts.origin, origin);
   assert.equal(accounts.pairs.length, 3);
@@ -22,8 +27,9 @@ try {
   browser = await chromium.launch({ headless: true });
   const errors = [];
   const views = [];
-  const evidence = new URL('../../../docs/records/2026-11-06-issue-59/', import.meta.url);
-  const documentBase = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
+  const evidence = local ? new URL(`file://${process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-demo-local'}/live/`)
+    : new URL('../../../docs/records/2026-11-06-issue-59/', import.meta.url);
+  const documentBase = `${local ? 'http://127.0.0.1:8085' : 'https://firestore.googleapis.com'}/v1/projects/${projectId}/databases/(default)/documents`;
   async function login(account) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 960 } });
     const page = await context.newPage();
@@ -57,8 +63,10 @@ try {
     const student = await login(pair.student);
     phase = `${pair.pair}-student-workspace`;
     await student.page.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
+    await student.page.getByRole('button', { name: '3つ並べて見る', exact: true }).click();
     phase = `${pair.pair}-student-observation`;
     await openLms(student.page);
+    await student.page.locator('.demo-more > summary').click();
     phase = `${pair.pair}-student-timetable`;
     const timetable = await student.context.newPage();
     timetable.setDefaultTimeout(30000);
@@ -68,7 +76,7 @@ try {
     const supporter = await login(pair.supporter);
     phase = `${pair.pair}-supporter-workspace`;
     await supporter.page.getByRole('link', { name: '面談を開く', exact: true }).click();
-    const link = supporter.page.getByRole('link', { name: `学生 ${pair.student.uid}`, exact: true });
+    const link = supporter.page.getByRole('navigation', { name: '担当する学生' }).locator(`a[href="/session/${pair.student.uid}"]`);
     phase = `${pair.pair}-supporter-student-list`;
     await link.waitFor();
     assert.equal(await supporter.page.getByRole('navigation', { name: '担当する学生' }).getByRole('link').count(), 1);

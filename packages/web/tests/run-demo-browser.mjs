@@ -31,15 +31,30 @@ try {
       } });
     } finally { await db.terminate(); await deleteApp(app); }
   }
+  if (!publicDemo) {
+    const requireServer = createRequire(new URL('../../server/package.json', import.meta.url));
+    const { initializeApp, deleteApp } = requireServer('firebase-admin/app');
+    const { getAuth } = requireServer('firebase-admin/auth');
+    const { getFirestore } = requireServer('firebase-admin/firestore');
+    const app = initializeApp({ projectId: 'demo-kadai-hisho' }, 'local-live-demo-seed');
+    const db = getFirestore(app);
+    try {
+      await seedPairs({ auth: getAuth(app), db, persist: async ({ pairs }) => {
+        env.KADAI_LOCAL_DEMO_PAIRS = JSON.stringify(pairs);
+      } });
+    } finally { await db.terminate(); await deleteApp(app); }
+  }
   const api = start('node', [publicDemo ? 'packages/web/tests/demo-announcements-server.mjs' : 'packages/server/dist/index.js'], true);
   await ready('http://127.0.0.1:8080/api/health', api);
   const vite = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', '5177', '--strictPort'], true);
   await ready('http://127.0.0.1:5177', vite);
   if (publicDemo) await finish(start('node', ['packages/web/tests/public-demo.browser.mjs']));
   else {
+    await finish(start('node', ['packages/web/tests/demo-screen.browser.mjs']));
     await finish(start('node', ['packages/web/tests/demo-reset.browser.mjs']));
     await finish(start('node', ['packages/web/tests/demo-flow.browser.mjs']));
     await finish(start('node', ['packages/web/tests/demo.browser.mjs']));
+    await finish(start('node', ['packages/web/tests/demo-live.browser.mjs', '--verify-local-demo']));
   }
 } finally {
   stop();
