@@ -44,10 +44,17 @@ export function createPlanStore(db: Firestore, syncDemo: (uid: string) => Promis
       if (input) {
         const assignment = (await tx.get(student.collection('assignments').doc(documentKey(input.assignment.system, input.assignment.sourceId)))).data() as LedgerAssignment | undefined;
         const courses = await tx.get(student.collection('courses'));
+        // Read the collection in this transaction so concurrent creates cannot both reserve the same time.
+        const plans = await tx.get(student.collection('plans'));
+        const overlaps = plans.docs.some(doc => {
+          const plan = doc.data() as PreparationPlan;
+          return plan.status === 'active' && Date.parse(plan.startsAt) < Date.parse(input.endsAt) &&
+            Date.parse(input.startsAt) < Date.parse(plan.endsAt);
+        });
         const weekday = new Date(`${input.date}T00:00:00Z`).getUTCDay() || 7;
         if (assignment && preparationAfterDeadline(input.startsAt, assignment.officialDeadline?.deadline)) throw new PlanAfterDeadline();
         if (!assignment || assignment.presenceState === 'cancelled' || assignment.submission === 'submitted' ||
-          Date.parse(input.startsAt) <= Date.now() || courses.docs.some(doc => (doc.data() as Course).slots.some(slot =>
+          Date.parse(input.startsAt) <= Date.now() || overlaps || courses.docs.some(doc => (doc.data() as Course).slots.some(slot =>
             slot.weekday === weekday && slot.period === input.period))) throw new PlanConflict();
         const now = new Date().toISOString();
         next = { ...input, planId, title: assignment.latest.title, decidedOn: new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }),
