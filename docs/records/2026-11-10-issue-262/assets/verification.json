@@ -1,10 +1,7 @@
 {
   "screenshots": [
     "page-controls.png",
-    "assets-a.png",
     "assets-b.png",
-    "assets-c.png",
-    "palettes.png",
     "screens.png",
     "eyecatch.png",
     "scene-office.png",
@@ -22,34 +19,7 @@
       "controlsFit": true
     },
     {
-      "name": "assets-a",
-      "width": 1280,
-      "height": 720,
-      "textOutside": [],
-      "peopleClipped": [],
-      "animations": 0,
-      "rasterImages": 0
-    },
-    {
       "name": "assets-b",
-      "width": 1280,
-      "height": 720,
-      "textOutside": [],
-      "peopleClipped": [],
-      "animations": 0,
-      "rasterImages": 0
-    },
-    {
-      "name": "assets-c",
-      "width": 1280,
-      "height": 720,
-      "textOutside": [],
-      "peopleClipped": [],
-      "animations": 0,
-      "rasterImages": 0
-    },
-    {
-      "name": "palettes",
       "width": 1280,
       "height": 720,
       "textOutside": [],

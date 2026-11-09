@@ -1,0 +1,212 @@
+[
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "stages": [
+      {
+        "stage": 1,
+        "duration": 4800
+      },
+      {
+        "stage": 2,
+        "duration": 6000
+      },
+      {
+        "stage": 3,
+        "duration": 4000
+      },
+      {
+        "stage": 4,
+        "duration": 6400
+      },
+      {
+        "stage": 5,
+        "duration": 4300
+      },
+      {
+        "stage": 6,
+        "duration": 4300
+      },
+      {
+        "stage": 7,
+        "duration": 2600
+      }
+    ],
+    "captures": [
+      {
+        "scene": "office",
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "bedroom",
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "consultation",
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "meeting",
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "morning",
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "summary",
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "eyecatch",
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      }
+    ],
+    "reducedDiagrams": 7,
+    "requests": 0,
+    "storageUnchanged": true,
+    "pageErrors": []
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "stages": [
+      {
+        "stage": 1,
+        "duration": 4800
+      },
+      {
+        "stage": 2,
+        "duration": 6000
+      },
+      {
+        "stage": 3,
+        "duration": 4000
+      },
+      {
+        "stage": 4,
+        "duration": 6400
+      },
+      {
+        "stage": 5,
+        "duration": 4300
+      },
+      {
+        "stage": 6,
+        "duration": 4300
+      },
+      {
+        "stage": 7,
+        "duration": 2600
+      }
+    ],
+    "captures": [
+      {
+        "scene": "office",
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "bedroom",
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "consultation",
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "meeting",
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "morning",
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "summary",
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "scene": "eyecatch",
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "noHorizontalOverflow": true
+        }
+      }
+    ],
+    "reducedDiagrams": 7,
+    "requests": 0,
+    "storageUnchanged": true,
+    "pageErrors": []
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "file": "out/issue-262/mechanism.mp4",
+  "sha256": "9c0fab66677df7d2c67a9348692938ce1b5c55a038107df886b9691cd226eeae",
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "codec_name": "aac",
+        "codec_type": "audio"
+      }
+    ],
+    "format": {
+      "duration": "33.618333",
+      "size": "2240321"
+    }
+  },
+  "volume": [
+    "mean_volume: -51.4 dB",
+    "max_volume: -27.0 dB"
+  ],
+  "soundStartsSeconds": [
+    1.893312,
+    4.346563,
+    8.1975,
+    10.353708,
+    14.360167,
+    18.417292,
+    20.767854,
+    22.826375
+  ],
+  "audioOffsetSeconds": 0.5600319999999996,
+  "audioDurationSeconds": 32.999968,
+  "recordedWallSeconds": 33.12459999999776,
+  "timelineMs": 32400,
+  "oscillators": 36
+}
