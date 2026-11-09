@@ -67,7 +67,7 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
   afterAll(async () => { if (server) await new Promise<void>(resolve => server.close(() => resolve())); await fixture?.close(); });
   afterEach(() => vi.restoreAllMocks());
   it.each([
-    { name: 'the seed deadline', earlier: [], expected: 'DEMO101_TASK1', title: '書き方を書くレポート' },
+    { name: 'the seed deadline', earlier: [], expected: 'DEMO101_TASK1', title: '第3回レポート（要約と引用）' },
     { name: 'an earlier deadline on another course', earlier: ['DEMO303_TASK1'], expected: 'DEMO303_TASK1', title: '第5回 小テスト' },
     { name: 'sourceId order for equal deadlines', earlier: ['DEMO303_TASK1', 'DEMO505_TASK1'], expected: 'DEMO303_TASK1', title: '第5回 小テスト' },
   ])('selects $name for the mail sample independently of document order', async ({ earlier, expected, title }) => {

@@ -26,7 +26,7 @@ const tasks = () => student.collection('assignments').get();
 const task = async () => (await tasks()).docs.find(doc => doc.data().key.sourceId === 'DEMO101_TASK1').data();
 const calls = async () => JSON.parse(await readFile(`${evidence}/fake-model.json`, 'utf8')).calls;
 const open = page.getByRole('button', { name: 'LMSを開く', exact: true });
-const publish = page.locator('.demo-teacher-action').filter({ hasText: '書き方を書くレポート' })
+const publish = page.locator('.demo-teacher-action').filter({ hasText: '第3回レポート（要約と引用）' })
   .getByRole('button', { name: 'お知らせを出す', exact: true });
 const status = text => page.getByRole('status').filter({ hasText: text }).waitFor();
 const notices = page.locator('[data-demo-announcement]');
@@ -53,7 +53,7 @@ try {
   const announced = (await source.get()).data();
   assert.deepEqual(announced.courses, original.courses);
   assert.equal((await tasks()).size, 0, 'publishing must not write the ledger');
-  assert.match(await notices.innerText(), /書き方を書くレポートの提出期限/);
+  assert.match(await notices.innerText(), /第3回レポート（要約と引用）の提出期限/);
   // The reader must send what the LMS DOM says, not reach back into Firestore.
   const sent = page.waitForRequest('**/api/v1/announcements');
   const parsed = page.waitForResponse('**/api/v1/announcements');
@@ -69,7 +69,7 @@ try {
   assert.equal(await calls(), 1);
   const timetable = await context.newPage();
   await timetable.goto('http://127.0.0.1:5177/student');
-  await timetable.locator('.timetable').getByRole('button', { name: /レポートの書き方の書き方/ }).click();
+  await timetable.locator('.timetable').getByRole('button', { name: /文章表現/ }).click();
   await timetable.locator('.course-panel').getByText('要確認', { exact: true }).waitFor();
   await timetable.locator('.course-panel').getByText(/お知らせでは締切が/).waitFor();
   await supporter.getByText(/お知らせでは締切が/).first().waitFor();

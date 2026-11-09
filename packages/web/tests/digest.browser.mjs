@@ -78,7 +78,7 @@ try {
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
   await preview.getByRole('link', { name: '🕒 後回し', exact: true }).waitFor();
   for (const page of [studentScreen, supporter]) {
-    await preparationList(page).getByText('書き方を書くレポート', { exact: true }).waitFor();
+    await preparationList(page).getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
     assert.equal(await preparationList(page).getByText('まだ', { exact: true }).count(), 0);
   }
   let doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
