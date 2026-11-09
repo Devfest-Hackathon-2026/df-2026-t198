@@ -15,6 +15,7 @@ import { DemoObserved, useDemoObserved } from './observed';
 import { Staged } from '../../shared/ui/motion';
 import { readDemoAnnouncements, readDemoObservation } from './reader';
 import './demo.css';
+import './redesign-demo.css';
 import { OperationMessages, useOperationMessage } from '../../shared/ui/operation-messages';
 import { PublicDemoEntry } from '../../shared/auth/public-demo-entry';
 import { hasJudgeLink, judgeLoginFailure, loginWithJudgeLink } from './judge-link';
@@ -85,12 +86,12 @@ function DemoPageContent({ initialLinkFailed }: { initialLinkFailed: boolean }) 
     catch { setError('ログインできませんでした。アカウントと接続を確かめてください。'); }
     finally { setLoginBusy(false); }
   }
-  return <div className="demo-shell"><header className="demo-header"><h1>ToDokuを試す</h1>
-    {user && <Button className="demo-logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}</header>
+  return <div className="demo-shell"><header className="demo-header"><h1>ToDokuを試す</h1><span className="rd-pill">授業と課題はすべて架空です</span>
+    {user && <Button variant="quiet" className="demo-logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}</header>
     <p>ここで扱う授業と課題は架空のものです。</p>
     {user === undefined ? <Skeleton label="ログインの状態を確かめています…" /> : user ? <>
       <DemoWorkspace key={user.uid} user={user} />
-    </> : <><PublicDemoEntry showDescription={false} showUnavailable /><details className="demo-judge-login" open={linkFailed || undefined}>
+    </> : <><p className="rd-demo-intro">架空の授業と課題で、学生と支援担当の両方の画面を試せます。</p><PublicDemoEntry showDescription={false} showUnavailable /><details className="demo-judge-login" open={linkFailed || undefined}>
       <summary>審査員の方（説明資料のアカウント）</summary><form className="session-login" onSubmit={event => { void login(event); }}>
       <label>メールアドレス<input name="email" type="email" autoComplete="username" required /></label>
       <label>パスワード<input name="password" type="password" autoComplete="current-password" required /></label>
@@ -148,6 +149,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   const [stage, setStage] = useState(0);
   const [autoRead, setAutoRead] = useState(false);
   const [mailOpen, setMailOpen] = useState(0);
+  const [lmsVersion, setLmsVersion] = useState(0);
   const showMail = mailOpen > 0;
   const observed = useDemoObserved(user);
   const tasks = data.courses.flatMap(course => course.assignments).filter(task => task.submission !== 'submitted');
@@ -173,7 +175,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       task.sourceId === expected.sourceId && task.dueAt === expected.dueAt)))) {
       setMessage(awaiting.message); setAwaiting(null);
       if (awaiting.next === 'read') { setStage(2); setAutoRead(true); screen.changed(extensionTicket.current!); }
-      if (awaiting.next === 'reset') { setStage(0); setMailOpen(0); screen.reset(); }
+      if (awaiting.next === 'reset') { setStage(0); setMailOpen(0); setLmsVersion(value => value + 1); screen.reset(); }
     }
   }, [awaiting, data]);
   const blocked = busy || awaiting !== null;
@@ -238,25 +240,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   const openButton = <Button variant={stage === 0 || stage === 2 ? 'primary' : 'quiet'} disabled={blocked}
     busy={blocked && operation === 'open'} busyLabel="確認中…" onClick={() => { void open(); }}>LMSを開く</Button>;
   const result = message ? <p role="status">{message}</p> : error ? <p role="alert">{error}</p> : null;
-  return <Staged>
-    <div className="demo-flow-header"><ol className="demo-steps" aria-label="体験の段階">
-      {['LMSを開く', '先生が締切を延ばす', '学生と支援担当の画面', '朝のメール'].map((label, index) =>
-        <li key={label} aria-current={index === stage ? 'step' : undefined} data-complete={index < stage}>
-          <span aria-hidden="true">{index < stage ? '✓' : index + 1}</span>{label}</li>)}
-    </ol><Button variant="quiet" disabled={blocked} busy={blocked && operation === 'reset'} busyLabel="やり直しています…" onClick={() => {
-      if (!window.confirm('体験を最初の状態に戻しますか？')) return;
-      setAutoRead(false); screen.reset(); extensionTicket.current = null;
-      void action(async () => {
-        const response = await post(user, '/api/v1/demo/reset', { onlyIfStale: false });
-        const result = await response.json() as { data: DemoData };
-        pending.current = null;
-        window.location.hash = 'courses';
-        setAwaiting({ announcementIds: [], dates: result.data.courses.flatMap(course => course.assignments),
-          next: 'reset', message: '体験を最初の状態に戻しました。' });
-        return '体験の画面を更新しています…';
-      }, 'reset');
-    }}>体験を最初からやり直す</Button></div>
-    <div className="demo-command" aria-label="今の操作">
+  const currentCommand = <div className="demo-command" aria-label="今の操作">
       {stage === 0 || stage === 2 ? <>{openButton}{result}</> : <>
         {stage === 1 && hero ? teacherButton(hero, true) : <Button variant="primary" disabled={blocked}
           busy={blocked && operation === 'mail'} busyLabel="開いています…" onClick={() => {
@@ -272,16 +256,43 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       </>}
       <LongWait busy={blocked} afterThree={operation === 'mail' ? 'メールの見本を開いています…' : operation === 'open' ? '課題とお知らせを確認しています…' : 'LMSの変更を待っています…'}
         afterTen="まだ応答を待っています。接続を確かめて、この画面でお待ちください。" />
-    </div>
+    </div>;
+  return <Staged>
+    <div className="demo-secondary"><Button className="rd-textlink" variant="quiet" disabled={blocked} busy={blocked && operation === 'reset'} busyLabel="やり直しています…" onClick={() => {
+      if (!window.confirm('体験を最初の状態に戻しますか？')) return;
+      setAutoRead(false); screen.reset(); extensionTicket.current = null;
+      void action(async () => {
+        const response = await post(user, '/api/v1/demo/reset', { onlyIfStale: false });
+        const result = await response.json() as { data: DemoData };
+        pending.current = null;
+        window.location.hash = 'courses';
+        setAwaiting({ announcementIds: [], dates: result.data.courses.flatMap(course => course.assignments),
+          next: 'reset', message: '体験を最初の状態に戻しました。' });
+        return '体験の画面を更新しています…';
+      }, 'reset');
+    }}>体験を最初からやり直す</Button></div>
+    <div className="rd-demo-stage" hidden={showMail}><aside className="rd-demo-guide"><div className="demo-flow-header"><ol className="demo-steps" aria-label="体験の段階">
+      {['LMSを開く', '先生が締切を延ばす', '学生と支援担当の画面', '朝のメール'].map((label, index) =>
+        <li key={label} aria-current={index === stage ? 'step' : undefined} data-complete={index < stage}>
+          <span aria-hidden="true">{index < stage ? '✓' : index + 1}</span><div className="rd-demo-step-copy"><b>{label}</b><small>{['学生が大学のLMSを開くと、課題が集まります', 'LMSの締切だけが先に変わります', '次の読み取りで、2人の画面に同じ変更が出ます', '見本を開いて、「終わった」を記録します'][index]}</small>{index === stage && currentCommand}</div></li>)}
+    </ol></div>
+    <div className="demo-screen-controls rd-demo-controls">
+      <label><input type="checkbox" checked={screen.automatic && !screen.reduced} disabled={screen.reduced} onChange={screen.toggleAutomatic} />自動で切り替える</label>
+      <a href="/student" target="_blank" rel="noreferrer" aria-label="学生の画面を開く">学生の画面を大きく開く</a>
+      <a href="/session" target="_blank" rel="noreferrer" aria-label="面談を開く">面談の画面を大きく開く</a>
+      <Button className="demo-parallel-toggle" variant="quiet" aria-pressed={screen.parallel} onClick={screen.toggleParallel}>{screen.parallel ? '1画面ずつ見る' : '3つ並べて見る'}</Button>
+      {(!screen.automatic || screen.reduced) && <div className="demo-manual-links">
+        <Button variant="quiet" onClick={() => screen.select('student')}>学生の画面を見る</Button>
+        <Button variant="quiet" onClick={() => screen.select('supporter')}>支援担当の画面を見る</Button>
+      </div>}
+      {stage !== 0 && stage !== 2 && openButton}
+    </div></aside>
     <CourseColorProvider courses={observed.data.courses}>
-      <DemoTriptych screen={screen} waiting={sourceAhead} lms={<div ref={pages}><DemoPages data={data} /></div>}
+      <DemoTriptych screen={screen} waiting={sourceAhead} changed={stage >= 2 && !sourceAhead} lms={<div ref={pages}><DemoPages key={lmsVersion} data={data} /></div>}
         student={<DemoObserved state={observed} role="student" />} supporter={<DemoObserved state={observed} role="supporter" />} />
     </CourseColorProvider>
-    <div className="demo-secondary"><a href="/student" target="_blank" rel="noreferrer">学生の画面を開く</a>
-      <a href="/session">面談を開く</a>
-      {stage !== 0 && stage !== 2 && openButton}
     </div>
-    <details className="demo-more"><summary>先生役の操作・メールの見本</summary>
+    <details className="demo-more" hidden={showMail}><summary>先生役の操作・メールの見本</summary>
       <section aria-label="先生役の操作"><h2>先生役の操作</h2>
         {tasks.map(task => <div className="demo-teacher-action" key={task.sourceId}>
           {!(stage === 1 && task === hero) && teacherButton(task)}
@@ -300,6 +311,6 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       </section>
       {!showMail && <DigestPreview user={user} />}
     </details>
-    {showMail && <div id="demo-morning-mail"><DigestPreview key={mailOpen} user={user} initiallyOpened /></div>}
+    {showMail && <div id="demo-morning-mail"><Button className="rd-textlink" variant="quiet" onClick={() => setMailOpen(0)}>体験に戻る</Button><DigestPreview key={mailOpen} user={user} initiallyOpened /></div>}
   </Staged>;
 }

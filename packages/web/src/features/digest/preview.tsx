@@ -77,7 +77,6 @@ export function DigestPreview({ user, initiallyOpened = false }: { user: User; i
   return <section className="digest-preview" aria-label="今日やることのメール"><h2>今日やることのメール</h2>
     <p className="rd-mail-sample">メールの見本です。実際には送信していません</p>
     <div className="digest-inbox-heading"><TodokuLogo /><span>受信箱（見本）</span></div>
-    <Button variant="quiet" busy={busy} busyLabel="準備中…" onClick={() => { void prepare(); }}>今日の準備の見本を用意する</Button>
     {!actionLink && digest && !digest.empty && <>
       {!opened ? <button className="digest-envelope" onClick={() => setOpened(true)} aria-label={`${digest.subject}を開く`}>
         <span>ToDoku</span><strong>{digest.subject}</strong><time>07:30</time>
@@ -89,5 +88,6 @@ export function DigestPreview({ user, initiallyOpened = false }: { user: User; i
     {actionLink && <><Button variant="quiet" onClick={() => setActionLink(undefined)}>メールの見本に戻る</Button><PlanLinkAction user={user} data={data} link={actionLink} /></>}
     {digest?.empty && <p>今日の準備や次に提出する課題、近い締切がない日は、メールを送りません。</p>}
     {message && <p role="status">{message}</p>}
+    <Button variant="quiet" busy={busy} busyLabel="準備中…" onClick={() => { void prepare(); }}>今日の準備の見本を用意する</Button>
   </section>;
 }

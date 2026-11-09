@@ -1,0 +1,97 @@
+/* The walkthrough keeps one current action beside one large screen. */
+.rd-demo-stage { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+.rd-demo-guide { min-width: 0; display: grid; gap: 10px; position: sticky; top: 84px; }
+.rd-demo-guide .demo-flow-header { display: block; border: 0; padding: 16px 18px; background: var(--card); border-radius: var(--r-card); box-shadow: var(--shadow); }
+.rd-demo-guide .demo-steps { display: grid; gap: 4px; }
+.rd-demo-guide .demo-steps li { align-items: start; gap: 10px; padding: 10px; border-radius: var(--r-inner); font-size: 14px; color: var(--muted); }
+.rd-demo-guide .demo-steps li > span:first-child { min-width: 26px; height: 26px; font-weight: 700; border: 1.5px solid var(--line-strong); }
+.rd-demo-guide .demo-steps li[aria-current] { color: var(--ink); background: var(--blue-soft); font-weight: 400; }
+.rd-demo-guide .demo-steps li[aria-current] > span:first-child { background: var(--blue); border-color: var(--blue); color: var(--card); }
+.rd-demo-guide .demo-steps li[data-complete='true'] > span:first-child { background: var(--green-soft); border-color: transparent; color: var(--green); }
+.rd-demo-step-copy { min-width: 0; display: grid; gap: 4px; }
+.rd-demo-step-copy > b { display: block; font-size: 15px; }
+.rd-demo-step-copy > small { font-size: 14px; line-height: 1.6; }
+.rd-demo-step-copy .demo-command { min-height: 0; padding: 4px 0 0; gap: 8px; }
+.rd-demo-step-copy .demo-command .td-btn { width: 100%; padding: 8px 12px; line-height: 1.5; }
+.rd-demo-controls { display: grid; gap: 8px; padding: 16px 18px; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow); font-size: 14px; }
+.rd-demo-controls > label { display: flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; }
+.rd-demo-controls input { display: inline-block; margin: 0; }
+.rd-demo-controls a, .app .rd-demo-controls .td-btn-quiet, .app .demo-shell .rd-textlink { display: inline-flex; align-items: center; justify-content: start; min-height: 44px; padding: 0 2px; border: 0; background: transparent; color: var(--blue); font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.app .demo-shell .demo-logout { text-decoration: underline; color: var(--muted); }
+.demo-header { margin-bottom: 12px; }
+.demo-shell > .td-staged > .td-stage:first-child .demo-secondary { justify-content: flex-end; padding-block: 0 12px; }
+.demo-header > h1 { font-size: 26px; }
+.demo-header + p { display: none; }
+.rd-demo-stage .demo-screen-flow { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow); overflow: hidden; }
+.rd-demo-stage .demo-pane-switch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 6px 6px 0; background: var(--today-soft); }
+.app .rd-demo-stage .demo-pane-switch button { display: flex; gap: 10px; align-items: center; justify-content: start; text-align: left; padding: 10px 14px; border: 0; border-radius: 12px 12px 0 0; background: transparent; color: var(--muted); }
+.app .rd-demo-stage .demo-pane-switch button[aria-pressed='true'] { background: var(--card); color: var(--ink); }
+.rd-demo-role { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; color: var(--card); background: var(--story-teacher, var(--ink)); font-size: 13px; font-weight: 700; }
+.rd-demo-role[data-role='student'] { background: var(--navy); }
+.rd-demo-role[data-role='supporter'] { background: var(--course-5-band); }
+.rd-demo-role-label { display: grid; gap: 2px; }
+.rd-demo-role-label b { font-size: 14px; line-height: 1.2; }
+.rd-demo-role-label small { font-size: 11px; font-weight: 400; }
+.rd-demo-dot { width: 10px; height: 10px; border-radius: 50%; margin-left: auto; flex: none; background: var(--faint); }
+.rd-demo-dot[data-changed='true'] { background: var(--red); }
+.rd-demo-caption { margin: 0; padding: 10px 18px; background: var(--blue-soft); color: var(--ink); border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 700; }
+.rd-demo-stage .demo-pane { border: 0; border-radius: 0; }
+.rd-demo-stage .demo-pane-heading { display: none; }
+.rd-demo-stage .demo-pane-body { height: clamp(480px, 62vh, 720px); scrollbar-gutter: auto; }
+.rd-demo-stage .demo-screen-flow[data-parallel='true'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rd-demo-stage .demo-screen-flow[data-parallel='true'] > nav, .rd-demo-stage .demo-screen-flow[data-parallel='true'] > .rd-demo-caption { grid-column: 1 / -1; }
+.rd-demo-stage .demo-screen-flow[data-parallel='true'] .demo-pane-heading { display: flex; }
+.rd-demo-stage .demo-screen-flow[data-parallel='true'] .demo-pane { border-inline-end: 1px solid var(--line); }
+.app .demo-shell .demo-teacher-action .td-btn-quiet { text-decoration: underline; text-underline-offset: 4px; padding-inline: 2px; }
+.demo-shell:has(.digest-open-mail, .plan-confirmation) .demo-command .td-btn-primary { background: transparent; color: var(--blue); border-color: transparent; text-decoration: underline; text-underline-offset: 4px; }
+.demo-shell .demo-login { padding: 22px; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow); }
+.demo-shell .demo-login > .td-btn { width: calc(50% - 8px); min-height: 96px; justify-content: start; text-align: left; padding: 16px 20px; gap: 14px; margin-right: 8px; }
+.demo-shell .demo-login > .td-btn::before { content: '学' / '';  display: grid; place-items: center; width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--navy); color: var(--card); }
+.demo-shell .demo-login > .td-btn:nth-of-type(2)::before { content: '支' / '';  background: var(--course-5-band); }
+.demo-shell .demo-login > p { font-size: 14px; }
+@media (max-width: 1050px) {
+  .rd-demo-stage { grid-template-columns: 260px minmax(0, 1fr); gap: 16px; }
+  .app .rd-demo-stage .demo-pane-switch button { padding-inline: 8px; gap: 6px; }
+  .rd-demo-role-label small { display: none; }
+}
+@media (max-width: 860px) {
+  .rd-demo-stage { grid-template-columns: minmax(0, 1fr); }
+  .rd-demo-guide { position: static; }
+  .rd-demo-stage .demo-pane-body { height: 560px; }
+  .rd-demo-stage .demo-pane-switch .rd-demo-role, .rd-demo-role-label small { display: none; }
+  .rd-demo-stage .demo-pane-switch button { min-width: 0; justify-content: center; }
+  .rd-demo-role-label b { font-size: 12px; }
+  .rd-demo-dot { width: 7px; height: 7px; margin-left: 0; }
+  .demo-shell .demo-login > .td-btn { width: 100%; margin: 0 0 12px; }
+}
+.rd-demo-stage[hidden] { display: none; }
+@media (max-width: 760px) { .app .rd-demo-controls .demo-parallel-toggle { display: none; } .rd-demo-stage .demo-screen-flow[data-parallel='true'] { grid-template-columns: minmax(0, 1fr); } }
+.rd-demo-stage .demo-observed-label { margin: 0 0 14px; font-size: 17px; }
+.rd-demo-stage .demo-observed-task { position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr); column-gap: 14px; border: 1px solid var(--line); border-radius: var(--r-inner); margin-bottom: 8px; padding: 10px 12px; }
+.rd-demo-stage .demo-observed-task[data-course-color] { border-inline-start: 4px solid var(--course-band); }
+.rd-demo-task-day { grid-row: span 3; display: grid; place-content: center; text-align: center; border-radius: 8px; background: var(--bg); line-height: 1.15; }
+.rd-demo-task-day b { font-size: 18px; }
+.rd-demo-task-day small { color: var(--muted); font-size: 11px; margin-top: 4px; }
+.rd-demo-stage .demo-observed-task .course-label { grid-column: 2; font-size: 13px; }
+.rd-demo-stage .demo-observed-task .course-label::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 7px; border-radius: 50%; background: var(--course-band); }
+.rd-demo-stage .demo-observed-task h3 { grid-column: 2; font-size: 15px; margin: 2px 0; }
+.rd-demo-stage .demo-observed-task .deadline { grid-column: 2; font-size: 14px; font-weight: 700; }
+.rd-demo-stage .demo-observed-task:has(.deadline.changed) { border-color: var(--red); background: var(--changed-surface); }
+.rd-demo-stage .demo-observed-task:has(.deadline.changed) .rd-demo-task-day { color: var(--red); background: var(--red-soft); }
+.rd-demo-stage .demo-session-tasks > li { border: 1px solid var(--line); border-radius: var(--r-inner); margin-bottom: 8px; padding: 10px 12px; }
+.rd-demo-stage .demo-session-tasks .session-task { background: var(--card); border: 0; padding: 0; }
+.rd-demo-stage .demo-session-tasks .session-task > summary { padding: 0; }
+.rd-demo-stage .demo-session-tasks > li:has(.deadline.changed) { border-color: var(--red); background: var(--changed-surface); }
+.rd-demo-stage .demo-session-tasks .session-task:has(.deadline.changed) { background: var(--changed-surface); }
+.demo-shell { position: relative; }
+.demo-header { justify-content: flex-start; gap: 14px; margin-bottom: 20px; }
+.demo-header .demo-logout { margin-left: auto; }
+.demo-shell > .td-staged > .td-stage:first-child { position: absolute; top: 0; right: 120px; }
+.rd-demo-stage .demo-pane-body { background: var(--card); }
+@media (max-width: 860px) {
+  .demo-shell > .td-staged > .td-stage:first-child { position: static; }
+  .demo-header { gap: 10px; }
+}
+#demo-morning-mail { max-width: 760px; margin-inline: auto; }
+.rd-demo-guide .demo-steps { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 860px) { .app .rd-demo-stage .demo-pane-switch button { padding-inline: 6px; gap: 4px; } }

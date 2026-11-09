@@ -1,5 +1,5 @@
-.app .plan-confirmation { max-width: 560px; margin: 24px auto; padding: 22px; display: grid; gap: 16px; border: 0; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow); text-align: left; color: var(--ink); }
-.plan-confirmation > h2 { font-size: 22px; margin: 0; }
+.app .plan-confirmation.notice { max-width: 560px; margin: 24px auto; padding: 22px; display: grid; gap: 16px; border: 0; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow); text-align: left; color: var(--ink); }
+.app .plan-confirmation > h2 { justify-self: start; font-size: 13px; margin: 0; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
 .plan-confirmation p { margin: 0; }
 .plan-confirmation .td-next { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-left: 6px solid var(--yellow); border-radius: var(--r-inner); box-shadow: none; }
 .plan-confirmation .td-next .td-btn-primary { background: var(--navy); color: var(--card); border-color: var(--navy); }
@@ -12,4 +12,10 @@
 .plan-confirmation .next-submission a { justify-self: start; display: inline-flex; align-items: center; min-height: 44px; border-radius: 10px; padding: 0 18px; font-weight: 700; background: var(--card); color: var(--navy); text-decoration: none; }
 .plan-confirmation .rd-days-left { justify-self: start; border-radius: 999px; padding: 3px 12px; font-size: 15px; font-weight: 700; background: var(--card); color: var(--navy); }
 .plan-confirmation > a { color: var(--blue); min-height: 44px; display: inline-flex; align-items: center; }
-@media (max-width: 600px) { .app .plan-confirmation { padding: 18px; } }
+@media (max-width: 600px) { .app .plan-confirmation.notice { padding: 18px; } }
+/* The direct mail link keeps the timetable available, with confirmation as its one main action. */
+.app .student-workspace:has(> .plan-confirmation) > :not(.plan-confirmation) .td-btn-primary { background: transparent; border-color: transparent; color: var(--blue); text-decoration: underline; text-underline-offset: 4px; }
+.app .student-workspace > .plan-confirmation { clear: both; width: min(100%, 560px); }
+.app .plan-confirmation .td-next { padding: 0; margin: 0; border: 0; background: transparent; box-shadow: none; }
+.app .plan-confirmation .td-marker { padding: 0; background: none; color: inherit; }
+.app .plan-confirmation .td-next-foot { display: grid; gap: 16px; justify-items: start; }

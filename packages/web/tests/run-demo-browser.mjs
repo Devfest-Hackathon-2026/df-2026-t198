@@ -49,6 +49,7 @@ try {
   const vite = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', '5177', '--strictPort'], true);
   await ready('http://127.0.0.1:5177', vite);
   if (publicDemo) await finish(start('node', ['packages/web/tests/public-demo.browser.mjs']));
+  else if (process.argv.includes('--redesign')) await finish(start('node', ['packages/web/tests/demo-layout.browser.mjs']));
   else {
     await finish(start('node', ['packages/web/tests/demo-screen.browser.mjs']));
     await finish(start('node', ['packages/web/tests/demo-reset.browser.mjs']));

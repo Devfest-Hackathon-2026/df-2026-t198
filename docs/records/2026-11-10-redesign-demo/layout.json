@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "checks": [
+    "one primary action inside the current guide step; secondary controls are text",
+    "home, materials, detail, student and supporter views fit at 1280 and 390",
+    "extension notice appears only after extending, with one old deadline",
+    "mail replaces the walkthrough; only done is filled",
+    "confirmation replaces mail; direct link keeps other actions quiet; explicit click records completion",
+    "after completion only the next-submission LMS action is filled; return to experience works"
+  ],
+  "browserErrors": []
+}

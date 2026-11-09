@@ -39,13 +39,13 @@ try {
   const current = (await source.get()).data();
   assert.ok(Date.parse(current.courses[0].assignments[0].dueAt) > Date.now());
   assert.ok(Date.parse((await student.collection('sessionContext').doc('current').get()).data().nextSessionAt) > Date.now());
-  assert.deepEqual(await page.locator('.demo-steps > li').allTextContents(), [
+  assert.deepEqual(await page.locator('.demo-steps > li').evaluateAll(rows => rows.map(row => row.firstElementChild.textContent + row.querySelector('b').textContent)), [
     '1LMSを開く', '2先生が締切を延ばす', '3学生と支援担当の画面', '4朝のメール',
   ]);
   assert.equal(await page.locator('.demo-command .td-btn-primary').count(), 1);
   await page.getByRole('link', { name: '学生の画面を開く', exact: true }).waitFor();
   await page.locator('.demo-more > summary').click();
-  await page.getByRole('heading', { name: 'LMS', exact: true }).waitFor();
+  assert.equal(await page.getByRole('navigation', { name: '体験の画面', exact: true }).getByRole('button', { name: 'LMS', exact: true }).getAttribute('aria-pressed'), 'true');
   const markers = await page.locator('.demo-list-end, .demo-availability').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().width));
   assert.ok(markers.length > 0 && markers.every(width => width <= 1));
   assert.equal(await page.locator('[data-demo-page="materials"] [data-demo-page="detail"]').count(), 0);

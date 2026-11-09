@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "checks": [
+    "default single pane, all three DOM panes retained",
+    "open: LMS then student after confirmation",
+    "extend: detail then student then supporter after 2.5 seconds",
+    "tab cancels during read and during supporter delay",
+    "automatic off: no switch, manual guides work",
+    "reduced motion: no switch or animation, manual guides work",
+    "parallel toggle works at 1280, hidden at 390, no horizontal overflow"
+  ],
+  "browserErrors": []
+}

@@ -91,7 +91,7 @@ try {
   assert.equal(Date.parse((await saved()).officialDeadline.deadline.dueAt), Date.parse(newDue));
   await reset();
   assert.equal((await ledger()).size, 0);
-  assert.equal(await page.locator('.demo-steps [aria-current="step"]').textContent(), '1LMSを開く');
+  assert.equal(await page.locator('.demo-steps [aria-current="step"] b').textContent(), 'LMSを開く');
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/flow.json`, JSON.stringify({ status: 'pass', checks: [
     'student login alone shows the session assignment component', 'source-only state keeps both observed views and ledger unchanged',
