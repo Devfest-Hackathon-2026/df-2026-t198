@@ -28,14 +28,14 @@ try {
     await page.getByText('支援担当が見られるのは、共有を許可した学生の情報だけです', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: '学生として試す', exact: true }).count(), 0);
     await page.getByRole('link', { name: '審査員の方', exact: true }).waitFor();
-    assert.equal(await page.locator('main > section.chapter').count(), 6);
+    assert.equal(await page.locator('main > section.chapter').count(), 7);
     assert.equal(await page.locator('.hero h1 span').count(), 3);
     if (width === 1280) {
       const title = await page.locator('.hero h1').evaluate(el => ({ height: el.getBoundingClientRect().height, line: parseFloat(globalThis.getComputedStyle(el).lineHeight) }));
       assert(Math.abs(title.height - title.line * 3) < 2, 'approved sentence occupies three desktop lines from the restored hero');
     }
     assert.equal(await page.locator('html').evaluate(el => globalThis.getComputedStyle(el).scrollSnapType), 'y mandatory');
-    assert.deepEqual(await page.locator('.chapter').evaluateAll(nodes => nodes.map(node => globalThis.getComputedStyle(node).scrollSnapAlign)), Array(6).fill('start'));
+    assert.deepEqual(await page.locator('.chapter').evaluateAll(nodes => nodes.map(node => globalThis.getComputedStyle(node).scrollSnapAlign)), Array(7).fill('start'));
     await noOverflow();
     for (const reveal of await page.locator('.td-reveal').all()) {
       await reveal.scrollIntoViewIfNeeded();

@@ -103,7 +103,15 @@ html.landing-scroll { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
 .landing .shot-dialog img { display: block; width: 100%; height: auto; }
 html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 
-/* 2 Mechanism: a supporting chapter, kept calm on ink */
+/* 2 Where deadlines also arrive: calendar, phone, morning mail */
+.landing .features-section { background: var(--surface); }
+.landing .feature-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; list-style: none; padding: 0; margin: 0; }
+.landing .feature-list li { display: grid; align-content: start; gap: 12px; padding: 28px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--white); box-shadow: 8px 8px 0 var(--line); }
+.landing .feature-icon { width: 56px; height: 56px; padding: 8px; box-sizing: border-box; border-radius: 12px; background: var(--marker); fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.landing .feature-list h3 { font-size: clamp(19px, 1.9vw, 24px); font-weight: 900; }
+.landing .feature-list p { font-size: 15px; font-weight: 500; line-height: 1.8; }
+
+/* 3 Mechanism: a supporting chapter, kept calm on ink */
 .landing .how-section { background: var(--ink); color: var(--paper); }
 .landing .how-section .section-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 28px; margin-bottom: 24px; }
 .landing .how-section .chapter-number { flex-basis: 100%; margin-bottom: 6px; }
@@ -114,7 +122,7 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 .landing .how-section .flow-controls button { border-color: var(--paper); }
 .landing .how-section .flow-number { color: var(--marker); }
 
-/* 3 Start */
+/* 4 Start */
 .landing .start-section { background: var(--paper); }
 .landing .setup-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; list-style: none; padding: 0; margin: 0 0 28px; }
 .landing .setup-steps li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 18px 20px; padding: 28px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--white); box-shadow: 8px 8px 0 var(--surface); }
@@ -123,15 +131,15 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 .landing .setup-steps .pill { grid-column: 1 / -1; justify-self: start; min-height: 48px; padding: 10px 20px; gap: 12px; font-size: 14px; }
 .landing .lms-support { display: flex; align-items: baseline; gap: 28px; padding-top: 22px; border-top: 1.5px solid var(--ink); }
 .landing .lms-support h3 { font-size: 14px; color: var(--muted); }
-.landing .supported-lms { list-style: none; padding: 0; margin: 0; font-size: 20px; font-weight: 700; }
+.landing .supported-lms { display: flex; flex-wrap: wrap; gap: 4px 28px; list-style: none; padding: 0; margin: 0; font-size: 20px; font-weight: 700; }
 
-/* 4 Privacy */
+/* 5 Privacy */
 .landing .privacy-section { background: var(--surface); }
 .landing .privacy-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; list-style: none; padding: 0; margin: 0; counter-reset: privacy; }
 .landing .privacy-list li { display: grid; align-content: start; gap: 14px; min-height: 132px; box-sizing: border-box; padding: 22px 24px; border-radius: 12px; background: var(--paper); font-size: clamp(16px, 1.55vw, 20px); font-weight: 700; line-height: 1.6; }
 .landing .privacy-list li::before { counter-increment: privacy; content: '0' counter(privacy); font: 600 13px var(--mono); color: var(--accent-text); }
 
-/* 5 Trial: the one loud chapter */
+/* 6 Trial: the one loud chapter */
 .landing .try-section { background: var(--accent); color: var(--white); align-items: center; text-align: center; }
 .landing .try-section .section-heading { margin-bottom: 20px; }
 .landing .try-section .chapter-number { justify-content: center; }
@@ -195,6 +203,10 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing .shot-trigger { box-shadow: 5px 5px 0 var(--surface); }
   .landing .shot { height: 15svh; }
   .landing .product-shot figcaption { margin-top: 8px; font-size: 11px; }
+  .landing .feature-list { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .landing .feature-list li { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 14px; padding: 16px; box-shadow: 5px 5px 0 var(--line); }
+  .landing .feature-icon { grid-row: 1 / span 2; align-self: start; width: 44px; height: 44px; padding: 6px; }
+  .landing .feature-list p { font-size: 13px; line-height: 1.7; }
   .landing .how-section.chapter { padding-top: 24px; }
   .landing .how-section .section-heading { margin-bottom: 12px; }
   .landing .how-section .section-heading p { font-size: 13px; line-height: 1.7; }

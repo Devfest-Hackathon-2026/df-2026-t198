@@ -1,6 +1,9 @@
 // The selected reference combines cumulative lit lines (B) with a following camera (C).
-export const stepDuration = 3000;
-export const motionDuration = 2000;
+export const stepDuration = 2400;
+export const motionDuration = 1500;
+// The last step stays longer: after the mail arrives, the camera pulls back to show all five cards.
+export const lastStepDuration = 4200;
+export const stepDurationOf = (step: number) => step === 5 ? lastStepDuration : stepDuration;
 export type NodeKey = 'T' | 'S' | 'H' | 'M' | 'P';
 type Point = readonly [number, number];
 export const routeKeys = ['r1', 'r2', 'r3', 'r4'] as const;
@@ -39,7 +42,7 @@ export function cameraAt(layout: Layout, step: number, t: number): Camera {
   const p = ease(progress(t, start, end));
   let cam: Camera = t < 600 ? mix(previous, source, ease(t / 600)) : mix(source, destination, p);
   if (t >= 600) cam = [cam[0], cam[1], cam[2] + (compact ? 70 : 120) * bump(p)];
-  if (step === 5 && !compact) cam = mix(cam, overview, ease(progress(t, 3600, 4800)));
+  if (step === 5) cam = mix(cam, overview, ease(progress(t, 5600, 8300)));
   const [cx, cy, width] = cam;
   const height = width * layout.h / layout.w;
   return [Math.min(Math.max(cx, -100 + width / 2), layout.w + 100 - width / 2),
@@ -68,7 +71,7 @@ export function bindScene(svg: SVGSVGElement, layout: Layout) {
   };
   const mark = (key: string, p: number) => get(key).setAttribute('width', String(round((widths[key] ?? 0) * clamp(p))));
   return (step: number, elapsed: number) => {
-    // Keep the reference's relative timings; the entire motion finishes within two seconds.
+    // Keep the reference's relative timings; the entire motion finishes within a second and a half.
     const t = elapsed * 5000 / motionDuration;
     const E = (s: number, a: number, b: number) => step > s ? 1 : step < s ? 0 : progress(t, a, b);
     const value = (prefix: string, s: number, offset: number) => {

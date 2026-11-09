@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { reducedMotion } from '../../shared/ui/motion';
 import { MechanismScene, type SceneHandle } from './mechanism-scene';
-import { motionDuration, stepDuration } from './mechanism-motion';
+import { motionDuration, stepDurationOf } from './mechanism-motion';
 import './mechanism.css';
 
 export const mechanismSteps = [
@@ -38,7 +38,7 @@ export function Mechanism({ autoplay = true }: { autoplay?: boolean }) {
     const current = clock.current;
     scene.current?.draw(current.step, current.elapsed);
     progress.current?.querySelectorAll('i').forEach((bar, index) => {
-      bar.style.transform = `scaleX(${index < current.step ? 1 : index === current.step ? current.elapsed / stepDuration : 0})`;
+      bar.style.transform = `scaleX(${index < current.step ? 1 : index === current.step ? Math.min(1, current.elapsed / stepDurationOf(current.step)) : 0})`;
     });
   }
   useEffect(() => {
@@ -64,8 +64,8 @@ export function Mechanism({ autoplay = true }: { autoplay?: boolean }) {
       const current = clock.current;
       current.elapsed += now - previous;
       previous = now;
-      if (current.elapsed >= stepDuration) {
-        current.elapsed %= stepDuration;
+      if (current.elapsed >= stepDurationOf(current.step)) {
+        current.elapsed %= stepDurationOf(current.step);
         current.step = (current.step + 1) % mechanismSteps.length;
         setStep(current.step);
         if (current.step === 0) { current.cycle++; setCycle(current.cycle); }

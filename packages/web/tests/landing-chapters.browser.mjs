@@ -17,8 +17,8 @@ try {
     await page.getByRole('heading', { level: 1 }).waitFor();
     await page.evaluate(() => globalThis.document.fonts.ready);
     await page.locator('.shot').evaluateAll(images => Promise.all(images.map(image => image.decode())));
-    assert.deepEqual(await page.locator('main > .chapter').evaluateAll(nodes => nodes.map(node => node.id)), ['home', 'people', 'how', 'start', 'privacy', 'try']);
-    assert.deepEqual(await page.locator('.next-chapter').evaluateAll(nodes => nodes.map(node => node.getAttribute('href'))), ['#people', '#how', '#start', '#privacy', '#try', '#home']);
+    assert.deepEqual(await page.locator('main > .chapter').evaluateAll(nodes => nodes.map(node => node.id)), ['home', 'people', 'features', 'how', 'start', 'privacy', 'try']);
+    assert.deepEqual(await page.locator('.next-chapter').evaluateAll(nodes => nodes.map(node => node.getAttribute('href'))), ['#people', '#features', '#how', '#start', '#privacy', '#try', '#home']);
     for (const chapter of await page.locator('main > .chapter').all()) {
       await chapter.evaluate(el => globalThis.scrollTo(0, el.offsetTop));
       await page.waitForFunction(id => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === `#${id}`, await chapter.getAttribute('id'));
@@ -36,7 +36,7 @@ try {
     }
     if (!baseline) {
       assert.equal(await page.locator('#privacy .privacy-list li').count(), 4);
-      assert.equal(await page.locator('#start .supported-lms li').count(), 1);
+      assert.equal(await page.locator('#start .supported-lms li').count(), 2);
       assert.equal(await page.locator('#try .trial-entry').count(), 1);
       assert.equal(await page.locator('#try a.judge-link').count(), 1);
       assert.equal(await page.locator('#try .local-demo, #try .entry-grid, #try .trial-route').count(), 0);
@@ -55,5 +55,5 @@ try {
     assert(result.contentFits, `${result.width} ${result.id}: all chapter content remains visible`);
     assert.equal(result.horizontalOverflow, false);
   }
-  log('PASS: six chapters fit 1280x800 / 390x844, no overflow, one trial entry, four privacy items, reduced motion.');
+  log('PASS: seven chapters fit 1280x800 / 390x844, no overflow, one trial entry, four privacy items, reduced motion.');
 } finally { await browser.close(); }

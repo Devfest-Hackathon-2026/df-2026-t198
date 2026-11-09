@@ -97,7 +97,7 @@ try {
       assert.equal(nodes.length, 5, 'same five cards');
       for (const node of nodes) assert.equal(await node.evaluate(node => node.isConnected), true);
       assert.equal(await flow.locator('img, .flow-task, .scene-card, .scene-tag').count(), 0, 'no screenshots or carried cards');
-      await page.waitForTimeout(2100);
+      await page.waitForTimeout(1600);
       await checkStage(flow, stage);
       const dimensions = await fits(page, standalone);
       assert(dimensions.height <= dimensions.viewport + 1 && dimensions.contentFits, 'all chapter content fits one screen');
@@ -109,14 +109,14 @@ try {
     // Loading/fonts/hover can consume part of stage 1 before this observer starts.
     for (let index = 2; index < stages.length; index++) {
       const duration = stages[index].elapsedMs - stages[index - 1].elapsedMs;
-      assert(duration >= 2650 && duration <= 3350, `stage lasts about three seconds: ${duration}`);
+      assert(duration >= 2100 && duration <= 2750, `stage lasts about 2.4 seconds: ${duration}`);
     }
     assert(new Set(stages.slice(0, 5).map(stage => stage.camera)).size === 5, 'camera follows each destination');
     await page.waitForFunction(() => Number(globalThis.document.querySelector('.mechanism')?.dataset.cycle) >= 1);
     await stageIs(page, 2);
     // Measure stage 2 to stage 2, excluding the partial first stage during load.
     const loopMs = await page.evaluate(() => globalThis.performance.now()) - started - stages[1].elapsedMs;
-    assert(loopMs >= 17000 && loopMs <= 18500, `six stages loop in about 18 seconds: ${loopMs}`);
+    assert(loopMs >= 15400 && loopMs <= 17000, `five 2.4-second stages and a 4.2-second closing overview loop in about 16 seconds: ${loopMs}`);
     assert.equal(await flow.getAttribute('data-stage'), '2');
     assert.equal(await flow.getAttribute('data-playing'), 'true', 'last stage loops with cursor still over the board');
     await flow.getByRole('button', { name: '前の段へ' }).click(); await stageIs(page, 1);
@@ -219,5 +219,5 @@ try {
     observed: observations,
     evidence_files: ['flow-verification.json', ...observations.flatMap(item => item.stages.map(stage => `flow-stage-${stage.stage}-${item.standalone ? '1280x720' : item.viewport.width}.png`))],
   }] }));
-  else log('PASS: six three-second stages, line delivery and following camera, 18-second loop, hover/focus continue, stop/resume conditions, controls, three viewports, six static diagrams, no requests/storage changes.');
+  else log('PASS: 2.4-second stages, line delivery and following camera, closing overview, 16-second loop, hover/focus continue, stop/resume conditions, controls, three viewports, six static diagrams, no requests/storage changes.');
 } finally { await browser.close(); }

@@ -9,7 +9,7 @@ import { Mechanism } from './mechanism';
 const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
 const chapters = [
   { id: 'home', label: 'トップ' }, { id: 'people', label: '概要' },
-  { id: 'how', label: 'しくみ' }, { id: 'start', label: '使い始める' },
+  { id: 'features', label: '届く場所' }, { id: 'how', label: 'しくみ' }, { id: 'start', label: '使い始める' },
   { id: 'privacy', label: '情報の扱い' }, { id: 'try', label: '体験する' },
 ];
 
@@ -30,6 +30,15 @@ function Screenshot({ name, alt, width, height, caption }: { name: string; alt: 
       </div>
     </dialog>
   </figure>;
+}
+
+const featureIcons = {
+  calendar: 'M8 14h32v26H8zM8 21h32M16 9v8M32 9v8M15 28h8v6h-8z',
+  phone: 'M15 6h18v36H15zM21 37h6M20 13h8v8h-8z',
+  mail: 'M6 12h36v24H6zM6 12l18 14 18-14',
+};
+function FeatureIcon({ name }: { name: keyof typeof featureIcons }) {
+  return <svg className="feature-icon" viewBox="0 0 48 48" aria-hidden="true"><path d={featureIcons[name]} /></svg>;
 }
 
 function DemoEntries() {
@@ -87,35 +96,45 @@ export function LandingPage() {
             <div className="person-thumb"><Screenshot name="session" alt="支援担当の面談画面" width={1200} height={650} caption="面談の画面" /></div>
           </Reveal>
         </div>
+        <a className="next-chapter" href="#features">届く場所 <span aria-hidden="true">↓</span></a>
+      </section>
+
+      <section className="chapter features-section" id="features" aria-labelledby="features-title">
+        <Reveal><div className="section-heading"><span className="chapter-number">02</span><h2 id="features-title">締切は、ふだん見る場所にも届きます</h2></div></Reveal>
+        <Reveal><ul className="feature-list">
+          <li><FeatureIcon name="calendar" /><h3>Google カレンダー</h3><p>締切が予定として入り、締切が変わると予定も動きます。</p></li>
+          <li><FeatureIcon name="phone" /><h3>スマホのホーム画面</h3><p>ホーム画面に置いて、アプリのように時間割を開けます。</p></li>
+          <li><FeatureIcon name="mail" /><h3>朝のメール</h3><p>課題がある朝 7:30 に、クラウドから本人へ送ります。PCを開いていなくても届きます。</p></li>
+        </ul></Reveal>
         <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter how-section" id="how" aria-labelledby="how-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">02</span><h2 id="how-title">しくみ</h2><p>締切が変わっても、学生と支援担当の画面にそろって出ます。</p></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">03</span><h2 id="how-title">しくみ</h2><p>締切が変わっても、学生と支援担当の画面にそろって出ます。</p></div></Reveal>
         <Mechanism />
         <a className="next-chapter" href="#start">使い始める <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter start-section" id="start" aria-labelledby="start-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">03</span><h2 id="start-title">導入</h2></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">04</span><h2 id="start-title">導入</h2></div></Reveal>
         <Reveal><ol className="setup-steps">
           <li><span className="step-number">01</span><h3>Chrome 拡張</h3><a className="pill" href={`${repository}#手元で動かす`}>開発版の導入手順を開く <span aria-hidden="true">↗</span></a></li>
           <li><span className="step-number">02</span><h3>Google ログイン</h3><a className="pill" href="/student">学生画面を開く <span aria-hidden="true">↗</span></a></li>
         </ol>
-          <div className="lms-support"><h3>対応しているLMS</h3><ul className="supported-lms"><li>横浜国立大学</li></ul></div>
+          <div className="lms-support"><h3>対応しているLMS</h3><ul className="supported-lms"><li>横浜国立大学</li><li>京都大学</li></ul></div>
         </Reveal>
         <a className="next-chapter" href="#privacy">情報の扱い <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter privacy-section" id="privacy" aria-labelledby="privacy-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">04</span><h2 id="privacy-title">情報の扱い</h2></div>
+        <Reveal><div className="section-heading"><span className="chapter-number">05</span><h2 id="privacy-title">情報の扱い</h2></div>
           <ul className="privacy-list"><li>LMS のパスワードを預かりません</li><li>LMSに課題の提出や書き込みをしません</li><li>メールは本人にだけ届きます</li><li>支援担当が見られるのは、共有を許可した学生の情報だけです</li></ul>
         </Reveal>
         <a className="next-chapter" href="#try">体験する <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter try-section" id="try" aria-labelledby="try-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">05</span><h2 id="try-title">体験版</h2></div>
+        <Reveal><div className="section-heading"><span className="chapter-number">06</span><h2 id="try-title">体験版</h2></div>
           <p className="trial-lead">架空の授業と課題で、学生と支援担当の画面を試せます。</p>
           <DemoEntries />
         </Reveal>

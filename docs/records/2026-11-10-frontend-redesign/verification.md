@@ -10,6 +10,12 @@ branch `frontend-redesign`（#271 の文と main を取り込み済み）。依�
 - 面談画面：2つの段を1つの切り替えにまとめ、面談日時と取得時点を1本の帯にし、前回からの変化を時系列の点と線で並べた。
 - 紹介ページの学生・面談の画像は、新しい見た目で撮り直した（架空の撮影日を 11/10 に進めたので、画像の締切は 11/13→11/14）。
 
+## Sora の確認後に足したこと（2026-11-10）
+
+- しくみを速くした（1段3秒→2.4秒）。最後の段はメールが届いたあとカメラを引いて5枚全体を見せる（4.2秒）。1周は18秒→約16秒。速さを確かめる試験の幅と待ち時間も合わせた。
+- しくみの手前に章を1つ足した（Google カレンダー・スマホのホーム画面・朝のメール）。章は7つになった。
+- 対応しているLMSに京都大学を足した。
+
 ## 結果（2026-11-10、ローカルのAuth・FirestoreエミュレーターとChromium）
 
 | 検査 | Asia/Tokyo | UTC |
@@ -38,6 +44,6 @@ branch `frontend-redesign`（#271 の文と main を取り込み済み）。依�
 
 `before-*` が変更前、`after-*` が変更後。幅は 1280 と 390。データはすべて体験用の架空のもの。
 
-- 紹介ページ：`after-landing-{home,people,how,start,privacy,try}-{1280,390}.png`
+- 紹介ページ：`after-landing-{home,people,features,how,start,privacy,try}-{1280,390}.png`
 - 学生：`after-student-*.png`、授業を開いた状態 `after-student-course-*.png`
 - 面談：`after-session-*.png`、課題の詳細 `after-session-detail-*.png`、学生の選択 `after-session-list-*.png`、相談 `after-plan-*.png`
