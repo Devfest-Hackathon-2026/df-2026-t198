@@ -8,7 +8,7 @@ import { Mechanism } from './mechanism';
 
 const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
 const chapters = [
-  { id: 'home', label: 'トップ' }, { id: 'people', label: '使う人' },
+  { id: 'home', label: 'トップ' }, { id: 'people', label: 'できること' },
   { id: 'how', label: 'しくみ' }, { id: 'start', label: '使い始める' },
   { id: 'privacy', label: '情報の扱い' }, { id: 'try', label: '体験する' },
 ];
@@ -62,7 +62,7 @@ export function LandingPage() {
   return <div className="landing brand"><Splash />
     <header className="landing-header">
       <a className="landing-home" href="/" aria-label="ToDoku ホーム"><TodokuLogo /></a>
-      <nav aria-label="目次"><a href="#people">使う人</a><a href="#how">しくみ</a><a href="#start">使い始める</a><a href="#try">体験する</a></nav>
+      <nav aria-label="目次"><a href="#people">できること</a><a href="#how">しくみ</a><a href="#start">使い始める</a><a href="#try">体験する</a></nav>
     </header>
     <nav className="chapter-nav" aria-label="現在地">{chapters.map(chapter => <a key={chapter.id} href={`#${chapter.id}`} aria-label={chapter.label} aria-current={current === chapter.id ? 'location' : undefined}><span>{chapter.label}</span></a>)}</nav>
     <main>
@@ -73,16 +73,16 @@ export function LandingPage() {
           <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="text-link" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
         </Staged>
         <HeroVisual />
-        <a className="next-chapter" href="#people">使う人 <span aria-hidden="true">↓</span></a>
+        <a className="next-chapter" href="#people">できること <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter people-section" id="people" aria-labelledby="people-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="people-title">使う人</h2></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="people-title">できること</h2></div></Reveal>
         <div className="product-grid">
-          <Reveal><div className="person-heading"><h3>学生</h3><p>時間割・カレンダーの締切と朝のメール</p></div><Screenshot name="student" alt="学生の時間割" width={685} height={496} caption="時間割と締切" />
+          <Reveal><div className="person-heading"><h3>学生</h3><p>LMSの課題と締切が、時間割とカレンダーにまとまります。<br />毎朝、今日やることがメールで届きます。</p></div><Screenshot name="student" alt="学生の時間割" width={685} height={496} caption="時間割と締切" />
             <div className="person-mail"><span>7:30 受信箱</span><strong>今日やること</strong><span>文章表現 レポートの準備</span></div>
           </Reveal>
-          <Reveal order={1}><div className="person-heading"><h3>支援担当（カウンセラーなど）</h3><p>前回の面談から変わった課題</p></div><Screenshot name="session" alt="支援担当の面談画面" width={1168} height={667} caption="面談の画面" /></Reveal>
+          <Reveal order={1}><div className="person-heading"><h3>支援担当（カウンセラーなど）</h3><p>前回の面談から変わった課題が、すぐ分かります。<br />次にやることを、学生と一緒に決められます。</p></div><Screenshot name="session" alt="支援担当の面談画面" width={1168} height={667} caption="面談の画面" /></Reveal>
         </div>
         <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
       </section>
