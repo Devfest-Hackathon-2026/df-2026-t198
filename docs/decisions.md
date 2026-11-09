@@ -713,3 +713,11 @@ Soraが別の準備予定との重複保存の拒否に合意し、断る理由�
 - 停止：サーバーの `BACKGROUND_COLLECTION=paused` で、対応する拡張の新たなYNUの裏の取得を止める。未設定はenabled。拡張は取得前に認証値なしで公開APIを読み、paused・通信失敗・不正な応答ならLMSの両取得経路を使わず、既存の「取得できない」表示を使う。開始済みの取得を途中で止める機能ではない。APIは [data-shapes.md](data-shapes.md#裏の取得の停止設定issue-267)、操作は [deploy.md](deploy.md#ynuの裏の取得を止めるissue-267) を参照。
 - 共通の設定読み取り関数を用意し、YNUだけから呼ぶ。KULMSへの適用はorangeの合意後の別作業。
 - 採らなかった案：開いた講義のページだけを読む方法は、開いていない授業の課題が入らなくなるため、今後の検討に回す。
+
+## D45. 京大（KULMS・KULASIS）の裏の取得にも6時間の待機と停止設定を使う（2026-11-10、Issue #267）
+
+- 決めた人：Sora（Issue #267の京大側の作業依頼）。京大の部品はorangeの担当で、orangeがこの変更に合意した（2026-11-10、PR #269）。
+- KULMS・KULASISとも、自動取得を試みた後は部分失敗・送信失敗も含め6時間待つ。学生の操作による中断だけは即時再開できる。利用者・接続先ごとの完了時刻をlocal storageに保存し、ブラウザを閉じても維持する。保存の契約は [data-shapes.md](data-shapes.md#kulasisの時間割と授業の対応issue-180)。時間割の対応表が更新されても待機は解除しない。
+- 自動取得を始める前にサーバーの `GET /api/v1/collection-policy` をキャッシュなし・15秒の上限で読み、`backgroundCollection: enabled` の応答だけで取得する。`paused`・読取失敗・不明な応答は取得しない。停止設定の読取りはYNU側（D44）と同じ共通の `collection-policy.ts` を使う。
+- Sakaiの公式APIを使うKULMSの1件ごとの間隔と、授業ごとの `/direct/assignment/site/{id}.json` は変えない。`/direct/assignment/my.json` でまとめて取る案は、サーバーで過去の学期の授業まで調べる可能性があり、KULMSで軽さを測っていないため今後の検討に残す。
+- YNUの取得部品とサーバーはこの変更に含めない（D44）。共通の停止設定の読み取り関数はD44のものをそのまま使う。

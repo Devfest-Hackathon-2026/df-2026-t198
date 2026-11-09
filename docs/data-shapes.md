@@ -146,7 +146,7 @@ Issue #180：`siteFilter` に既知の授業以外の種別（`project`・`works
 - 保存先のキーは従来どおり `system` と `courseId`。別の情報源の文書を上書きしない。同一情報源では観測した授業を置き換える。KULASISが完全に成功した回に限り、見当たらない以前のKULASIS授業を `currentTerm: false` にする。授業サポートや対応照会に失敗した回は時間割全体を送らず、全体の失敗を記録して以前の時間割・対応を保持する（Issue #218）。200以外・通信失敗・認証画面・不明の遷移先を「リンクなし」の成功にしない。サポート画面を取得でき、対応リンクがない場合とは区別する。KULMSのURL・今学期かどうかの値には書き込まない。
 - 表示用の `linkedCourses` は今学期の明示の対応があるKULASIS授業とKULMS授業を1つにする。名前・URL・課題キーはKULMS、曜日・時限はKULASISを優先する。現在の時間割で確認できた対応は表示上の `currentTerm: true` とする。複数のKULASIS授業が同じサイトを指す場合はコマを重複なく合わせる。取れない対応は別々に出す。元データは変えない。
 - 学生・面談画面は同じ関数を使う。締切のカレンダーはKULMSの課題キーと授業名を引き続き使い、KULASISの観測では予定を追加・変更しない。京大の時限の実時刻は未確認なので補わない。
-- 取得の優先順位用に、完全に成功した観測の受領後に対応先siteIdだけを `chrome.storage.local.kulasisMapping` に保存する（Firebase uid・学期付き）。同じ本人・同じ学期の場合だけKULMSの取得へ渡す。対応が変わったらKULMSの取得後の待ち時間を解除し、次にKULMSを開くと新しい優先順位を使う。時間割の保存の正本はサーバーの授業文書で、このキャッシュは別の端末へ同期しない。拡張を入れ直した端末では、KULASISを先に開く。KULMS・KULASISとも取得を試みた後は、部分失敗・全体失敗・送信失敗を含め、本人・接続先ごとに10分待つ。学生の操作による中断だけは即時再開できる。待機はworker再起動後もsession storageから復元する（Issue #218）。
+- 取得の優先順位用に、完全に成功した観測の受領後に対応先siteIdだけを `chrome.storage.local.kulasisMapping` に保存する（Firebase uid・学期付き）。同じ本人・同じ学期の場合だけKULMSの取得へ渡す。対応が変わってもKULMSの取得後の待ち時間は解除せず、待機後の取得で新しい優先順位を使う（D45、Issue #267）。時間割の保存の正本はサーバーの授業文書で、このキャッシュは別の端末へ同期しない。拡張を入れ直した端末では、KULASISを先に開く。KULMS・KULASISとも取得を試みた後は、部分失敗・全体失敗・送信失敗を含め、本人・接続先ごとに6時間待つ。学生の操作による中断だけは即時再開できる。完了時刻は `chrome.storage.local` の `${system}FetchCompletedAt:${uid}` に保存し、ブラウザ再起動後も復元する。旧版のsession storageに同じ本人の完了時刻があればlocal storageへ移す。取得開始前に `GET /api/v1/collection-policy` を読み、`backgroundCollection: enabled` の場合だけ取得する。停止中・通信失敗・不正な応答の場合はLMSを取得しない（D43、Issue #267）。
 - 参照URLは認証情報のない授業ページを組み立てる。採点・提出本文・添付・お知らせは送らない。KULMSのAPIから取った生のJSONやCookieをservice workerへ渡さない。
 
 ## 学生による共有の停止と再開（Issue #257）
