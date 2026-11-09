@@ -64,7 +64,8 @@ export function Mechanism() {
     </div>
     <div className="flow-bridge"><span aria-hidden="true">↓</span><span>03 ToDoku</span><span className="flow-status" role="status">{statuses[stage]}</span></div>
     <div className="flow-destinations">
-      <Schedule moved={stage >= 5} emphasize={stage === 5} /><Schedule calendar moved={stage >= 5} emphasize={stage === 5} />
+      {/* Keep the class into step 6: the pop starts after the 1.2s slide and outlasts step 5. */}
+      <Schedule moved={stage >= 5} emphasize={stage >= 5 && !reduced} /><Schedule calendar moved={stage >= 5} emphasize={stage >= 5 && !reduced} />
       <div className={`flow-supporter app${stage >= 6 ? ' is-updated' : ''}${pulse(stage === 6 && !reduced)}`}>
         <h3>支援担当</h3><p>前回の面談からの変化</p>
         <strong>書き方を書くレポート</strong>
