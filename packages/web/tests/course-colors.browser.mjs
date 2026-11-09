@@ -46,7 +46,7 @@ try {
       if (width === 390) await page.getByRole('navigation', { name: '体験の画面', exact: true }).getByRole('button', { name: role, exact: true }).click();
     };
     await switchPane('学生');
-    await pane('student').getByText('書き方を書くレポート', { exact: true }).waitFor();
+    await pane('student').getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
     const demoTone = phase === 'after' ? await tone(pane('student').locator('[data-course-color]').first()) : null;
     const demoStudentTones = phase === 'after' ? await courseTones(pane('student').locator('.demo-observed-task'), '.course-label') : [];
     await shot(page, 'demo-student', width);
@@ -66,12 +66,12 @@ try {
 
     await page.goto(`${base}/student`);
     await page.locator('.student-overview').waitFor();
-    const row = page.locator('.td-taskrow').filter({ hasText: '書き方を書くレポート' });
+    const row = page.locator('.td-taskrow').filter({ hasText: '第3回レポート（要約と引用）' });
     await row.waitFor();
     if (phase === 'after') {
       assert.deepEqual(await tone(row), demoTone);
       // Event itself owns the course attribute; preparation events deliberately do not.
-      const deadline = page.locator('.calendar-event[data-course-color]').filter({ hasText: '書き方を書くレポート' });
+      const deadline = page.locator('.calendar-event[data-course-color]').filter({ hasText: '第3回レポート（要約と引用）' });
       await deadline.waitFor();
       assert.deepEqual(await tone(deadline), demoTone);
       assert.ok(await row.locator('.td-taskrow-course').evaluate(element => globalThis.getComputedStyle(element, '::before').content !== 'none'));
@@ -79,7 +79,7 @@ try {
     }
     await shot(page, 'student', width);
     if (width === 390) await page.getByRole('tab', { name: '時間割', exact: true }).click();
-    const course = page.locator('.course-cell').filter({ hasText: '書き方を書くレポート' });
+    const course = page.locator('.course-cell').filter({ hasText: '第3回レポート（要約と引用）' });
     await course.waitFor();
     if (phase === 'after') {
       assert.deepEqual(await tone(course), demoTone);
@@ -87,8 +87,8 @@ try {
       checks.push(`${width}: timetable and deadline row match the demo course`);
       const timetableRows = await courseTones(page.locator('.course-cell'), 'strong');
       const colors = Object.fromEntries(timetableRows.map(({ name, index }) => [name, index]));
-      assert.deepEqual(Object.keys(colors).sort(), ['レポートの書き方の書き方', 'キャンパス植物図鑑演習', 'Re:線形代数',
-        '学食経済学', '自転車置き場の社会学', '90分の数理'].sort());
+      assert.deepEqual(Object.keys(colors).sort(), ['文章表現', '生物学実験', '線形代数',
+        '経済学入門', '社会調査法', '統計学入門'].sort());
       assert.equal(new Set(Object.values(colors)).size, 6, 'all six demo courses use distinct colors');
       matchesTimetable(demoStudentTones, colors);
       matchesTimetable(demoSupporterTones, colors);
@@ -108,9 +108,9 @@ try {
     await page.goto(`${base}/session/trial-student`);
     const table = page.getByRole('table', { name: '次の面談までの課題', exact: true });
     await table.waitFor();
-    const tableRow = table.getByRole('row').filter({ hasText: '書き方を書くレポート' });
+    const tableRow = table.getByRole('row').filter({ hasText: '第3回レポート（要約と引用）' });
     if (phase === 'after') assert.deepEqual(await tone(tableRow), demoTone);
-    await tableRow.getByRole('button', { name: '書き方を書くレポート', exact: true }).click();
+    await tableRow.getByRole('button', { name: '第3回レポート（要約と引用）', exact: true }).click();
     await page.locator('.td-detail').waitFor();
     await page.locator('.td-detail').getByRole('link', { name: /LMSで見る/ }).waitFor();
     const frame = await page.locator('.session-task-workspace > .td-scroll-frame').boundingBox();

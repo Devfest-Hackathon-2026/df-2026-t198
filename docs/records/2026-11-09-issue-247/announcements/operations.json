@@ -1,0 +1,19 @@
+{
+  "status": "pass",
+  "environment": "local Auth/Firestore + Chromium",
+  "model": "fake",
+  "realCalls": 0,
+  "fakeCalls": 2,
+  "checks": [
+    "publish changes source notice only",
+    "read rendered DOM and send after observation",
+    "official deadline unchanged",
+    "student and session review reason",
+    "repeated open parses once",
+    "390px no overflow",
+    "503 parsing preserves observation",
+    "reset clears notices and reviews",
+    "republish after reset works"
+  ],
+  "browserErrors": []
+}

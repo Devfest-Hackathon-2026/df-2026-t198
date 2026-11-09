@@ -1,0 +1,106 @@
+[
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "observed": [
+      {
+        "status": "先生がお知らせを出しました",
+        "elapsedMs": 1425
+      },
+      {
+        "status": "LMSの締切が変わりました",
+        "elapsedMs": 2823
+      },
+      {
+        "status": "学生がLMSを開きました",
+        "elapsedMs": 4219
+      },
+      {
+        "status": "課題の読み取り中",
+        "elapsedMs": 5624
+      },
+      {
+        "status": "時間割とカレンダーの締切を更新しました",
+        "elapsedMs": 7023
+      },
+      {
+        "status": "支援担当の画面も更新しました",
+        "elapsedMs": 8423
+      },
+      {
+        "status": "支援担当の画面も更新しました",
+        "elapsedMs": 20210
+      }
+    ],
+    "positions": {
+      "before": [
+        116.390625,
+        492.109375
+      ],
+      "during": [
+        179.15237426757812,
+        554.87109375
+      ],
+      "after": [
+        286.3282470703125,
+        662.0468139648438
+      ]
+    },
+    "requests": 0,
+    "storageUnchanged": true
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "observed": [
+      {
+        "status": "先生がお知らせを出しました",
+        "elapsedMs": 1421
+      },
+      {
+        "status": "LMSの締切が変わりました",
+        "elapsedMs": 2815
+      },
+      {
+        "status": "学生がLMSを開きました",
+        "elapsedMs": 4220
+      },
+      {
+        "status": "課題の読み取り中",
+        "elapsedMs": 5620
+      },
+      {
+        "status": "時間割とカレンダーの締切を更新しました",
+        "elapsedMs": 7020
+      },
+      {
+        "status": "支援担当の画面も更新しました",
+        "elapsedMs": 8420
+      },
+      {
+        "status": "支援担当の画面も更新しました",
+        "elapsedMs": 20211
+      }
+    ],
+    "positions": {
+      "before": [
+        32,
+        207
+      ],
+      "during": [
+        60.6036262512207,
+        235.60362243652344
+      ],
+      "after": [
+        109.53900909423828,
+        284.53900146484375
+      ]
+    },
+    "requests": 0,
+    "storageUnchanged": true
+  }
+]

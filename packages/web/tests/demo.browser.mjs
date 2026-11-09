@@ -92,7 +92,7 @@ try {
   assert.equal((await ledger()).size, 0);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
-  await deadlines.getByText('書き方を書くレポート', { exact: true }).waitFor();
+  await deadlines.getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
   assert.equal((await ledger()).size, 5);
   assert.equal(await deadlines.getByText('第3回 ふりかえり', { exact: true }).count(), 0);
   pass(1);
@@ -103,20 +103,20 @@ try {
   assert.equal(await timetable.title(), 'ToDoku');
   await timetable.locator('.timetable').waitFor();
   assert.deepEqual((await timetable.locator('.course-cell strong').allTextContents()).sort(), [
-    'レポートの書き方の書き方', 'キャンパス植物図鑑演習', 'Re:線形代数', '学食経済学', '自転車置き場の社会学', '90分の数理',
+    '文章表現', '生物学実験', '線形代数', '経済学入門', '社会調査法', '統計学入門',
   ].sort());
   for (const [name, weekday, period] of [
-    ['レポートの書き方の書き方', 1, 2], ['キャンパス植物図鑑演習', 4, 4], ['Re:線形代数', 2, 1],
-    ['学食経済学', 3, 3], ['自転車置き場の社会学', 3, 1], ['90分の数理', 5, 2],
+    ['文章表現', 1, 2], ['生物学実験', 4, 4], ['線形代数', 2, 1],
+    ['経済学入門', 3, 3], ['社会調査法', 3, 1], ['統計学入門', 5, 2],
   ]) {
     await timetable.locator(`.timetable tbody tr:nth-child(${period}) td:nth-of-type(${weekday})`)
       .getByRole('button').filter({ hasText: name }).waitFor();
   }
-  await timetable.locator('.timetable').getByRole('button', { name: /レポートの書き方の書き方/ }).click();
-  await timetable.getByRole('heading', { name: '書き方を書くレポート', exact: true }).waitFor();
+  await timetable.locator('.timetable').getByRole('button', { name: /文章表現/ }).click();
+  await timetable.getByRole('heading', { name: '第3回レポート（要約と引用）', exact: true }).waitFor();
   const oldDeadline = (await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt;
   const calendar = timetable.getByRole('region', { name: '締切のカレンダー', exact: true });
-  await calendar.getByText(/書き方を書くレポート/).waitFor();
+  await calendar.getByText(/第3回レポート（要約と引用）/).waitFor();
   await timetable.emulateMedia({ reducedMotion: 'reduce' });
   assert.equal(await timetable.locator('.course-cell').first().evaluate(node => globalThis.getComputedStyle(node).transitionDuration), '0s');
   const beforeCalendar = await calendar.innerText();
@@ -124,7 +124,7 @@ try {
   assert.equal(await timetable.getByRole('heading', { name: '締切の近い課題' }).count(), 0);
   assert.equal(await timetable.locator('.changed').count(), 0);
   assert.equal(await supporter.locator('.changed').count(), 0);
-  const eventCard = calendar.locator('.calendar-event').filter({ hasText: '書き方を書くレポート' });
+  const eventCard = calendar.locator('.calendar-event').filter({ hasText: '第3回レポート（要約と引用）' });
   const eventDay = () => eventCard.locator('..').locator('..').getAttribute('data-date');
   const oldDay = await eventDay();
   const jstDay = value => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(value));
@@ -135,7 +135,7 @@ try {
   const initialTarget = (await calendarTarget()).data();
   assert.equal(initialTarget.mode, 'mock');
   assert.equal(initialTarget.executor, 'demo');
-  const oldEventId = Object.keys(initialTarget.mockEvents).find(id => initialTarget.mockEvents[id].event.summary.includes('書き方を書くレポート'));
+  const oldEventId = Object.keys(initialTarget.mockEvents).find(id => initialTarget.mockEvents[id].event.summary.includes('第3回レポート（要約と引用）'));
   assert.ok(oldEventId);
   const beforeChanges = (await changes()).size;
   const sessionBefore = await deadlines.innerText();
@@ -148,7 +148,7 @@ try {
   await timetable.setViewportSize({ width: 1280, height: 960 });
   await student.screenshot({ path: `${evidence}/demo-wide.png`, fullPage: true });
   await student.locator('[data-demo-page="home"]').screenshot({ path: `${evidence}/landing-lms.png` });
-  await student.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
+  await student.getByRole('button', { name: '「第3回レポート（要約と引用）」の締切を1日延ばす', exact: true }).click();
   await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   assert.equal((await changes()).size, beforeChanges);
   assert.equal((await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt, oldDeadline);
@@ -171,8 +171,8 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('alert').filter({ hasText: '操作が終わりませんでした' }).waitFor();
   // Observe all highlights immediately after the first applied response (before replay).
-  const highlighted = [timetable.locator('.course-cell').filter({ hasText: 'レポートの書き方の書き方' }),
-    eventCard, timetable.locator('.course-panel .assignment').filter({ hasText: '書き方を書くレポート' }).locator('.deadline'), deadlines.locator('.deadline')];
+  const highlighted = [timetable.locator('.course-cell').filter({ hasText: '文章表現' }),
+    eventCard, timetable.locator('.course-panel .assignment').filter({ hasText: '第3回レポート（要約と引用）' }).locator('.deadline'), deadlines.locator('.deadline')];
   for (const target of highlighted) {
     await target.locator('xpath=self::*[contains(@class,"changed")]').waitFor({ timeout: Math.max(1, 2000 - (Date.now() - openedAt)) });
     assert.equal(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
@@ -266,17 +266,17 @@ try {
   const sampleId = new URL(await done.getAttribute('href')).searchParams.get('id');
   const sample = (await db.doc(`students/trial-student/plans/${sampleId}`).get()).data();
   assert.deepEqual(sample.assignment, { system: 'demo-lms', sourceId: 'DEMO101_TASK1' });
-  assert.match(await preview.innerText(), /書き方を書くレポート/);
+  assert.match(await preview.innerText(), /第3回レポート（要約と引用）/);
   assert.doesNotMatch(await student.locator('main').innerText(), /Googleでログイン|カレンダーに接続|YNUに接続/);
   await student.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await openJudgeLogin(student);
   await student.getByLabel('メールアドレス').waitFor();
-  assert.doesNotMatch(await student.locator('main').innerText(), /書き方を書くレポート|レポートの書き方の書き方/);
+  assert.doesNotMatch(await student.locator('main').innerText(), /第3回レポート（要約と引用）|文章表現/);
   await timetable.getByRole('button', { name: 'Googleでログイン', exact: true }).waitFor();
   assert.equal(await timetable.getByRole('region', { name: '締切のカレンダー', exact: true }).count(), 0);
   await supporter.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await supporter.getByRole('heading', { name: '面談にログイン', exact: true }).waitFor();
-  assert.doesNotMatch(await supporter.locator('main').innerText(), /書き方を書くレポート|学生 trial-student/);
+  assert.doesNotMatch(await supporter.locator('main').innerText(), /第3回レポート（要約と引用）|学生 trial-student/);
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/operations.json`, JSON.stringify({ status: 'pass', operations: [
     'email login in separate student and supporter browsers', 'source has no preseeded ledger',

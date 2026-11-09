@@ -1,0 +1,62 @@
+{
+  "now": "2026-11-09T08:00:00.000Z",
+  "observations": [
+    {
+      "role": "supporter",
+      "planning": false,
+      "width": 1280,
+      "screenshot": "after-supporter-check-1280.png",
+      "status": "pass"
+    },
+    {
+      "role": "supporter",
+      "planning": true,
+      "width": 1280,
+      "screenshot": "after-supporter-plan-1280.png",
+      "status": "pass"
+    },
+    {
+      "role": "supporter",
+      "planning": false,
+      "width": 390,
+      "screenshot": "after-supporter-check-390.png",
+      "status": "pass"
+    },
+    {
+      "role": "supporter",
+      "planning": true,
+      "width": 390,
+      "screenshot": "after-supporter-plan-390.png",
+      "status": "pass"
+    },
+    {
+      "role": "student-a",
+      "planning": false,
+      "width": 1280,
+      "screenshot": "after-student-a-check-1280.png",
+      "status": "pass"
+    },
+    {
+      "role": "student-a",
+      "planning": true,
+      "width": 1280,
+      "screenshot": "after-student-a-plan-1280.png",
+      "status": "pass"
+    },
+    {
+      "role": "student-a",
+      "planning": false,
+      "width": 390,
+      "screenshot": "after-student-a-check-390.png",
+      "status": "pass"
+    },
+    {
+      "role": "student-a",
+      "planning": true,
+      "width": 390,
+      "screenshot": "after-student-a-plan-390.png",
+      "status": "pass"
+    }
+  ],
+  "browserErrors": []
+}

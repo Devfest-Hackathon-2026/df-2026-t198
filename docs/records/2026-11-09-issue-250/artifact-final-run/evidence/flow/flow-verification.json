@@ -1,0 +1,250 @@
+[
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "observed": [
+      {
+        "stage": 1,
+        "status": "先生がお知らせを出しました",
+        "elapsedMs": 14,
+        "dimensions": {
+          "board": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "active": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 2,
+        "status": "LMSで課題の締切が変わりました",
+        "elapsedMs": 1814,
+        "dimensions": {
+          "board": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "active": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 3,
+        "status": "学生がLMSを開き、課題を取り込んでいます",
+        "elapsedMs": 3614,
+        "dimensions": {
+          "board": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "active": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 4,
+        "status": "時間割とカレンダーの締切が更新されました",
+        "elapsedMs": 5415,
+        "dimensions": {
+          "board": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "active": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 5,
+        "status": "支援担当の画面も更新されました",
+        "elapsedMs": 7215,
+        "dimensions": {
+          "board": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "active": {
+            "width": 1075.21875,
+            "height": 400
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 6,
+        "status": "同じ締切になりました",
+        "elapsedMs": 9015
+      },
+      {
+        "stage": 1,
+        "status": "先生がお知らせを出しました",
+        "elapsedMs": 13103
+      },
+      {
+        "stage": 6,
+        "status": "同じ締切になりました",
+        "elapsedMs": 22090
+      }
+    ],
+    "positions": {
+      "before": [
+        0,
+        0
+      ],
+      "during": [
+        0.12354025087836362,
+        0.12354025087836362
+      ],
+      "after": [
+        0.5114942528735632,
+        0.5114942528735632
+      ]
+    },
+    "requests": 0,
+    "storageUnchanged": true
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "observed": [
+      {
+        "stage": 1,
+        "status": "先生がお知らせを出しました",
+        "elapsedMs": 12,
+        "dimensions": {
+          "board": {
+            "width": 342,
+            "height": 500
+          },
+          "active": {
+            "width": 342,
+            "height": 500
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 2,
+        "status": "LMSで課題の締切が変わりました",
+        "elapsedMs": 1815,
+        "dimensions": {
+          "board": {
+            "width": 342,
+            "height": 500
+          },
+          "active": {
+            "width": 342,
+            "height": 500
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 3,
+        "status": "学生がLMSを開き、課題を取り込んでいます",
+        "elapsedMs": 3616,
+        "dimensions": {
+          "board": {
+            "width": 342,
+            "height": 500
+          },
+          "active": {
+            "width": 342,
+            "height": 500
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 4,
+        "status": "時間割とカレンダーの締切が更新されました",
+        "elapsedMs": 5416,
+        "dimensions": {
+          "board": {
+            "width": 342,
+            "height": 500
+          },
+          "active": {
+            "width": 342,
+            "height": 500
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 5,
+        "status": "支援担当の画面も更新されました",
+        "elapsedMs": 7213,
+        "dimensions": {
+          "board": {
+            "width": 342,
+            "height": 500
+          },
+          "active": {
+            "width": 342,
+            "height": 500
+          },
+          "visibleCards": 1,
+          "contentFits": true
+        }
+      },
+      {
+        "stage": 6,
+        "status": "同じ締切になりました",
+        "elapsedMs": 9017
+      },
+      {
+        "stage": 1,
+        "status": "先生がお知らせを出しました",
+        "elapsedMs": 13092
+      },
+      {
+        "stage": 6,
+        "status": "同じ締切になりました",
+        "elapsedMs": 22075
+      }
+    ],
+    "positions": {
+      "before": [
+        0,
+        0
+      ],
+      "during": [
+        0.12399421088296289,
+        0.12399421088296289
+      ],
+      "after": [
+        0.5133333333333333,
+        0.5133333333333333
+      ]
+    },
+    "requests": 0,
+    "storageUnchanged": true
+  }
+]

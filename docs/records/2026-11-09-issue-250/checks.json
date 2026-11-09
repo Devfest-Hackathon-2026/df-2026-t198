@@ -1,0 +1,29 @@
+{
+  "command": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm progress --check && pnpm check:samples",
+  "exitCode": 0,
+  "sampleFilesPassed": 17,
+  "realLocalMaterialComparison": "skipped; not read",
+  "progress": {
+    "all": "36/43",
+    "required": "32/39"
+  },
+  "packageTests": [
+    {
+      "package": "core",
+      "summary": "Tests  274 passed (274)"
+    },
+    {
+      "package": "extension",
+      "summary": "Tests  509 passed (509)"
+    },
+    {
+      "package": "web",
+      "summary": "Tests  212 passed | 2 skipped (214)"
+    },
+    {
+      "package": "server",
+      "summary": "Tests  319 passed | 129 skipped (448)"
+    }
+  ],
+  "warning": "existing web chunk size >500kB"
+}

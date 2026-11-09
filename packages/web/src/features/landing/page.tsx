@@ -8,9 +8,9 @@ import { Mechanism } from './mechanism';
 
 const repository = 'https://github.com/Devfest-Hackathon-2026/df-2026-t198';
 const chapters = [
-  { id: 'home', label: 'トップ' }, { id: 'how', label: 'しくみ' },
-  { id: 'people', label: '使う人' }, { id: 'try', label: '体験する' },
-  { id: 'start', label: '使い始める' }, { id: 'privacy', label: '情報の扱い' },
+  { id: 'home', label: 'トップ' }, { id: 'people', label: '使う人' },
+  { id: 'how', label: 'しくみ' }, { id: 'start', label: '使い始める' },
+  { id: 'privacy', label: '情報の扱い' }, { id: 'try', label: '体験する' },
 ];
 
 function Screenshot({ name, alt, width, height, caption }: { name: string; alt: string; width: number; height: number; caption: string }) {
@@ -35,7 +35,6 @@ function Screenshot({ name, alt, width, height, caption }: { name: string; alt: 
 function DemoEntries() {
   return <div className="trial-entry">
     <div className="trial-launch">
-      <h3>体験版</h3>
       <PublicDemoEntry showDescription={false} />
       <a className="pill primary shared-fallback" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
     </div>
@@ -63,7 +62,7 @@ export function LandingPage() {
   return <div className="landing brand"><Splash />
     <header className="landing-header">
       <a className="landing-home" href="/" aria-label="ToDoku ホーム"><TodokuLogo /></a>
-      <nav aria-label="目次"><a href="#how">しくみ</a><a href="#people">使う人</a><a href="#try">体験する</a><a href="#start">使い始める</a></nav>
+      <nav aria-label="目次"><a href="#people">使う人</a><a href="#how">しくみ</a><a href="#start">使い始める</a><a href="#try">体験する</a></nav>
     </header>
     <nav className="chapter-nav" aria-label="現在地">{chapters.map(chapter => <a key={chapter.id} href={`#${chapter.id}`} aria-label={chapter.label} aria-current={current === chapter.id ? 'location' : undefined}><span>{chapter.label}</span></a>)}</nav>
     <main>
@@ -74,32 +73,28 @@ export function LandingPage() {
           <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="text-link" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
         </Staged>
         <HeroVisual />
-        <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
-      </section>
-
-      <section className="chapter how-section" id="how" aria-labelledby="how-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="how-title">しくみ</h2></div></Reveal>
-        <Mechanism />
         <a className="next-chapter" href="#people">使う人 <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter people-section" id="people" aria-labelledby="people-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">02</span><h2 id="people-title">使う人</h2></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="people-title">使う人</h2></div></Reveal>
         <div className="product-grid">
-          <Reveal><h3>学生</h3><Screenshot name="student" alt="学生の時間割" width={685} height={686} caption="締切の変更が時間割に出ます。" /></Reveal>
-          <Reveal order={1}><h3>支援担当（カウンセラーなど）</h3><Screenshot name="session" alt="支援担当の面談画面" width={768} height={312} caption="前回の面談から変わった課題を確かめられます。" /></Reveal>
+          <Reveal><div className="person-heading"><h3>学生</h3><p>時間割・カレンダーの締切と朝のメール</p></div><Screenshot name="student" alt="学生の時間割" width={685} height={638} caption="時間割と締切" />
+            <div className="person-mail"><span>7:30 受信箱</span><strong>今日やること</strong><span>文章表現 レポートの準備</span></div>
+          </Reveal>
+          <Reveal order={1}><div className="person-heading"><h3>支援担当（カウンセラーなど）</h3><p>前回の面談から変わった課題</p></div><Screenshot name="session" alt="支援担当の面談画面" width={768} height={312} caption="面談の画面" /></Reveal>
         </div>
-        <a className="next-chapter" href="#try">体験する <span aria-hidden="true">↓</span></a>
+        <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
       </section>
 
-      <section className="chapter try-section" id="try" aria-labelledby="try-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">03</span><h2 id="try-title">体験</h2></div></Reveal>
-        <Reveal><DemoEntries /></Reveal>
+      <section className="chapter how-section" id="how" aria-labelledby="how-title">
+        <Reveal><div className="section-heading"><span className="chapter-number">02</span><h2 id="how-title">しくみ</h2></div></Reveal>
+        <Mechanism />
         <a className="next-chapter" href="#start">使い始める <span aria-hidden="true">↓</span></a>
       </section>
 
       <section className="chapter start-section" id="start" aria-labelledby="start-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">04</span><h2 id="start-title">導入</h2></div></Reveal>
+        <Reveal><div className="section-heading"><span className="chapter-number">03</span><h2 id="start-title">導入</h2></div></Reveal>
         <Reveal><ol className="setup-steps">
           <li><span className="step-number">01</span><h3>Chrome 拡張</h3><a className="pill" href={`${repository}#手元で動かす`}>開発版の導入手順を開く <span aria-hidden="true">↗</span></a></li>
           <li><span className="step-number">02</span><h3>Google ログイン</h3><a className="pill" href="/student">学生画面を開く <span aria-hidden="true">↗</span></a></li>
@@ -110,10 +105,18 @@ export function LandingPage() {
       </section>
 
       <section className="chapter privacy-section" id="privacy" aria-labelledby="privacy-title">
-        <Reveal><div className="section-heading"><span className="chapter-number">05</span><h2 id="privacy-title">情報の扱い</h2></div>
+        <Reveal><div className="section-heading"><span className="chapter-number">04</span><h2 id="privacy-title">情報の扱い</h2></div>
           <ul className="privacy-list"><li>LMS のパスワードを預かりません</li><li>LMSに課題の提出や書き込みをしません</li><li>メールは本人にだけ届きます</li><li>支援担当が見られるのは、共有を許可した学生の情報だけです</li></ul>
         </Reveal>
-        <a className="pill" href="#home">トップに戻る <span aria-hidden="true">↑</span></a>
+        <a className="next-chapter" href="#try">体験する <span aria-hidden="true">↓</span></a>
+      </section>
+
+      <section className="chapter try-section" id="try" aria-labelledby="try-title">
+        <Reveal><div className="section-heading"><span className="chapter-number">05</span><h2 id="try-title">体験版</h2></div>
+          <div className="trial-preview" aria-hidden="true"><TodokuLogo /><span>時間割と締切</span><span>朝のメール</span><span>面談の画面</span></div>
+          <DemoEntries />
+        </Reveal>
+        <a className="next-chapter" href="#home">トップに戻る <span aria-hidden="true">↑</span></a>
       </section>
     </main>
     <footer className="landing-footer"><a href="/" aria-label="ToDoku ホーム"><TodokuLogo /></a><span>TEAM ORANGE<br />DEVFEST GDGoC JAPAN HACKATHON 2026</span><a href={repository}>GitHub ↗</a></footer>

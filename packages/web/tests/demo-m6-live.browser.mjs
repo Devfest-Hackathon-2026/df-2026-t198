@@ -126,24 +126,24 @@ try {
   beforeDue = task(initialLedger).officialDeadline.deadline.dueAt;
   c14 = true;
   const deadlines = supporter.page.getByRole('region', { name: '次の面談までの締切' });
-  await deadlines.getByText('書き方を書くレポート', { exact: true }).waitFor();
+  await deadlines.getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
   pass(1);
 
   const timetable = await student.context.newPage();
   timetable.setDefaultTimeout(30000);
   timetable.on('pageerror', () => errors.push('browser-error'));
   await timetable.goto(`${origin}/student`);
-  await timetable.locator('.timetable').getByRole('button', { name: /レポートの書き方の書き方/ }).click();
-  await timetable.getByRole('heading', { name: '書き方を書くレポート', exact: true }).waitFor();
+  await timetable.locator('.timetable').getByRole('button', { name: /文章表現/ }).click();
+  await timetable.getByRole('heading', { name: '第3回レポート（要約と引用）', exact: true }).waitFor();
   const calendar = timetable.getByRole('region', { name: '締切のカレンダー', exact: true });
-  await calendar.getByText(/書き方を書くレポート/).waitFor();
+  await calendar.getByText(/第3回レポート（要約と引用）/).waitFor();
   const beforeCalendar = await calendar.innerText();
   const initialTarget = await calendarTarget();
   const initialItems = await calendarItems();
   assert.equal(initialTarget.mode, 'mock');
   assert.equal(initialTarget.executor, 'demo');
   const oldEventId = Object.keys(initialTarget.mockEvents).find(id =>
-    initialTarget.mockEvents[id].event.summary.includes('書き方を書くレポート'));
+    initialTarget.mockEvents[id].event.summary.includes('第3回レポート（要約と引用）'));
   assert.ok(oldEventId);
   const beforeChanges = await changes();
   const sessionBefore = await deadlines.innerText();
@@ -155,7 +155,7 @@ try {
   }
   await screenshot(timetable, 'student-before.png');
   phase = 'teacher-changes-source-only';
-  await student.page.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
+  await student.page.getByRole('button', { name: '「第3回レポート（要約と引用）」の締切を1日延ばす', exact: true }).click();
   await student.page.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   afterDue = (await document('demo/current')).courses[0].assignments[0].dueAt;
   assert.equal(Date.parse(afterDue) - Date.parse(beforeDue), 86400_000);
@@ -206,7 +206,7 @@ try {
   phase = 'persisted-calendar-and-revisions';
   const eventDay = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Tokyo' }).format(new Date(afterDue));
   const eventTime = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(afterDue));
-  const eventCard = calendar.locator(`td[data-date="${eventDay}"] .calendar-event`).filter({ hasText: '書き方を書くレポート' });
+  const eventCard = calendar.locator(`td[data-date="${eventDay}"] .calendar-event`).filter({ hasText: '第3回レポート（要約と引用）' });
   await eventCard.getByText(eventTime, { exact: true }).waitFor();
   const savedTarget = await calendarTarget();
   const savedItems = await calendarItems();
@@ -218,7 +218,7 @@ try {
       itemKey: item.itemKey, generation: item.generation, revision: item.appliedRevision, event: item.desired.event,
     });
   }
-  assert.equal(await calendar.locator('li').filter({ hasText: '書き方を書くレポート' }).count(), 1);
+  assert.equal(await calendar.locator('li').filter({ hasText: '第3回レポート（要約と引用）' }).count(), 1);
   pass(5);
   await screenshot(timetable, 'student-after.png');
 

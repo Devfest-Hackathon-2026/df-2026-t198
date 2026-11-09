@@ -39,22 +39,29 @@ it('provides six fictional courses while keeping DEMO101 the first unfinished de
   expect(displayName).toBe('田中 太郎');
   expect(data.courses.map(({ name, teacher, weekday, period }) => ({ name, teacher, weekday, period })))
     .toEqual([
-      { name: 'レポートの書き方の書き方', teacher: '森 先生', weekday: 1, period: 2 },
-      { name: 'キャンパス植物図鑑演習', teacher: '草野 先生', weekday: 4, period: 4 },
-      { name: 'Re:線形代数', teacher: '安藤 先生', weekday: 2, period: 1 },
-      { name: '学食経済学', teacher: '大盛 先生', weekday: 3, period: 3 },
-      { name: '自転車置き場の社会学', teacher: '半田 先生', weekday: 3, period: 1 },
-      { name: '90分の数理', teacher: '時田 先生', weekday: 5, period: 2 },
+      { name: '文章表現', teacher: '森 先生', weekday: 1, period: 2 },
+      { name: '生物学実験', teacher: '草野 先生', weekday: 4, period: 4 },
+      { name: '線形代数', teacher: '安藤 先生', weekday: 2, period: 1 },
+      { name: '経済学入門', teacher: '大盛 先生', weekday: 3, period: 3 },
+      { name: '社会調査法', teacher: '半田 先生', weekday: 3, period: 1 },
+      { name: '統計学入門', teacher: '時田 先生', weekday: 5, period: 2 },
     ]);
   const tasks = data.courses.flatMap(course => course.assignments);
   expect(tasks.map(({ title, submission }) => ({ title, submission }))).toEqual([
-    { title: '書き方を書くレポート', submission: 'not-submitted' },
+    { title: '第3回レポート（要約と引用）', submission: 'not-submitted' },
     { title: '第3回 ふりかえり', submission: 'submitted' },
     { title: '第5回 小テスト', submission: 'not-submitted' },
-    { title: '日替わり定食の値段しらべ', submission: 'submitted' },
-    { title: '駐輪場のフィールドノート', submission: 'not-submitted' },
+    { title: '第2回 確認問題', submission: 'submitted' },
+    { title: '第4回 調査計画書', submission: 'not-submitted' },
   ]);
-  expect(new Set(data.courses.map(course => course.courseId)).size).toBe(6);
+  expect(data.courses.map(course => course.courseId)).toEqual(['DEMO101', 'DEMO202', 'DEMO303', 'DEMO404', 'DEMO505', 'DEMO606']);
+  expect(tasks.map(({ sourceId, dueAt }) => [sourceId, dueAt])).toEqual([
+    ['DEMO101_TASK1', '2026-11-11T08:00:00.000Z'],
+    ['DEMO101_TASK2', '2026-11-11T08:00:00.000Z'],
+    ['DEMO303_TASK1', '2026-11-18T08:00:00.000Z'],
+    ['DEMO404_TASK1', '2026-11-11T08:00:00.000Z'],
+    ['DEMO505_TASK1', '2026-11-19T08:00:00.000Z'],
+  ]);
   expect(new Set(tasks.map(task => task.sourceId)).size).toBe(5);
   const main = tasks.find(task => task.sourceId === 'DEMO101_TASK1')!;
   for (const task of tasks.filter(task => task.submission === 'not-submitted' && task !== main)) {

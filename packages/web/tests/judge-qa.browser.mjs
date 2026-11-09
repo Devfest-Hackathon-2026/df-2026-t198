@@ -75,7 +75,7 @@ try {
     await check(`${width}: submitted deadlines, scroll hints and date navigation`, async () => {
       const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
       // #177 added a second submitted task; both badges and their date navigation must work.
-      for (const title of ['第3回 ふりかえり', '日替わり定食の値段しらべ']) {
+      for (const title of ['第3回 ふりかえり', '第2回 確認問題']) {
         const submitted = calendar.locator('.calendar-event.submitted').filter({ has: student.getByText(title, { exact: true }) });
         await submitted.getByText('出せました', { exact: true }).waitFor();
         const day = await submitted.evaluate(element => element.closest('[data-date]').dataset.date);

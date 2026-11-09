@@ -119,7 +119,7 @@ try {
   const done = preview.getByRole('link', { name: '✅ 終わった', exact: true });
   await done.waitFor();
   await student.goto(`${base}/student`);
-  await student.locator('.course-cell').filter({ hasText: 'レポートの書き方の書き方' }).click();
+  await student.locator('.course-cell').filter({ hasText: '文章表現' }).click();
   await student.locator('.course-panel').waitFor();
   await student.locator('.preparation-cell').first().waitFor();
   await student.locator('.course-cell[aria-pressed="true"]').evaluate(node =>
@@ -137,7 +137,7 @@ try {
   await student.getByText('準備の予定を入れる', { exact: true }).click();
   await student.locator('.preparation-form').waitFor();
   await capture(student, 'preparation-plans');
-  await student.locator('.course-cell').filter({ hasText: 'レポートの書き方の書き方' }).click();
+  await student.locator('.course-cell').filter({ hasText: '文章表現' }).click();
   await login(session, 'supporter');
   await session.getByRole('link', { name: '面談を開く', exact: true }).click();
   await session.getByRole('link', { name: '田中 太郎', exact: true }).click();
@@ -163,7 +163,7 @@ try {
   await session.getByRole('link', { name: '① 確かめる', exact: true }).click();
   await session.locator('.review-tag').first().waitFor();
   await capture(session, 'session-review');
-  await demo.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
+  await demo.getByRole('button', { name: '「第3回レポート（要約と引用）」の締切を1日延ばす', exact: true }).click();
   await demo.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   await demo.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.locator('.course-panel .deadline.changed').waitFor();

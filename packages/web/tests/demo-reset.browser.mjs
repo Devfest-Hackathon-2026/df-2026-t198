@@ -22,7 +22,7 @@ const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i19-evidence';
 const student = db.doc('students/trial-student');
 const source = student.collection('demo').doc('current');
 const open = page.getByRole('button', { name: 'LMSを開く', exact: true });
-const teacher = page.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true });
+const teacher = page.getByRole('button', { name: '「第3回レポート（要約と引用）」の締切を1日延ばす', exact: true });
 const status = text => page.getByRole('status').filter({ hasText: text }).waitFor();
 try {
   const stale = (await source.get()).data();

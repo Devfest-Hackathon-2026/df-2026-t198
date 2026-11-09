@@ -63,8 +63,8 @@ try {
     const timetable = await student.context.newPage();
     timetable.setDefaultTimeout(30000);
     await timetable.goto(`${origin}/student`);
-    await timetable.locator('.timetable').getByRole('button', { name: /レポートの書き方の書き方/ }).click();
-    await timetable.getByRole('heading', { name: '書き方を書くレポート', exact: true }).waitFor();
+    await timetable.locator('.timetable').getByRole('button', { name: /文章表現/ }).click();
+    await timetable.getByRole('heading', { name: '第3回レポート（要約と引用）', exact: true }).waitFor();
     const supporter = await login(pair.supporter);
     phase = `${pair.pair}-supporter-workspace`;
     await supporter.page.getByRole('link', { name: '面談を開く', exact: true }).click();
@@ -75,7 +75,7 @@ try {
     await link.click();
     const deadlines = supporter.page.getByRole('region', { name: '次の面談までの締切' });
     phase = `${pair.pair}-supporter-deadlines`;
-    await deadlines.getByText('書き方を書くレポート', { exact: true }).waitFor();
+    await deadlines.getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
     views.push({ pair, student, supporter, timetable, deadlines,
       panelBefore: await timetable.locator('.course-panel').innerText(),
       sessionBefore: await deadlines.innerText(),
@@ -104,7 +104,7 @@ try {
   }
   phase = 'teacher-extension-does-not-yet-change-ledger';
   await screenshot(first.timetable, 'student-before.png');
-  await first.student.page.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
+  await first.student.page.getByRole('button', { name: '「第3回レポート（要約と引用）」の締切を1日延ばす', exact: true }).click();
   await first.student.page.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   assert.notEqual(await first.student.page.getByRole('region', { name: '先生役の操作' }).innerText(), first.sourceBefore);
   assert.equal(await first.timetable.locator('.course-panel').innerText(), first.panelBefore);

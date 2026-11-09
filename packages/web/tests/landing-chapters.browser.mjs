@@ -17,6 +17,8 @@ try {
     await page.getByRole('heading', { level: 1 }).waitFor();
     await page.evaluate(() => globalThis.document.fonts.ready);
     await page.locator('.shot').evaluateAll(images => Promise.all(images.map(image => image.decode())));
+    assert.deepEqual(await page.locator('main > .chapter').evaluateAll(nodes => nodes.map(node => node.id)), ['home', 'people', 'how', 'start', 'privacy', 'try']);
+    assert.deepEqual(await page.locator('.next-chapter').evaluateAll(nodes => nodes.map(node => node.getAttribute('href'))), ['#people', '#how', '#start', '#privacy', '#try', '#home']);
     for (const chapter of await page.locator('main > .chapter').all()) {
       await chapter.evaluate(el => globalThis.scrollTo(0, el.offsetTop));
       await page.waitForFunction(id => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === `#${id}`, await chapter.getAttribute('id'));
@@ -39,7 +41,7 @@ try {
       assert.equal(await page.locator('#try a.judge-link').count(), 1);
       assert.equal(await page.locator('#try .local-demo, #try .entry-grid, #try .trial-route').count(), 0);
       assert.equal(await page.locator('#try .trial-launch a:visible, #try .trial-launch button:visible').count(), 1);
-      assert.equal(await page.locator('.flow-status').innerText(), '支援担当の画面も更新しました');
+      assert.equal(await page.locator('.flow-status').innerText(), '同じ締切になりました');
       assert.equal(await page.locator('.flow-schedule .flow-event').count(), 2);
       assert.deepEqual(await page.locator('.flow-schedule s, .flow-supporter s').allTextContents(), ['11/12', '11/12', '11/12']);
       assert.equal(await page.locator('html').evaluate(el => globalThis.getComputedStyle(el).scrollBehavior), 'auto');

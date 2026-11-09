@@ -64,7 +64,7 @@ const markerChecks = async row => {
   await summary.evaluate(node => node.blur());
 };
 const removedCopy = /学生と一緒に見る画面です|学生が見せることにした|今日の面談|面談の準備|未提出/;
-const deadlineRegion = () => page.getByRole('region', { name: '次の面談までの締切' });
+const deadlineRegion = () => page.getByRole('region', { name: /^次の面談までの締切/ });
 try {
   await mkdir(dir, { recursive: true });
   const now = new Date();
@@ -86,12 +86,12 @@ try {
   await page.getByLabel('メールアドレス').fill('demo-supporter@example.invalid');
   await page.getByLabel('パスワード').fill(process.env.SESSION_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
-  await page.getByText('学生が見せることにした授業と課題だけを出しています。').waitFor();
+  await page.getByText('共有を許可した学生の授業と課題を出しています。').waitFor();
   await page.locator('.session-students nav a').first().waitFor();
   await selectorChecks();
   await page.screenshot({ path: `${dir}/students-wide.png`, fullPage: true });
   await select('demo-student-a');
-  await deadlineRegion().getByRole('heading', { name: '架空の数学レポート' }).waitFor();
+  await deadlineRegion().getByRole('button', { name: '架空の数学レポート' }).waitFor();
   assert.equal(new URL(page.url()).pathname, '/session/demo-student-a');
   assert.equal(await page.locator('.session-heading h1').innerText(), '学生');
   assert.equal(await page.locator('.session-heading .session-student-id').innerText(), 'demo-student-a');
@@ -117,7 +117,7 @@ try {
   await notice.getByText('YNU LMS：課題をすべて確認できていません。LMSを一緒に開いて確かめてください。', { exact: true }).waitFor();
   await fetchRef.update({ lastResult: 'success', lastFailureKind: null });
   await notice.waitFor({ state: 'detached' });
-  assert.match(await page.locator('.session-updates').innerText(), /YNU.*時点の情報/);
+  assert.match(await page.locator('.session-updates').innerText(), /YNU[\s\S]*時点の情報/);
   await fetchRef.delete();
   const logoutStyle = await page.locator('.session-account .logout').evaluate(node => {
     const style = globalThis.getComputedStyle(node);
@@ -130,14 +130,15 @@ try {
   await page.getByRole('region', { name: '前回の約束' }).getByText(/3限に準備/).waitFor();
   assert.match(await deadlineRegion().innerText(), /要確認.*今回、課題の締切を読めませんでした/);
   assert.match(await deadlineRegion().innerText(), /日付のみ/);
-  assert.equal(await page.getByRole('table').count(), 0);
+  assert.equal(await page.getByRole('table', { name: '次の面談までの課題' }).count(), 1);
+  assert.equal(await page.locator('.session-timetable').count(), 0);
   assert.equal(await page.locator('#session-decisions').count(), 0);
   assert.doesNotMatch(await page.locator('main').innerText(), removedCopy);
-  const row = deadlineRegion().locator('details').first();
-  assert.equal(await row.getByRole('link', { name: 'LMSで見る ›' }).isVisible(), false);
-  await row.locator('summary').click();
+  assert.equal(await deadlineRegion().getByRole('link', { name: 'LMSで見る ›' }).count(), 0);
+  await deadlineRegion().getByRole('button', { name: '架空の数学レポート', exact: true }).click();
+  const row = deadlineRegion().locator('.td-detail details').first();
   await row.getByRole('link', { name: 'LMSで見る ›' }).waitFor();
-  await row.getByRole('heading', { name: '書いてあったこと' }).waitFor();
+  await row.getByRole('heading', { name: 'LMSの課題ページに書いてあったこと' }).waitFor();
   await row.getByRole('heading', { name: 'これまでの変更' }).waitFor();
   await row.locator('summary').click();
   await markerChecks(row);
@@ -167,7 +168,8 @@ try {
   await page.screenshot({ path: `${dir}/plan-wide.png`, fullPage: true });
   await page.goBack();
   await deadlineRegion().waitFor();
-  assert.equal(await page.getByRole('table').count(), 0);
+  assert.equal(await page.getByRole('table', { name: '次の面談までの課題' }).count(), 1);
+  assert.equal(await page.locator('.session-timetable').count(), 0);
   await page.getByRole('link', { name: '② 相談する', exact: true }).click();
   await page.reload(); // Direct planning URL must work with the existing login.
   await page.getByRole('table', { name: '授業と準備の候補' }).waitFor();
@@ -175,12 +177,12 @@ try {
   await deadlineRegion().waitFor();
 
   await select('demo-student-b');
-  await deadlineRegion().getByRole('heading', { name: '架空の物理演習' }).waitFor();
+  await deadlineRegion().getByRole('button', { name: '架空の物理演習' }).waitFor();
   assert.doesNotMatch(await page.locator('main').innerText(), /架空の数学レポート/);
   await select('demo-student-a');
-  await deadlineRegion().getByRole('heading', { name: '架空の数学レポート' }).waitFor();
+  await deadlineRegion().getByRole('button', { name: '架空の数学レポート' }).waitFor();
   await page.getByText('面談日時を変える', { exact: true }).click();
-  const nextInput = page.getByLabel('次の面談（日本時間）');
+  const nextInput = page.getByLabel('次の面談（任意・日本時間）');
   const save = page.getByRole('button', { name: '面談日時を保存', exact: true });
   const before = `${dayInJapan(now)}T00:00`;
   await nextInput.fill(before); await save.click();
@@ -188,12 +190,12 @@ try {
   assert.equal((await contextRef.get()).data().nextSessionAt, `${before}:00+09:00`);
   await page.getByText('面談日時を変える', { exact: true }).click();
   await nextInput.fill(''); await save.click();
-  await page.getByText('次の面談日時を決めると、この期間の締切が出ます。').waitFor();
+  await page.getByText('次の面談日時が未設定です。').waitFor();
   assert.equal((await contextRef.get()).data().nextSessionAt, null);
   await contextRef.set(originalContext);
-  await deadlineRegion().getByRole('heading', { name: '架空の数学レポート' }).waitFor();
+  await deadlineRegion().getByRole('button', { name: '架空の数学レポート' }).waitFor();
   await task.ref.update({ 'latest.title': '数学レポートの変更後' });
-  await deadlineRegion().getByRole('heading', { name: '数学レポートの変更後' }).waitFor();
+  await deadlineRegion().getByRole('button', { name: '数学レポートの変更後' }).waitFor();
   const beforeDeadline = { kind: 'datetime', dueAt: `${dayInJapan(new Date(now.getTime() + 3 * 86400_000))}T17:00:00+09:00`,
     dueText: '架空の日時', timeZone: 'Asia/Tokyo' };
   const afterDeadline = { ...beforeDeadline, dueAt: `${dayInJapan(new Date(now.getTime() + 4 * 86400_000))}T17:00:00+09:00` };
@@ -229,12 +231,12 @@ try {
   await page.locator('.session-students nav a').first().waitFor();
   await selectorChecks();
   await select('demo-student-b');
-  await deadlineRegion().getByRole('heading', { name: '架空の物理演習' }).waitFor();
+  await deadlineRegion().getByRole('button', { name: '架空の物理演習' }).waitFor();
   await page.getByRole('link', { name: '学生', exact: true }).click();
   await page.getByRole('button', { name: 'ログアウト', exact: true }).waitFor();
   await page.getByRole('link', { name: '面談', exact: true }).click();
   await select('demo-student-b');
-  await deadlineRegion().getByRole('heading', { name: '架空の物理演習' }).waitFor();
+  await deadlineRegion().getByRole('button', { name: '架空の物理演習' }).waitFor();
   await page.getByRole('button', { name: 'ログアウト', exact: true }).click();
   await page.getByRole('heading', { name: '面談にログイン', exact: true }).waitFor();
   assert.doesNotMatch(await page.locator('main').innerText(), /架空の物理演習|学生 demo-student/);
@@ -244,7 +246,7 @@ try {
     'stale notice at 72 hours at 1280px and 390px', 'failed fetch notice and live recovery',
     'secondary student IDs and no redundant selector actions', 'own session only without assigned students',
     'no internal timezone labels and trial LMS wording', 'link-style logout', 'deadline extension sentence after live update',
-    'aligned disclosure and Enter/Space at 1280px and 390px', 'student selector only sharing notice', 'checking without timetable or decisions', 'row-only source details',
+    'aligned disclosure and Enter/Space at 1280px and 390px', 'student selector only sharing notice', 'checking table without timetable or decisions', 'row-only source details',
     'previous promises', 'planning without full deadline/change list', 'two free weekday suggestions',
     'available add buttons and no writes before choosing', 'both step links', 'browser back', 'direct URL reload',
     '390px checking and planning', 'student switch', 'session time edit and unset', 'live assignment update',
