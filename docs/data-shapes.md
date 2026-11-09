@@ -254,6 +254,20 @@ APIのGemini利用はサーバー専用の `announcementUsage/{日本時間の�
 設定画面からの内部メッセージ `calendar-sync` と `observation-send` でも同期を試せる。他の拡張機能・LMSのページ・子フレームからの要求は拒否する。`observation-send` の応答は観測の受領結果であり、カレンダー同期の成功とは区別する。同期に失敗しても受領済みの観測を失敗に戻さず、サーバーの同期待ちを次回に処理する。
 
 
+## 学生画面から拡張への命令（Issue #278）
+
+理由はD47。学生画面は `chrome.runtime.sendMessage(拡張ID, 命令)` で送り、拡張は `onMessageExternal` で受ける。送れるのはmanifestの `externally_connectable` に載る、ビルド設定のプロジェクトの学生画面だけ。拡張は送信元のoriginと最上位フレームをもう一度確かめる。保存するデータの形とサーバーのAPIは変えない。
+
+| 命令 | 中身 | 応答 |
+|---|---|---|
+| `todoku-status` | `uid` | `{ ok: true, account: 'none' | 'same' | 'other' }`。拡張のログインと学生画面のUIDの関係。許可画面は出さない |
+| `todoku-calendar-connect` | `uid` | 成功は `{ ok: true, synced }`。本人のGoogleの許可（初回は確認画面）→ 専用カレンダーの再利用か作成 → 既存の同期。`synced: false` はカレンダーの用意だけ済んだ状態 |
+| `todoku-calendar-sync` | `uid` | 成功は `{ ok: true, synced: true }`。許可画面を出さずに既存の同期を1回行う |
+
+- 命令は `type` と `uid` だけを持つ。それ以外のキー、形の合わないUID、上の3つ以外の `type`（設定画面用の内部メッセージを含む）は断る。カレンダーID・宛先・トークンは受け取らない。
+- 失敗は `{ ok: false, code }`。`code` は `account-mismatch`（学生画面と拡張かGoogleのアカウントが違う）、`authorization-denied`（許可が終わらなかった）、`busy`（別の接続が進行中）、`recovery-required`（登録済みのカレンダーが見つからない、または前回の作成結果が不明）、`reauthorization-required`・`not-connected`（この拡張に使える接続がない）、`sync-failed`、`calendar-unavailable`、`unconfigured`。例外の文言や応答の本文は返さない。
+- 学生画面の状態表示は、本人だけが読める `students/{uid}/integrations/calendar` と `calendarItems` から決める。接続先の文書がなければ未接続。`connectionState: 'reauthorization-required'`、または待っている予定の `lastErrorCode` が `authorization-required` なら再接続が必要。`recovery-required`、または待っている予定に他の `lastErrorCode` があれば失敗。望ましい版と反映済みの版が違う予定が残っていれば同期待ち。どれでもなければ連携済み。`demoAccounts/{uid}` がある体験用アカウントには操作を出さない。
+
 ## 体験用カレンダー（Issue #47）
 
 Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。既存のHTTP入力・応答とFirestore規則は変えない。`GET/POST /api/v1/calendar-sync`は引き続き体験UIDを拒否する。

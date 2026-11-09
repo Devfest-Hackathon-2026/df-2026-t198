@@ -1,0 +1,15 @@
+.connect-panel { margin-bottom: var(--space-6); padding: var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
+.connect-lead { margin: 0 0 var(--space-3); }
+.connect-items { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4) var(--space-6); align-items: start; }
+.connect-item { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
+.connect-item .td-btn { margin: 0; }
+.connect-state, .connect-note, .connect-result { margin: 0; }
+.connect-state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.connect-note { color: var(--ink-muted); }
+.connect-note b { display: block; color: var(--ink); }
+.connect-chip { font-size: 14px; line-height: 20px; font-weight: 700; padding: 2px var(--space-2); border-radius: var(--radius-sm); white-space: nowrap; }
+.connect-chip-connected { background: var(--done-soft); color: var(--ink); }
+.connect-chip-pending { background: var(--marker-soft); color: var(--ink-on-marker); }
+.connect-chip-reconnect, .connect-chip-failed { background: var(--danger-soft); color: var(--danger); }
+.connect-result[role="alert"] { color: var(--danger); }
+@media (max-width: 720px) { .connect-items { grid-template-columns: minmax(0, 1fr); } }

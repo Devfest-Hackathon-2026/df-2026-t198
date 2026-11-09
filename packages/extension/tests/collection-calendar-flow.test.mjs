@@ -31,7 +31,8 @@ const worker = await build({
            namespace: 'synthetic:123-synthetic.apps.googleusercontent.com',
            calendar: { status: 'ready', id: 'dedicated@group.calendar.google.com' } });
          export const confirmGoogleIdentity = async () => true;
-         export const browserProbe = () => { throw new Error('interactive-auth-forbidden'); };` }));
+         export const browserProbe = () => { throw new Error('interactive-auth-forbidden'); };
+      export const browserConnect = () => { throw new Error('interactive-auth-forbidden'); };` }));
   } }],
 });
 

@@ -6,7 +6,7 @@ import type { User } from 'firebase/auth';
 import type { NotificationSettings, NotificationStatus } from '../../../../core/src/types';
 
 interface SettingsView { settings: NotificationSettings; status: NotificationStatus | null; availability: string }
-const availabilityText: Record<string, string> = {
+export const availabilityText: Record<string, string> = {
   preparing: '通知の送信元は準備中です。今は有効にできません。',
   'authorization-required': '送信元の接続をやり直す必要があります。運営が確認するまで通知を送れません。',
   'recipient-unavailable': 'ログインしたGoogleアカウントのメールアドレスを確認できません。今は有効にできません。',
@@ -17,14 +17,19 @@ const statusText: Record<string, string> = {
   failed: '通知を送れませんでした。', unknown: '送信の結果が分かりません。重複を避けるため、この通知は自動で送り直しません。',
   skipped: '予定や設定が変わったため、この通知は送りませんでした。', expired: '通知する時刻を過ぎたため、この通知は送りませんでした。',
 };
-const savedText = {
+export const savedText = {
   cutover: '通知を有効にしました。朝のまとめは次の07:30から、今日やることがある日に送ります。切り替え前に通知の時刻を過ぎた分は送りません。',
   enabled: '通知を有効にしました。',
   stopped: '通知を停止しました。拡張機能からも送りません。',
 };
 const dateText = (value: string) => new Date(value).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hourCycle: 'h23' });
 
-export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | 'getIdToken'> }) {
+export interface NotificationController {
+  view: SettingsView | null; busy: boolean; error: string; saved: keyof typeof savedText | null;
+  request: (input?: { enabled: boolean; version: number }) => Promise<void>;
+}
+/** One state for the buttons above the timetable and the detailed panel below it. */
+export function useNotificationSettings(user: Pick<User, 'uid' | 'getIdToken'>): NotificationController {
   const [view, setView] = useState<SettingsView | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -70,6 +75,12 @@ export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | '
     return () => { active.current = false; };
     // The parent keys this component by authenticated UID, clearing all previous account state.
   }, []);
+  return { view, busy, error, saved, request };
+}
+export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | 'getIdToken'> }) {
+  return <NotificationSettingsView controller={useNotificationSettings(user)} />;
+}
+export function NotificationSettingsView({ controller: { view, busy, error, saved, request } }: { controller: NotificationController }) {
   return <details className="notification-settings">
     <summary>メール通知の設定</summary>
     <section aria-label="メール通知の設定">

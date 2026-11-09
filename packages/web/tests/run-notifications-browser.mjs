@@ -30,7 +30,9 @@ const { start, ready, finish, stop } = localProcesses(env, 'notifications');
 try {
   const web = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', webPort, '--strictPort'], true);
   await ready(env.KADAI_WEB_ORIGIN, web);
-  await finish(start('node', ['packages/web/tests/notifications.browser.mjs', ...process.argv.slice(2)]));
+  // --connect runs the calendar and mail buttons above the timetable instead of the settings panel.
+  const script = process.argv.includes('--connect') ? 'connect.browser.mjs' : 'notifications.browser.mjs';
+  await finish(start('node', [`packages/web/tests/${script}`, ...process.argv.slice(2)]));
 } finally {
   stop();
   await new Promise(resolve => api.close(resolve));

@@ -33,6 +33,7 @@ export interface ProbeDependencies {
 }
 
 const calendarName = 'ToDoku・接続テスト';
+const studentCalendarName = 'ToDoku';
 const eventName = 'ToDokuの接続テスト（架空の予定）';
 
 /** Only the transport adapter can establish that dispatch never started. */
@@ -77,6 +78,83 @@ function checkHttp(status: number): void {
   const hint = status === 401 ? 'もう一度連携してください。'
     : status === 403 ? 'Calendar APIと同意した権限を確認してください。' : '時間を置いて再度試してください。';
   throw new ProbeFailure('calendar-http', `Googleカレンダーとの通信に失敗しました（HTTP ${status}）。${hint}`);
+}
+
+/** Reuse the saved calendar; otherwise record the intent before the single creation request. */
+async function dedicatedCalendar(deps: ProbeDependencies, uid: string, token: string,
+  previous: ProbeState | undefined, name: string, registeredId?: string): Promise<ProbeState> {
+  if (previous?.namespace === deps.namespace && previous.uid === uid) {
+    if (previous.calendar.status === 'creating') {
+      throw new ProbeFailure('calendar-recovery-required', '前回のカレンダー作成が終わったか不明です。二重に作らず停止しました。spikes/auth-probe.mdの復旧手順を確認してください。');
+    }
+    return previous;
+  }
+  const start = new Date(Math.floor(deps.now().getTime() / 1000) * 1000 + 24 * 60 * 60 * 1000);
+  const state: ProbeState = { namespace: deps.namespace, uid, workerId: deps.workerId,
+    calendar: registeredId ? { status: 'ready', id: registeredId } : { status: 'creating' },
+    event: { id: deps.newEventId(), start: start.toISOString(), end: new Date(start.getTime() + 5 * 60 * 1000).toISOString() } };
+  if (registeredId) return state;
+  // Calendar creation has no client-chosen ID. Never repeat an uncertain POST.
+  await deps.write(state);
+  let created;
+  try {
+    created = await deps.request('/calendars', token, { summary: name, timeZone: 'Asia/Tokyo' });
+  } catch (error) {
+    if (error instanceof RequestNotSent) await deps.write(undefined);
+    throw error;
+  }
+  // These responses reject creation. Other failures may hide a completed POST.
+  if ([400, 401, 403].includes(created.status)) await deps.write(undefined);
+  checkHttp(created.status);
+  const id = record(created.data).id;
+  if (typeof id !== 'string' || !id) throw new ProbeFailure('calendar-response', 'カレンダーの作成結果を確認できませんでした。再作成せず停止しました。');
+  state.calendar = { status: 'ready', id };
+  return state;
+}
+
+export type ConnectCode = 'unconfigured' | 'account-mismatch' | 'authorization-denied' | 'recovery-required' | 'calendar-unavailable';
+export type ConnectResult = { ok: true } | { ok: false; code: ConnectCode };
+export interface ConnectDependencies extends ProbeDependencies {
+  /** Checks the Google account in isolation, without replacing the extension's login. */
+  sameAccount(token: string, uid: string): Promise<boolean>;
+  /** The calendar the server already holds for the signed-in student, if any. */
+  registeredCalendar(): Promise<string | null>;
+}
+
+/** Started from the student page: prepares the dedicated calendar for exactly that account. */
+export function createConnect(deps: ConnectDependencies) {
+  return async (expectedUid: string): Promise<ConnectResult> => {
+    const fail = (code: ConnectCode): ConnectResult => ({ ok: false, code });
+    if (deps.missing.length) return fail('unconfigured');
+    try {
+      const restored = await deps.auth.restore();
+      if (restored && restored !== expectedUid) return fail('account-mismatch');
+      let token = '';
+      try { token = await deps.auth.getToken(); } catch { /* The student closed or refused the Google dialog. */ }
+      if (!token) return fail('authorization-denied');
+      if (!await deps.sameAccount(token, expectedUid)) return fail('account-mismatch');
+      if (!restored && await deps.auth.signIn(deps.auth.credential(null, token)) !== expectedUid) return fail('account-mismatch');
+      const previous = await deps.read();
+      let registeredId: string | undefined;
+      if (previous?.namespace !== deps.namespace || previous.uid !== expectedUid) {
+        // A reinstalled extension has lost its local record; the server still knows the calendar.
+        const registered = await deps.registeredCalendar();
+        if (registered) {
+          const found = await deps.request(`/calendars/${encodeURIComponent(registered)}`, token);
+          if (found.status === 404 || found.status === 410) return fail('recovery-required');
+          checkHttp(found.status);
+          registeredId = registered;
+        }
+      }
+      const state = await dedicatedCalendar(deps, expectedUid, token, previous, studentCalendarName, registeredId);
+      state.workerId = deps.workerId;
+      await deps.write(state);
+      return { ok: true };
+    } catch (error) {
+      // SDK/API errors may contain tokens or response bodies. Only fixed codes leave this function.
+      return fail(error instanceof ProbeFailure && error.code === 'calendar-recovery-required' ? 'recovery-required' : 'calendar-unavailable');
+    }
+  };
 }
 
 export function createProbe(deps: ProbeDependencies) {
@@ -130,33 +208,7 @@ export function createProbe(deps: ProbeDependencies) {
       ok('signed-in', result.sameUid ? '前回と同じuidでログインできました。' : 'Firebaseにログインできました。');
 
       stage = '専用カレンダー';
-      let state: ProbeState;
-      if (previous?.namespace === deps.namespace && previous.uid === uid) {
-        state = previous;
-        if (state.calendar.status === 'creating') {
-          throw new ProbeFailure('calendar-recovery-required', '前回のカレンダー作成が終わったか不明です。二重に作らず停止しました。spikes/auth-probe.mdの復旧手順を確認してください。');
-        }
-      } else {
-        const start = new Date(Math.floor(deps.now().getTime() / 1000) * 1000 + 24 * 60 * 60 * 1000);
-        state = { namespace: deps.namespace, uid, workerId: deps.workerId,
-          calendar: { status: 'creating' },
-          event: { id: deps.newEventId(), start: start.toISOString(), end: new Date(start.getTime() + 5 * 60 * 1000).toISOString() } };
-        // Calendar creation has no client-chosen ID. Never repeat an uncertain POST.
-        await deps.write(state);
-        let created;
-        try {
-          created = await deps.request('/calendars', token, { summary: calendarName, timeZone: 'Asia/Tokyo' });
-        } catch (error) {
-          if (error instanceof RequestNotSent) await deps.write(undefined);
-          throw error;
-        }
-        // These responses reject creation. Other failures may hide a completed POST.
-        if ([400, 401, 403].includes(created.status)) await deps.write(undefined);
-        checkHttp(created.status);
-        const id = record(created.data).id;
-        if (typeof id !== 'string' || !id) throw new ProbeFailure('calendar-response', 'カレンダーの作成結果を確認できませんでした。再作成せず停止しました。');
-        state.calendar = { status: 'ready', id };
-      }
+      const state = await dedicatedCalendar(deps, uid, token, previous, calendarName);
       state.workerId = deps.workerId;
       await deps.write(state);
       result.calendarName = calendarName;

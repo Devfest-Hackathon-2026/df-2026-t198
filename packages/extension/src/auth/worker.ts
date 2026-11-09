@@ -3,6 +3,13 @@ import { browserProbe } from './browser.js';
 import type { ProbeResult } from './probe.js';
 
 let running = false;
+/** The probe and the student-page connection write the same saved calendar record. */
+export function claimCalendarSetup(): boolean {
+  if (running) return false;
+  running = true;
+  return true;
+}
+export function releaseCalendarSetup() { running = false; }
 
 export function handleAuthProbeMessage(
   message: unknown, sender: chrome.runtime.MessageSender, respond: (result: ProbeResult) => void,
@@ -16,11 +23,10 @@ export function handleAuthProbeMessage(
     respond(failure('untrusted-sender', '設定画面から操作してください。'));
     return false;
   }
-  if (running) {
+  if (!claimCalendarSetup()) {
     respond(failure('busy', '別の接続テストが進んでいます。終わるまでお待ちください。'));
     return false;
   }
-  running = true;
   void (async () => {
     try {
       await chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
@@ -31,7 +37,7 @@ export function handleAuthProbeMessage(
     } catch {
       respond(failure('probe-unavailable', '接続テストを始められませんでした。拡張機能を再読み込みしてください。'));
     } finally {
-      running = false;
+      releaseCalendarSetup();
     }
   })();
   return true;

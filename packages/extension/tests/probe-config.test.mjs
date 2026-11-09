@@ -50,6 +50,17 @@ describe('local probe build config', () => {
     expect(manifest).toEqual(original);
   });
 
+  it('lets only the student page of the configured project message the extension', async () => {
+    const manifest = JSON.parse(await readFile(new URL('../manifest.json', import.meta.url), 'utf8'));
+    const firebase = { projectId: 'synthetic-project' };
+    expect(configureManifest(manifest, { apiOrigin: '', firebase }).externally_connectable)
+      .toEqual({ matches: ['https://synthetic-project.web.app/*'] });
+    for (const config of [{ apiOrigin: '' }, { apiOrigin: '', firebase: { projectId: '*' } },
+      { apiOrigin: '', firebase: { projectId: 'synthetic.example' } }, { apiOrigin: '', firebase, invalidJson: true }]) {
+      expect(configureManifest(manifest, config).externally_connectable).toBeUndefined();
+    }
+  });
+
   it('normalizes API config before embedding it and rejects invalid origins while loading', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'api-origin-config-'));
     const file = join(dir, 'config.local.json');
