@@ -68,6 +68,6 @@ export function Mechanism() {
         {stage >= 6 ? <Deadline changed /> : <span>変化なし</span>}
       </div>
     </div>
-    <button className="flow-replay" type="button" hidden={reduced} disabled={stage < 6} onClick={() => { setStep(0); setReplay(value => value + 1); }}>もう一度見る <span aria-hidden="true">↻</span></button>
+    <button className="flow-replay" type="button" hidden={reduced} disabled={stage < 6} onClick={() => { setStep(0); setReplay(value => value + 1); }}>もう一度見る</button>
   </div>;
 }

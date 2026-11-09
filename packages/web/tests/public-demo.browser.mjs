@@ -38,7 +38,7 @@ try {
   await student.route('**/accounts:signInWithPassword?*', rejectLogin);
   for (const role of ['学生', '支援担当']) {
     await entry.getByRole('button', { name: `${role}として試す`, exact: true }).click();
-    await entry.getByRole('alert').filter({ hasText: '共用の体験に入れませんでした。説明資料のアカウントか、紹介ページの動く見本をお使いください。' }).waitFor();
+    await entry.getByRole('alert').filter({ hasText: '共用の体験に入れませんでした。少し待ってからもう一度押すか、説明資料のアカウントで入ってください。' }).waitFor();
     assert.doesNotMatch(await entry.innerText(), /EMAIL_NOT_FOUND|FirebaseError|auth\//);
   }
   await student.unroute('**/accounts:signInWithPassword?*', rejectLogin);

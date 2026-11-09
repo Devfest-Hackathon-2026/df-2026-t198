@@ -93,7 +93,7 @@ try {
 NODE
 ```
 
-4つの変数は `VITE_PUBLIC_DEMO_STUDENT_EMAIL`、`VITE_PUBLIC_DEMO_STUDENT_PASSWORD`、`VITE_PUBLIC_DEMO_SUPPORTER_EMAIL`、`VITE_PUBLIC_DEMO_SUPPORTER_PASSWORD`。1つでも欠ければ両方のボタンを出さない。ビルド成功後に [Hosting](#hosting) のコマンドを実行する。共用のボタンが `/demo-lms` のログイン欄の上にあり、学生は `/demo-lms`、支援担当は `/session` に入ることを別のブラウザで確認する。延長→LMSを開く→開いたままの面談画面の更新、やり直し、審査用3組へのログインも確認する。失敗時は審査用アカウントか紹介ページの動く見本へ案内し、締切後は共用の組を修復しない（[D38](decisions.md#d38-紹介ページから入れる共用の体験の組を足す2026-11-08issue-178)）。
+4つの変数は `VITE_PUBLIC_DEMO_STUDENT_EMAIL`、`VITE_PUBLIC_DEMO_STUDENT_PASSWORD`、`VITE_PUBLIC_DEMO_SUPPORTER_EMAIL`、`VITE_PUBLIC_DEMO_SUPPORTER_PASSWORD`。1つでも欠ければ両方のボタンを出さない。ビルド成功後に [Hosting](#hosting) のコマンドを実行する。共用のボタンが `/demo-lms` のログイン欄の上にあり、学生は `/demo-lms`、支援担当は `/session` に入ることを別のブラウザで確認する。延長→LMSを開く→開いたままの面談画面の更新、やり直し、審査用3組へのログインも確認する。失敗時は審査用アカウントへ案内し、締切後は共用の組を修復しない（[D38](decisions.md#d38-紹介ページから入れる共用の体験の組を足す2026-11-08issue-178)）。
 
 ## 動作確認
 
