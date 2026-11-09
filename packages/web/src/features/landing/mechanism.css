@@ -34,6 +34,16 @@
 .landing .flow-replay { display: block; margin: 12px 0 0 auto; min-height: var(--target); padding: 4px 8px; border: 0; background: transparent; color: inherit; font: 13px var(--jp); text-decoration: underline; cursor: pointer; }
 .landing .flow-replay:disabled { opacity: .55; cursor: default; }
 .landing .flow-replay[hidden] { display: none; }
+/* Emphasis: the part that just changed grows a little and returns. */
+@keyframes flow-pop { 0%, 100% { transform: scale(1); } 45% { transform: scale(var(--pop, 1.05)); } }
+.landing .flow-pulse { animation: flow-pop 900ms ease-in-out; transform-origin: center; }
+.landing .flow-deadline.flow-pulse { --pop: 1.3; display: inline-flex; transform-origin: left center; }
+.landing .flow-lms-notice.flow-pulse, .landing .flow-open.flow-pulse { --pop: 1.08; transform-origin: left center; }
+/* The schedule waits for its event to finish sliding before it pops. */
+.landing .flow-schedule.flow-pulse { --pop: 1.04; animation-delay: 1200ms; }
+.landing .flow-schedule .flow-deadline.flow-pulse { animation-delay: 1200ms; }
+.landing .flow-supporter.flow-pulse { --pop: 1.05; }
+@media (prefers-reduced-motion: reduce) { .landing .flow-pulse { animation: none; } }
 @media (max-width: 700px) {
   .landing .flow-source { grid-template-columns: 1fr; gap: 8px; }
   .landing .flow-teacher { padding: 10px 12px; }
