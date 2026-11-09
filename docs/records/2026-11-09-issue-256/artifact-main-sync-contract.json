@@ -1,0 +1,113 @@
+{
+  "schema_version": 2,
+  "root": "../../..",
+  "recipient": "紹介ページを見る学生・支援担当・審査員とPRの見直し役",
+  "purpose": "同じ課題の締切変更を先生のLMSから学生・ToDoku・面談・翌朝のメールまで追える。",
+  "conditions": [
+    "6段、各約5秒、最終段で停止",
+    "1280×800・390×844の1画面",
+    "架空データ、独自HTML/SVG、依存追加なし"
+  ],
+  "assumptions": [
+    "公開先と実LMSの動作証明ではない"
+  ],
+  "request": {
+    "reference": "docs/records/2026-11-09-issue-256/intent.md",
+    "source_refs": [
+      "docs/records/2026-11-09-issue-256/intent.md",
+      "AGENTS.md",
+      "docs/records/2026-11-09-issue-256/main-sync.md"
+    ]
+  },
+  "plan_alignment": {
+    "status": "checked",
+    "reason": "Issue #256の了承済み6段と操作・単独表示を、他章の変更を最小にして実装する。"
+  },
+  "artifact_paths": [
+    "packages/web/src/app.tsx",
+    "packages/web/src/features/landing/mechanism.tsx",
+    "packages/web/src/features/landing/mechanism.css",
+    "packages/web/src/features/landing/mechanism-scene.tsx"
+  ],
+  "verification_paths": [
+    "packages/web/tests/verify-landing.mjs",
+    "packages/web/tests/landing-chapters.browser.mjs",
+    "packages/web/tests/landing-flow.browser.mjs"
+  ],
+  "intent_paths": [
+    "docs/records/2026-11-09-issue-256/intent.md",
+    "docs/records/2026-11-09-issue-256/main-sync.md"
+  ],
+  "requirements": [
+    {
+      "id": "layout",
+      "operation": "両サイズで全章を開き静止設定の6枚を読む。",
+      "expected_result": "各章と全内容が画面内に収まり、横にはみ出さず、6枚が静止する。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "flow",
+      "operation": "通常再生の全6段と、前後・停止再開・キー・スワイプ・画面外停止・最初から・単独表示を実行する。",
+      "expected_result": "約5秒ずつ進み同じカードと予定を維持し、本人の操作後は停止、6枚の静止表示と16:9単独ページが使える。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "reading",
+      "operation": "両サイズの全6段・静止図・単独表示と録画を読み比べる。",
+      "expected_result": "課題の題名と旧新締切を追え、更新先の表示がカードに隠れず、各段の主役と説明が対応する。",
+      "verification": "semantic",
+      "review_evidence": [
+        "全12段の画像",
+        "両サイズの6枚静止図",
+        "単独表示の写し",
+        "録画から抜き出した各段の画像"
+      ],
+      "evidence_required": true
+    }
+  ],
+  "commands": [
+    {
+      "id": "layout",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "layout"
+      ],
+      "covers": [
+        "layout"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "flow-1280",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "flow",
+        "--width=1280"
+      ],
+      "covers": [
+        "flow"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "flow-390",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "flow",
+        "--width=390"
+      ],
+      "covers": [
+        "flow"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    }
+  ]
+}

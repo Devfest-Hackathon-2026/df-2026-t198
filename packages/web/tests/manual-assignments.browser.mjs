@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL } from 'node:url';
@@ -32,6 +33,7 @@ const manualList = page => page.getByRole('region', { name: '手で入れた課�
 const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
 async function login(page, role) {
   await page.goto(`${base}/demo-lms`);
+  await openJudgeLogin(page);
   await page.getByLabel('メールアドレス').fill(`trial-${role}@example.invalid`);
   await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
@@ -55,7 +57,7 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   const dueDate = new Date(Date.now() + 2 * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
-  await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
+  await student.goto(`${base}/student`); await student.locator('.student-overview').waitFor();
   await login(supporter, 'supporter'); await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
   await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
   const validationForm = await form(student, '  　 ', dueDate, null);
@@ -80,10 +82,10 @@ try {
   const editor = await form(supporter, paper, dueDate, null, course);
   await editor.getByRole('button', { name: '課題を入れる', exact: true }).click();
   await editor.getByRole('status').filter({ hasText: '課題を入れました' }).waitFor();
-  await student.getByRole('region', { name: '締切の近い課題', exact: true }).getByText(paper, { exact: false }).waitFor();
+  await student.getByRole('region', { name: '今週の締切', exact: true }).getByText(paper, { exact: false }).waitFor();
   await manualList(student).getByText('手で入れた課題（支援担当が入れました）', { exact: true }).waitFor();
   const deadlines = supporter.getByRole('region', { name: '次の面談までの締切', exact: true });
-  await deadlines.getByRole('heading', { name: paper, exact: true }).waitFor();
+  await deadlines.getByRole('button', { name: paper, exact: true }).waitFor();
   await deadlines.getByText(/日付のみ/).waitFor();
   await calendar.getByText(paper, { exact: true }).waitFor();
   const [saved] = (await rows()).docs; assert.ok(saved);
@@ -106,7 +108,7 @@ try {
   assert.equal((await rows()).size, 1);
   await manualList(student).getByRole('button', { name: `${paper}を消す`, exact: true }).click();
   await manualList(student).getByRole('heading', { name: paper }).waitFor({ state: 'detached' });
-  await deadlines.getByRole('heading', { name: paper }).waitFor({ state: 'detached' });
+  await deadlines.getByRole('button', { name: paper }).waitFor({ state: 'detached' });
   await calendar.getByText(paper, { exact: true }).waitFor({ state: 'detached' });
   assert.equal((await rows()).docs[0].data().status, 'cancelled');
   assert.equal((await target()).data().mockEvents[item.eventId], undefined);
@@ -122,7 +124,7 @@ try {
   await ownForm.getByRole('status').filter({ hasText: '保存を確認できませんでした' }).waitFor();
   await ownForm.getByRole('button', { name: '課題を入れる', exact: true }).click();
   await ownForm.getByRole('status').filter({ hasText: '課題を入れました' }).waitFor();
-  await deadlines.getByRole('heading', { name: ownTitle }).waitFor();
+  await deadlines.getByRole('button', { name: ownTitle }).waitFor();
   await deadlines.getByText(/14:35/).waitFor();
   assert.equal(await manualList(supporter).getByRole('button', { name: `${ownTitle}を消す`, exact: true }).count(), 0);
   assert.equal((await rows()).docs.filter(doc => doc.data().status === 'active').length, 1);
@@ -132,9 +134,10 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   assert.equal((await rows()).docs.filter(doc => doc.data().status === 'active').length, 1);
+  student.once('dialog', dialog => dialog.accept());
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
-  await deadlines.getByRole('heading', { name: ownTitle }).waitFor({ state: 'detached' });
+  await deadlines.getByRole('button', { name: ownTitle }).waitFor({ state: 'detached' });
   assert.equal((await rows()).size, 0);
   assert.equal((await ref.collection('calendarItems').get()).size, 0);
   assert.equal((await target()).exists, false);
@@ -152,7 +155,7 @@ try {
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   // Move the clock across both deadline boundaries without changing saved task state.
-  await student.goto(`${base}/student`); await student.locator('.timetable').waitFor();
+  await student.goto(`${base}/student`); await student.locator('.student-overview').waitFor();
   const timedTitle = '架空の時刻境界の課題';
   const dateTitle = '架空の日付境界の課題';
   for (const [title, time, owner] of [[timedTitle, '12:00', course], [dateTitle, null, '']]) {
@@ -160,7 +163,7 @@ try {
     await boundaryForm.getByRole('button', { name: '課題を入れる', exact: true }).click();
     await boundaryForm.getByRole('status').filter({ hasText: '課題を入れました' }).waitFor();
     await manualList(student).getByText('課題を手で入れる', { exact: true }).click();
-    await deadlines.getByRole('heading', { name: title, exact: true }).waitFor();
+    await deadlines.getByRole('button', { name: title, exact: true }).waitFor();
   }
   async function at(value) {
     for (const page of [student, supporter]) {
@@ -169,20 +172,22 @@ try {
     }
   }
   async function checkBoundary(title, ended) {
-    const studentUpcoming = student.getByRole('region', { name: '締切の近い課題', exact: true });
+    const studentUpcoming = student.getByRole('region', { name: '今週の締切', exact: true });
     if (ended) {
       await studentUpcoming.getByText(title, { exact: false }).waitFor({ state: 'detached' });
-      await deadlines.getByRole('heading', { name: title, exact: true }).waitFor({ state: 'detached' });
+      await deadlines.getByRole('button', { name: title, exact: true }).waitFor({ state: 'detached' });
     } else {
       await studentUpcoming.getByText(title, { exact: false }).waitFor();
-      await deadlines.getByRole('heading', { name: title, exact: true }).waitFor();
+      await deadlines.getByRole('button', { name: title, exact: true }).waitFor();
     }
     for (const page of [student, supporter]) {
       const finished = manualList(page).locator('.finished-assignments');
       assert.equal(await finished.getByRole('heading', { name: title, exact: true, includeHidden: true }).count(), ended ? 1 : 0);
     }
   }
+  await student.getByRole('tab', { name: '時間割', exact: true }).click();
   await student.locator('.course-cell').filter({ hasText: '文章表現' }).first().click();
+  await student.getByRole('tab', { name: '締切', exact: true }).click();
   const boundaryPanel = student.getByRole('complementary', { name: '文章表現の課題', exact: true });
   for (const time of ['11:59:59.999', '12:00:00.000']) {
     await at(`${dueDate}T${time}+09:00`);

@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { log } from 'node:console';
@@ -41,6 +42,7 @@ try {
       }
     });
     await page.goto(`${origin}/demo-lms`);
+    await openJudgeLogin(page);
     await page.getByLabel('メールアドレス').fill(account.email);
     await page.getByLabel('パスワード').fill(account.password);
     await page.getByRole('button', { name: 'ログイン', exact: true }).click();

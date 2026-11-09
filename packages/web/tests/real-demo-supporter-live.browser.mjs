@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { readFile, lstat } from 'node:fs/promises';
@@ -34,6 +35,7 @@ try {
   // No console, request body, screenshot, trace, HAR, token or private assignment capture.
   phase = 'password-login';
   await page.goto(`${origin}/demo-lms`);
+  await openJudgeLogin(page);
   await page.getByLabel('メールアドレス').fill(account.supporter.email);
   await page.getByLabel('パスワード').fill(account.supporter.password);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();

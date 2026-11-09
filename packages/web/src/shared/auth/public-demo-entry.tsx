@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebase } from '../firebase';
 
-export function PublicDemoEntry({ showDescription = true }: { showDescription?: boolean }) {
+export function PublicDemoEntry({ showDescription = true, showUnavailable = false }: { showDescription?: boolean; showUnavailable?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const [role, setRole] = useState<'student' | 'supporter'>('student');
@@ -16,7 +16,8 @@ export function PublicDemoEntry({ showDescription = true }: { showDescription?: 
     password: import.meta.env.VITE_PUBLIC_DEMO_STUDENT_PASSWORD };
   const supporter = { email: import.meta.env.VITE_PUBLIC_DEMO_SUPPORTER_EMAIL,
     password: import.meta.env.VITE_PUBLIC_DEMO_SUPPORTER_PASSWORD };
-  if (!firebase || !student.email || !student.password || !supporter.email || !supporter.password) return null;
+  if (!firebase || !student.email || !student.password || !supporter.email || !supporter.password) return showUnavailable
+    ? <p>この版では体験版のボタンを出していません。審査員の方は説明資料のアカウントかリンクで入ってください。</p> : null;
   const auth = firebase.auth;
   async function enter(role: 'student' | 'supporter') {
     if (busy) return;

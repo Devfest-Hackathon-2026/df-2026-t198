@@ -3,6 +3,7 @@ import process from 'node:process';
 import { URL } from 'node:url';
 import { log } from 'node:console';
 import { createRequire } from 'node:module';
+import { mkdir } from 'node:fs/promises';
 
 if (process.env.GCLOUD_PROJECT !== 'demo-kadai-hisho' ||
   process.env.FIRESTORE_EMULATOR_HOST !== '127.0.0.1:8085' ||
@@ -29,6 +30,24 @@ const assignments = () => db.collection(`students/${studentId}/assignments`).get
 const deadline = async () => (await assignments()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt;
 const confirmed = () => student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
 try {
+  const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-public-demo';
+  await mkdir(evidence, { recursive: true });
+  for (const width of [1280, 390]) {
+    const context = await browser.newContext({ viewport: { width, height: width === 1280 ? 800 : 844 }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto(`${base}/demo-lms`);
+    await page.getByRole('link', { name: 'アプリのホーム', exact: true }).waitFor();
+    await page.evaluate(() => globalThis.document.fonts.ready);
+    await page.getByRole('button', { name: '学生として試す', exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: '支援担当として試す', exact: true }).isVisible(), true);
+    assert.equal(await page.getByLabel('メールアドレス').isVisible(), false);
+    assert.equal(await page.locator('.demo-judge-login').getAttribute('open'), null);
+    assert.equal(await page.getByText('この版では体験版のボタンを出していません。', { exact: false }).count(), 0);
+    await page.screenshot({ path: `${evidence}/after-demo-lms-configured-${width}.png`, animations: 'disabled' });
+    await page.locator('.demo-judge-login > summary').click();
+    await page.getByLabel('メールアドレス').waitFor();
+    await context.close();
+  }
   await student.goto(`${base}/`);
   const entry = student.getByRole('region', { name: '体験版に入る', exact: true });
   await entry.getByRole('button', { name: '学生として試す', exact: true }).waitFor();

@@ -1,0 +1,86 @@
+[
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "stages": [
+      {
+        "stage": 1,
+        "elapsedMs": 1.5,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 2,
+        "elapsedMs": 4999.5,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 3,
+        "elapsedMs": 10010.199999999255,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 4,
+        "elapsedMs": 15008.39999999851,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 5,
+        "elapsedMs": 20008.299999998882,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 6,
+        "elapsedMs": 25009.39999999851,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      }
+    ],
+    "controls": "buttons, scoped arrows, horizontal swipes, vertical scroll, pause, replay, hover, exit",
+    "reducedDiagrams": 6,
+    "requests": 0,
+    "storageUnchanged": true
+  }
+]

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { deadlineText, pending, StudentView } from './page';
 import { assignment, dated, studentFixture } from '../../shared/testing/student-fixture';
-
+import { studentFitFixture } from '../../shared/testing/student-fit-fixture';
 describe('学生が締切を確かめる画面', () => {
   it('終了した課題は次の締切に数えず、過去の学期の授業は時間割にも出さない', () => {
     const data = studentFixture();
@@ -50,7 +50,7 @@ describe('学生が締切を確かめる画面', () => {
   });
   it('同じ授業IDの別大学を混ぜず、週末・6限・複数コマ・時限のない授業を出す', () => {
     const html = renderToStaticMarkup(<StudentView data={studentFixture()} />);
-    expect(html.match(/架空の線形代数/g)).toHaveLength(4); // 一覧2つと授業の2コマ
+    expect(html.match(/<strong>架空の線形代数<\/strong>/g)).toHaveLength(2);
     expect(html).toContain('架空の別大学の授業</strong></button>');
     expect(html).toContain('日</th>');
     expect(html).toContain('6限');
@@ -90,6 +90,18 @@ describe('学生が締切を確かめる画面', () => {
     expect(render('2026-11-07T15:30:00Z')).not.toContain('changed');
   });
 
+});
+
+it('架空の長い英語付き授業名と同一コマの2授業を保持し、締切を1行にまとめる', () => {
+  const data = studentFitFixture(studentFixture(), true);
+  const html = renderToStaticMarkup(<StudentView data={data} now={Date.parse('2026-11-09')} />);
+  for (const course of data.courses) {
+    expect(html).toContain(`title="${course.name}" aria-label="${course.name}"`);
+  }
+  expect(html.match(/<div class="timetable-slot">(.*?)<\/div>/)![1]!.match(/<button/g)).toHaveLength(2);
+  expect(html).toContain('11/10 · 2件');
+  expect(html.match(/scope="row"/g)).toHaveLength(7);
+  expect(html.match(/scope="col"/g)).toHaveLength(8);
 });
 
 it.each(['partial', 'failed'] as const)('学生の失敗の案内を維持する: %s', lastResult => {

@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -23,6 +24,7 @@ try {
     const page = await context.newPage(); page.setDefaultTimeout(15000);
     page.on('pageerror', () => errors.push('browser-error'));
     await page.goto(`${base}/demo-lms`);
+    await openJudgeLogin(page);
     await page.getByLabel('メールアドレス').fill('trial-student@example.invalid');
     await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
     await page.getByRole('button', { name: 'ログイン', exact: true }).click();

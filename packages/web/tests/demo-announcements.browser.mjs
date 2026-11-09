@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL } from 'node:url';
@@ -34,6 +35,7 @@ const errors = [];
 for (const view of [page, supporter]) { view.setDefaultTimeout(15000); view.on('pageerror', () => errors.push('browser-error')); }
 async function login(view, role) {
   await view.goto('http://127.0.0.1:5177/demo-lms');
+  await openJudgeLogin(view);
   await view.getByLabel('メールアドレス').fill(`trial-${role}@example.invalid`);
   await view.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await view.getByRole('button', { name: 'ログイン', exact: true }).click();
