@@ -7,6 +7,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import { firebase } from '../../shared/firebase';
 import type { PreparationPlan } from '../../../../core/src/types';
 import { PlanLinkAction, planProgress } from '../plans/progress';
+import { planErrorCode, planErrorMessage } from '../plans/errors';
 import './digest-preview.css';
 import type { StudentData } from '../../shared/assignments/types';
 import { useOperationMessage } from '../../shared/ui/operation-messages';
@@ -53,7 +54,7 @@ export function DigestPreview({ user, initiallyOpened = false }: { user: User; i
       const response = await serverFetch('/api/v1/digest/demo-plan', { method: 'POST', cache: 'no-store', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
       if (!response.ok) {
         const value = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(value.error === 'plan-after-deadline' ? value.error : 'demo-plan-failed');
+        throw new Error(planErrorCode(value.error) ?? 'demo-plan-failed');
       }
       const plan = await response.json() as PreparationPlan;
       setMessage(`見本の準備：${plan.date.replaceAll('-', '/')} ${plan.startsAt.slice(11, 16)}〜${plan.endsAt.slice(11, 16)}、${planProgress(plan) || 'まだ'}。最初から試すときは「体験を最初からやり直す」を押してください。`);
@@ -61,7 +62,7 @@ export function DigestPreview({ user, initiallyOpened = false }: { user: User; i
     } catch (error) {
       setMessage(error instanceof Error && error.message === 'plan-after-deadline'
         ? '今日の空いたコマは課題の締切より後になるため、見本を用意できませんでした。締切を確かめてください。'
-        : '先に「LMSを開く」で課題を読み込んでから、もう一度お試しください。');
+        : planErrorMessage(error, '先に「LMSを開く」で課題を読み込んでから、もう一度お試しください。'));
     }
     finally { setBusy(false); }
   }

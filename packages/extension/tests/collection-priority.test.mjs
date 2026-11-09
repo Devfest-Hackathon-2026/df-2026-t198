@@ -15,6 +15,7 @@ const url = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session';
 async function fixture({ pageRoute = false, hold = false, restoreLoggedOut = false, ...options } = {}) {
   vi.resetModules();
   const f = await fakeLms({ moveStudent: false, strictState: true, ...options });
+  const local = {};
   const state = { ynuSessionId: 'synthetic-session' }, uploads = [];
   const expired = await readFile(new URL('../../../lms-definitions/coursepower/samples/session-expired.html', import.meta.url), 'utf8');
   let homeRequests = 0;
@@ -30,6 +31,7 @@ async function fixture({ pageRoute = false, hold = false, restoreLoggedOut = fal
     return f.fetcher(url, init);
   };
   const fetcher = vi.fn(async (url, init) => {
+    if (url.endsWith('/api/v1/collection-policy')) return { ok: true, json: async () => ({ backgroundCollection: 'enabled' }) };
     if (url.startsWith('https://lms.ynu.ac.jp/')) {
       if (pageRoute) throw new Error('background-blocked');
       return read(url, init);
@@ -44,12 +46,12 @@ async function fixture({ pageRoute = false, hold = false, restoreLoggedOut = fal
     catch (error) { return { ok: false, code: error.message, diagnostic: error.diagnostic }; }
   });
   vi.stubGlobal('fetch', fetcher);
-  vi.stubGlobal('chrome', { tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: pageReads }, action: {}, storage: { session: {
+  vi.stubGlobal('chrome', { tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: pageReads }, action: {}, storage: { local: { get: async () => globalThis.structuredClone(local), set: vi.fn(async values => Object.assign(local, values)) }, session: {
     get: async () => globalThis.structuredClone(state), set: async values => Object.assign(state, globalThis.structuredClone(values)),
   } } });
   const realTimeout = globalThis.setTimeout;
   vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn, ms) => {
-    if (ms !== 250) return realTimeout(fn, ms);
+    if (ms !== 1500) return realTimeout(fn, ms);
     globalThis.queueMicrotask(fn); return 0;
   });
   const worker = await import('../src/collection-worker.js');
@@ -189,7 +191,7 @@ it('does not claim or read when the tab state cannot be inspected', async () => 
 });
 
 for (const pageRoute of [false, true]) it(`retries a loading tab and collects once after it completes (page: ${pageRoute})`, async () => {
-  // Install the clock first so the fixture's 250ms pause bypass stays active.
+  // Install the clock first so the fixture's 1500ms pause bypass stays active.
   vi.useFakeTimers();
   const f = await fixture({ pageRoute });
   const digest = globalThis.crypto.subtle.digest.bind(globalThis.crypto.subtle);

@@ -6,8 +6,11 @@ import { observationIdentity } from './auth/browser.js';
 import { observationApiOrigin } from './auth/config.js';
 import { syncCalendarInBackground } from './calendar/browser.js';
 import { showCollectionStatus } from './collection-display.js';
+import { backgroundCollectionEnabled } from './collection-policy.js';
 
 const running = new Set<string>();
+const cooldownMs = 6 * 60 * 60 * 1000;
+
 export function isKulmsPage(url: string): boolean {
   try { return new URL(url).origin === KULMS_ORIGIN; } catch { return false; }
 }
@@ -27,22 +30,31 @@ async function runKyotoCollection(system: 'kulms' | 'kulasis', tabId: number, do
   if (running.has(system)) return { ok: false, code: 'busy' };
   running.add(system);
   let outcome: string | undefined;
-  let attemptedUid: string | undefined;
+  let attemptedCooldownKey: string | undefined;
   try {
-    const saved = await chrome.storage.session.get([`${system}FetchCompletedAt`, `${system}FetchOwnerUid`]);
-    const completed = saved[`${system}FetchCompletedAt`];
     const api = observationApiOrigin();
     if (!api) { outcome = 'api-not-configured'; return { ok: false, code: outcome }; }
     const identity = await observationIdentity();
     if (!identity) { outcome = 'sign-in-required'; return { ok: false, code: outcome }; }
-    if (saved[`${system}FetchOwnerUid`] === identity.uid && typeof completed === 'number' && Date.now() >= completed
-      && Date.now() - completed < 600_000) return { ok: false, code: 'cooldown' };
+    const cooldownKey = `${system}FetchCompletedAt:${identity.uid}`;
+    let completed = (await chrome.storage.local.get(cooldownKey))[cooldownKey];
+    if (completed === undefined) {
+      // Carry a pre-update worker's completion into persistent, per-user storage.
+      const legacy = await chrome.storage.session.get([`${system}FetchCompletedAt`, `${system}FetchOwnerUid`]);
+      if (legacy[`${system}FetchOwnerUid`] === identity.uid && typeof legacy[`${system}FetchCompletedAt`] === 'number') {
+        completed = legacy[`${system}FetchCompletedAt`];
+        await chrome.storage.local.set({ [cooldownKey]: completed });
+      }
+    }
+    if (typeof completed === 'number' && Number.isFinite(completed) && completed > 0
+      && Date.now() - completed < cooldownMs) return { ok: false, code: 'cooldown' };
+    if (!await backgroundCollectionEnabled(api)) return { ok: false, code: 'collection-paused' };
     outcome = 'running'; await showCollectionStatus(outcome);
     const observationId = crypto.randomUUID(), fetchedAt = new Date().toISOString();
     const cached = (await chrome.storage.local.get('kulasisMapping'))['kulasisMapping'] as { uid?: string; term?: string; siteIds?: string[] } | undefined;
     const prioritySiteIds = cached?.uid === identity.uid && cached.term === kulasisTerm(fetchedAt) && Array.isArray(cached.siteIds) ? cached.siteIds : [];
     const target = { frameId: 0, ...(documentId ? { documentId } : {}) };
-    attemptedUid = identity.uid;
+    attemptedCooldownKey = cooldownKey;
     const reply = await chrome.tabs.sendMessage(tabId, { type: `${system}-collect`, observationId, fetchedAt, ...(system === 'kulms' ? { prioritySiteIds } : {}) }, target) as {
       ok?: boolean; observation?: Observation; code?: string };
     if (!reply?.ok || !reply.observation) {
@@ -82,9 +94,6 @@ async function runKyotoCollection(system: 'kulms' | 'kulasis', tabId: number, do
         const mapping = { uid: identity.uid, term: kulasisTerm(fetchedAt),
           siteIds: observation.catalogCourses.filter(c => c.currentTerm === true && c.kulmsSiteId).map(c => c.kulmsSiteId!) };
         await chrome.storage.local.set({ kulasisMapping: mapping });
-        if (JSON.stringify(cached) !== JSON.stringify(mapping)) {
-          await chrome.storage.session.set({ kulmsFetchCompletedAt: 0 });
-        }
       }
     }
     void syncCalendarInBackground();
@@ -92,8 +101,8 @@ async function runKyotoCollection(system: 'kulms' | 'kulasis', tabId: number, do
   } catch { outcome = 'collection-unavailable'; return { ok: false, code: outcome }; }
   finally {
     // Failed reads and delivery attempts still consume LMS requests. Student activity may resume immediately.
-    if (attemptedUid && outcome !== 'yielded') {
-      await chrome.storage.session.set({ [`${system}FetchCompletedAt`]: Date.now(), [`${system}FetchOwnerUid`]: attemptedUid }).catch(() => {});
+    if (attemptedCooldownKey && outcome !== 'yielded') {
+      await chrome.storage.local.set({ [attemptedCooldownKey]: Date.now() }).catch(() => {});
     }
     if (outcome) {
       await chrome.storage.session.set({ [`${system}FetchStatus`]: outcome }).catch(() => {});

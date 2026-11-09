@@ -22,7 +22,7 @@ const student = await studentContext.newPage(); const supporter = await supporte
 const studentScreen = await studentContext.newPage(); const linkPage = await studentContext.newPage();
 const errors = []; const operations = []; const pass = name => operations.push(name);
 for (const page of [student, supporter, studentScreen, linkPage]) {
-  page.setDefaultTimeout(15000); page.on('pageerror', () => errors.push('browser-error'));
+  page.setDefaultTimeout(15000); page.on('pageerror', error => errors.push(error.message.split('\n')[0].replace(/https?:\/\/\S+/g, '[url]').slice(0, 180)));
 }
 const base = process.env.KADAI_WEB_ORIGIN; const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i112-browser';
 const ref = db.doc('students/trial-student');
@@ -49,6 +49,11 @@ async function screenshot(page, name) {
   await page.setViewportSize({ width: 1280, height: 960 });
 }
 const confirmation = page => page.getByRole('region', { name: '準備の予定の操作', exact: true });
+async function prepareSample() {
+  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
+  if (await preview.locator('.digest-envelope').count()) await preview.locator('.digest-envelope').click();
+}
 async function confirmPreview(label, action, capture) {
   const link = preview.getByRole('link', { name: label, exact: true });
   const target = ref.collection('plans').doc(new URL(await link.getAttribute('href')).searchParams.get('id'));
@@ -77,7 +82,8 @@ try {
   await supporter.locator('.session-heading').waitFor();
   assert.equal(await supporter.locator('.session-heading h1').innerText(), '田中 太郎');
   assert.equal(await supporter.locator('.session-student-id').count(), 0);
-  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await student.getByText('先生役の操作・メールの見本', { exact: true }).click();
+  await prepareSample();
   await preview.getByRole('link', { name: '🕒 後回し', exact: true }).waitFor();
   for (const page of [studentScreen, supporter]) {
     await preparationList(page).getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
@@ -120,15 +126,15 @@ try {
   await screenshot(student, 'preview-later-after');
   pass('preview later action moves durable event with the same id; both open screens update without reload');
   await linkPage.goto(laterUrl);
-  await linkPage.getByRole('status').filter({ hasText: '変更していません' }).waitFor();
+  await confirmation(linkPage).getByRole('status').filter({ hasText: '変更していません' }).waitFor();
   await screenshot(linkPage, 'plan-link-moved');
   assert.deepEqual((await planRef.get()).data(), moved);
-  await linkPage.reload(); await linkPage.getByRole('status').filter({ hasText: '変更していません' }).waitFor();
+  await linkPage.reload(); await confirmation(linkPage).getByRole('status').filter({ hasText: '変更していません' }).waitFor();
   assert.deepEqual((await planRef.get()).data(), moved);
   pass('same email link including reload cannot postpone the plan twice');
   await linkPage.goto(doneUrl);
-  await linkPage.getByRole('status').filter({ hasText: '後回しにした' }).waitFor();
-  assert.match(await linkPage.getByRole('status').innerText(), /変更していません/);
+  await confirmation(linkPage).getByRole('status').filter({ hasText: '後回しにした' }).waitFor();
+  assert.match(await confirmation(linkPage).getByRole('status').innerText(), /変更していません/);
   assert.equal(await linkPage.getByRole('button', { name: 'もう一度試す', exact: true }).count(), 0);
   assert.deepEqual((await planRef.get()).data(), moved);
   await screenshot(linkPage, 'stale-action-conflict');
@@ -137,8 +143,8 @@ try {
   await preparationList(studentScreen).getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
   const movedAgain = (await planRef.get()).data();
   assert.equal(movedAgain.revision, moved.revision + 1); assert.notEqual(movedAgain.startsAt, moved.startsAt);
-  await linkPage.goto(laterUrl); await linkPage.getByRole('status').filter({ hasText: '変更していません' }).waitFor();
-  assert.ok((await linkPage.getByRole('status').innerText()).includes(movedAgain.startsAt.slice(11, 16)));
+  await linkPage.goto(laterUrl); await confirmation(linkPage).getByRole('status').filter({ hasText: '変更していません' }).waitFor();
+  assert.ok((await confirmation(linkPage).getByRole('status').innerText()).includes(movedAgain.startsAt.slice(11, 16)));
   assert.deepEqual((await planRef.get()).data(), movedAgain);
   pass('student can postpone again using the current revision while the earlier email remains replay safe');
   await supporter.getByRole('link', { name: '② 相談する', exact: true }).click();
@@ -150,7 +156,7 @@ try {
   await supporter.locator('.session-deadline').waitFor();
   await screenshot(supporter, 'session-plan-later');
   // README step 6: a fresh sample restores today's email while retaining the postponed plan.
-  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await prepareSample();
   await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
   const replacementLink = preview.getByRole('link', { name: '✅ 終わった', exact: true });
   await replacementLink.waitFor();
@@ -163,37 +169,38 @@ try {
   assert.deepEqual((await planRef.get()).data(), movedAgain);
   pass('B4: later, prepare a fresh sample, and finish it from today\'s email while the postponed plan remains intact');
   await preparationList(studentScreen).locator('li').filter({ hasText: '後回しにした' }).getByRole('button', { name: '終わった', exact: true }).click();
-  await preparationList(studentScreen).getByText('終わった（LMSへの提出は別）', { exact: true }).nth(1).waitFor();
+  await preparationList(studentScreen).locator('.td-chip-done').filter({ hasText: '終わった（LMSへの提出は別）' }).nth(1).waitFor();
   const finishedMoved = (await planRef.get()).data();
   await linkPage.goto(laterUrl);
-  await linkPage.getByRole('status').filter({ hasText: 'もう「終わった」' }).waitFor();
-  assert.doesNotMatch(await linkPage.getByRole('status').innerText(), /動かしました/);
+  await confirmation(linkPage).getByRole('status').filter({ hasText: 'もう「終わった」' }).waitFor();
+  assert.doesNotMatch(await confirmation(linkPage).getByRole('status').innerText(), /動かしました/);
   assert.deepEqual((await planRef.get()).data(), finishedMoved);
   await screenshot(linkPage, 'old-mail-after-done');
   pass('B1: the first email after completion reports the old plan\'s current state without a success claim');
   // Reset, prepare again, then exercise the other button inside the exact same preview.
+  student.once('dialog', dialog => dialog.accept());
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
   assert.equal((await ref.collection('plans').get()).size, 0);
   await preparationList(studentScreen).waitFor({ state: 'detached' });
   await preparationList(supporter).waitFor({ state: 'detached' });
   await openLms();
-  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await prepareSample();
   await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
   doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
   planRef = ref.collection('plans').doc(new URL(doneUrl).searchParams.get('id'));
   await confirmPreview('✅ 終わった', '終わった');
   await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
-  for (const page of [studentScreen, supporter]) await preparationList(page).getByText('終わった（LMSへの提出は別）', { exact: true }).waitFor();
+  for (const page of [studentScreen, supporter]) await preparationList(page).locator('.td-chip-done').filter({ hasText: '終わった（LMSへの提出は別）' }).waitFor();
   assert.equal((await planRef.get()).data().status, 'done');
   const assignments = (await ref.collection('assignments').get()).docs.map(doc => doc.data());
   assert.equal(assignments.find(row => row.key.sourceId === 'DEMO101_TASK1').submission, 'not-submitted');
   const finished = (await planRef.get()).data();
-  await linkPage.goto(doneUrl); await linkPage.getByRole('status').filter({ hasText: 'もう「終わった」' }).waitFor();
+  await linkPage.goto(doneUrl); await confirmation(linkPage).getByRole('status').filter({ hasText: 'もう「終わった」' }).waitFor();
   assert.deepEqual((await planRef.get()).data(), finished);
   await screenshot(studentScreen, 'student-done'); await screenshot(supporter, 'session-plan-done');
   await supporter.getByRole('link', { name: '① 確かめる', exact: true }).click();
-  await preparationList(supporter).getByText('終わった（LMSへの提出は別）', { exact: true }).waitFor();
+  await preparationList(supporter).locator('.td-chip-done').filter({ hasText: '終わった（LMSへの提出は別）' }).waitFor();
   await screenshot(supporter, 'session-check-done');
   pass('done preview button updates both session steps and student while preserving LMS submission, and duplicate link is stable');
   // Opening the action link in a different logged-in account cannot touch the owner's plan.
@@ -225,7 +232,7 @@ try {
   await loginRef.delete();
   await signedOutContext.close();
   pass('signed-out email link asks for login and resumes only after the owner authenticates');
-  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await prepareSample();
   await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
   await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
   const renewedId = new URL(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href')).searchParams.get('id');
@@ -241,8 +248,9 @@ try {
   await form.locator('select[name="assignment"]').selectOption(JSON.stringify({ system: 'demo-lms', sourceId: 'DEMO101_TASK1' }));
   const japanDate = offset => new Date(Date.now() + 9 * 3600000 + offset * 86400000).toISOString().slice(0, 10);
   const fillPlan = async date => {
-    await form.getByLabel('準備する日').fill(date); await form.getByLabel('時間割の時限').fill('3');
-    await form.getByLabel('開始時刻').fill('13:00'); await form.getByLabel('終了時刻').fill('14:00');
+    // The demo has no fifth-period classes on any weekday. Keep this boundary test independent of tomorrow's weekday.
+    await form.getByLabel('準備する日').fill(date); await form.getByLabel('時間割の時限').fill('5');
+    await form.getByLabel('開始時刻').fill('16:15'); await form.getByLabel('終了時刻').fill('17:15');
   };
   const previousIds = new Set((await ref.collection('plans').get()).docs.map(doc => doc.id));
   const count = previousIds.size;
@@ -281,10 +289,11 @@ try {
   await screenshot(student, 'sample-after-deadline');
   pass('sample creation 409 explains the deadline cause without asking the student to reload the LMS');
   // Issue #141: add only invented records for the submission stage and stateful links.
+  student.once('dialog', dialog => dialog.accept());
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
   await openLms();
-  await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
+  await prepareSample();
   await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
   const sampleId = new URL(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href')).searchParams.get('id');
   const source = (await ref.collection('assignments').get()).docs[0].data();
@@ -297,7 +306,7 @@ try {
   await submissionRef.set(submissionTask);
   await ref.collection('plans').doc('fictional-141').set({ ...(await ref.collection('plans').doc(sampleId).get()).data(),
     planId: 'fictional-141', assignment: submissionTask.key, status: 'done', title: submissionTask.latest.title });
-  const submissionSection = preview.locator(':scope > div').getByRole('region', { name: '次は提出', exact: true });
+  const submissionSection = preview.locator('.digest-open-mail').getByRole('region', { name: '次は提出', exact: true });
   await submissionSection.waitFor();
   assert.equal(await submissionSection.getByRole('link', { name: 'LMSを開く', exact: true }).getAttribute('href'), 'https://lms.example.invalid/lms/homeHoml/doIndex');
   assert.match(await submissionSection.innerText(), /道順：ホーム › 架空の提出演習 › 架空の提出レポート/);
@@ -310,12 +319,12 @@ try {
     await preview.screenshot({ path: `${evidence}/submission-mail-${size}.png` });
   }
   await student.setViewportSize({ width: 1280, height: 960 });
-  await studentScreen.getByRole('button', { name: /架空の提出演習/ }).click();
+  await studentScreen.getByRole('button', { name: '架空の提出演習', exact: true }).click();
   const studentSource = studentScreen.locator('#course-assignments').getByRole('link', { name: 'LMSで見る ›', exact: true });
   assert.equal(await studentSource.getAttribute('href'), 'https://lms.example.invalid/lms/homeHoml/doIndex');
   await supporter.goto(`${base}/session/trial-student`);
+  await supporter.getByRole('button', { name: '架空の提出レポート', exact: true }).click();
   const sessionTask = supporter.locator('.session-task').filter({ hasText: '架空の提出レポート' });
-  await sessionTask.locator('summary').click();
   assert.equal(await sessionTask.getByRole('link', { name: 'LMSで見る ›', exact: true }).getAttribute('href'), 'https://lms.example.invalid/lms/homeHoml/doIndex');
   assert.match(await sessionTask.innerText(), /ホーム › 架空の提出演習 › 架空の提出レポート/);
   pass('Issue #141: morning preview headings, unchanged buttons, one final note and submission stage; both screens use the definition home and route');
@@ -366,6 +375,6 @@ try {
   log(JSON.stringify({ status: 'pass', operations: operations.length, browserErrors: 0, evidence }));
 } catch (error) {
   await student.screenshot({ path: `${evidence}/failure.png`, fullPage: true });
-  await writeFile(`${evidence}/failure.json`, JSON.stringify({ preview: await preview.innerText().catch(() => ''), linkStatus: await linkPage.getByRole('status').allTextContents(), browserErrors: errors, operations }, null, 2));
+  await writeFile(`${evidence}/failure.json`, JSON.stringify({ preview: await preview.innerText().catch(() => ''), linkStatus: await confirmation(linkPage).getByRole('status').allTextContents(), browserErrors: errors, operations }, null, 2));
   throw error;
 } finally { await browser.close(); await db.terminate(); await deleteApp(app); }

@@ -2,6 +2,7 @@ import { observationIdentity } from './auth/browser.js';
 import { observationApiOrigin } from './auth/config.js';
 import { syncCalendarInBackground } from './calendar/browser.js';
 import { collectObservation } from './collection.js';
+import { backgroundCollectionEnabled } from './collection-policy.js';
 import { showCollectionStatus } from './collection-display.js';
 import { LmsReadError, isHomePage, safeDiagnostic, type PageDiagnostic } from './collection-diagnostics.js';
 import { observationSummary } from './collection-summary.js';
@@ -75,11 +76,21 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       checkpoint = undefined;
       await clearCheckpoint();
     }
-    const cooldowns = [last['ynuFetchFailedAt'], ...(last['ynuFetchStatus'] !== 'yielded' ? [last['ynuFetchCompletedAt']] : [])];
+    const cooldowns = [last['ynuFetchFailedAt']];
     if (cooldowns.some(at => typeof at === 'number' && Number.isFinite(at) && Date.now() >= at && Date.now() - at < 10 * 60_000)) {
       return { ok: false, code: 'cooldown' };
     }
     if (!sid) return fail('session-changed');
+    const api = observationApiOrigin();
+    if (!api) { started = true; return fail('api-not-configured'); }
+    const identity = await observationIdentity();
+    if (!identity) { started = true; return fail('sign-in-required'); }
+    const completedKey = `ynuFetchCompletedAt:${identity.uid}`;
+    const completedAt = (await chrome.storage.local.get(completedKey))[completedKey];
+    if (typeof completedAt === 'number' && Number.isFinite(completedAt)
+      && Date.now() >= completedAt && Date.now() - completedAt < 6 * 60 * 60_000) {
+      return { ok: false, code: 'cooldown' };
+    }
     lease = new CollectionLease(navigation.statefulSession, async () => {
       if (navigation.restore !== 'home') throw new Error('not-logged-in');
       const home = await perform({ kind: 'home' }, true);
@@ -101,12 +112,9 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
     }
     started = true;
     await showCollectionStatus('running');
-    const api = observationApiOrigin();
-    if (!api) return fail('api-not-configured');
-    const identity = await observationIdentity();
-    if (!identity) return fail('sign-in-required');
     if (checkpoint && checkpoint.uid !== identity.uid) { checkpoint = undefined; await clearCheckpoint(); }
     checkpoint ??= { sessionHash: hash || await sessionHash(sid), uid: identity.uid, courses: [] };
+    if (!await backgroundCollectionEnabled(api)) return fail('collection-unavailable');
     const saveCheckpoint = async () => {
       if ((await chrome.storage.session.get('ynuSessionId'))['ynuSessionId'] !== sid) return;
       if (credentialFree(JSON.stringify(checkpoint), sid!)) {
@@ -196,7 +204,9 @@ export async function runCollection(pageUrl: string, tabId: number, documentId?:
       || receipt.changeCount < 0 || receipt.changed !== (receipt.changeCount > 0)) {
       return fail('send-failed');
     }
-    await chrome.storage.session.set({ ynuFetchCompletedAt: Date.now() }).catch(() => {});
+    const completed = Date.now();
+    await chrome.storage.local.set({ [completedKey]: completed });
+    await chrome.storage.session.set({ ynuFetchCompletedAt: completed }).catch(() => {});
     void syncCalendarInBackground();
     success = observation.failures.length === 0;
     outcome = success ? 'success' : 'partial';
