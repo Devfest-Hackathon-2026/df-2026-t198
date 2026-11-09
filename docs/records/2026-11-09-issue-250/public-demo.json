@@ -1,0 +1,6 @@
+{
+  "command": "pnpm test:public-demo:browser",
+  "environment": "local Auth/Firestore emulators; fake model only",
+  "exitCode": 0,
+  "result": "Public demo: role buttons, fixed login failures, extension -> LMS -> live supporter update, quota message and reset passed (emulators only)."
+}
