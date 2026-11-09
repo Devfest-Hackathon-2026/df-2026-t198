@@ -23,7 +23,7 @@ export function validOperation(input: unknown): input is LmsOperation {
 
 /** No arbitrary URL, method, headers, or submission operations cross the tab boundary. */
 export async function executeLmsRequest(input: unknown, pageUrl: string, sid: string,
-  fetcher: typeof fetch = fetch, pause = () => new Promise<void>(resolve => setTimeout(resolve, 250)),
+  fetcher: typeof fetch = fetch, pause = () => new Promise<void>(resolve => setTimeout(resolve, 1500)),
   signal?: AbortSignal, canStart = () => true): Promise<LmsPage> {
   if (!validOperation(input) || sessionFromUrl(pageUrl) !== sid || !/^[A-Za-z0-9._~%+-]{1,512}$/.test(sid)) {
     throw new Error('invalid-request');

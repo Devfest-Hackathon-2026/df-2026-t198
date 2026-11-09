@@ -39,6 +39,11 @@ export interface ObservationDependencies {
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
+    if (request.method === 'GET' && path === '/api/v1/collection-policy') {
+      response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      response.end(JSON.stringify({ backgroundCollection: process.env['BACKGROUND_COLLECTION'] === 'paused' ? 'paused' : 'enabled' }));
+      return;
+    }
     if ((request.method === 'GET' && path === '/api/v1/sharing/supporters') ||
       (request.method === 'POST' && /^\/api\/v1\/sharing\/supporters\/[^/]+\/(revoke|restore)$/.test(path ?? ''))) {
       void receiveSharingRequest(request, response, dependencies); return;

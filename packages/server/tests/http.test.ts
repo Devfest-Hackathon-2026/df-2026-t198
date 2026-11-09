@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createHttpServer } from '../src/http.js';
 
 const server = createHttpServer();
@@ -15,7 +15,20 @@ afterAll(async () => {
   await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 });
 
+afterEach(() => vi.unstubAllEnvs());
+
 describe('HTTP server', () => {
+  it.each([undefined, 'enabled', 'paused'])('serves only public collection policy for %s', async value => {
+    vi.stubEnv('BACKGROUND_COLLECTION', value);
+    const response = await fetch(`${baseUrl}/api/v1/collection-policy`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({ backgroundCollection: value === 'paused' ? 'paused' : 'enabled' });
+  });
+  it.each(['POST', 'PUT', 'DELETE'])('does not allow %s to change collection policy', async method => {
+    const response = await fetch(`${baseUrl}/api/v1/collection-policy`, { method, body: '{}' });
+    expect(response.status).toBe(404);
+  });
   it('refuses observations without a Firebase ID token', async () => {
     const response = await fetch(`${baseUrl}/api/v1/observations`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',

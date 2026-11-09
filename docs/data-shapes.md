@@ -337,3 +337,12 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - GETは `{ settings: NotificationSettings, status: NotificationStatus | null, availability }`。欠損時は保存せず、停止・owner none・移行前・version 1・updatedAt epochの既定値を返す。availabilityは `preparing/ready/authorization-required/migration-pending/recipient-unavailable`。送信元の準備、本人宛先、移行済みの順で判定する。宛先・送信元の秘密は応答に入れない。
 - PUTは1 KiB以下のJSON `{ enabled: boolean, version: 正の整数 }` のみ。UID・宛先・deliveryOwner・migrationStateは指定不可。有効化はavailability readyだけ。停止は送信元・宛先が利用できなくても可能。設定と体験プロフィールを同じtransactionで確認し、変更時にversionを1増やす。同じ値の再送は版と日時を変えない。古い版からの値変更は409。設定保存で送信状態や受理日時を作らない。
 - 成功200、未認証401、体験利用者403、不正入力400、競合・未準備409、サイズ超過413、JSON以外415、依存未接続503、内部失敗500。応答はno-store、エラーは固定コードのみ。画面は通信失敗を保存成功とせず、状態の再読取を案内する。
+
+
+## 裏の取得の停止設定（Issue #267）
+
+- `GET /api/v1/collection-policy` は認証不要の読み取り専用API。200の応答は `{ "backgroundCollection": "enabled" | "paused" }` の1項目だけで、利用者の情報を含まない。`Cache-Control: no-store`。GET以外は404で、要求から設定を変更できない。
+- Cloud Runの環境変数 `BACKGROUND_COLLECTION=paused` のときpaused、それ以外（未設定を含む）はenabled。操作は [deploy.md](deploy.md#ynuの裏の取得を止めるissue-267) を参照。
+- 拡張はYNUの取得を始める前に、Cookie・認証ヘッダーなしで毎回読み、明示のenabledだけを認める。paused・HTTPエラー・通信失敗（15秒の期限を含む）・JSONの形の不一致は取得しない。ページ側への切替も行わない。拡張の既存の `collection-unavailable` 表示で知らせる。
+- 6時間の成功待機は `chrome.storage.local` の `ynuFetchCompletedAt:<uid>` に数値の完了時刻だけを保存する。別のuidの記録は使わず、元のuidに戻ったときも期限を守る。SID・Cookie・トークンはこの記録に含めない。SIDと中断時のチェックポイントは従来どおり `storage.session` に置く。
+- 適用範囲は新しい拡張でこれから始めるYNUの取得。実行中の取得と旧版の拡張は止められない。KULMSの取得と体験用LMSにはつながない（D44）。
