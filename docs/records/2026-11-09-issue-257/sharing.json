@@ -1,0 +1,27 @@
+{
+  "status": "pass",
+  "checks": [
+    {
+      "width": 1280,
+      "confirmationCancel": true,
+      "failurePreservesGrant": true,
+      "openSessionCleared": true,
+      "removedFromList": true,
+      "restored": true,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "confirmationCancel": true,
+      "failurePreservesGrant": true,
+      "openSessionCleared": true,
+      "removedFromList": true,
+      "restored": true,
+      "overflow": false
+    }
+  ],
+  "resetRestored": true,
+  "emptyHidden": true,
+  "publicHidden": true,
+  "pageErrors": []
+}

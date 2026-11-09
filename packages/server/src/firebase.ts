@@ -9,6 +9,7 @@ import { createManualAssignmentStore } from './manual-assignments/store.js';
 import { createDigestStore } from './digest/store.js';
 import { createPlanStore } from './plans/store.js';
 import { createSessionStore } from './sessions/store.js';
+import { createSharingStore } from './sharing/store.js';
 import { createDemoStore } from './demo/store.js';
 import { createAnnouncementStore } from './announcements/store.js';
 import { createGeminiModel } from './announcements/gemini.js';
@@ -62,6 +63,13 @@ export function firebaseDependencies() {
     },
     calendar: createCalendarStore(db),
     session: createSessionStore(db),
+    sharing: createSharingStore(db, async uid => {
+      try { return (await getAuth(app).getUser(uid)).displayName; }
+      catch (error) {
+        if ((error as { code?: string }).code === 'auth/user-not-found') return undefined;
+        throw error;
+      }
+    }),
     plans: createPlanStore(db, syncDemoCalendar),
     manualAssignments: createManualAssignmentStore(db, syncDemoCalendar),
     demo: createDemoStore(db),

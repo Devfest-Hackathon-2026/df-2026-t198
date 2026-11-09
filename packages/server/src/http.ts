@@ -18,11 +18,14 @@ import type { createAnnouncementStore } from './announcements/store.js';
 import { receiveNotificationTick, type NotificationHttpDependencies } from './notifications/http.js';
 import { receiveNotificationSettings } from './notifications/settings-http.js';
 import type { NotificationSettingsStore } from './notifications/settings.js';
+import { receiveSharingRequest } from './sharing/http.js';
+import type { SharingStore } from './sharing/store.js';
 
 export interface ObservationDependencies {
   verifyToken: (token: string) => Promise<string>;
   saveObservation: (uid: string, observation: Observation) => Promise<ObservationResult>;
   session?: SessionStore;
+  sharing?: SharingStore;
   plans?: PlanStore;
   manualAssignments?: ManualAssignmentStore;
   verifyDigestToken?: (token: string) => Promise<{ uid: string; email?: string | undefined }>;
@@ -36,6 +39,10 @@ export interface ObservationDependencies {
 export function createHttpServer(dependencies?: ObservationDependencies) {
   return createServer((request, response) => {
     const path = request.url?.split('?')[0];
+    if ((request.method === 'GET' && path === '/api/v1/sharing/supporters') ||
+      (request.method === 'POST' && /^\/api\/v1\/sharing\/supporters\/[^/]+\/(revoke|restore)$/.test(path ?? ''))) {
+      void receiveSharingRequest(request, response, dependencies); return;
+    }
     if (path === '/api/v1/notification-settings' && (request.method === 'GET' || request.method === 'PUT')) {
       void receiveNotificationSettings(request, response, dependencies); return;
     }

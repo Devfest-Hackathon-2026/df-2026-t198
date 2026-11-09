@@ -1,0 +1,83 @@
+{
+  "base": "bcd1e6a363a3c548704704efd07c6c04b41fb947",
+  "environment": "local demo-kadai-hisho Auth/Firestore emulators and Chromium; no live services",
+  "checks": [
+    {
+      "command": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm progress --check && pnpm check:samples",
+      "exitCode": 0,
+      "unitPassed": {
+        "core": 274,
+        "extension": 509,
+        "web": 221,
+        "server": 324
+      },
+      "sampleFilesPassed": 17
+    },
+    {
+      "command": "pnpm test:sharing:emulator",
+      "exitCode": 0,
+      "testsPassed": 5
+    },
+    {
+      "command": "pnpm test:sharing:browser",
+      "exitCode": 0,
+      "widths": [
+        1280,
+        390
+      ]
+    },
+    {
+      "command": "pnpm exec node scripts/run-emulators.mjs --project demo-kadai-hisho --only auth,firestore \"node packages/web/tests/run-plans-browser.mjs --judge-qa\"",
+      "exitCode": 0,
+      "passed": 28,
+      "total": 28
+    },
+    {
+      "command": "pnpm metrics:m6",
+      "exitCode": 0,
+      "passed": 8,
+      "total": 8
+    },
+    {
+      "command": "pnpm test:public-demo:browser",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm test:sessions:emulator",
+      "exitCode": 0,
+      "testsPassed": 2
+    },
+    {
+      "command": "pnpm exec node scripts/run-emulators.mjs --project demo-kadai-hisho --only auth,firestore \"node packages/web/tests/run-session-browser.mjs\"",
+      "exitCode": 0,
+      "operations": 26,
+      "views": 8
+    },
+    {
+      "command": "pnpm test:demo:emulator",
+      "exitCode": 0,
+      "testsPassed": 19
+    }
+  ],
+  "runtimeSha256": {
+    ".gcloudignore": "76af433403b17a6eca7705403b89633fd5eb65baba507c17d8b33d5340f207bb",
+    "package.json": "b82e0a5dc46dbe63e71c8bf8986afaea47329d8956505047c968adf2db456534",
+    "packages/server/src/sharing/http.ts": "4286b86e4d2d99e952993ed069f63526b96e0d8406fe4ac03ac196561b352f9d",
+    "packages/server/src/sharing/store.ts": "f1d5a01cfc0196ae43ecf2c42d9ff3d4044d016e71b7febfeeb178813d99369d",
+    "packages/server/src/http.ts": "19c20e34a685554eed19590f36871bf5d499b9336748a494a77341442ca81d3e",
+    "packages/server/src/firebase.ts": "cec82cb99ad236aa3d30dfea52b5e7f7df4cb7508c01e95b896d2c091caa9dab",
+    "packages/server/src/demo/store.ts": "b144aea3c5e51e7ac5b2a8ee6d19b6114964d60b25b37d50571707c1d1281f62",
+    "packages/web/src/features/sharing/panel.tsx": "01a735caff90aa5be1beb86bb822c0d1554ca75e0510e6786d7398d8b9604990",
+    "packages/web/src/features/sharing/sharing.css": "6c9b34cd58b4e0dea34edd2a05a5670ee7e0dd4877c5e3bb77a5612d770cac9f",
+    "packages/web/src/features/student/page.tsx": "8fd76636ded3be0915a299e7fc54576b7553408d0956ee0b594e74531f379439"
+  },
+  "review": {
+    "copySkills": [
+      "kuchiguse",
+      "yomiyasu"
+    ],
+    "yomiyasuCandidates": 0,
+    "argon": "not run: no callable tool or executable available",
+    "externalCodeReview": "pending Claude review after PR"
+  }
+}

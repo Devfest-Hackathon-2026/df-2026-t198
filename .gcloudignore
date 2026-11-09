@@ -40,6 +40,8 @@
 !packages/server/src/runtime/*.ts
 !packages/server/src/sessions/
 !packages/server/src/sessions/*.ts
+!packages/server/src/sharing/
+!packages/server/src/sharing/*.ts
 !lms-definitions/
 !lms-definitions/coursepower/
 !lms-definitions/coursepower/navigation.json

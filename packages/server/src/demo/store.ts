@@ -38,12 +38,21 @@ export function createDemoStore(db: Firestore, resetClock = Date.now): DemoStore
         const collections = ['assignments', 'courses', 'changes', 'fetchStates', 'observationReceipts', 'calendarItems', 'plans', 'manualAssignments', 'planActionReceipts'];
         const rows = [];
         for (const name of collections) rows.push(await tx.get(student.collection(name)));
+        const grants = await tx.get(student.collection('supporters'));
+        const pairedGrants = [];
+        for (const grant of grants.docs) {
+          const supporter = (await tx.get(db.doc(`demoAccounts/${grant.id}`))).data();
+          if (supporter?.['role'] === 'supporter' && supporter['studentId'] === uid) pairedGrants.push(grant);
+        }
         const initial = initialDemo(now);
         for (const row of rows) for (const document of row.docs) tx.delete(document.ref);
         tx.delete(calendar);
         tx.set(source, initial.data);
         tx.set(contextRef, initial.context);
         tx.update(profile.ref, { displayName: initial.displayName });
+        for (const grant of pairedGrants) {
+          if (grant.data()['revokedAt'] !== null) tx.update(grant.ref, { revokedAt: null });
+        }
         return { reset: true, data: initial.data };
       });
     },
