@@ -65,3 +65,46 @@
   .student-overview[data-tab='deadlines'] .student-timetable:has(.course-panel) > h2,
   .student-overview[data-tab='deadlines'] .student-timetable:has(.course-panel) .student-layout > div { display: none; }
 }
+
+/* Composition: deadlines are read first, the timetable carries colour, settings stay quiet below. */
+.student-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+.student-today { margin: 0; font: 600 15px var(--mono); color: var(--ink-muted); }
+.student-overview { grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: var(--space-6) var(--space-8); }
+.student-workspace h2 { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
+.student-workspace .td-tasklist { display: grid; gap: var(--space-2); border-top: 0; }
+.student-workspace .td-taskrow {
+  border: 1px solid var(--rule); border-inline-start: 4px solid var(--course-band, var(--line-strong)); border-radius: var(--radius-md);
+  background: var(--sheet); padding: var(--space-3) var(--space-4); transition: box-shadow .15s, transform .15s;
+}
+.student-workspace button.td-taskrow:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.student-workspace .td-taskrow-course { font-size: 13px; }
+.student-workspace .td-taskrow-side { font: 600 15px var(--font-mono); }
+.student-workspace .other-deadlines { margin-top: var(--space-3); }
+.student-workspace .other-deadlines .td-tasklist { margin-top: var(--space-2); }
+.student-workspace .other-deadlines .td-taskrow { background: transparent; }
+.student-workspace .timetable-scroll { border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
+.student-workspace .timetable th { background: transparent; font-family: var(--font-mono); }
+.student-workspace .timetable thead th { border-bottom: 1px solid var(--rule); }
+.student-workspace .timetable th:first-child { background: var(--sheet); }
+.student-workspace .timetable tbody tr:first-child td { border-top: 0; }
+.student-workspace .timetable [data-today] { background: color-mix(in srgb, var(--marker-soft) 38%, transparent); }
+.student-workspace .timetable thead th[data-today] { color: var(--ink); font-weight: 700; box-shadow: inset 0 3px 0 var(--marker); }
+.student-workspace .course-cell { border-radius: var(--radius-sm); transition: filter .15s; }
+.student-workspace .course-cell:hover { filter: brightness(.96); }
+.student-workspace .course-panel { border-top: 1px solid var(--rule); box-shadow: var(--shadow-lg); }
+.student-workspace .course-panel .panel-heading button { min-height: var(--target); padding: 4px 14px; border: 1px solid var(--rule); border-radius: 100px; font-size: 13px; text-decoration: none; }
+.student-workspace .course-panel .assignment .deadline { font: 600 24px/1.4 var(--font-mono); }
+.student-workspace .calendar-scroll { border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
+.student-workspace .deadline-week th { background: transparent; border-bottom: 1px solid var(--rule); color: var(--ink-muted); }
+.student-workspace .deadline-week td { border-top: 0; }
+.student-workspace .deadline-week .calendar-today { background: color-mix(in srgb, var(--marker-soft) 38%, transparent); color: var(--ink); }
+.student-workspace .deadline-week th.calendar-today { box-shadow: inset 0 3px 0 var(--marker); }
+.student-workspace .calendar-event { border-inline-start: 4px solid var(--course-band, var(--line-strong)); border-radius: var(--radius-sm); }
+.student-workspace .calendar-event strong { display: block; }
+.student-workspace .calendar-navigation button { border: 1px solid var(--rule); border-radius: 100px; background: var(--sheet); font-size: 13px; }
+.student-workspace .preparation-add, .app main > .notification-settings, .app main > .student-sharing, .student-workspace > .manual-assignments {
+  padding: var(--space-3) var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet);
+}
+.student-workspace > .manual-assignments { margin: var(--space-6) 0 var(--space-3); }
+.app main > .notification-settings, .app main > .student-sharing { margin-bottom: var(--space-3); }
+@media (prefers-reduced-motion: reduce) { .student-workspace .td-taskrow, .student-workspace .course-cell { transition: none; } }

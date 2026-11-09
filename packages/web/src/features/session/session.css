@@ -204,3 +204,64 @@
   .session-task-workspace .td-table .td-r { text-align: left; white-space: normal; }
   .session-task-workspace .td-table .td-chip { white-space: normal; font-size: 12px; padding-inline: var(--space-1); gap: var(--space-1); }
 }
+
+/* Meeting view: who and when on one strip, the deadlines as the main sheet, changes as a timeline. */
+.session-account { float: right; margin: 0; }
+.session-heading { margin-bottom: var(--space-3); }
+.session-heading h1 { font: 700 30px/1.4 var(--display); }
+.session-back { min-height: var(--target); margin-bottom: var(--space-2); color: var(--ink-muted); }
+.session-steps { gap: 0; padding: 4px; border: 1px solid var(--rule); border-radius: 12px; background: var(--sheet); }
+.session-steps a { border: 0; border-radius: 8px; background: transparent; padding: var(--space-3) var(--space-6); transition: background-color .15s; }
+.session-steps a:hover { background: var(--done-soft); }
+.session-steps a strong { font-family: var(--display); }
+.session-steps [aria-current='page'], .session-steps [aria-current='page']:hover { background: var(--ink); color: var(--on-ink); }
+.session-meta { gap: 0; border: 1px solid var(--rule); border-radius: 12px; background: var(--sheet); align-items: stretch; }
+.session-meta > section, .session-meta .session-meta-last { border: 0; border-radius: 0; background: transparent; padding: var(--space-4) var(--space-6); }
+.session-meta > section + section { border-inline-start: 1px solid var(--rule); }
+.session-meta h2 { font-family: var(--sans); font-size: 12px; font-weight: 400; letter-spacing: .04em; }
+.session-meta > section > p > time { font-size: 18px; }
+.session-meta-next > p { color: var(--ink); }
+.session-meta .session-updates strong { font-size: 15px; }
+.session-meta .session-updates span { font-size: 13px; color: var(--ink-muted); }
+[aria-labelledby='session-deadlines'], .session-planning { padding: var(--space-6); border-top: 1px solid var(--rule); border-radius: 12px; }
+.session-check [aria-labelledby='session-deadlines'] h2 { display: flex; align-items: center; gap: var(--space-2); }
+.session-count { margin-left: 0; border-radius: 100px; padding: 2px 12px; background: var(--ink); color: var(--on-ink); font-family: var(--font-mono); }
+.session-task-workspace .td-table th { border-bottom-color: var(--rule); font-weight: 400; font-size: 12px; }
+.session-task-workspace .td-table tbody tr:last-child td { border-bottom: 0; }
+.session-task-workspace .td-table td { vertical-align: middle; padding-block: var(--space-4); }
+.session-task-workspace .td-table tbody tr[data-course-color] > td:first-child { border-inline-start-width: 4px; font-weight: 700; }
+.session-task-workspace .td-table-select { font-size: 16px; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 4px; }
+.session-task-workspace .td-table-select:hover { text-decoration-color: currentColor; }
+.session-task-workspace .td-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.session-task-workspace .td-table .td-r { font-family: var(--font-mono); }
+.session-primary .session-next { display: flex; width: fit-content; min-height: 52px; padding: 12px 28px; border-radius: 100px; background: var(--ink); font-weight: 700; transition: transform .15s, box-shadow .15s; }
+.session-primary .session-next:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.session-supplement .panel { background: transparent; }
+.session-supplement .session-rows { padding: 0; }
+.session-supplement .session-brief li { position: relative; padding: 0 0 var(--space-4) var(--space-6); border: 0; }
+.session-supplement .session-brief li + li { border-top: 0; }
+.session-supplement .session-brief li::before { content: ''; position: absolute; left: 3px; top: 8px; width: 9px; height: 9px; border: 2px solid var(--line-strong); border-radius: 50%; background: var(--paper); box-sizing: border-box; }
+.session-supplement .session-brief li::after { content: ''; position: absolute; left: 7px; top: 20px; bottom: -6px; width: 1px; background: var(--rule); }
+.session-supplement .session-brief li:last-child::after { display: none; }
+.session-supplement .session-brief li:has(.session-status-changed)::before { border-color: var(--change-text); background: var(--change-text); }
+.session-status { border-radius: 100px; padding-inline: var(--space-3); }
+.session-status-changed, .session-status-done { display: block; width: fit-content; }
+.session-students h2 { font-size: 24px; }
+.session-students nav a { border-radius: 12px; padding: var(--space-4) var(--space-6); font-size: 17px; text-decoration: none; justify-content: space-between; transition: border-color .15s, box-shadow .15s; }
+/* Empty alternative text keeps the arrow out of the link's accessible name. */
+.session-students nav a::after { content: '→' / ''; color: var(--ink-muted); }
+.session-students nav a:hover { border-color: var(--ink); box-shadow: var(--shadow-md); }
+.session-login { margin: var(--space-8) auto; border-radius: 12px; }
+.session-timetable { border-radius: var(--radius-md); }
+.session-timetable th { font-family: var(--font-mono); font-weight: 400; color: var(--ink-muted); }
+.session-course, .session-candidate { border-radius: var(--radius-sm); }
+.session-planning .session-candidate { display: grid; gap: var(--space-1); border-width: 1.5px; font-size: 13px; line-height: 1.5; }
+.session-planning .session-candidate button { justify-self: start; min-height: var(--target); padding: 2px 16px; border: 0; border-radius: 100px; background: var(--accent); color: var(--on-ink); font-weight: 700; }
+.session-deadline { border: 0; border-radius: var(--radius-sm); background: var(--marker-soft); font-weight: 700; }
+@media (max-width: 850px) {
+  .session-meta > section + section { border-inline-start: 0; border-top: 1px solid var(--rule); }
+  .session-steps a { padding: var(--space-2) var(--space-3); }
+  [aria-labelledby='session-deadlines'], .session-planning { padding: var(--space-3); }
+}
+@media (max-width: 480px) { .session-meta > section, .session-meta .session-meta-last { padding: var(--space-2) var(--space-3); } }
+@media (prefers-reduced-motion: reduce) { .session-steps a, .session-primary .session-next, .session-students nav a { transition: none; } }
