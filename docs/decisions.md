@@ -95,7 +95,7 @@
 
 〔作品〕
 
-確認：共通の [definition.ts](../packages/core/src/definition.ts) と `lms-definitions/` の製品定義を分ける方針を採用済み。大学ごとの設定を数行足すだけで取得できる仕組み全体が完成したという意味ではなく、現在の拡張の [lms-request.ts](../packages/extension/src/lms-request.ts) はCoursePowerの定義を直接参照する。定義の下書きはC30、模擬LMSはC32の証拠を参照。PandAはC08・C09が未完了で、他大学での実機確認もしていない。
+確認（2026-11-10）：現行の実装は共通の核と、LMS製品ごとの読み取り定義に分かれる。大学固有の処理は一部コードにもあり、下の3層は当初の設計方針である。設定だけで別大学へ対応できることは未確認。KULMS・KULASISの部品は実装済みで、11/9にKULMSの20授業と時間割7/7を実物で確認した。期間内の対象課題が0件のため実課題の精度は未測定（[記録](records/2026-11-09-issue-152.md)）。定義の下書きはC30、模擬LMSはC32の証拠を参照。
 
 | 層 | 中身 | 数 |
 |---|---|---|
@@ -231,12 +231,12 @@ Discordから開発のエージェントを呼ぶ仕組み（Claude CodeのDisco
 
 注記：D36で、サーバーは利用者のGoogle認可・LMSの認証情報を預からず、専用送信元のGmail認可だけを持つ方針（A1）を決定した。情報を持つ範囲は [data-shapes.md](data-shapes.md) を参照。架空の体験用LMSのお知らせ本文を体験用文書に置く例外はIssue #84の記録のとおりで、実物の本文や解析の受領記録への保存を許可しない。
 
-注記：下の「共有はいつでも取り消せる」は当初の目標。現在は運用で許可文書を失効・削除すると、その後の読み取りを拒否し、通知を受けた支援担当の画面を消して購読を止める（[session-watch.ts](../packages/web/src/features/session/watch.ts)、[firestore.rules](../firestore.rules)、C26）。学生が自分で取り消す画面・APIは未実装。通信が切れている間の即時検知や、すでに渡した情報の回収は保証しない。
+注記（2026-11-10更新）：共有の停止が確定すると、その後の読み取りを拒否し、通知を受けた支援担当の画面を消して購読を止める（[session-watch.ts](../packages/web/src/features/session/watch.ts)、[firestore.rules](../firestore.rules)、C26）。学生が既存の共有先への共有を停止・再開する画面とAPIはD42で追加した。共用の体験の組は操作対象外。通信が切れている間の即時検知や、すでに渡した情報の回収は保証しない。
 
 持たない情報：
 - 診断名や障害の情報を入れる欄を作らない。支援の方針は「どう知らせるか」という行動の言葉で書く。
 - お知らせやメールの本文は保存しない（[design.md](design.md) の9節）。
-- 本人と、本人が許可した支援担当のほかは読めない（PLAN.md の C26）。共有はいつでも取り消せる（design.md の2節・8節）。
+- 本人と、本人が許可した支援担当のほかは読めない（PLAN.md の C26）。学生は既存の共有先への共有を停止できる（D42）。
 - AIの処理はGoogle Cloudを通して行う。「アプリが保存しない」「学習に使われない」「Google側にも残らない」は別の条件として確かめる（design.md の9節）。
 - 試験と発表には架空のデータを使う。
 
@@ -622,6 +622,8 @@ FableとAstraに、作った開発の仕組みが目的に沿っているかを�
 ## D36. 専用Gmailから本人へ通知する（2026-11-08、orange決定）
 
 〔作品〕
+
+注記（2026-11-10追記）：11/9に本番でA1を使う方針が確定し、送信受理2件と本人の受信報告が記録された。2通それぞれの到達と送信元表示名の照合は未完了（[経過](records/2026-11-10-notification-status.md)）。以下の送信OFF・未受信は11/8の構成時点の記録。
 
 注記：送信部品の実装は [mail-sender.ts](../packages/server/src/notifications/mail-sender.ts)、設定APIの実装は [settings.ts](../packages/server/src/notifications/settings.ts)、2026-11-08のCloud構成・Secret Manager・Cloud Schedulerの実行記録は [2026-11-08-issue-152.md](records/2026-11-08-issue-152.md) を参照。`sender.check` は `ready` だが、実メールの送信・API受理・本人の受信は未確認であり、この決定や準備は実受信の証拠ではない。
 
