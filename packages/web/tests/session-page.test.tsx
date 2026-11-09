@@ -84,7 +84,7 @@ it('does not show an internal demo id while its name is loading on a direct sess
   expect(host.querySelector('.session-heading .session-student-id')).toBeNull();
 });
 async function click(text: string) {
-  const button = [...host.querySelectorAll('button, a')].find(button => button.textContent?.trim() === text);
+  const button = [...host.querySelectorAll('button, a')].find(button => (button.getAttribute('aria-label') ?? button.textContent?.trim()) === text);
   expect(button, text).toBeDefined();
   await act(async () => { const event = new window.Event('click', { bubbles: true, cancelable: true });
     Object.assign(event, { button: 0 }); button!.dispatchEvent(event); });
@@ -203,7 +203,9 @@ it('keeps student IDs secondary and removes redundant selector actions', async (
   await click('学生 student-a');
   expect(host.querySelector('h1')?.textContent).toBe('学生');
   expect(host.querySelector('.session-heading .session-student-id')?.textContent).toBe('student-a');
-  expect(host.querySelector('.session-dates')?.textContent).not.toMatch(/今回|日本時間|Asia\/Tokyo/);
+  for (const date of host.querySelectorAll('.session-meta-last > p, .session-meta-next > p')) {
+    expect(date.textContent).not.toMatch(/今回|日本時間|Asia\/Tokyo/);
+  }
   expect(host.querySelector('.session-account button')?.classList.contains('logout')).toBe(true);
 });
 
@@ -246,7 +248,7 @@ it.each([
       expect(host.querySelector('.session-updates')?.textContent).toContain('11/4(水) 00:30 時点の情報');
     }
     await click('② 相談する');
-    expect(host.querySelector('.session-updates')).toBeNull();
+    expect(host.querySelector('.session-meta-fetch .session-updates')).not.toBeNull();
   } finally { vi.useRealTimers(); }
 });
 
@@ -257,4 +259,36 @@ it.each(['partial', 'failed'] as const)('shows incomplete fetching in a notice: 
   await open(); await click('学生 student-a');
   expect(host.querySelector('.session-updates .notice')?.textContent).toBe(
     'YNU LMS：課題をすべて確認できていません。LMSを一緒に開いて確かめてください。');
+});
+
+it('prioritizes deadlines and keeps counted navigation and three context cards in both views', async () => {
+  await open(); await click('学生 student-a');
+  const links = host.querySelectorAll('.session-steps a');
+  expect(links[0]?.getAttribute('aria-current')).toBe('page');
+  expect(links[0]?.textContent).toContain('締切1件・変化1件');
+  expect(links[1]?.textContent).toMatch(/準備の候補 \d+コマ/);
+  expect([...host.querySelectorAll('.session-meta > section h2')].map(node => node.textContent))
+    .toEqual(['前回の面談', '次の面談', '情報の取得時点']);
+  expect(host.querySelector('.session-meta-next .session-editor')).not.toBeNull();
+  expect(host.querySelector('.session-check > :first-child #session-deadlines')).not.toBeNull();
+  expect(host.querySelector('.session-supplement #session-changes')).not.toBeNull();
+  expect(host.querySelector('.td-table .td-r')?.textContent).toBe('あと1日');
+  expect(host.querySelector('.td-table .session-status-review')?.textContent).toBe('要確認');
+  await click('② 相談する');
+  expect(host.querySelector('.session-steps a[aria-current="page"]')?.textContent).toContain('② 相談する');
+  expect(host.querySelectorAll('.session-meta > section')).toHaveLength(3);
+});
+
+it('shows both deadline-change and review marks while excluding submitted work from deadlines', async () => {
+  const session = data['student-a']!;
+  const row = session.assignments[0]!;
+  session.changes.push({ ...session.changes[0]!, changeId: 'deadline-change', kind: 'deadline-changed', before: null, after: row.officialDeadline!.deadline });
+  session.assignments.push({ ...row, key: { ...row.key, sourceId: 'submitted' }, latest: { ...row.latest, title: '提出した課題' }, submission: 'submitted' });
+  session.changes.push({ ...session.changes[0]!, changeId: 'submitted-change', kind: 'submitted', before: 'not-submitted', after: 'submitted' });
+  await open(); await click('学生 student-a');
+  expect(host.querySelectorAll('.td-table tbody tr')).toHaveLength(1);
+  expect(host.querySelector('.td-table .td-chip-changed')?.textContent).toContain('締切が変わった');
+  expect(host.querySelector('.td-table .session-status-review')?.textContent).toBe('要確認');
+  expect(host.querySelector('.session-supplement .session-status-done')?.textContent).toContain('出せました');
+  expect(host.querySelector('.session-steps a')?.textContent).toContain('締切1件・変化3件');
 });
