@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL } from 'node:url';
@@ -67,6 +68,7 @@ try {
       if (url.pathname === '/api/v1/observations') session.observationId = request.postDataJSON().observationId;
     });
     await page.goto(`${origin}/demo-lms`);
+    await openJudgeLogin(page);
     await page.getByLabel('メールアドレス').fill(account.email);
     await page.getByLabel('パスワード').fill(account.password);
     await page.getByRole('button', { name: 'ログイン', exact: true }).click();

@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL, pathToFileURL } from 'node:url';
@@ -54,6 +55,7 @@ const region = (page, name) => page.getByRole('region', { name, exact: true });
 const plans = page => region(page, '入れた準備の予定');
 async function login(page, account) {
   await page.goto(`${origin}/demo-lms`);
+  await openJudgeLogin(page);
   await page.getByLabel('メールアドレス').fill(account.email);
   await page.getByLabel('パスワード').fill(account.password);
   await button(page, 'ログイン').click();

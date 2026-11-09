@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL } from 'node:url';
@@ -95,6 +96,7 @@ try {
     } else if (path.startsWith('/student')) {
       await page.getByRole('heading', { name: '時間割と課題', exact: true }).waitFor();
     } else {
+      await openJudgeLogin(page);
       await page.getByLabel('メールアドレス').waitFor();
     }
   }

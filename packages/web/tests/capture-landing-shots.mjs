@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { log } from 'node:console';
@@ -48,6 +49,7 @@ for (const page of [demo, student, session]) {
 }
 async function login(page, role) {
   await page.goto(`${base}/demo-lms`);
+  await openJudgeLogin(page);
   await page.getByLabel('メールアドレス').fill(`trial-${role}@example.invalid`);
   await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();

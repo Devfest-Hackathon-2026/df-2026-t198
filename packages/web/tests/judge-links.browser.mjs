@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL } from 'node:url';
@@ -73,6 +74,7 @@ try {
       await page.getByLabel('パスワード').inputValue() === '' && await panes().count() === 0 && new URL(page.url()).hash === '');
   }
   await page.screenshot({ path: `${evidence}/judge-failure.png`, fullPage: true });
+  await openJudgeLogin(page);
   await page.getByLabel('メールアドレス').fill(target.email);
   await page.getByLabel('パスワード').fill(target.password);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();

@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL } from 'node:url';
@@ -48,6 +49,7 @@ const ledger = () => db.collection('students/trial-student/assignments').get();
 const changes = () => db.collection('students/trial-student/changes').get();
 async function login(page, role) {
   await page.goto(`${base}/demo-lms`);
+  await openJudgeLogin(page);
   await page.getByLabel('メールアドレス').fill(`trial-${role}@example.invalid`);
   await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
@@ -59,9 +61,10 @@ try {
     await entry.waitFor();
     assert.equal(await entry.getAttribute('href'), '/demo-lms');
     await entry.click();
+    await openJudgeLogin(student);
     await student.getByLabel('メールアドレス').waitFor();
   }
-  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生', '面談']);
+  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生']);
   assert.equal(await student.title(), 'ToDoku');
   assert.equal(await student.locator('.app-header > a').innerText(), 'ToDoku');
   await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();
@@ -75,6 +78,7 @@ try {
   await nonDemoNotice.waitFor();
   assert.equal(await student.getByRole('button', { name: 'LMSを開く', exact: true }).count(), 0);
   await nonDemoNotice.locator('..').getByRole('button', { name: 'ログアウト', exact: true }).click();
+  await openJudgeLogin(student);
   await student.getByLabel('メールアドレス').waitFor();
   await student.getByLabel('パスワード').waitFor();
   assert.equal(await nonDemoNotice.count(), 0);
@@ -265,6 +269,7 @@ try {
   assert.match(await preview.innerText(), /第3回レポート（要約と引用）/);
   assert.doesNotMatch(await student.locator('main').innerText(), /Googleでログイン|カレンダーに接続|YNUに接続/);
   await student.getByRole('button', { name: 'ログアウト', exact: true }).click();
+  await openJudgeLogin(student);
   await student.getByLabel('メールアドレス').waitFor();
   assert.doesNotMatch(await student.locator('main').innerText(), /第3回レポート（要約と引用）|文章表現/);
   await timetable.getByRole('button', { name: 'Googleでログイン', exact: true }).waitFor();

@@ -89,11 +89,12 @@ function DemoPageContent({ initialLinkFailed }: { initialLinkFailed: boolean }) 
     <p>ここで扱う授業と課題は架空のものです。</p>
     {user === undefined ? <Skeleton label="ログインの状態を確かめています…" /> : user ? <>
       <DemoWorkspace key={user.uid} user={user} />
-    </> : <><PublicDemoEntry showDescription={false} /><form className="session-login" onSubmit={event => { void login(event); }}>
+    </> : <><PublicDemoEntry showDescription={false} showUnavailable /><details className="demo-judge-login" open={linkFailed || undefined}>
+      <summary>審査員の方（説明資料のアカウント）</summary><form className="session-login" onSubmit={event => { void login(event); }}>
       <label>メールアドレス<input name="email" type="email" autoComplete="username" required /></label>
       <label>パスワード<input name="password" type="password" autoComplete="current-password" required /></label>
       <Button type="submit" busy={loginBusy} busyLabel="ログイン中…">ログイン</Button>
-    </form></>}
+    </form></details></>}
     {error && <p role="alert">{error}</p>}
   </div>;
 }

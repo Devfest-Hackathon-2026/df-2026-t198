@@ -1,5 +1,9 @@
 .demo-shell { max-width: 1440px; margin: 0 auto; color: var(--ink); }
 .demo-shell input { display: block; max-width: 100%; padding: var(--space-3); }
+.demo-shell > .demo-login { margin-block: var(--space-6); }
+.demo-judge-login { margin-block: var(--space-6); padding: var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
+.demo-judge-login > summary { min-height: var(--target); display: list-item; align-content: center; }
+.demo-judge-login .session-login { margin-block: var(--space-4) 0; }
 .demo-shell p, .demo-shell button, .demo-shell a { overflow-wrap: anywhere; }
 .demo-header, .demo-flow-header, .demo-secondary, .demo-preview-controls { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
 .demo-header { justify-content: space-between; }
