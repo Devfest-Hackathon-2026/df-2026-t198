@@ -48,6 +48,38 @@
   --font-mono: "Google Sans Code", "BIZ UDPGothic", ui-monospace, monospace;
 }
 
+/* Static story assets; role colours are options for the material preview. */
+:root {
+  --story-ink: #252D32;
+  --story-teacher-a: #283F39;
+  --story-student-a: #2456B0;
+  --story-supporter-a: #78572C;
+  --story-teacher-b: #292C31;
+  --story-student-b: #16386C;
+  --story-supporter-b: #64446E;
+  --story-teacher-c: #304D35;
+  --story-student-c: #155267;
+  --story-supporter-c: #753F38;
+  --story-wood: #C9B999;
+  --story-laptop: #A5AFB5;
+  --story-laptop-base: #CED4D4;
+  --story-phone: #E3E9E6;
+  --story-room-line: #B9B2A3;
+  --story-book: #DDD5C4;
+  --story-day: #DBE7E8;
+  --story-night: #343F58;
+  --story-sun: #E8C871;
+  --story-moon: #F3E7BE;
+  --story-bedding: #E3DDD0;
+  --story-leaf: #D4DDCF;
+  --story-sheet: #FFFDF7;
+  --story-border: #9B9485;
+  --story-marker-line: #8A7022;
+  --story-blue-soft: #E3ECFA;
+  --story-success-soft: #E5EAE1;
+  --story-selected: #9F2E1F;
+}
+
 .app {
   /* Course categories: soft background / solid band. Keep status colors separate. */
   /* Blue, teal, green, ochre, pink, purple, sky, brown. L*≈94 preserves the fixed change text's AA contrast. */
