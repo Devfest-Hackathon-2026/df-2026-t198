@@ -190,7 +190,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
         return (await response.json() as { status: string }).status;
       }));
       if (results.some(result => result.status === 'rejected' && result.reason instanceof DemoRequestError &&
-        result.reason.code === 'public-demo-limit')) return '共用の体験で、今日使えるお知らせの読み取りの回数を使い切りました';
+        result.reason.code === 'public-demo-limit')) return '体験版で今日使えるお知らせの読み取りの回数を使い切りました';
       if (results.some(result => result.status === 'rejected' ||
         !['proposal', 'duplicate', 'abstained'].includes(result.value))) {
         return '課題を確認しました。お知らせは最後まで確認できませんでした。LMSのお知らせと課題ページの締切を見比べてください。';
