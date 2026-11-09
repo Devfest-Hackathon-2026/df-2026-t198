@@ -146,7 +146,8 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
   const [operation, setOperation] = useState('open');
   const [stage, setStage] = useState(0);
   const [autoRead, setAutoRead] = useState(false);
-  const [showMail, setShowMail] = useState(false);
+  const [mailOpen, setMailOpen] = useState(0);
+  const showMail = mailOpen > 0;
   const observed = useDemoObserved(user);
   const [awaiting, setAwaiting] = useState<{ dates: { sourceId: string; dueAt: string }[]; announcementIds?: string[]; message: string; next?: 'read' | 'reset' } | null>(null);
   const [message, setMessage] = useOperationMessage();
@@ -160,7 +161,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       task.sourceId === expected.sourceId && task.dueAt === expected.dueAt)))) {
       setMessage(awaiting.message); setAwaiting(null);
       if (awaiting.next === 'read') { setStage(2); setAutoRead(true); }
-      if (awaiting.next === 'reset') { setStage(0); setShowMail(false); }
+      if (awaiting.next === 'reset') { setStage(0); setMailOpen(0); }
     }
   }, [awaiting, data]);
   const blocked = busy || awaiting !== null;
@@ -244,12 +245,19 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
     }}>体験を最初からやり直す</Button></div>
     <div className="demo-command" aria-label="今の操作">
       {stage === 0 || stage === 2 ? <>{openButton}{result}</> : <>
-        {stage === 1 && hero ? teacherButton(hero, true) : <Button variant="primary" onClick={() => {
-          setShowMail(true); setStage(3);
-          window.setTimeout(() => document.getElementById('demo-morning-mail')?.scrollIntoView({ block: 'start' }), 0);
+        {stage === 1 && hero ? teacherButton(hero, true) : <Button variant="primary" disabled={blocked}
+          busy={blocked && operation === 'mail'} busyLabel="開いています…" onClick={() => {
+          void action(async () => {
+            await post(user, '/api/v1/digest/demo-plan', undefined);
+            if (active.current) {
+              setMailOpen(value => value + 1); setStage(3);
+              window.setTimeout(() => document.getElementById('demo-morning-mail')?.scrollIntoView({ block: 'start' }), 0);
+            }
+            return '';
+          }, 'mail');
         }}>朝のメールを見る</Button>}{result}
       </>}
-      <LongWait busy={blocked} afterThree={operation === 'open' ? '課題とお知らせを確認しています…' : 'LMSの変更を待っています…'}
+      <LongWait busy={blocked} afterThree={operation === 'mail' ? 'メールの見本を開いています…' : operation === 'open' ? '課題とお知らせを確認しています…' : 'LMSの変更を待っています…'}
         afterTen="まだ応答を待っています。接続を確かめて、この画面でお待ちください。" />
     </div>
     <CourseColorProvider courses={observed.data.courses}>
@@ -279,6 +287,6 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
       </section>
       {!showMail && <DigestPreview user={user} />}
     </details>
-    {showMail && <div id="demo-morning-mail"><DigestPreview user={user} /></div>}
+    {showMail && <div id="demo-morning-mail"><DigestPreview key={mailOpen} user={user} initiallyOpened /></div>}
   </Staged>;
 }

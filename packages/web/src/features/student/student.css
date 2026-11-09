@@ -47,6 +47,11 @@
 }
 .app .course-cell[data-course-color][aria-pressed='true'] { outline: 2px solid var(--ink); outline-offset: -2px; }
 .student-workspace .preparation-add { margin: 0 0 var(--space-4); }
+@media (max-width: 480px) {
+  .student-workspace .student-deadlines .td-taskrow { grid-template-columns: 6.75rem minmax(0, 1fr); gap: var(--space-1) var(--space-2); }
+  .student-deadlines .td-taskrow-course, .student-deadlines .td-taskrow-title { grid-column: 2; }
+  .student-deadlines .td-taskrow-side { grid-column: 1; grid-row: 1 / span 2; justify-content: flex-start; font-weight: 700; }
+}
 @media (max-width: 850px) {
   .student-workspace .timetable th:first-child { width: 28px; }
   .student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr); }

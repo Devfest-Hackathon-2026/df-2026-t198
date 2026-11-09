@@ -11,8 +11,8 @@ import './digest-preview.css';
 import type { StudentData } from '../../shared/assignments/types';
 import { useOperationMessage } from '../../shared/ui/operation-messages';
 interface Preview { subject: string; html: string; empty: boolean }
-export function DigestPreview({ user }: { user: User }) {
-  const [opened, setOpened] = useState(false);
+export function DigestPreview({ user, initiallyOpened = false }: { user: User; initiallyOpened?: boolean }) {
+  const [opened, setOpened] = useState(initiallyOpened);
   const [digest, setDigest] = useState<Preview | null>(null);
   const [message, setMessage] = useOperationMessage(); const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);

@@ -46,12 +46,12 @@ export function TaskTable({ rows, now, selected, caption = '課題', onSelect }:
   const [local, setLocal] = useState<string>();
   const hasStatus = rows.some(row => row.status);
   const hasRemaining = rows.some(row => row.remaining);
-  return <ScrollFrame label={caption} className="td-table-wrap"><table className="td-table"><caption>{caption}</caption>
-    <thead><tr>{['科目', '課題', '締切', ...(hasStatus ? ['状況'] : []), ...(hasRemaining ? ['残り'] : [])].map(label => <th key={label} scope="col">{label}</th>)}</tr></thead>
-    <tbody>{rows.map(row => <tr key={row.id} data-selected={row.id === (selected ?? local)} data-course-color={courseColor(row.courseIdentity)}>
-      <td><span className="course-label">{row.course}</span></td><td>{onSelect ? <button type="button" className="td-table-select" aria-pressed={row.id === (selected ?? local)}
+  return <ScrollFrame label={caption} className="td-table-wrap"><table className="td-table" role="table"><caption>{caption}</caption>
+    <thead role="rowgroup"><tr role="row">{['科目', '課題', '締切', ...(hasStatus ? ['状況'] : []), ...(hasRemaining ? ['残り'] : [])].map(label => <th key={label} scope="col" role="columnheader">{label}</th>)}</tr></thead>
+    <tbody role="rowgroup">{rows.map(row => <tr role="row" key={row.id} data-selected={row.id === (selected ?? local)} data-course-color={courseColor(row.courseIdentity)}>
+      <td role="cell"><span className="course-label">{row.course}</span></td><td role="cell">{onSelect ? <button type="button" className="td-table-select" aria-pressed={row.id === (selected ?? local)}
         onClick={() => { setLocal(row.id); onSelect(row.id); }}>{row.title}</button> : row.title}{row.note}</td>
-      <td>{row.deadline ?? (row.status !== 'done' && <DeadlineText due={row.due} now={now} />)}</td>{hasStatus && <td>{row.status && <StatusChip status={row.status} />}</td>}{hasRemaining && <td className="td-r">{row.remaining}</td>}
+      <td role="cell" data-label="締切">{row.deadline ?? (row.status !== 'done' && <DeadlineText due={row.due} now={now} />)}</td>{hasStatus && <td role="cell" data-label="状況">{row.status && <StatusChip status={row.status} />}</td>}{hasRemaining && <td role="cell" data-label="残り" className="td-r">{row.remaining}</td>}
     </tr>)}</tbody></table></ScrollFrame>;
 }
 export interface DetailPanelProps { title: string; facts?: [string, ReactNode][]; agreed?: string; actions?: ReactNode }
