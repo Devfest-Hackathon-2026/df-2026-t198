@@ -1,17 +1,29 @@
-.digest-preview { margin: 1.5rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: 0; background: var(--paper); overflow-wrap: anywhere; }
-.digest-preview article { background: var(--white); padding: 1rem; margin: .8rem 0; border-radius: 0; }
-.digest-preview article a { display: inline-block; margin: .3rem .6rem .3rem 0; }
-.digest-preview a[href*="/student/plan"] { padding: .6rem .9rem; border: 1.5px solid var(--ink); background: transparent !important; color: var(--ink) !important; border-radius: 0 !important; }
-.digest-preview [aria-busy="true"] { opacity: .65; pointer-events: none; }
-/* The preview keeps the server's mail content; only its on-page presentation changes. */
-.digest-preview a[href*="do=done"] { background: var(--ink) !important; color: var(--white) !important; }
-
-.digest-preview { padding: var(--space-4); border-radius: var(--radius-md); background: var(--sheet); }
-.digest-inbox-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--rule); margin-bottom: var(--space-4); }
+.digest-preview { max-width: 760px; margin: 24px auto; padding: 0; overflow-wrap: anywhere; color: var(--ink); }
+.digest-preview > h2 { font-size: 22px; margin-bottom: 16px; }
+.rd-mail-sample { display: flex; align-items: center; background: var(--yellow); color: var(--on-yellow); font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 12px 12px 0 0; margin: 0; }
+.digest-inbox-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 22px; border-bottom: 1px solid var(--line); background: var(--card); }
 .digest-inbox-heading .todoku-logo { font-size: 22px; }
-.digest-preview .digest-envelope { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-4); text-align: left; width: 100%; padding: var(--space-4); margin-top: var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--accent-soft); }
+.digest-preview > .td-btn { margin: 12px 0; }
+.digest-preview .digest-envelope { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; text-align: left; width: 100%; padding: 18px 22px; margin-top: 12px; border: 1px solid var(--line); border-radius: var(--r-inner); background: var(--card); box-shadow: var(--shadow); }
 .digest-envelope strong { grid-column: 1; }
-.digest-envelope time { grid-column: 2; grid-row: 1; font-family: var(--font-mono); }
-.digest-preview .digest-open-mail { margin: var(--space-4) 0 0; padding: 0; }
-.digest-open-mail > header { padding: var(--space-4) 0; margin-bottom: var(--space-4); border-bottom: 1px solid var(--rule); }
-.digest-open-mail > header span { font-size: 14px; color: var(--ink-muted); }
+.digest-envelope time { grid-column: 2; grid-row: 1; font-size: 13px; color: var(--muted); }
+.digest-preview .digest-open-mail { margin: 0; padding: 0; background: var(--card); border-radius: 0 0 var(--r-card) var(--r-card); box-shadow: var(--shadow); overflow: hidden; }
+.digest-open-mail > .td-btn { margin: 8px 22px 0; }
+.digest-open-mail > header { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 14px; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+.digest-open-mail > header h3 { font-size: 19px; margin: 0; }
+.digest-open-mail > header > span:not(.rd-mail-avatar) { font-size: 13px; color: var(--muted); }
+.rd-mail-avatar { grid-row: span 2; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; font-weight: 700; background: var(--blue); color: var(--card); }
+.digest-open-mail > div { padding: 20px 22px 24px; }
+.digest-open-mail [lang='ja'] { display: grid; gap: 14px; }
+.digest-open-mail article { border: 1px solid var(--line); border-left: 6px solid var(--yellow); border-radius: var(--r-inner); padding: 14px 16px; display: grid; gap: 4px; }
+.digest-open-mail article h3 { font-size: 17px !important; font-weight: 700; margin: 0 !important; }
+.digest-open-mail p { margin: 0; line-height: 1.7; }
+.digest-open-mail article p:has(a[href*='/student/plan']) { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.digest-preview a[href*='/student/plan'] { display: inline-flex !important; align-items: center; justify-content: center; min-height: 44px; padding: 0 2px !important; border: 0 !important; border-radius: 10px !important; background: transparent !important; color: var(--blue) !important; font: 700 15px var(--font-sans) !important; text-decoration: underline; text-underline-offset: 4px; }
+.digest-preview article:first-of-type a[href*='do=done'] { padding: 0 18px !important; text-decoration: none; background: var(--navy) !important; border-color: var(--navy) !important; color: var(--card) !important; }
+.digest-open-mail article a:not([href*='/student/plan']) { display: inline-flex; align-items: center; min-height: 36px; font-size: 13px; color: var(--blue); }
+.digest-open-mail [lang='ja'] > p:last-child { font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.digest-preview [aria-busy='true'] { opacity: .65; pointer-events: none; }
+@media (max-width: 600px) { .digest-open-mail > header, .digest-open-mail > div { padding: 16px; } .digest-open-mail article { padding: 12px; } }
+
+.digest-preview .td-btn-quiet { padding-inline: 2px; text-decoration: underline; text-underline-offset: 4px; }
