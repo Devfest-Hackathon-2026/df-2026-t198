@@ -34,8 +34,8 @@ const output = new URL('../public/landing/', import.meta.url);
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i189-evidence';
 const errors = [];
 const shots = [];
-const courses = ['レポートの書き方の書き方', 'キャンパス植物図鑑演習', 'Re:線形代数',
-  '学食経済学', '自転車置き場の社会学', '90分の数理'];
+const courses = ['文章表現', '生物学実験', '線形代数',
+  '経済学入門', '社会調査法', '統計学入門'];
 for (const context of [studentContext, supporterContext]) {
   // Permit only the local fixture and the app's existing public font assets.
   await context.route('**/*', route => ['127.0.0.1', 'fonts.googleapis.com', 'fonts.gstatic.com'].includes(new URL(route.request().url()).hostname)
@@ -59,18 +59,20 @@ async function capture(page, name, anchor, target) {
   await page.evaluate(() => globalThis.document.fonts.ready);
   await anchor.scrollIntoViewIfNeeded();
   const box = await anchor.boundingBox();
-  const targetBox = await target.boundingBox();
-  assert(targetBox.x >= box.x && targetBox.x + targetBox.width <= box.x + box.width &&
-    targetBox.y >= box.y && targetBox.y + targetBox.height <= box.y + box.height, `${name}: highlighted deadline fits`);
+  if (target) {
+    const targetBox = await target.boundingBox();
+    assert(targetBox.x >= box.x && targetBox.x + targetBox.width <= box.x + box.width &&
+      targetBox.y >= box.y && targetBox.y + targetBox.height <= box.y + box.height, `${name}: highlighted deadline fits`);
+  }
   // Annotation exists only in the capture page; application styles stay untouched.
-  await target.evaluate(node => {
+  if (target) await target.evaluate(node => {
     node.style.outline = '3px solid var(--change-text)';
     node.style.outlineOffset = '3px';
   });
   const buffer = await anchor.screenshot({ path: new URL(`${name}.png`, output).pathname, animations: 'disabled' });
   shots.push({ name, viewport: page.viewportSize(), width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20),
-    highlighted: await target.innerText(), sha256: createHash('sha256').update(buffer).digest('hex') });
-  await target.evaluate(node => { node.style.removeProperty('outline'); node.style.removeProperty('outline-offset'); });
+    ...(target ? { highlighted: await target.innerText() } : {}), sha256: createHash('sha256').update(buffer).digest('hex') });
+  if (target) await target.evaluate(node => { node.style.removeProperty('outline'); node.style.removeProperty('outline-offset'); });
 }
 try {
   await mkdir(evidence, { recursive: true });
@@ -85,6 +87,13 @@ try {
   await login(demo, 'student');
   const home = demo.getByRole('region', { name: '体験用LMSの授業一覧', exact: true });
   assert.deepEqual(await home.locator('.demo-course h2').allTextContents(), courses);
+  // Refresh the older standalone LMS asset too, even though the current page uses the two reader views.
+  const lmsBody = demo.locator('[data-demo-pane="lms"] .demo-pane-body');
+  // Expand only this capture page's scrollbox so the asset includes all six courses.
+  await lmsBody.evaluate(node => { node.style.height = 'auto'; node.style.overflow = 'visible'; });
+  assert.equal(await lmsBody.evaluate(node => node.scrollHeight <= node.clientHeight), true);
+  await capture(demo, 'lms', home, null);
+  await lmsBody.evaluate(node => { node.style.removeProperty('height'); node.style.removeProperty('overflow'); });
   // The original starts just above the home panel, leaving its 36px top margin.
   await demo.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await demo.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
@@ -101,7 +110,7 @@ try {
   await session.getByRole('link', { name: '田中 太郎', exact: true }).click();
   await session.getByRole('heading', { name: '田中 太郎', exact: true }).waitFor();
   await session.evaluate(() => globalThis.document.fonts.ready);
-  await demo.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
+  await demo.getByRole('button', { name: '「第3回レポート（要約と引用）」の締切を1日延ばす', exact: true }).click();
   await demo.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   // The teacher changes the source first; the student still shows the old date.
   assert.equal(await student.locator('.previous-deadline').count(), 0);
@@ -115,6 +124,7 @@ try {
   assert.match(await previous.innerText(), /11\/12 17:00/);
   assert.equal(await changed.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
   assert.match(await previous.evaluate(node => globalThis.getComputedStyle(node).textDecorationLine), /line-through/);
+  await capture(student, 'updated', student.locator('.course-panel'), changed);
   const course = student.locator('.course-cell').filter({ hasText: courses[0] });
   await course.locator('.previous-deadline').waitFor();
   await student.getByRole('button', { name: '閉じる', exact: true }).click();
@@ -123,14 +133,14 @@ try {
   const changes = session.getByRole('region', { name: '前回の面談からの変化', exact: true });
   await changes.getByText('締切が 11/12 17:00 から 11/13 17:00 に変わりました', { exact: false }).waitFor();
   await session.getByRole('region', { name: '次の面談までの締切', exact: true })
-    .getByText('書き方を書くレポート', { exact: true }).waitFor();
+    .getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
   const changedRow = changes.locator('li').filter({ hasText: '締切が 11/12 17:00 から 11/13 17:00 に変わりました' });
   await session.setViewportSize({ width: 800, height: 1100 });
   await capture(session, 'session', changes, changedRow);
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/capture-results.json`, JSON.stringify({ status: 'pass', fixedTime,
     viewport: options.viewport, serverClock: 'real; history timestamps may differ', shots, browserErrors: errors }, null, 2));
-  log('PASS landing capture: two fictional screens, same highlighted changed deadline, six courses, weekday columns and session history.');
+  log('PASS landing capture: four fictional assets, same highlighted changed deadline in student/session, six courses and session history.');
 } finally {
   await browser.close();
   await db.terminate();

@@ -1,0 +1,55 @@
+{
+  "status": "pass",
+  "fixedTime": "2026-11-09T23:50:00+09:00",
+  "viewport": {
+    "width": 1280,
+    "height": 1100
+  },
+  "serverClock": "real; history timestamps may differ",
+  "shots": [
+    {
+      "name": "lms",
+      "viewport": {
+        "width": 1280,
+        "height": 1100
+      },
+      "width": 304,
+      "height": 979,
+      "sha256": "c9107da6099bcd97db87c5947d190caa9ae2f4f7be9fdcf33b976a26b523fc8e"
+    },
+    {
+      "name": "updated",
+      "viewport": {
+        "width": 1280,
+        "height": 1100
+      },
+      "width": 295,
+      "height": 434,
+      "highlighted": "11/12 17:00\n11/13 17:00",
+      "sha256": "3665c7f40ad22665ec851728866cd1d1a14fb66156fdf4f9cadf1af5a6871a5b"
+    },
+    {
+      "name": "student",
+      "viewport": {
+        "width": 1280,
+        "height": 1100
+      },
+      "width": 685,
+      "height": 638,
+      "highlighted": "文章表現\n11/12 17:00\n11/13 17:00\n第3回レポート（要約と引用）",
+      "sha256": "4817fca8c66597abaa91ac33611c55f9ebe477970a7436e44783ef39c7e30797"
+    },
+    {
+      "name": "session",
+      "viewport": {
+        "width": 800,
+        "height": 1100
+      },
+      "width": 768,
+      "height": 312,
+      "highlighted": "11/9(月) 17:04 第3回レポート（要約と引用）：締切が 11/12 17:00 から 11/13 17:00 に変わりました",
+      "sha256": "00179a811ee5848871ebe8736a1a2b0c2ee78b55dc1bc61d81b6788ebd77b06b"
+    }
+  ],
+  "browserErrors": []
+}

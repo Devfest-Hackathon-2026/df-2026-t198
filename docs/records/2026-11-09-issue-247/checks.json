@@ -1,0 +1,46 @@
+{
+  "checks": {
+    "install": 0,
+    "typecheck": 0,
+    "lint": 0,
+    "test": 0,
+    "build": 0,
+    "progress --check": 0,
+    "check:samples": 0
+  },
+  "unit": {
+    "core": 274,
+    "extension": 509,
+    "web": 211,
+    "server": 319
+  },
+  "defaultSkipped": {
+    "web": 2,
+    "server": 129
+  },
+  "samples": 17,
+  "emulatorTests": 65,
+  "qa": {
+    "passed": 28,
+    "total": 28,
+    "browserErrors": 0
+  },
+  "m6": {
+    "passed": 8,
+    "total": 8,
+    "calendar": "mock"
+  },
+  "logsSha256": {
+    "six-checks-final.log": "410844525765022daf3d1e885c3902f7ffee8082b6af57c5dd5e8a41c6142056",
+    "emulator-tests-sequential.log": "443d47f6fc5c3ae32175416d5840110cc38cb9286b7f081b9bc01c6ae6fe4cc3",
+    "metrics-m6.log": "56bcb1c2e4a4fb8056b28ec0e7d68f0ca5d9269e2af2b616920c8a6851fd27e5",
+    "demo-announcements.log": "d6c3534f9e902c33d331c0884eea070b2b454444aa40d1426313dd331b5fb915",
+    "qa.log": "6ea0569014e5fd9d935ed3e23880649ed7e3da3e44baf82a02c321d76153f240",
+    "capture-four-assets-final.log": "82d3d98196f364144d4a2b6b9b6155b7a67466e30480af33c3446290f2934716"
+  },
+  "production": {
+    "deploy": false,
+    "reset": false,
+    "dryRun": false
+  }
+}
