@@ -1,0 +1,75 @@
+{
+  "schema_version": 2,
+  "root": "../../..",
+  "recipient": "デモ映像を使うSora",
+  "purpose": "締切変更から面談と朝のメールまでの映像を通常版と25秒版で録画できる。",
+  "conditions": [
+    "紹介ページとの分離",
+    "1280×720の通常7場面と短縮5場面25秒",
+    "自動再生・音・停止と静止一覧"
+  ],
+  "assumptions": [
+    "架空データだけ",
+    "ローカルのビルド済みpreviewを5263で起動済み",
+    "既存Playwrightを使用"
+  ],
+  "request": {
+    "reference": "PR #266のSoraの方針と今回の録画用ページ分離の依頼",
+    "source_refs": [
+      "docs/records/2026-11-10-issue-262/standalone-plan.md"
+    ]
+  },
+  "plan_alignment": {
+    "status": "checked",
+    "reason": "紹介ページをmainへ戻し、既存映像を単独ページへ分離する。通常版を保ち短縮版を追加する。"
+  },
+  "artifact_paths": [
+    "packages/web/src/app.tsx",
+    "packages/web/src/features/landing/story",
+    "out/issue-262/story.mp4",
+    "out/issue-262/story-short.mp4"
+  ],
+  "verification_paths": [
+    "packages/web/tests/story.browser.mjs",
+    "packages/web/tests/story-film.test.tsx",
+    "scripts/record-story.mjs"
+  ],
+  "intent_paths": [
+    "docs/records/2026-11-10-issue-262/standalone-plan.md"
+  ],
+  "requirements": [
+    {
+      "id": "story",
+      "operation": "通常と短縮を最後まで自動再生し、全場面・音・停止・前後移動・静止一覧・紹介ページとの分離を確かめる。",
+      "expected_result": "32.4秒の7場面と25秒の5場面が完走し、全12場面の文字が1280×720に収まり、紹介ページに映像を出さない。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "reading",
+      "operation": "録画フレームと全場面の画像・音声の測定を確認する。",
+      "expected_result": "締切の変更、学生の閲覧、面談で決まる準備と朝のメールを追え、時計と道具の接地・文字を読める。",
+      "verification": "semantic",
+      "review_evidence": [
+        "全場面の画像",
+        "録画から抜いたフレーム",
+        "音声と寸法・長さの測定"
+      ],
+      "evidence_required": true
+    }
+  ],
+  "commands": [
+    {
+      "id": "story-browser",
+      "argv": [
+        "node",
+        "packages/web/tests/story.browser.mjs"
+      ],
+      "covers": [
+        "story"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    }
+  ]
+}
