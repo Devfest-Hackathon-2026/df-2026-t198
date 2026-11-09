@@ -1,0 +1,86 @@
+[
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "stages": [
+      {
+        "stage": 1,
+        "elapsedMs": 1,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 2,
+        "elapsedMs": 5003.700000001118,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 3,
+        "elapsedMs": 10004.400000000373,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 4,
+        "elapsedMs": 15014.700000001118,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 5,
+        "elapsedMs": 20011.5,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 6,
+        "elapsedMs": 25016.700000001118,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      }
+    ],
+    "controls": "buttons, scoped arrows, horizontal swipes, vertical scroll, pause, replay, hover, exit",
+    "reducedDiagrams": 6,
+    "requests": 0,
+    "storageUnchanged": true
+  }
+]
