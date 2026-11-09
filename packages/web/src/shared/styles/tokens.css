@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Google+Sans+Code:wght@400;600&family=Google+Sans+Flex:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Google+Sans+Code:wght@400;600&family=Google+Sans+Flex:wght@400;700&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap');
 
 /* Brand defaults also serve pages that have not adopted a theme class yet. */
 :root, .brand {
@@ -21,11 +21,13 @@
   --marker: #ffe14d;
   --ink-on-marker: #18202e;
   --marker-soft: #fff4b8;
+  --ink-soft: #3d3b33;
   --danger: #b42318;
   --danger-soft: #fde8e6;
   --done-soft: #edeff2;
   --focus: var(--accent-text);
   --jp: "BIZ UDPGothic", sans-serif;
+  --display: "Zen Kaku Gothic New", "BIZ UDPGothic", sans-serif;
   --sans: "Space Grotesk", "BIZ UDPGothic", sans-serif;
   --mono: "JetBrains Mono", "BIZ UDPGothic", monospace;
 }
@@ -46,6 +48,9 @@
   --measure: 36em;
   --font-sans: "Google Sans Flex", "BIZ UDPGothic", system-ui, sans-serif;
   --font-mono: "Google Sans Code", "BIZ UDPGothic", ui-monospace, monospace;
+  --shadow-sm: 0 1px 2px rgb(24 32 46 / .16);
+  --shadow-md: 0 2px 8px rgb(24 32 46 / .12);
+  --shadow-lg: 0 4px 16px rgb(24 32 46 / .1);
 }
 
 /* SVG story materials. */

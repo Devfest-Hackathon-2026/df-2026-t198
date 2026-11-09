@@ -122,3 +122,29 @@ summary { cursor: pointer; color: var(--muted); }
 .previous-deadline { display: block; color: var(--muted); font: 400 13px/1.7 var(--mono); }
 .deadline-week th, .calendar-navigation, .calendar-event time { font-family: var(--mono); }
 .course-cell.changed:not([aria-pressed='true']) { background: var(--paper); }
+
+/* App frame: one quiet header, headings in the display face, sheets on paper. */
+.app-shell { padding: 0 40px; }
+.app-shell > .app-header { padding: 12px 0; gap: 12px 24px; }
+.app-header .todoku-logo { font-size: 24px; }
+.app-header nav { gap: 2px; padding: 3px; border-radius: 100px; background: var(--done-soft); }
+.app-header nav a { padding: 0 16px; border-radius: 100px; font-size: 14px; color: var(--ink-muted); }
+.app-header nav a:hover { color: var(--ink); }
+.app-header nav a[aria-current='page'] { border-bottom: 0; background: var(--sheet); color: var(--ink); box-shadow: var(--shadow-sm); }
+.app main { padding: 28px 0 40px; }
+/* Zero specificity: feature styles keep deciding their own heading sizes. */
+:where(.app) h1 { font: 700 30px/1.4 var(--display); }
+:where(.app) h2 { font-family: var(--display); }
+.app summary { width: fit-content; border-radius: var(--radius-sm); }
+.app summary:hover { color: var(--ink); }
+.app-introduction { margin: 0 0 24px; font-size: 13px; color: var(--ink-muted); }
+.app .notice, .app .empty { border-radius: var(--radius-md); }
+.app .empty { padding: 28px 24px; border-style: dashed; text-align: center; color: var(--ink-muted); }
+.app .plain-button { border-radius: var(--radius-sm); font-weight: 700; }
+.app .badge { border-radius: var(--radius-sm); padding: 2px 8px; font-weight: 700; }
+@media (max-width: 850px) {
+  .app-shell { padding: 0 16px; }
+  :where(.app) h1 { font-size: 24px; }
+  .app main { padding-top: 20px; }
+  .app-header nav a { padding: 0 12px; }
+}
