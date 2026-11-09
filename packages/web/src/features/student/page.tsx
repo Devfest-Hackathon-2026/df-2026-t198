@@ -9,7 +9,7 @@ import { PlanLinkAction } from '../plans/progress';
 import { LmsSourceLink } from '../../shared/assignments/lms-link';
 import { fetchStatus } from '../../shared/assignments/fetch-status';
 import { missingDeadlineText, reviewReasonText } from '../../shared/assignments/review-reason';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Deadline, LedgerAssignment } from '../../../../core/src/types';
 import { PlanCell, PlanForm, PlanList, PlanSummary } from '../plans/components';
 import { planActions, type PlanActions } from '../plans/api';
@@ -76,13 +76,23 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
   const timetable = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const frame = timetable.current;
+    if (!frame || typeof ResizeObserver === 'undefined') return;
+    const fit = () => {
+      if (!frame.getClientRects().length) return;
+      const header = frame.querySelector('thead')?.getBoundingClientRect().height ?? 0;
+      const offset = frame.getBoundingClientRect().top + window.scrollY + header + 8;
+      frame.style.setProperty('--timetable-offset', `${offset}px`);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(frame.closest('.student-workspace')!);
+    window.addEventListener('resize', fit);
+    return () => { observer.disconnect(); window.removeEventListener('resize', fit); };
+  }, [tab]);
   const todayWeekday = new Date(now).toLocaleDateString('en-US', { timeZone: 'Asia/Tokyo', weekday: 'short' });
   const weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(todayWeekday) + 1;
-  useEffect(() => {
-    const scroll = timetable.current;
-    const today = scroll?.querySelector<HTMLElement>(`[data-weekday="${weekday}"]`);
-    if (scroll && today) scroll.scrollLeft = today.offsetLeft - 44;
-  }, [weekday]);
   useEffect(() => {
     if ((selected || selectedPlanId) && window.matchMedia('(max-width: 850px)').matches) {
       panel.current?.focus({ preventScroll: true });
@@ -149,21 +159,28 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
     <div className="student-deadlines">{upcomingList}</div>
     <section className="student-timetable" aria-label="時間割"><h2>時間割</h2>
     <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
-      <div><ScrollFrame scrollRef={timetable} className="timetable-scroll" label="授業と次の締切"><table className="timetable" style={{ minWidth: 44 + days * 120 }}><caption className="sr-only">授業と次の締切</caption>
+      <div><ScrollFrame scrollRef={timetable} className="timetable-scroll" label="授業と次の締切"><table className="timetable" style={{ '--periods': periods } as CSSProperties}><caption className="sr-only">授業と次の締切</caption>
         <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d} data-weekday={d + 1}>{'月火水木金土日'[d]}</th>)}</tr></thead>
         <tbody>{Array.from({ length: periods }, (_, p) => <tr key={p}><th scope="row">{p + 1}限</th>
-          {Array.from({ length: days }, (_, d) => <td key={d}>{courses.filter(c =>
+          {Array.from({ length: days }, (_, d) => <td key={d}><div className="timetable-slot">{courses.filter(c =>
             c.slots.some(slot => slot.weekday === d + 1 && slot.period === p + 1)).map(c => {
-            const next = courseEntries(c)[0];
+            const items = courseEntries(c);
+            const next = items[0];
+            const deadline = next ? entryDisplayDeadline(next) : undefined;
+            const summary = deadline?.kind === 'datetime' ? deadlineText(deadline) : deadline?.kind === 'date'
+              ? `${Number(deadline.date.slice(5, 7))}/${Number(deadline.date.slice(8))}` : deadlineText(deadline);
             return <button className={`course-cell${changed.has(courseKey(c)) ? ' changed' : ''}`} key={courseKey(c)} onClick={() => select(c)}
-              data-course-color={courseColor(c)} aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
-              <strong>{c.name}</strong>{next && <><span><ChangedDeadline value={deadlineText(entryDisplayDeadline(next))} /></span><span>{entryTitle(next)}</span>{next.kind === 'manual' && <small>手で入れた課題</small>}
-                {next.kind === 'lms' && (next.row.reviewReasons.length > 0 || next.row.presenceState === 'cancellation-candidate') && <span className="review">要確認：{next.row.reviewReasons[0]?.kind === 'unreadable-deadline'
+              data-course-color={courseColor(c)} title={c.name} aria-label={c.name}
+              aria-description={next ? `${deadlineText(deadline)}・${entryTitle(next)}・${items.length}件` : undefined}
+              aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
+              <strong>{c.name}</strong>{next && <><span className="course-deadline"><ChangedDeadline value={`${summary} · ${items.length}件`} /></span>
+                <span className="sr-only">{entryTitle(next)}{next.kind === 'manual' && <small>手で入れた課題</small>}</span>
+                {next.kind === 'lms' && (next.row.reviewReasons.length > 0 || next.row.presenceState === 'cancellation-candidate') && <span className="sr-only">要確認：{next.row.reviewReasons[0]?.kind === 'unreadable-deadline'
                   ? missingDeadlineText(next.row.latest.deadline) ?? '締切を確認できていません。' : next.row.reviewReasons[0] ? reviewReasonText(next.row.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
             </button>;
           })}{plans.filter(plan => (new Date(`${plan.date}T00:00:00Z`).getUTCDay() || 7) === d + 1 && plan.period === p + 1)
             .map(plan => <PlanCell key={plan.planId} plan={plan} assignments={data.assignments} selected={plan.planId === selectedPlanId}
-              onSelect={() => { setSelected(null); setSelectedPlanId(plan.planId); }} />)}</td>)}</tr>)}</tbody>
+              onSelect={() => { setSelected(null); setSelectedPlanId(plan.planId); }} />)}</div></td>)}</tr>)}</tbody>
       </table></ScrollFrame>{!!unscheduled.length && <section><h2>曜日・時限のない授業</h2>{unscheduled.map(c =>
         <button className="plain-button" key={courseKey(c)} onClick={() => select(c)} aria-controls="course-assignments">{c.name}</button>)}</section>}</div>
       {course && <aside ref={panel} tabIndex={-1} className="course-panel" id="course-assignments" aria-label={`${course.name}の課題`}>
@@ -197,7 +214,7 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
     </div>
   </OperationMessages>;
 }
-export function StudentPage() {
+export function StudentPage({ showOwnSession = false }: { showOwnSession?: boolean }) {
   const [state, setState] = useState<StudentState>({ status: 'loading' });
   const [authError, setAuthError] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
@@ -210,13 +227,13 @@ export function StudentPage() {
   return <>
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin returnTo={window.location.pathname === '/student/plan' ? window.location.pathname + window.location.search : undefined} />
       <Button className="plain-button" busy={authBusy} busyLabel="ログイン中…" onClick={() => accountAction(client.login)}>Googleでログイン</Button></> :
-      <><Button className="logout" busy={authBusy} busyLabel="ログアウト中…" onClick={() => accountAction(client.logout)}>ログアウト</Button>
+      <><Button className="logout student-logout" busy={authBusy} busyLabel="ログアウト中…" onClick={() => accountAction(client.logout)}>ログアウト</Button>
         {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
           planLink={window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} data={state} />}
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
           {client.auth.currentUser && <><NotificationSettingsPanel key={client.auth.currentUser.uid} user={client.auth.currentUser} />
-            <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a></>}</> : state.status === 'error' ? <FetchState state="error" title="課題を表示できませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を読み込んでいます…" lines={6} />}</>}
+            {showOwnSession && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</>}</> : state.status === 'error' ? <FetchState state="error" title="課題を表示できませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を読み込んでいます…" lines={6} />}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;
 }

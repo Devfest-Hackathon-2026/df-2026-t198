@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { randomUUID } from 'node:crypto';
@@ -30,6 +31,7 @@ const preview = student.getByRole('region', { name: '今日やることのメー
 const preparationList = page => page.getByRole('region', { name: '入れた準備の予定', exact: true });
 async function login(page, role) {
   await page.goto(`${base}/demo-lms`);
+  await openJudgeLogin(page);
   await page.getByLabel('メールアドレス').fill(`trial-${role}@example.invalid`);
   await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
@@ -209,6 +211,7 @@ try {
   await signedOut.getByRole('button', { name: 'Googleでログイン', exact: true }).waitFor();
   assert.deepEqual((await loginRef.get()).data(), loginPlan);
   await signedOut.getByRole('link', { name: '体験用LMSからログイン', exact: true }).click();
+  await openJudgeLogin(signedOut);
   await signedOut.getByLabel('メールアドレス').fill('trial-student@example.invalid');
   await signedOut.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await signedOut.getByRole('button', { name: 'ログイン', exact: true }).click();

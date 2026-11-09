@@ -67,11 +67,12 @@ try {
   const panel = page.getByRole('complementary', { name: '架空の対応済み授業の課題' });
   await panel.getByRole('heading', { name: '架空の課題A', exact: true }).waitFor();
   assert.equal(await panel.getByRole('link', { name: 'LMSで授業を開く' }).getAttribute('href'), lms.catalogCourses[0].url);
-  const outside = page.locator('section').filter({ has: page.getByRole('heading', { name: '曜日・時限のない授業', exact: true }) });
+  const outside = page.getByRole('heading', { name: '曜日・時限のない授業', exact: true }).locator('..');
   await outside.getByRole('button', { name: '架空の授業', exact: true }).click();
   await page.getByRole('heading', { name: '架空の対応しない課題', exact: true }).waitFor();
   await page.screenshot({ path: `${evidence}/student-wide.png`, fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('tab', { name: '時間割', exact: true }).click();
   await meetings.first().click();
   await panel.getByRole('heading', { name: '架空の課題A', exact: true }).waitFor();
   await page.screenshot({ path: `${evidence}/student-narrow.png`, fullPage: true });

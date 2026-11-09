@@ -22,6 +22,7 @@ const evidenceDir = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i20-evidenc
 page.on('pageerror', () => errors.push('browser-error'));
 let student;
 try {
+  await page.clock.setFixedTime(new Date('2026-11-06T09:00:00+09:00'));
   await page.goto(`${process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5176'}/student`);
   await page.getByRole('button', { name: 'Googleでログイン' }).waitFor();
   const uid = await page.evaluate(async () => {
@@ -42,7 +43,7 @@ try {
   const cells = page.locator('.course-cell').filter({ hasText: '架空の線形代数' });
   await cells.first().waitFor();
   assert.equal(await cells.count(), 2);
-  assert.match(await cells.first().innerText(), /11\/10（日付のみ）/);
+  assert.match(await cells.first().innerText(), /11\/10 · 2件/);
   assert.doesNotMatch(await page.locator('.course-cell').filter({ hasText: '架空の別大学の授業' }).innerText(), /レポート/);
   assert.equal(await page.getByText('授業を押すと、課題が開きます。', { exact: true }).count(), 0);
   assert.equal(await page.locator('.upcoming .review').count(), 0);
@@ -70,11 +71,11 @@ try {
   await mkdir(evidenceDir, { recursive: true });
   await page.screenshot({ path: `${evidenceDir}/student-wide.png`, fullPage: true });
   await student.collection('assignments').doc('a0').update({ 'officialDeadline.deadline': dated('2026-11-08') });
-  await cells.first().getByText('11/8（日付のみ）', { exact: true }).waitFor();
+  await cells.first().getByText('11/8 · 2件', { exact: true }).waitFor();
   assert.match(await page.locator('.upcoming li').first().innerText(), /レポートB/);
   assert.match(await panel.innerText(), /11\/8（日付のみ）/);
   await student.collection('assignments').doc('a0').update({ submission: 'submitted' });
-  await cells.first().getByText('レポートA', { exact: true }).waitFor();
+  await page.locator('.course-cell[aria-description*="レポートA"]').first().waitFor();
   await page.evaluate(async () => {
     const { firebase } = await import('/src/shared/firebase.ts');
     const source = await (await globalThis.fetch('/src/shared/firebase.ts')).text();
@@ -83,7 +84,9 @@ try {
   await page.getByText('接続を確かめています。', { exact: false }).waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
-  assert.ok((await page.locator('.timetable td').first().boundingBox()).width >= 115);
+  // Issue #249 replaces horizontal scrolling with the whole timetable fitting its frame.
+  await page.getByRole('tab', { name: '時間割', exact: true }).click();
+  assert.equal(await page.locator('.timetable-scroll').evaluate(element => element.scrollWidth <= element.clientWidth + 1), true);
   await panel.getByText('月曜2限・水曜2限', { exact: true }).waitFor();
   assert.equal(await courseLink.isVisible(), true);
   await page.screenshot({ path: `${evidenceDir}/student-narrow.png`, fullPage: true });
@@ -95,7 +98,7 @@ try {
     await (await import(source.match(/from "([^"]*firebase_firestore[^"]*)"/)[1])).enableNetwork(firebase.db);
   });
   await student.collection('assignments').doc('a1').update({ presenceState: 'ended', consecutiveMissingCount: 0 });
-  await cells.first().getByText('レポートA', { exact: true }).waitFor({ state: 'hidden' });
+  await page.locator('.course-cell[aria-description*="レポートA"]').first().waitFor({ state: 'detached' });
   assert.doesNotMatch(await page.locator('.upcoming').allTextContents().then(text => text.join('')), /レポートA/);
   await cells.first().click();
   const finished = panel.locator('.finished-assignments');
@@ -122,6 +125,7 @@ try {
   assert.equal(await cells.count(), 0);
   await page.screenshot({ path: `${evidenceDir}/student-past-term-wide.png`, fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('tab', { name: '締切', exact: true }).click();
   await panel.getByRole('button', { name: '閉じる' }).click();
   await pastTask.click();
   await panel.getByRole('heading', { name: 'レポートB', exact: true }).waitFor();
@@ -129,6 +133,7 @@ try {
   await page.screenshot({ path: `${evidenceDir}/student-past-term-narrow.png`, fullPage: true });
   await panel.getByRole('button', { name: '閉じる' }).click();
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('tab', { name: '時間割', exact: true }).click();
   await page.getByRole('button', { name: '架空の集中講義' }).click();
   await page.getByText('この授業の課題はまだありません。').waitFor();
   const unscheduledPanel = page.getByRole('complementary', { name: '架空の集中講義の課題' });

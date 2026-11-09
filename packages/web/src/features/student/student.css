@@ -1,4 +1,5 @@
 .student-workspace { min-width: 0; }
+.student-logout { position: relative; z-index: 1; }
 .student-heading { margin-bottom: var(--space-6); }
 .student-overview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: var(--space-6); align-items: start; }
 .student-deadlines { grid-column: 1; grid-row: 1; min-width: 0; }
@@ -13,6 +14,29 @@
 .student-workspace .td-taskrow-side { max-width: 10rem; }
 .student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr) minmax(14rem, .8fr); }
 .student-workspace .timetable-scroll { border: 0; }
+/* Rows add 4px of cell padding and a 1px top rule to the available content height. */
+.student-workspace .timetable { min-width: 0; --period-height: clamp(24px, calc((100svh - var(--timetable-offset, 340px)) / var(--periods) - 5px), 88px); }
+.student-workspace .timetable th { padding: 8px 2px; font-size: 11px; }
+.student-workspace .timetable th:first-child { width: 32px; }
+.student-workspace .timetable td { height: auto; padding: 2px; }
+.timetable-slot { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 2px; height: var(--period-height); }
+.student-workspace .course-cell, .student-workspace .preparation-cell {
+  min-height: 0; height: 100%; margin: 0; padding: 3px; min-width: 0;
+  display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden;
+}
+.student-workspace .course-cell strong, .student-workspace .preparation-cell strong {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; white-space: normal; overflow-wrap: anywhere; font-size: 12px; line-height: 14px; margin: 0;
+}
+.student-workspace .course-deadline, .student-workspace .course-deadline .deadline {
+  display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  font-size: 10px; line-height: 12px; flex-shrink: 0;
+}
+.student-workspace .course-deadline .previous-deadline { display: none; }
+.student-workspace .timetable-slot:has(> :nth-child(2)) > button { padding: 0 2px; gap: 0; border-block: 0; }
+.student-workspace .timetable-slot:has(> :nth-child(2)) strong { font-size: 10px; line-height: 10px; }
+.student-workspace .timetable-slot:has(> :nth-child(2)) .course-deadline,
+.student-workspace .timetable-slot:has(> :nth-child(2)) .deadline { font-size: 9px; line-height: 10px; }
 .student-workspace .course-panel { padding: var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
 .student-workspace .course-panel h2 { font-size: 22px; }
 .student-workspace .td-fetch { margin-bottom: var(--space-4); }
@@ -24,6 +48,7 @@
 .app .course-cell[data-course-color][aria-pressed='true'] { outline: 2px solid var(--ink); outline-offset: -2px; }
 .student-workspace .preparation-add { margin: 0 0 var(--space-4); }
 @media (max-width: 850px) {
+  .student-workspace .timetable th:first-child { width: 28px; }
   .student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr); }
   .student-mobile-tabs { display: block; margin-bottom: var(--space-6); }
   .student-overview { display: block; }

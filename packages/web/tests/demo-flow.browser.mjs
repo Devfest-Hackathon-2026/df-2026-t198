@@ -1,3 +1,4 @@
+import { openJudgeLogin } from './helpers/judge-login.mjs';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { URL } from 'node:url';
@@ -28,6 +29,7 @@ async function reset() {
 try {
   await mkdir(evidence, { recursive: true });
   await page.goto('http://127.0.0.1:5177/demo-lms');
+  await openJudgeLogin(page);
   await page.getByLabel('メールアドレス').fill('trial-student@example.invalid');
   await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
