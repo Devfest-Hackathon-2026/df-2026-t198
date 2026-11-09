@@ -135,8 +135,6 @@ summary { cursor: pointer; color: var(--muted); }
 /* Zero specificity: feature styles keep deciding their own heading sizes. */
 :where(.app) h1 { font: 700 30px/1.4 var(--display); }
 :where(.app) h2 { font-family: var(--display); }
-.app .logout, .app .session-page .session-account .logout { float: right; min-height: var(--target); padding: 4px 16px; border: 1px solid var(--rule); border-radius: 100px; background: var(--sheet); color: var(--ink-muted); font-size: 13px; text-decoration: none; }
-.app .logout:hover, .app .session-page .session-account .logout:hover { border-color: var(--line-strong); color: var(--ink); }
 .app summary { width: fit-content; border-radius: var(--radius-sm); }
 .app summary:hover { color: var(--ink); }
 .app-introduction { margin: 0 0 24px; font-size: 13px; color: var(--ink-muted); }

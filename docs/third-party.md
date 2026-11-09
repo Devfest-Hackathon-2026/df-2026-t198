@@ -103,6 +103,7 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 | Space Grotesk | ロゴ・欧文 | [Google Fonts](https://fonts.google.com/specimen/Space+Grotesk)、[OFL](https://github.com/google/fonts/blob/main/ofl/spacegrotesk/OFL.txt) |
 | BIZ UDPGothic | 紹介ページ・学生・面談・体験用LMSの日本語 | [Google Fonts](https://fonts.google.com/specimen/BIZ+UDPGothic)、[OFL](https://github.com/google/fonts/blob/main/ofl/bizudpgothic/OFL.txt) |
 | JetBrains Mono | 番号・時刻 | [Google Fonts](https://fonts.google.com/specimen/JetBrains+Mono)、[OFL](https://github.com/google/fonts/blob/main/ofl/jetbrainsmono/OFL.txt) |
+| Zen Kaku Gothic New | 紹介ページの本文と見出し、学生・面談画面の見出し（2026-11-10 追加） | [Google Fonts](https://fonts.google.com/specimen/Zen+Kaku+Gothic+New)、[OFL](https://github.com/google/fonts/blob/main/ofl/zenkakugothicnew/OFL.txt) |
 
 紹介ページの配色・構成・文・格子のロゴは、Sora承認の見本（Issue #182、D37）に従う。掲載画像は、このrepoの体験用データをローカルのエミュレーターで描いた画面を撮影したもの。実LMS・実際の課題のデータ・外部の画像は使っていない。
 
