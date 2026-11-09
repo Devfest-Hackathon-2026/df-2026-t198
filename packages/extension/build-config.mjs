@@ -43,5 +43,13 @@ export function configureManifest(manifest, config) {
   if (/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(config.oauthClientId) && !config.invalidJson) {
     result.oauth2 = { client_id: config.oauthClientId, scopes: oauthScopes };
   }
+  // Only the student page of this build's Firebase project may start the calendar connection (D46).
+  const origin = studentOrigin(config);
+  if (origin) result.externally_connectable = { matches: [`${origin}/*`] };
   return result;
+}
+
+export function studentOrigin(config) {
+  const projectId = config.firebase?.projectId ?? '';
+  return !config.invalidJson && /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId) ? `https://${projectId}.web.app` : null;
 }

@@ -54,6 +54,7 @@ it('builds the real SDK with synthetic local config, fixed ID, local scripts and
     expect(await readFile(join(extensionDir, 'dist/popup.js'), 'utf8')).toContain('chrome.tabs.create');
     expect(await readFile(join(extensionDir, 'dist/popup.css'), 'utf8')).toContain('button');
     expect(manifest.key).toBe(original.key);
+    expect(manifest.externally_connectable).toEqual({ matches: ['https://synthetic.web.app/*'] });
     expect(manifest.permissions).toContain('alarms');
     for (const origin of ['https://lms.ynu.ac.jp', 'https://gmail.googleapis.com', config.apiOrigin]) {
       expect(manifest.host_permissions.filter(host => host === `${origin}/*`)).toHaveLength(1);

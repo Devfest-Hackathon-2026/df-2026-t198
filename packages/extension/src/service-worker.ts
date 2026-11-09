@@ -6,6 +6,7 @@ import { handleAuthProbeMessage } from './auth/worker.js';
 import { runCollection, yieldCollection } from './collection-worker.js';
 import { startDigest, handleDigestMessage } from './digest/browser.js';
 import { isHomePage } from './collection-diagnostics.js';
+import { startStudentBridge } from './student-bridge.js';
 
 chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
   if (message && typeof message === 'object' && 'type' in message && message.type === 'ynu-collection-yield') {
@@ -53,3 +54,4 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, respond) => {
 
 startCalendarSync();
 startDigest();
+startStudentBridge();

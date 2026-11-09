@@ -1,8 +1,8 @@
 import { deleteApp, initializeApp } from 'firebase/app';
 import { GoogleAuthProvider, initializeAuth, indexedDBLocalPersistence, inMemoryPersistence, signInWithCredential } from 'firebase/auth/web-extension';
 import type { Auth, AuthCredential } from 'firebase/auth/web-extension';
-import { createProbe, RequestNotSent } from './probe.js';
-import type { ProbeState } from './probe.js';
+import { createConnect, createProbe, RequestNotSent } from './probe.js';
+import type { ProbeDependencies, ProbeState } from './probe.js';
 import { missingConfig, probeConfig } from './config.js';
 import { calendarScopes } from './scopes.js';
 
@@ -40,8 +40,8 @@ export async function confirmGoogleIdentity(token: string, expectedUid: string):
   }
 }
 
-export function browserProbe() {
-  return createProbe({
+function probeDependencies(): ProbeDependencies {
+  return {
     missing: missingConfig(probeConfig),
     namespace: `${probeConfig.firebase.projectId}:${probeConfig.oauthClientId}`,
     workerId,
@@ -83,6 +83,25 @@ export function browserProbe() {
       const response = await pending;
       // Error response bodies are deliberately never parsed or passed to the UI.
       return { status: response.status, ...(response.ok ? { data: await response.json() as unknown } : {}) };
+    },
+  };
+}
+export function browserProbe() { return createProbe(probeDependencies()); }
+
+export function browserConnect() {
+  return createConnect({
+    ...probeDependencies(),
+    sameAccount: confirmGoogleIdentity,
+    async registeredCalendar() {
+      const user = firebaseAuth().currentUser;
+      if (!user || !probeConfig.apiOrigin) throw new Error('calendar-unavailable');
+      const response = await fetch(`${probeConfig.apiOrigin}/api/v1/calendar-sync`, {
+        method: 'GET', credentials: 'omit', redirect: 'error', cache: 'no-store',
+        headers: { Authorization: `Bearer ${await user.getIdToken()}` },
+      });
+      if (!response.ok) throw new Error('calendar-unavailable');
+      const integration = (await response.json() as { integration?: { mode?: unknown; calendarId?: unknown } | null }).integration;
+      return integration?.mode === 'google' && typeof integration.calendarId === 'string' ? integration.calendarId : null;
     },
   });
 }

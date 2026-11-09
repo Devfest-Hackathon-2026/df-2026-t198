@@ -26,7 +26,8 @@ const worker = await build({
       export const firebaseAuth = () => sdk.auth;
       export const readProbeState = async () => sdk.probe;
       export const confirmGoogleIdentity = async (token, uid) => token === 'synthetic-google-token' && uid === 'synthetic-user';
-      export const browserProbe = () => { throw new Error('interactive-auth-forbidden'); };` }));
+      export const browserProbe = () => { throw new Error('interactive-auth-forbidden'); };
+      export const browserConnect = () => { throw new Error('interactive-auth-forbidden'); };` }));
   } }],
 });
 const content = await build({ entryPoints: [fileURLToPath(new URL('../src/content.ts', import.meta.url))],

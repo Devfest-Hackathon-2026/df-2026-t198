@@ -64,6 +64,8 @@ const sync = createCalendarSync({
   return { status: response.status, ...(response.ok && method !== 'DELETE' ? { data: await response.json() as unknown } : {}) };
 }));
 
+/** Rejects with a CalendarFailure so the caller can tell the student what to do next. */
+export function syncCalendar(): Promise<void> { return sync(); }
 export function syncCalendarInBackground(): Promise<void> { return sync().catch(() => undefined); }
 export function sendObservation(observation: Observation): Promise<ObservationResult> {
   return sendObservationAndSync(observation, async body => await api('observations', body) as ObservationResult, sync);
