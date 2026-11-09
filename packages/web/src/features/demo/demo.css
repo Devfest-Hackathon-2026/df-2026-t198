@@ -89,3 +89,29 @@
   .demo-lms-layout { grid-template-columns: 92px minmax(0, 1fr); }
 }
 .app .demo-observed-task[data-course-color] { border-inline-start: 4px solid var(--course-band); padding-inline-start: var(--space-3); background: var(--course-soft); }
+
+/* FLOW1: the LMS contents above remain independent of the outer presentation. */
+.demo-screen-flow { grid-template-columns: minmax(0, 1fr); }
+.demo-screen-flow .demo-screen-controls, .demo-screen-flow .demo-pane-switch { grid-column: 1 / -1; }
+.demo-screen-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.demo-screen-controls label { display: flex; align-items: center; gap: var(--space-2); }
+.demo-shell .demo-screen-controls input { display: inline-block; }
+.demo-screen-controls p { flex-basis: 100%; margin: 0; min-height: 1.5em; font-size: 14px; }
+.demo-screen-flow .demo-pane-switch { display: flex; gap: var(--space-2); }
+.demo-screen-flow .demo-pane-switch button { flex: 1; min-width: 0; }
+.demo-screen-flow .demo-pane-switch button[aria-pressed='true'] { background: var(--accent-soft); color: var(--accent); }
+.demo-screen-flow .demo-pane[data-selected='false'] { display: none; }
+.demo-screen-flow .demo-pane-body { height: clamp(480px, 62vh, 720px); }
+.demo-screen-flow .demo-pane[data-selected='true'] { animation: demo-pane-enter 200ms ease-out; }
+.demo-manual-links { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+@keyframes demo-pane-enter { from { opacity: 0; } to { opacity: 1; } }
+@media (min-width: 761px) {
+  .demo-screen-flow[data-parallel='true'] { grid-template-columns: 1.2fr 1fr 1fr; }
+  .demo-screen-flow[data-parallel='true'] .demo-pane { display: block; }
+}
+@media (max-width: 760px) {
+  .demo-screen-flow .demo-parallel-toggle { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-screen-flow .demo-pane[data-selected='true'] { animation: none; }
+}
