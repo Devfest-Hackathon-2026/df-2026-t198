@@ -58,6 +58,7 @@ it.each([
     expect(request).not.toHaveBeenCalled(); expect(view.host.querySelectorAll('button')).toHaveLength(0);
     expect(view.host.textContent).toContain('変更していません');
     if (current.revision !== 1) expect(view.host.textContent).toContain('リンクが作られた後に予定が変わっています');
+    if (current.revision !== 1) expect(view.host.querySelector('[role="status"]')?.textContent).toContain('変更していません');
   } finally { await view.close(); }
 });
 it('retries a lost response with the same target and revision, even after the live plan moves', async () => {
@@ -82,6 +83,21 @@ it('keeps the target and reports a conflict if it changes after confirmation is 
   try {
     await view.click('終わった'); expect(view.host.textContent).toContain('外されています。変更していません');
     expect(view.host.textContent).toContain('架空のレポート'); expect(view.host.querySelectorAll('button')).toHaveLength(0);
+  } finally { await view.close(); }
+});
+
+it.each([
+  ['plan-assignment-unavailable', 'この課題は提出済み、取り消し済み、または課題の一覧にないため、予定を入れられません。'],
+  ['plan-after-deadline', '締切より後の予定は入れられません。締切までの日時を選んでください。'],
+])('explains %s from the mail postponement link without offering a blind retry', async (code, message) => {
+  const request = vi.fn(async () => new Response(JSON.stringify({ error: code }), { status: 409 }));
+  vi.stubGlobal('fetch', request);
+  const view = await mountLink('later');
+  try {
+    await view.click('後回し');
+    expect(view.host.textContent).toContain(message);
+    expect(view.host.querySelectorAll('button')).toHaveLength(0);
+    expect(request).toHaveBeenCalledOnce();
   } finally { await view.close(); }
 });
 

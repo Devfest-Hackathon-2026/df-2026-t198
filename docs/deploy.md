@@ -44,7 +44,7 @@ Cloud Runの入口は公開する。ヘルスチェックは認証なしで返�
 
 ## YNUの裏の取得を止める（Issue #267）
 
-`BACKGROUND_COLLECTION` は新しい拡張が取得前に読む停止設定。未設定または `enabled` で許可し、`paused` で止める。契約は [data-shapes.md](data-shapes.md#裏の取得の停止設定issue-267)、理由はD43を参照。APIが未配備・読めない場合も新しい拡張は取得しないため、APIを配備してから拡張を更新する。
+`BACKGROUND_COLLECTION` は新しい拡張が取得前に読む停止設定。未設定または `enabled` で許可し、`paused` で止める。契約は [data-shapes.md](data-shapes.md#裏の取得の停止設定issue-267)、理由はD44を参照。APIが未配備・読めない場合も新しい拡張は取得しないため、APIを配備してから拡張を更新する。
 
 人が対象と実行を確認してから、既存のサービスの環境変数だけを更新する。ほかの環境変数は置き換えない。
 
