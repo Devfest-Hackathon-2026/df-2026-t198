@@ -1,0 +1,6 @@
+.student-sharing { margin-block: 2rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: 12px; }
+.student-sharing h2 { margin-top: 0; }
+.student-sharing ul { list-style: none; padding: 0; margin: 0; }
+.student-sharing li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-block: .75rem; }
+.student-sharing li > span { min-width: 0; overflow-wrap: anywhere; }
+.student-sharing small { display: block; }

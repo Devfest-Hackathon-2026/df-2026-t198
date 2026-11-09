@@ -21,6 +21,7 @@ import { firebase } from '../../shared/firebase';
 import { watchAccount, type StudentState } from './data';
 import { type StudentCourse, type StudentData } from '../../shared/assignments/types';
 import { NotificationSettingsPanel } from '../notifications/settings';
+import { SharingPanel } from '../sharing/panel';
 import { CourseColorProvider, useCourseColors } from '../../shared/course-color-context';
 
 export const courseKey = (course: StudentCourse) => JSON.stringify([course.system, course.courseId]);
@@ -233,6 +234,7 @@ export function StudentPage({ showOwnSession = false }: { showOwnSession?: boole
           actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
           manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
           {client.auth.currentUser && <><NotificationSettingsPanel key={client.auth.currentUser.uid} user={client.auth.currentUser} />
+            <SharingPanel key={`sharing-${client.auth.currentUser.uid}`} user={client.auth.currentUser} />
             {showOwnSession && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</>}</> : state.status === 'error' ? <FetchState state="error" title="課題を表示できませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を読み込んでいます…" lines={6} />}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;

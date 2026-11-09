@@ -1,6 +1,6 @@
 # データの形
 
-Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observations/input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。カレンダー同期は本書の末尾、未実装の共有の操作は設計案を参照する。
+Issue #16で実装した観測と台帳の契約。型の正本は [`types.ts`](../packages/core/src/types.ts)、受信時の検査は [`observation-input.ts`](../packages/server/src/observations/input.ts)。[設計案の2・3節](design.md#2-firestoreのデータの置き方と共有の範囲)を具体化する。共有の操作は本書の「学生による共有の停止と再開」、カレンダー同期は本書の末尾を参照する。
 
 ## 体験用データ（Issue #19）
 
@@ -12,7 +12,7 @@ Issue #19の最新コメントとPR #30の合意1〜6を実装した。体験用
 - `POST /api/v1/demo/announce`（Issue #84）：延長APIと同じ認証・本文・上限・エラー形式。本人の体験学生の未提出課題と期待する締切を同じトランザクションで確認し、サーバーが架空の締切延長文を作る。日時は操作時刻+4日と課題の締切+1日の遅い側の日本時間17時。成功は200で `{ announcementId }`。課題の締切と台帳は変えない。
 - 体験データの任意の `announcements` 配列は `{ courseId, announcement: { announcementId, version, publishedAt, body } }`。既存データで省略されていれば空として読む。授業ごとに最新1件、IDは投稿ごとに新しいUUID、版は `1`、公開日時は秒まで。架空の本文を保存するのは本人だけの体験用LMS文書に限り、解析APIの受領記録やログには複製しない。「LMSを開く」は描かれたDOMから読み、観測を送った後で既存のお知らせAPIへ別送する。解析の失敗で課題の更新は戻さない。
 - `POST /api/v1/demo/reset`（Issue #68）：認証・本文上限・エラー形式は上の延長APIと同じ。本文は `{ onlyIfStale: boolean }` だけ。`false` は常に初期化、`true` は初回表示時に締切か次の面談が過去／不正／未設定なら初期化する。新しい場合は進行中の体験を保つ。応答は200で `{ reset: boolean, data: DemoData }`。
-- リセットは本人の体験学生プロフィールと元データを同じトランザクションで確認する。授業を初期の架空シナリオへ戻し、締切は操作日+3日の日本時間17時、前回／次回面談は操作日の−7日／+7日の平日15:00（日本時間）。操作日が土日なら直前の金曜を基点にする（Issue #129）。`assignments`・`courses`・`changes`・`fetchStates`・`observationReceipts`・`calendarItems` と体験用の `integrations/calendar` を消す。共有許可とアカウント、他の学生は変えない。支援担当・通常利用者・不正なプロフィール・実物カレンダーの接続がある場合は403。少量の架空データ向けで、同じ組の同時利用は同じ体験を共有する。
+- リセットは本人の体験学生プロフィールと元データを同じトランザクションで確認する。授業を初期の架空シナリオへ戻し、締切は操作日+3日の日本時間17時、前回／次回面談は操作日の−7日／+7日の平日15:00（日本時間）。操作日が土日なら直前の金曜を基点にする（Issue #129）。`assignments`・`courses`・`changes`・`fetchStates`・`observationReceipts`・`calendarItems` と体験用の `integrations/calendar` を消す。同じ組の体験支援担当（`demoAccounts/{supporterUid}` の `role: supporter`・`studentId === uid`）の既存の共有許可は `revokedAt: null` に戻す（Issue #257）。`scopes`・許可文書の他の項目・アカウント・他の学生は変えない。組に属さない共有許可は戻さず、新しい許可も作らない。支援担当・通常利用者・不正なプロフィール・実物カレンダーの接続がある場合は403。少量の架空データ向けで、同じ組の同時利用は同じ体験を共有する。
 - やり直すと `announcements` も空に戻る。解析の受領記録と全体の費用予約は消さない。新しい投稿IDにより、やり直し後も新しい架空のお知らせを処理できる。同じ体験アカウントでの並行操作は従来どおり同じ体験を共有する。
 - 体験UIDの観測は`system: demo-lms`・`definitionId: demo-lms`だけを認める。支援担当や不正なプロフィールも403。プロフィール判定を台帳の保存トランザクション内で行い、再送でも判定する。プロフィールのない既存の利用者の観測契約は変えない。
 - カレンダーAPI（`GET/POST /api/v1/calendar-sync`）は`demoAccounts/{uid}`のある利用者を403で拒否する。接続・同期対象の取得・結果報告の各トランザクションの先頭で確認する。画面のボタンを隠すだけにはしない。
@@ -148,6 +148,19 @@ Issue #180：`siteFilter` に既知の授業以外の種別（`project`・`works
 - 学生・面談画面は同じ関数を使う。締切のカレンダーはKULMSの課題キーと授業名を引き続き使い、KULASISの観測では予定を追加・変更しない。京大の時限の実時刻は未確認なので補わない。
 - 取得の優先順位用に、完全に成功した観測の受領後に対応先siteIdだけを `chrome.storage.local.kulasisMapping` に保存する（Firebase uid・学期付き）。同じ本人・同じ学期の場合だけKULMSの取得へ渡す。対応が変わったらKULMSの取得後の待ち時間を解除し、次にKULMSを開くと新しい優先順位を使う。時間割の保存の正本はサーバーの授業文書で、このキャッシュは別の端末へ同期しない。拡張を入れ直した端末では、KULASISを先に開く。KULMS・KULASISとも取得を試みた後は、部分失敗・全体失敗・送信失敗を含め、本人・接続先ごとに10分待つ。学生の操作による中断だけは即時再開できる。待機はworker再起動後もsession storageから復元する（Issue #218）。
 - 参照URLは認証情報のない授業ページを組み立てる。採点・提出本文・添付・お知らせは送らない。KULMSのAPIから取った生のJSONやCookieをservice workerへ渡さない。
+
+## 学生による共有の停止と再開（Issue #257）
+
+許可文書は `students/{uid}/supporters/{supporterUid}`。`scopes` はリストで `all` を含む場合だけ一括共有を許可し、`revokedAt` は共有中なら明示的な `null`、停止時はサーバーが確定するFirestore Timestamp。既存の停止日時の文字列も停止済みとして扱う。文書は監査用に残す。
+
+- `GET /api/v1/sharing/supporters`：失効確認付きのFirebase ID tokenから本人のuidを決め、本人の既存の一括共有許可だけを `{ supporters: [{ uid, displayName?, revoked }], canManage }` で返す。停止済みも含む。表示名は既存の共有先についてFirebase Authから取得し、未設定・アカウント削除済みなら省略する。メールは返さない。
+- `POST /api/v1/sharing/supporters/{supporterUid}/revoke`：本文なし。本人の既存の許可の `revokedAt` だけをサーバー時刻にする。停止済みなら200のまま書き込まず、更新時刻も変えない。
+- `POST /api/v1/sharing/supporters/{supporterUid}/restore`：本文なし。同じ既存許可の `revokedAt` だけを `null` に戻す。共有中の再送も書き込まない。新しい支援担当の追加や `scopes` の変更は行わない。
+- 保存先の学生uidはtokenだけで決める。学生uid・時刻などの本文は400、他人のtokenで本人の許可を操作することや、許可がない／共有範囲が異なる／形が不正な支援担当の操作は403。UIDの不正な符号化やパス区切りも400。許可の確認と更新は同じFirestoreトランザクションで行う。
+- 体験学生も操作できる。共用の `public: true` は `canManage: false` とし、画面に欄を出さず、取消・再開APIも403にする。体験支援担当や不正な体験プロフィールからの変更も403。個別の体験のリセットは上の体験データの契約に従う。
+- 成功は200（変更APIは `{ status: 'ok' }`）。未認証401、内部エラー500。応答はすべて `Cache-Control: no-store`、エラーは固定コードだけ。Firestore規則は緩めず、本人を含むクライアントの直接書き込みを引き続き拒否する。
+
+学生画面は本人の許可を購読して一覧を更新する。有効な許可も停止済みの許可もない学生には欄を出さない。取消後は既存の規則とAPIが支援担当の新しい読み書きを拒否する。開いている面談画面の消去は次節の購読処理を使い、担当学生APIの一覧からも除外する。すでに相手に渡った情報の回収や、通信断中の即時検知は保証しない。
 
 ## 面談日時と担当する学生（Issue #21）
 
