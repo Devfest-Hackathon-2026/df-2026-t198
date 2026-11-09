@@ -56,6 +56,7 @@ async function open(id, { extension = null, width = 1280 } = {}) {
     const sdk = await import(source.match(/from "([^"]*firebase_auth[^"]*)"/)[1]);
     await sdk.signInWithCustomToken(firebase.auth, customToken);
   }, token);
+  await page.locator('.rd-settings > summary').click();
   const panel = page.getByRole('region', { name: 'カレンダーとメール' });
   await panel.waitFor();
   // Both settings have finished their first check before a scenario reads the buttons.
@@ -90,7 +91,7 @@ try {
   await view.panel.getByRole('button', { name: 'Google カレンダーに予定を入れる' }).waitFor();
   assert.deepEqual(await view.buttons(), ['Google カレンダーに予定を入れる', '朝のメールを受け取る']);
   const top = async locator => (await locator.boundingBox()).y;
-  assert.ok(await top(view.panel) < await top(view.page.locator('.timetable')), 'the settings must sit above the timetable');
+  assert.ok(await top(view.panel) > await top(view.page.locator('.timetable')), 'the folded settings sit below the timetable');
   await view.shot('not-set-up-1280');
 
   // 3. A refused Google dialog: the page says so and the same button remains. A double click sends one request.
@@ -176,7 +177,7 @@ try {
   await account(unverified, false);
   const pending = await open(unverified, { extension: 'none' });
   await pending.panel.getByText('準備中', { exact: true }).waitFor();
-  await pending.panel.getByText('ログインしたGoogleアカウントのメールアドレスを確認できません。今は有効にできません。').waitFor();
+  await pending.panel.locator('.connect-item').getByText('ログインしたGoogleアカウントのメールアドレスを確認できません。今は有効にできません。').waitFor();
   assert.deepEqual(await pending.buttons(), ['Google カレンダーに予定を入れる']);
   const refusedStatus = await pending.page.evaluate(async () => {
     const { firebase } = await import('/src/shared/firebase.ts');

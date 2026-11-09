@@ -1,3 +1,4 @@
+import { deadlineDay, NextAction, nextPreparation } from './nearest';
 import { Button, TaskRow, Tabs, FetchState, Skeleton, StatusChip } from '../../shared/ui';
 import { ScrollFrame } from '../../shared/ui/scroll-frame';
 import './student.css';
@@ -11,19 +12,18 @@ import { fetchStatus } from '../../shared/assignments/fetch-status';
 import { missingDeadlineText, reviewReasonText } from '../../shared/assignments/review-reason';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Deadline, LedgerAssignment } from '../../../../core/src/types';
-import { PlanCell, PlanForm, PlanList, PlanSummary } from '../plans/components';
+import { PlanCell, PlanControls, PlanForm, PlanList, PlanSummary } from '../plans/components';
 import { planActions, type PlanActions } from '../plans/api';
 import { DemoCalendar } from '../calendar/calendar';
 import { ChangedDeadline, useDeadlineChanges } from '../../shared/assignments/deadline-change';
 import { DemoLogin } from '../../shared/auth/demo-login';
-import { OperationMessages } from '../../shared/ui/operation-messages';
+import { OperationMessages, useOperationMessage } from '../../shared/ui/operation-messages';
 import { firebase } from '../../shared/firebase';
 import { watchAccount, type StudentState } from './data';
 import { type StudentCourse, type StudentData } from '../../shared/assignments/types';
-import { NotificationSettingsView, useNotificationSettings } from '../notifications/settings';
-import { ConnectPanel } from '../connect/panel';
+import { useNotificationSettings } from '../notifications/settings';
+import { StudentSettings } from './settings';
 import type { User } from 'firebase/auth';
-import { SharingPanel } from '../sharing/panel';
 import { CourseColorProvider, useCourseColors } from '../../shared/course-color-context';
 
 export const courseKey = (course: StudentCourse) => JSON.stringify([course.system, course.courseId]);
@@ -68,17 +68,20 @@ function AssignmentRow({ item, courseName, changed = false }: { item: LedgerAssi
     <LmsSourceLink item={item} courseName={courseName} />
   </li>;
 }
-interface StudentViewProps { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode; setup?: ReactNode }
+interface StudentViewProps { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode; setup?: ReactNode; settings?: ReactNode }
 export function StudentView(props: StudentViewProps) {
-  return <CourseColorProvider courses={props.data.courses}><StudentContent {...props} /></CourseColorProvider>;
+  return <CourseColorProvider courses={props.data.courses}><OperationMessages><StudentContent {...props} /></OperationMessages></CourseColorProvider>;
 }
-function StudentContent({ data, now = Date.now(), calendar = false, actions, manualActions, planLink, setup }: StudentViewProps) {
+function StudentContent({ data, now = Date.now(), calendar = false, actions, manualActions, planLink, setup, settings }: StudentViewProps) {
   const courseColor = useCourseColors();
+  const [detailMessage, reportDetail] = useOperationMessage();
   data = { ...data, courses: linkedCourses(data.courses) };
   const [tab, setTab] = useState(planLink ? 'preparation' : 'deadlines');
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
+  const prepare = useRef<HTMLDetailsElement>(null);
+  const [prepareFor, setPrepareFor] = useState<string | null>(null);
   const timetable = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const frame = timetable.current;
@@ -121,7 +124,18 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
   const courseEntries = (owner: StudentCourse) => entries.filter(item => entryBelongsTo(item, owner));
   const changed = useDeadlineChanges(new Map(courses.map(c => [courseKey(c),
     deadlineText(courseEntries(c)[0] ? entryDisplayDeadline(courseEntries(c)[0]!) : undefined)])));
-  const changedEntries = useDeadlineChanges(new Map(entries.map(item => [entryId(item), deadlineText(entryDisplayDeadline(item))])));
+  const deadlineLabels = new Map(entries.map(item => [entryId(item), deadlineText(entryDisplayDeadline(item))]));
+  const changedEntries = useDeadlineChanges(deadlineLabels);
+  const lastLabels = useRef(deadlineLabels);
+  const previousLabels = useRef(new Map<string, string>());
+  useEffect(() => {
+    for (const [id, label] of deadlineLabels) {
+      const last = lastLabels.current.get(id);
+      if (last !== undefined && last !== label) previousLabels.current.set(id, last);
+    }
+    for (const id of previousLabels.current.keys()) if (!deadlineLabels.has(id)) previousLabels.current.delete(id);
+    lastLabels.current = deadlineLabels;
+  }, [deadlineLabels]);
   const monday = new Date(new Date(now).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }) + 'T00:00:00Z');
   monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
   const weekStart = monday.toISOString().slice(0, 10);
@@ -135,21 +149,40 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
   };
   const taskRows = (items: typeof upcoming) => <ul className="td-tasklist">{items.map(item => {
       const owner = data.courses.find(c => entryBelongsTo(item, c));
-      return <li key={entryId(item)}><TaskRow course={owner?.name ?? '手で入れた課題'} courseIdentity={owner} title={entryTitle(item)} changed={changedEntries.has(entryId(item))}
+      return <li key={entryId(item)} className={changedEntries.has(entryId(item)) ? 'rd-row-changed' : undefined}>
+        {deadlineDay(entryDeadline(item)) && <time className="rd-row-day" aria-hidden="true" dateTime={deadlineDay(entryDeadline(item))}><b>{Number(deadlineDay(entryDeadline(item))!.slice(8))}</b><span>{'日月火水木金土'[new Date(`${deadlineDay(entryDeadline(item))}T00:00:00Z`).getUTCDay()]}</span></time>}<TaskRow course={owner?.name ?? '手で入れた課題'} courseIdentity={owner} title={entryTitle(item)} changed={changedEntries.has(entryId(item))}
         deadline={<ChangedDeadline value={deadlineText(entryDisplayDeadline(item))} />}
         onSelect={owner ? () => select(owner) : undefined} />
+        <span className="rd-row-time" aria-hidden="true">{entryDeadline(item)?.kind === 'datetime' ? new Intl.DateTimeFormat('ja-JP', { timeZone: entryDeadline(item)!.timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(deadlineValue(entryDeadline(item)))) : '日付のみ'}</span>
         {item.kind === 'manual' && <small className="manual-author">{manualAuthor(item.row)}</small>}</li>;
     })}</ul>;
-  const upcomingList = (!!data.assignments.length || hasManual) && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">今週の締切</h2>
+  const upcomingList = (!!data.assignments.length || hasManual) && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">今週の締切 <span className="rd-count" aria-hidden="true">{upcoming.filter(inWeek).length}</span></h2>
     {upcoming.some(inWeek) ? taskRows(upcoming.filter(inWeek)) : <p className="empty-week">今週の締切はありません</p>}
     {!!upcoming.filter(item => !inWeek(item)).length && <details className="other-deadlines"><summary>その他の締切</summary>{taskRows(upcoming.filter(item => !inWeek(item)))}</details>}
     </section>;
-  return <OperationMessages>
-    <div className="student-workspace">
+  const next = nextPreparation(entries[0], data.plans, now);
+  const plannedAssignment = next.today && data.assignments.find(row => row.key.system === next.today!.assignment.system && row.key.sourceId === next.today!.assignment.sourceId);
+  const nearest = next.today ? plannedAssignment ? { kind: 'lms' as const, row: plannedAssignment } : undefined : entries[0];
+  const demo = data.fetchStates.some(state => state.system === 'demo-lms');
+  const beginPreparation = (item: LedgerAssignment) => {
+    setPrepareFor(JSON.stringify(item.key)); setTab('preparation');
+    if (prepare.current) prepare.current.open = true;
+    requestAnimationFrame(() => {
+      prepare.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
+      prepare.current?.querySelector<HTMLInputElement>('input[name="date"]')?.focus({ preventScroll: true });
+    });
+  };
+  return <div className="student-workspace">
     {planLink}
     <div className="student-heading td-stage"><h1>時間割と課題</h1>
-      <p className="student-today"><time dateTime={new Date(now).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })}>{new Date(now).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short' })}</time></p></div>
-    {setup}
+      <p className="student-today">今日 <time dateTime={new Date(now).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })}>{new Date(now).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short' })}</time></p>
+      <div className="rd-head-status">{data.online && data.fetchStates.map(state => {
+        const { stale, failed } = fetchStatus(state, now);
+        if (stale || failed || !state.lastSucceededAt) return null;
+        const label = { 'ynu-lms': 'YNU LMS', kulms: 'KULMS', kulasis: 'KULASIS', 'demo-lms': '体験用LMS' }[state.system];
+        return <span className="rd-pill rd-fetched" key={state.system}>✓ {label} {new Date(state.lastSucceededAt).toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} 時点</span>;
+      })}</div></div>
+    <p className="rd-key"><span><i />いま見るもの・今日</span><span><i className="rd-yellow" />準備の予定</span><span><i className="rd-red" />締切が変わった</span><span><i className="rd-green" />終わった</span><span><i className="rd-blue" />選べる・押せる</span></p>
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
@@ -163,7 +196,11 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
     <div className="student-mobile-tabs"><Tabs label="学生の画面" value={tab} onChange={setTab}
       items={[{ value: 'deadlines', label: '締切' }, { value: 'timetable', label: '時間割' }, { value: 'preparation', label: '準備' }]} /></div>
     <div className="student-overview td-stage" style={{ animationDelay: '100ms' }} data-tab={tab}>
-    <div className="student-deadlines">{upcomingList}</div>
+    <div className="student-deadlines"><NextAction entry={nearest} course={nearest ? data.courses.find(c => entryBelongsTo(nearest, c)) : undefined}
+      text={nearest ? deadlineText(entryDisplayDeadline(nearest)) : ''} previous={nearest ? previousLabels.current.get(entryId(nearest)) : undefined}
+      now={now} changed={!!nearest && changedEntries.has(entryId(nearest))}
+      today={next.today} future={next.future} hasPlans={next.hasPlans} actions={actions}
+      onPrepare={actions && nearest?.kind === 'lms' ? () => beginPreparation(nearest.row) : undefined} />{upcomingList}</div>
     <section className="student-timetable" aria-label="時間割"><h2>時間割</h2>
     <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
       <div><ScrollFrame scrollRef={timetable} className="timetable-scroll" label="授業と次の締切"><table className="timetable" style={{ '--periods': periods } as CSSProperties}><caption className="sr-only">授業と次の締切</caption>
@@ -208,28 +245,33 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
       {selectedPlan && <aside ref={panel} tabIndex={-1} className="course-panel preparation-details" id="preparation-details" aria-label="準備の予定の詳細">
         <div className="panel-heading"><h2>準備の予定</h2><button onClick={() => setSelectedPlanId(null)}>閉じる</button></div>
         <PlanSummary plan={selectedPlan} assignments={data.assignments} /><span>{selectedPlan.period}限（日本時間）</span>
+        <PlanControls plan={selectedPlan} actions={actions} now={now} report={reportDetail} />
       </aside>}
+      {detailMessage && <p role="status">{detailMessage}</p>}
     </div>
     </section>
-    <section className="student-preparation" aria-label="準備"><h2>準備の予定</h2>
-    {actions && <details className="preparation-add"><summary>準備の予定を入れる</summary>
-      <PlanForm assignments={data.assignments} actions={actions} /></details>}
+    <section className="student-preparation" aria-label="準備"><h2>準備の予定 <span className="rd-count" aria-hidden="true">{plans.length}</span></h2>
+    {actions && <details ref={prepare} className="preparation-add"><summary>準備の予定を入れる</summary>
+      <PlanForm key={prepareFor ?? 'all'} assignments={prepareFor ? [...data.assignments].sort((a, b) => Number(JSON.stringify(b.key) === prepareFor) - Number(JSON.stringify(a.key) === prepareFor)) : data.assignments} actions={actions} /></details>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own />
     </section>
-    {calendar && <div className="student-calendar"><DemoCalendar courses={data.courses} assignments={data.assignments} manual={data.manualAssignments} now={now} /></div>}
     </div>
-    <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own now={now} />
-    </div>
-  </OperationMessages>;
+    {calendar && <details className="student-calendar rd-fold"><summary>締切のカレンダー {demo && <span className="rd-pill">体験用カレンダー</span>}</summary>
+      <DemoCalendar courses={data.courses} assignments={data.assignments} manual={data.manualAssignments} now={now} /></details>}
+    {settings ?? <details className="rd-settings rd-fold"><summary>連携と設定</summary>{setup}
+      {demo && !setup && <p>体験版では、実際のGoogle カレンダーとメールにはつなぎません。</p>}
+      <ManualAssignments rows={data.manualAssignments} courses={data.courses} actions={manualActions} own now={now} /></details>}
+    </div>;
 }
-/** The signed-in student's own page: the mail setting is shared by the top buttons and the panel below. */
+/** Keep one mail controller for the summary and its settings. */
 function StudentAccount({ user, data, now, showOwnSession }: { user: User; data: StudentData; now: number; showOwnSession: boolean }) {
   const mail = useNotificationSettings(user);
-  return <><StudentView data={data} now={now} calendar setup={<ConnectPanel user={user} mail={mail} />}
+  return <><StudentView data={data} now={now} calendar
     planLink={window.location.pathname === '/student/plan' && <PlanLinkAction user={user} data={data} />}
-    actions={planActions(user, user.uid)} manualActions={manualAssignmentActions(user, user.uid)} />
-    <NotificationSettingsView controller={mail} />
-    <SharingPanel user={user} />
+    actions={planActions(user, user.uid)} manualActions={manualAssignmentActions(user, user.uid)}
+    settings={<StudentSettings user={user} mail={mail} data={data}>
+      <ManualAssignments rows={data.manualAssignments} courses={linkedCourses(data.courses)} actions={manualAssignmentActions(user, user.uid)} own now={now} />
+    </StudentSettings>} />
     {showOwnSession && <a href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談日時を見る・変える</a>}</>;
 }
 export function StudentPage({ showOwnSession = false }: { showOwnSession?: boolean }) {

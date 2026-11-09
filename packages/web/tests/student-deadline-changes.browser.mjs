@@ -33,9 +33,11 @@ try {
     await page.locator('.course-panel').waitFor();
     await page.clock.install();
     await page.evaluate(() => globalThis.renderFixture(true));
-    await page.locator('.student-deadlines .td-chip-changed').waitFor();
+    await page.locator('.upcoming .td-chip-changed').waitFor();
     assert.equal(await page.locator('.course-panel .td-chip-changed').count(), 1);
-    const colour = await page.locator('.student-deadlines .td-chip-changed').evaluate(chip => {
+    assert.equal(await page.locator('.rd-next .td-chip-changed').count(), 1);
+    assert.match(await page.locator('.rd-next .previous-deadline').innerText(), /11\/12/);
+    const colour = await page.locator('.upcoming .td-chip-changed').evaluate(chip => {
       const canvas = globalThis.document.createElement('canvas'); const ctx = canvas.getContext('2d');
       ctx.fillStyle = globalThis.getComputedStyle(chip).color; ctx.fillRect(0, 0, 1, 1);
       return [...ctx.getImageData(0, 0, 1, 1).data].slice(0, 3);

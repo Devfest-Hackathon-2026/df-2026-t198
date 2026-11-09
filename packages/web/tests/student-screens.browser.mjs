@@ -30,6 +30,7 @@ try {
     await page.getByRole('button', { name: 'ログイン', exact: true }).click();
     await page.getByRole('button', { name: 'LMSを開く', exact: true }).click();
     await page.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
+    await page.locator('.demo-more > summary').click();
     const preview = page.getByRole('region', { name: '今日やることのメール', exact: true });
     await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
     const envelope = preview.getByRole('button', { name: /今日やること.*を開く/ });
@@ -67,13 +68,16 @@ try {
       const timetable = await page.locator('.student-timetable').boundingBox();
       assert.ok(deadlines.x + deadlines.width <= timetable.x);
       assert.equal(await page.getByRole('tablist').isVisible(), false);
+      await page.locator('.student-calendar > summary').click();
       // The navigation is only needed when seven days overflow their frame.
       await page.locator('.student-calendar').evaluate(element => { element.style.maxWidth = '400px'; });
       await page.locator('.calendar-navigation').waitFor();
       await page.locator('.student-calendar').evaluate(element => { element.style.removeProperty('max-width'); });
       await page.getByRole('region', { name: '締切のカレンダー', exact: true }).locator('.calendar-navigation').waitFor({ state: 'detached' });
+      await page.locator('.student-calendar > summary').click();
     }
     await fits(page);
+    await page.evaluate(() => globalThis.scrollTo(0, 0));
     await page.screenshot({ path: `${evidence}/student-${width}.png`, fullPage: true, animations: 'disabled' });
     pass(`${width}: timetable and preparation are reachable in the specified desktop/mobile layout`);
 

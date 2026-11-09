@@ -56,7 +56,7 @@ try {
   await login(supporter, 'supporter');
   for (const width of [1280, 390]) {
     for (const page of [student, supporter]) await page.setViewportSize({ width, height: width === 1280 ? 960 : 844 });
-    await student.goto(`${base}/student`); await revoke().waitFor();
+    await student.goto(`${base}/student`); await student.locator('.rd-settings > summary').click(); await revoke().waitFor();
     await panel().getByText('架空の支援担当A', { exact: true }).waitFor();
     await supporter.goto(`${base}/session/trial-student`); await readySession().waitFor();
     assert.equal(await student.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
@@ -93,13 +93,14 @@ try {
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
   assert.equal((await grant.get()).data().revokedAt, null);
-  await student.goto(`${base}/student`); await revoke().waitFor();
+  await student.goto(`${base}/student`); await student.locator('.rd-settings > summary').click(); await revoke().waitFor();
   await grant.delete();
   await panel().waitFor({ state: 'detached' });
   await grant.set({ scopes: ['all'], revokedAt: null }); await revoke().waitFor();
   await profile.update({ public: true });
   const loaded = student.waitForResponse(response => response.url().endsWith('/api/v1/sharing/supporters') && response.ok());
   await student.reload(); assert.equal((await (await loaded).json()).canManage, false);
+  await student.locator('.rd-settings > summary').click();
   assert.equal(await panel().count(), 0);
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/sharing.json`, JSON.stringify({ status: 'pass', checks, resetRestored: true, emptyHidden: true, publicHidden: true, pageErrors: errors }, null, 2) + '\n');

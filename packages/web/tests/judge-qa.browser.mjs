@@ -72,6 +72,7 @@ try {
     await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
     await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
     await student.goto(`${base}/student`); await student.locator('.timetable').waitFor({ state: 'attached' });
+    await student.locator('.student-calendar > summary').click();
     await check(`${width}: submitted deadlines, scroll hints and date navigation`, async () => {
       const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
       // #177 added a second submitted task; both badges and their date navigation must work.
@@ -159,7 +160,7 @@ try {
       await page.screenshot({ path: `${evidence}/${role}-${width}.png`, fullPage: true });
     }
     await check(`${width}: adding then removing leaves only the latest notice`, async () => {
-      await student.getByText('準備の予定を入れる', { exact: true }).click();
+      await student.locator('.preparation-add > summary').click();
       const add = student.locator('.preparation-form');
       await add.getByLabel('準備する日', { exact: true }).fill(saved.date);
       await add.getByLabel('時間割の時限', { exact: true }).fill('4');

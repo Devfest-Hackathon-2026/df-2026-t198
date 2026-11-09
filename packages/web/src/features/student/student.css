@@ -1,117 +1,160 @@
 .student-workspace { min-width: 0; }
-.student-logout { position: relative; z-index: 1; }
-.student-heading { margin-bottom: var(--space-6); }
-.student-overview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: var(--space-6); align-items: start; }
-.student-deadlines { grid-column: 1; grid-row: 1; min-width: 0; }
-.student-timetable { grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
-.student-calendar { grid-column: 1 / -1; grid-row: 3; min-width: 0; }
+.app.app .student-logout { color: var(--muted); background: transparent; border: 0; border-radius: 0; padding: 0; min-height: 44px; box-shadow: none; font-size: 14px; font-weight: 400; text-decoration: underline; }
+.student-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 20px; }
+.student-today { margin: 0; padding: 4px 12px; border-radius: 999px; background: var(--navy); color: var(--card); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.rd-head-status { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.app .student-workspace .rd-fetched { border: 0; background: var(--green-soft); color: var(--green); }
+.student-overview { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-rows: auto auto; gap: 20px; align-items: start; }
+.student-deadlines { grid-column: 1; grid-row: 1; display: grid; gap: 20px; min-width: 0; }
+.student-timetable { grid-column: 2; grid-row: 1 / 3; min-width: 0; }
 .student-preparation { grid-column: 1; grid-row: 2; min-width: 0; }
-.student-workspace .upcoming { margin-bottom: var(--space-6); }
-.student-workspace .upcoming li { padding: 0; border: 0; }
-.student-workspace .td-taskrow { text-align: left; width: 100%; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; background: transparent; padding: var(--space-3) var(--space-2); }
-.student-workspace .td-taskrow:hover { background: var(--sheet); }
-.student-workspace .td-taskrow-title { font-weight: 700; }
-.student-workspace .td-taskrow-side { max-width: 10rem; }
-.student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr) minmax(14rem, .8fr); }
-.student-workspace .timetable-scroll { border: 0; }
-/* Rows add 4px of cell padding and a 1px top rule to the available content height. */
-.student-workspace .timetable { min-width: 0; --period-height: clamp(24px, calc((100svh - var(--timetable-offset, 340px)) / var(--periods) - 5px), 88px); }
-.student-workspace .timetable th { padding: 8px 2px; font-size: 11px; }
-.student-workspace .timetable th:first-child { width: 32px; }
-.student-workspace .timetable td { height: auto; padding: 2px; }
-.timetable-slot { display: grid; grid-auto-rows: minmax(0, 1fr); gap: 2px; height: var(--period-height); }
-.student-workspace .course-cell, .student-workspace .preparation-cell {
-  min-height: 0; height: 100%; margin: 0; padding: 3px; min-width: 0;
-  display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden;
-}
-.student-workspace .course-cell strong, .student-workspace .preparation-cell strong {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-  overflow: hidden; white-space: normal; overflow-wrap: anywhere; font-size: 12px; line-height: 14px; margin: 0;
-}
-.student-workspace .course-deadline, .student-workspace .course-deadline .deadline {
-  display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-  font-size: 10px; line-height: 12px; flex-shrink: 0;
-}
+.student-workspace :is(.upcoming, .student-timetable, .student-preparation, .deadline-calendar) { background: var(--card); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 20px 22px; margin: 0; border: 0; }
+.student-workspace h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+
+.student-workspace .td-tasklist { display: grid; gap: 8px; border: 0; }
+.student-workspace .upcoming li { position: relative; padding: 0; border: 0; }
+.student-workspace .td-taskrow { display: grid; grid-template-columns: minmax(0, 1fr); align-content: center; min-height: 76px; width: 100%; border: 1px solid var(--line); border-radius: var(--r-inner); background: var(--card); padding: 10px 62px 10px 90px; text-align: left; }
+.student-workspace .td-taskrow:hover { box-shadow: var(--cell-shadow); }
+.student-workspace .td-taskrow-course { font-size: 13px; line-height: 1.6; }
+.student-workspace .td-taskrow-title { font-weight: 700; font-size: 15px; line-height: 1.45; }
+.student-workspace .td-taskrow-side { grid-column: 1; grid-row: auto; justify-content: start; max-width: none; }
+.student-workspace .td-taskrow-side .deadline { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.rd-row-day { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 64px; padding: 6px 0; border-radius: 8px; background: var(--bg); text-align: center; line-height: 1.15; pointer-events: none; }
+.rd-row-day b { display: block; font-size: 18px; }
+.rd-row-day span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.rd-row-time { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 700; color: var(--muted); pointer-events: none; }
+.student-workspace .rd-row-changed .td-taskrow { border-color: var(--red); background: var(--changed-surface); }
+.rd-row-changed .rd-row-day { background: var(--red-soft); color: var(--red); }
+.student-workspace .other-deadlines { margin-top: 12px; }
+.student-workspace .other-deadlines .td-tasklist { margin-top: 8px; }
+
+.rd-next { display: grid; gap: 10px; padding: 22px 24px; border-radius: var(--r-card); background: var(--navy); color: var(--card); box-shadow: var(--shadow); }
+.rd-next p { margin: 0; }
+.rd-next-eyebrow { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; color: var(--on-navy-muted); font-size: 13px; font-weight: 700; }
+.rd-next-course { font-size: 14px; color: var(--on-navy-course); }
+.rd-next-course::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: var(--course-band); }
+.student-workspace .rd-next h2 { font-size: 26px; line-height: 1.4; margin: 0; overflow-wrap: anywhere; text-wrap: balance; }
+.rd-next-when { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin-top: 2px; }
+.rd-next-when > span:first-child { color: var(--on-navy-muted); font-size: 13px; }
+.rd-next-when > .deadline { font-size: 30px; font-weight: 700; line-height: 1.5; letter-spacing: -.01em; }
+.rd-next-when > .deadline.changed { color: var(--card); }
+.rd-next .previous-deadline { font: 400 14px/1.6 var(--sans); color: var(--on-navy-muted); margin-bottom: 8px; }
+.rd-next-left { background: var(--card); color: var(--navy); border-radius: 999px; padding: 3px 12px; font-size: 15px; font-weight: 700; }
+.rd-next-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.student-workspace .rd-next-actions a { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--card); text-decoration: underline; font-size: 14px; font-weight: 700; }
+.rd-next-actions .muted { color: var(--on-navy-muted); flex-basis: 100%; }
+.student-workspace .rd-next-action-buttons { margin: 0; }
+
+/* The next step is the only filled action; other controls remain text links. */
+.app .student-workspace .td-btn:not(.rd-next-action-buttons .td-btn-primary),
+.app .student-workspace .course-panel .panel-heading button,
+.app .student-workspace .calendar-navigation button,
+.app .student-workspace .plain-button { color: var(--blue); background: transparent; border: 0; box-shadow: none; border-radius: 0; padding: 4px 0; min-height: 44px; text-decoration: underline; font-size: 14px; font-weight: 400; }
+.app .student-workspace .rd-next-prepare, .app .student-workspace .rd-next-action-buttons .td-btn-primary { background: var(--card); color: var(--navy); border: 1px solid var(--card); padding: 10px 22px; border-radius: var(--r-inner); min-height: 48px; min-width: 150px; font-size: 16px; font-weight: 700; }
+.app .student-workspace .rd-next .rd-next-action-buttons .td-btn-quiet { color: var(--card); font-weight: 700; }
+
+.student-layout { gap: 20px; }
+.student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr); }
+.student-workspace .student-timetable .td-scroll-frame { border: 0; border-radius: 0; }
+.student-workspace .timetable-scroll { border: 0; background: transparent; }
+.student-workspace .timetable { min-width: 0; border: 0; border-collapse: separate; border-spacing: 4px; --period-height: 64px; }
+.student-workspace .timetable th { padding: 4px 0 6px; font: 700 12px var(--sans); background: transparent; color: var(--muted); }
+.student-workspace .timetable th:first-child { width: 34px; background: transparent; color: var(--faint); font-size: 11px; position: static; }
+.student-workspace .timetable td { height: 64px; padding: 0; border: 0; border-radius: 8px; background: var(--bg); }
+.student-workspace .timetable [data-today] { background: var(--today-soft); }
+.student-workspace .timetable thead th[data-today] { background: var(--navy); color: var(--card); border-radius: 8px; }
+.timetable-slot { display: grid; grid-auto-rows: minmax(64px, 1fr); gap: 4px; min-height: var(--period-height); }
+.student-workspace .course-cell, .student-workspace .preparation-cell { display: flex; flex-direction: column; justify-content: center; gap: 2px; width: 100%; min-width: 0; min-height: 64px; height: 100%; margin: 0; padding: 6px 8px; border: 0; border-left: 5px solid var(--course-band); border-radius: 8px; box-shadow: var(--cell-shadow); text-align: left; line-height: 1.25; overflow-wrap: anywhere; }
+.student-workspace .course-cell strong, .student-workspace .preparation-cell strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-wrap: balance; margin: 0; font-size: 13px; white-space: normal; line-break: strict; }
+.student-workspace .course-deadline, .student-workspace .course-cell span { font-size: 11px; font-family: var(--sans); font-weight: 700; color: var(--muted); }
+.student-workspace .course-deadline { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .student-workspace .course-deadline .previous-deadline { display: none; }
-.student-workspace .timetable-slot:has(> :nth-child(2)) > button { padding: 0 2px; gap: 0; border-block: 0; }
-.student-workspace .timetable-slot:has(> :nth-child(2)) strong { font-size: 10px; line-height: 10px; }
-.student-workspace .timetable-slot:has(> :nth-child(2)) .course-deadline,
-.student-workspace .timetable-slot:has(> :nth-child(2)) .deadline { font-size: 9px; line-height: 10px; }
-.student-workspace .course-panel { padding: var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
+.student-workspace .course-cell.changed { box-shadow: 0 0 0 2px var(--red); color: var(--ink); }
+.student-workspace .course-cell.changed span { color: var(--red); }
+.student-workspace .course-cell[aria-pressed='true'], .student-workspace .preparation-cell[aria-pressed='true'] { outline: 2px solid var(--navy); outline-offset: -2px; }
+.student-workspace .preparation-cell { background: var(--yellow); color: var(--on-yellow); border-left-color: var(--yellow-band); }
+.student-workspace .preparation-cell small { color: var(--yellow-muted); font: 700 11px var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.student-workspace .course-panel { border: 0; border-radius: var(--r-card); box-shadow: var(--shadow); background: var(--card); padding: 20px 22px; }
 .student-workspace .course-panel h2 { font-size: 22px; }
-.student-workspace .td-fetch { margin-bottom: var(--space-4); }
+.student-workspace .course-panel .assignment .deadline { font: 700 24px/1.4 var(--sans); }
+.student-workspace .td-fetch { margin-bottom: 16px; }
 .student-workspace .td-fetch .notice { margin: 0; padding: 0; border: 0; background: transparent; }
+.student-workspace .empty-week { padding: 16px; border: 1px dashed var(--line-strong); border-radius: var(--r-inner); color: var(--muted); text-align: center; }
+
+.student-workspace .preparation-add { margin: 0 0 14px; padding: 0; border: 0; background: transparent; }
+.student-workspace .preparation-add > summary { margin: 0; width: fit-content; padding: 4px 0; min-height: 44px; color: var(--blue); background: transparent; font-size: 13px; font-weight: 400; text-decoration: underline; }
+.student-workspace .preparation-list > h2 { display: none; }
+.student-workspace .preparation-list ul { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
+.student-workspace .preparation-list li { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 14px 0; margin: 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
+.student-workspace .preparation-list li:has(.td-chip-done) { color: var(--green); }
+.student-workspace .preparation-list li > time { flex-basis: 100%; font: 700 15px var(--sans); }
+.student-workspace .preparation-list li > strong { overflow-wrap: anywhere; }
+.student-workspace .preparation-list li > span { font-size: 12px; color: var(--muted); }
+.student-workspace .preparation-buttons { display: flex; flex-wrap: wrap; margin-top: 8px; gap: 16px; }
+
+.student-workspace .calendar-scroll { border: 0; background: transparent; }
+.student-workspace .deadline-week { min-width: 720px; border-collapse: separate; border-spacing: 6px 0; }
+.student-workspace .deadline-week th { font: 700 12px var(--sans); padding: 8px; border: 0; border-radius: var(--r-inner) var(--r-inner) 0 0; background: var(--bg); color: var(--muted); text-align: left; }
+.student-workspace .deadline-week td { border: 0; padding: 4px 8px 8px; background: var(--bg); border-radius: 0 0 var(--r-inner) var(--r-inner); min-height: 120px; }
+.student-workspace .deadline-week .calendar-today { background: var(--today-soft); }
+.student-workspace .deadline-week th.calendar-today { box-shadow: inset 0 3px 0 var(--navy); color: var(--ink); }
+.student-workspace .calendar-event { border: 0; border-left: 4px solid var(--course-band, var(--line-strong)); border-radius: 8px; background: var(--card); box-shadow: var(--cell-shadow); padding: 6px 8px; line-height: 1.4; }
+.student-workspace .calendar-event time { font: 700 12px var(--sans); }
+.student-workspace .calendar-event strong { display: block; font-size: 12px; }
+.app.app .student-workspace .calendar-event.rd-preparation-event { background: var(--yellow); border-left-color: var(--yellow-band); color: var(--on-yellow); }
+.app.app .student-workspace .calendar-event.submitted { background: var(--green-soft); color: var(--green); border-left-color: var(--green); box-shadow: none; }
+.student-workspace .calendar-event.submitted .muted { color: var(--green); }
+
+.rd-fold { margin-top: 20px; padding: 0 22px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-inner); box-shadow: none; }
+.rd-fold > summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 12px 0; min-height: 56px; cursor: pointer; font-size: 16px; font-weight: 700; }
+.rd-fold > summary::before { content: '▸'; color: var(--muted); }
+.rd-fold[open] > summary::before { content: '▾'; }
+.rd-fold .rd-pill { border: 0; background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 400; }
+.student-workspace .rd-settings { margin-top: 8px; }
+.rd-settings-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.rd-settings-badges [data-ready] { background: var(--green-soft); color: var(--green); }
+.rd-setup-link { color: var(--blue); font-size: 13px; font-weight: 400; }
+.rd-setting-row { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: start; gap: 8px 20px; padding: 16px 0; border-top: 1px solid var(--line); }
+.rd-setting-row h3 { font-size: 14px; margin: 0; }
+.rd-setting-row > :not(h3) { grid-column: 2; margin: 0; }
+.student-workspace .rd-settings .connect-panel, .rd-setting-row > .connect-item, .rd-setting-row > .notification-settings { border: 0; border-radius: 0; padding: 0; margin: 0; background: transparent; }
+.rd-setting-row .connect-item { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.rd-setting-row .connect-state b { display: none; }
+.rd-setting-row .connect-note { font-size: 13px; }
+.rd-setting-row .connect-chip { border-radius: 999px; }
+.rd-setting-row .connect-chip-connected { background: var(--green-soft); color: var(--green); }
+.rd-setting-row .notification-settings > summary { color: var(--blue); min-height: 44px; text-decoration: underline; }
+.rd-setting-row .student-sharing, .rd-setting-row .manual-assignments { padding: 0; margin: 0; border: 0; }
+.rd-setting-row .student-sharing h2 { display: none; }
 .student-mobile-tabs { display: none; }
-.app .course-cell[data-course-color] {
-  background: var(--course-soft); border-inline-start: 4px solid var(--course-band);
-}
-.app .course-cell[data-course-color][aria-pressed='true'] { outline: 2px solid var(--ink); outline-offset: -2px; }
-.student-workspace .preparation-add { margin: 0 0 var(--space-4); }
-@media (max-width: 480px) {
-  .student-workspace .student-deadlines .td-taskrow { grid-template-columns: 6.75rem minmax(0, 1fr); gap: var(--space-1) var(--space-2); }
-  .student-deadlines .td-taskrow-side .td-chip-changed { padding-inline: var(--space-1); }
-  .student-deadlines .td-taskrow-course, .student-deadlines .td-taskrow-title { grid-column: 2; }
-  .student-deadlines .td-taskrow-side { grid-column: 1; grid-row: 1 / span 2; justify-content: flex-start; font-weight: 700; }
-}
 @media (max-width: 850px) {
-  .student-workspace .timetable th:first-child { width: 28px; }
-  .student-workspace .student-layout.with-course { grid-template-columns: minmax(0, 1fr); }
-  .student-mobile-tabs { display: block; margin-bottom: var(--space-6); }
+  .student-mobile-tabs { display: block; margin-bottom: 20px; }
   .student-overview { display: block; }
-  .student-overview[data-tab='deadlines'] > :not(.student-deadlines, .student-calendar),
+  .student-overview > * { margin-bottom: 20px; }
+  .student-overview[data-tab='deadlines'] > :not(.student-deadlines),
   .student-overview[data-tab='timetable'] > :not(.student-timetable),
   .student-overview[data-tab='preparation'] > :not(.student-preparation) { display: none; }
-  .student-workspace .td-taskrow-side { max-width: none; }
-  .student-overview[data-tab='deadlines'] .student-timetable:has(.course-panel) { display: block; margin-top: var(--space-6); }
+  .student-overview[data-tab='deadlines'] .student-timetable:has(.course-panel) { display: block; }
   .student-overview[data-tab='deadlines'] .student-timetable:has(.course-panel) > h2,
   .student-overview[data-tab='deadlines'] .student-timetable:has(.course-panel) .student-layout > div { display: none; }
+  .student-workspace :is(.upcoming, .student-timetable, .student-preparation, .deadline-calendar) { padding: 18px 16px; }
+  .student-workspace .timetable th:first-child { width: 24px; }
+  .student-workspace .course-cell, .student-workspace .preparation-cell { padding: 5px 3px; }
+  .student-workspace .course-cell strong, .student-workspace .preparation-cell strong { font-size: 11px; }
+  .student-workspace .course-deadline, .student-workspace .course-cell span { font-size: 10px; }
+  .student-workspace .td-taskrow { padding-left: 72px; padding-right: 56px; }
+  .rd-row-day { width: 48px; }
+  .rd-next { padding: 18px; }
+  .rd-head-status { margin-left: 0; }
+  .rd-fold { padding: 0 16px; }
+  .rd-settings-badges { flex-basis: 100%; margin-left: 20px; }
+  .rd-setting-row { grid-template-columns: minmax(0, 1fr); }
+  .rd-setting-row > :not(h3) { grid-column: 1; }
 }
-
-/* Composition: deadlines are read first, the timetable carries colour, settings stay quiet below. */
-.student-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
-.student-today { margin: 0; font: 600 15px var(--mono); color: var(--ink-muted); }
-.student-overview { grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr); grid-template-rows: auto 1fr; gap: var(--space-6) var(--space-8); }
-.student-workspace h2 { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3); }
-.student-workspace .td-tasklist { display: grid; gap: var(--space-2); border-top: 0; }
-.student-workspace .td-taskrow {
-  border: 1px solid var(--rule); border-inline-start: 4px solid var(--course-band, var(--line-strong)); border-radius: var(--radius-md);
-  background: var(--sheet); padding: var(--space-3) var(--space-4); transition: box-shadow .15s, transform .15s;
+@media (max-width: 480px) {
+  .student-workspace .rd-next h2 { font-size: 21px; }
+  .rd-next-when > .deadline { font-size: 26px; }
+  .rd-next-actions { gap: 6px 16px; }
+  .student-workspace .rd-next-action-buttons { display: contents; }
+  .student-workspace .rd-next-actions > .rd-next-prepare, .student-workspace .rd-next-action-buttons .td-btn-primary { flex: 1 0 100%; min-height: 52px; }
 }
-.student-workspace button.td-taskrow:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-.student-workspace .td-taskrow-course { font-size: 13px; }
-.student-workspace .td-taskrow-side { font: 600 15px var(--font-mono); }
-.student-workspace .other-deadlines { margin-top: var(--space-3); }
-.student-workspace .other-deadlines .td-tasklist { margin-top: var(--space-2); }
-.student-workspace .other-deadlines .td-taskrow { background: transparent; }
-.student-workspace .timetable-scroll { border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
-.student-workspace .timetable th { background: transparent; font-family: var(--font-mono); }
-.student-workspace .timetable th:first-child { background: var(--sheet); }
-.student-workspace .timetable [data-today] { background: color-mix(in srgb, var(--marker-soft) 38%, transparent); }
-.student-workspace .timetable thead th[data-today] { color: var(--ink); font-weight: 700; box-shadow: inset 0 3px 0 var(--marker); }
-.student-workspace .course-cell { border-radius: var(--radius-sm); transition: filter .15s; }
-.student-workspace .course-cell:hover { filter: brightness(.96); }
-.student-workspace .course-panel { border-top: 1px solid var(--rule); box-shadow: var(--shadow-lg); }
-.student-workspace .course-panel .panel-heading button { min-height: var(--target); padding: 4px 14px; border: 1px solid var(--rule); border-radius: 100px; font-size: 13px; text-decoration: none; }
-.student-workspace .course-panel .assignment .deadline { font: 600 24px/1.4 var(--font-mono); }
-.student-workspace .calendar-scroll { border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet); }
-.student-workspace .deadline-week th { background: transparent; border-bottom: 1px solid var(--rule); color: var(--ink-muted); }
-.student-workspace .deadline-week td { border-top: 0; }
-.student-workspace .deadline-week .calendar-today { background: color-mix(in srgb, var(--marker-soft) 38%, transparent); color: var(--ink); }
-.student-workspace .deadline-week th.calendar-today { box-shadow: inset 0 3px 0 var(--marker); }
-.student-workspace .calendar-event { border-inline-start: 4px solid var(--course-band, var(--line-strong)); border-radius: var(--radius-sm); }
-.student-workspace .calendar-event strong { display: block; }
-.student-workspace .calendar-navigation button { border: 1px solid var(--rule); border-radius: 100px; background: var(--sheet); font-size: 13px; }
-.student-workspace .preparation-add, .app main > .notification-settings, .app main > .student-sharing, .student-workspace > .manual-assignments {
-  padding: var(--space-3) var(--space-4); border: 1px solid var(--rule); border-radius: var(--radius-md); background: var(--sheet);
-}
-.student-workspace > .manual-assignments { margin: var(--space-6) 0 var(--space-3); }
-.app main > .notification-settings, .app main > .student-sharing { margin-bottom: var(--space-3); }
-@media (prefers-reduced-motion: reduce) { .student-workspace .td-taskrow, .student-workspace .course-cell { transition: none; } }
-
-/* Names break evenly instead of leaving one character on a line; the changed chip matches the session screen. */
-.student-workspace .course-cell strong, .student-workspace .td-taskrow-course, .student-workspace .course-panel h2 { text-wrap: balance; line-break: strict; }
-/* Darken each channel by one for this chip only; keep literal colours in tokens.css. */
-.student-workspace .td-chip-changed { color: color(from var(--change-text) srgb calc(r - 1 / 255) calc(g - 1 / 255) calc(b - 1 / 255)); background: var(--danger-soft); border-radius: 100px; padding-inline: var(--space-3); font-size: 12px; }
-.student-workspace .td-taskrow-side { max-width: 12rem; flex-wrap: wrap; justify-content: flex-end; }
-.student-workspace .assignment > .td-chip-changed { margin-bottom: var(--space-1); }
-.student-workspace .empty-week { margin: 0; padding: var(--space-4); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); color: var(--ink-muted); text-align: center; }

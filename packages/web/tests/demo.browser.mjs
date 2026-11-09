@@ -66,7 +66,7 @@ try {
   }
   assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生']);
   assert.equal(await student.title(), 'ToDoku');
-  assert.equal(await student.locator('.app-header > a').innerText(), 'ToDoku');
+  assert.equal(await student.locator('.app-header .app-home').innerText(), 'ToDoku');
   await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();
   assert.match(await student.locator('main').innerText(), /ここで扱う授業と課題は架空のものです/);
   // A signed-in account without a demo profile can return to the demo login.
@@ -115,6 +115,7 @@ try {
   await timetable.locator('.timetable').getByRole('button', { name: /文章表現/ }).click();
   await timetable.getByRole('heading', { name: '第3回レポート（要約と引用）', exact: true }).waitFor();
   const oldDeadline = (await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt;
+  await timetable.locator('.student-calendar > summary').click();
   const calendar = timetable.getByRole('region', { name: '締切のカレンダー', exact: true });
   await calendar.getByText(/第3回レポート（要約と引用）/).waitFor();
   await timetable.emulateMedia({ reducedMotion: 'reduce' });
@@ -175,7 +176,11 @@ try {
     eventCard, timetable.locator('.course-panel .assignment').filter({ hasText: '第3回レポート（要約と引用）' }).locator('.deadline'), deadlines.locator('.deadline')];
   for (const target of highlighted) {
     await target.locator('xpath=self::*[contains(@class,"changed")]').waitFor({ timeout: Math.max(1, 2000 - (Date.now() - openedAt)) });
-    assert.equal(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
+    const indicator = await target.evaluate(node => {
+      const style = globalThis.getComputedStyle(node);
+      return node.classList.contains('course-cell') ? style.boxShadow : style.color;
+    });
+    assert.match(indicator, /rgb\(195, 57, 37\)/);
   }
   const oldDate = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(oldDeadline));
   const previousDeadline = timetable.locator('.course-panel .previous-deadline');
@@ -232,7 +237,11 @@ try {
   await timetable.waitForTimeout(Math.max(0, 10000 - (Date.now() - highlightAt)));
   for (const target of highlighted) {
     assert.doesNotMatch(await target.getAttribute('class'), /changed/);
-    assert.notEqual(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
+    const indicator = await target.evaluate(node => {
+      const style = globalThis.getComputedStyle(node);
+      return node.classList.contains('course-cell') ? style.boxShadow : style.color;
+    });
+    assert.doesNotMatch(indicator, /rgb\(195, 57, 37\)/);
   }
   assert.equal(await previousDeadline.count(), 0);
   const fetchState = db.doc('students/trial-student/fetchStates/demo-lms');

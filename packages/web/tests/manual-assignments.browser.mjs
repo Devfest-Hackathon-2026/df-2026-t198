@@ -58,6 +58,8 @@ try {
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   const dueDate = new Date(Date.now() + 2 * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
   await student.goto(`${base}/student`); await student.locator('.student-overview').waitFor();
+  await student.locator('.rd-settings > summary').click();
+  await student.locator('.student-calendar > summary').click();
   await login(supporter, 'supporter'); await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
   await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
   const validationForm = await form(student, '  　 ', dueDate, null);
@@ -104,7 +106,10 @@ try {
     }
   }
   pass('1280px and 390px retain readable author, date, memo and removal controls without document overflow');
-  await student.reload(); await manualList(student).getByRole('heading', { name: paper }).waitFor();
+  await student.reload();
+  await student.locator('.rd-settings > summary').click();
+  await student.locator('.student-calendar > summary').click();
+  await manualList(student).getByRole('heading', { name: paper }).waitFor();
   assert.equal((await rows()).size, 1);
   await manualList(student).getByRole('button', { name: `${paper}を消す`, exact: true }).click();
   await manualList(student).getByRole('heading', { name: paper }).waitFor({ state: 'detached' });
@@ -156,6 +161,8 @@ try {
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   // Move the clock across both deadline boundaries without changing saved task state.
   await student.goto(`${base}/student`); await student.locator('.student-overview').waitFor();
+  await student.locator('.rd-settings > summary').click();
+  await student.locator('.student-calendar > summary').click();
   const timedTitle = '架空の時刻境界の課題';
   const dateTitle = '架空の日付境界の課題';
   for (const [title, time, owner] of [[timedTitle, '12:00', course], [dateTitle, null, '']]) {
