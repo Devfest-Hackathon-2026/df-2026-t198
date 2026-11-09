@@ -158,3 +158,14 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing-footer { flex-wrap: wrap; padding: 32px 24px; }
 }
 @media (prefers-reduced-motion: reduce) { html.landing-scroll { scroll-snap-type: none; scroll-behavior: auto; } }
+
+/* 1章：一文ずつを主役にし、画面の画像は小さく添える */
+.landing .people-section .section-heading h2 { font-size: clamp(30px, 3.4vw, 46px); }
+.landing .person-statement h3 { font-size: 15px; color: var(--muted); }
+.landing .person-statement p { margin-top: 10px; font-size: clamp(19px, 1.8vw, 24px); font-weight: 700; line-height: 1.6; }
+.landing .person-statement p span { display: block; }
+.landing .person-thumb { max-width: 340px; margin-top: 22px; }
+@media (max-width: 700px) {
+  .landing .person-statement p { font-size: 16.5px; }
+  .landing .person-thumb { max-width: 220px; margin-top: 12px; }
+}

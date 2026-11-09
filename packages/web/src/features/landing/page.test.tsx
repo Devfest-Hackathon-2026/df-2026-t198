@@ -10,7 +10,7 @@ afterEach(() => vi.unstubAllEnvs());
 it('offers the LMS fallback and judge guidance without shared demo settings', () => {
   for (const key of keys) vi.stubEnv(key, '');
   const html = renderToStaticMarkup(<LandingPage />);
-  for (const section of ['しくみ', 'できること', '体験する', '使い始める', '情報の扱い']) {
+  for (const section of ['しくみ', '課題を一か所にまとめ、支援担当と共有します', '体験する', '使い始める', '情報の扱い']) {
     expect(html).toContain(section);
   }
   expect(html).not.toContain('動く見本');
@@ -66,9 +66,9 @@ it('introduces the people before the mechanism and ends with the trial entry', (
   expect([...main.matchAll(/<section[^>]+id="([^"]+)"/g)].map(match => match[1]))
     .toEqual(['home', 'people', 'how', 'start', 'privacy', 'try']);
   expect(main.match(/class="trial-entry"/g)).toHaveLength(1);
-  expect(main).toContain('毎朝、今日やることがメールで届きます。');
-  expect(main).toContain('次にやることを、学生と一緒に決められます。');
-  expect(main).toContain('授業ごとの課題と締切をまとめ、その日にやることを毎朝メールで届けます。');
+  expect(main).toContain('やることがある日は朝にメールが届きます。');
+  expect(main).toContain('次にやることを一緒に決められます。');
+  expect(main).toContain('授業ごとの課題と締切を時間割にまとめ、支援担当と共有します。');
   expect(html.match(/class="flow-scene"/g)).toHaveLength(1);
   expect(html.match(/data-task="report"/g)).toHaveLength(1);
   const progress = html.slice(html.indexOf('role="progressbar"'));
