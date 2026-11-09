@@ -1,88 +1,117 @@
 import { useEffect, useRef, useState } from 'react';
-import './mechanism.css';
 import { reducedMotion } from '../../shared/ui/motion';
+import { MechanismScene } from './mechanism-scene';
+import './mechanism.css';
 
-const statuses = ['先生のお知らせ', '先生がお知らせを出しました', 'LMSで課題の締切が変わりました',
-  '学生がLMSを開き、課題を取り込んでいます', '時間割とカレンダーの締切が更新されました',
-  '支援担当の画面も更新されました', '同じ締切になりました'];
-const slideDuration = 1800;
+export const mechanismSteps = [
+  { title: '先生の締切変更', lines: ['先生がLMSで、レポートの締切を', '11/12から11/13に延ばします。'] },
+  { title: '学生のLMS閲覧', lines: ['学生はいつもどおり、', 'LMSを開きます。'] },
+  { title: 'ToDokuへの取り込み', lines: ['拡張機能が変更後の締切を読み取り、', 'ToDokuの台帳に記録します。'] },
+  { title: '予定の更新', lines: ['学生のカレンダーと時間割で、', '締切が11/12から11/13に移ります。'] },
+  { title: '面談画面の変化', lines: ['学生が共有を許可していれば、', '支援担当の画面にも変更が表示されます。'] },
+  { title: '翌朝のメール', lines: ['翌朝7:30、学生本人に', '「今日やること」のメールが届きます。'] },
+];
+const duration = 5000;
 
-function Deadline({ changed }: { changed: boolean }) {
-  return <span className="flow-deadline">{changed && <s>11/12</s>}<strong>{changed ? '11/13' : '11/12'} 17:00</strong></span>;
+function Explanation({ step }: { step: number }) {
+  const item = mechanismSteps[step];
+  if (!item) return null;
+  return <><span className="flow-number">{step + 1} / 6</span><h3>{item.title}</h3>
+    <p className="flow-description">{item.lines.map(line => <span key={line}>{line}</span>)}</p></>;
 }
 
-function Schedule({ calendar, moved }: { calendar?: boolean; moved: boolean }) {
-  return <div className={`flow-schedule${moved ? ' is-moved' : ''}`}>
-    <h4>{calendar ? 'カレンダー' : '時間割と締切'}</h4>
-    <div className="flow-days"><span>11/12（木）</span><span>11/13（金）</span></div>
-    <div className="flow-track">
-      <div className="flow-event"><span>第3回レポート（要約と引用）</span><Deadline changed={moved} /></div>
-    </div>
-  </div>;
-}
-
-export function Mechanism() {
+export function Mechanism({ autoplay = true }: { autoplay?: boolean }) {
   const container = useRef<HTMLDivElement>(null);
+  const touch = useRef<{ x: number; y: number } | null>(null);
   const [visible, setVisible] = useState(false);
+  const [foreground, setForeground] = useState(() => typeof document === 'undefined' || !document.hidden);
   const [reduced, setReduced] = useState(reducedMotion);
   const [step, setStep] = useState(0);
-  const [replay, setReplay] = useState(0);
+  const [paused, setPaused] = useState(!autoplay);
+  const [hovered, setHovered] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const playing = visible && foreground && !paused && !hovered && !reduced && !finished;
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
     const change = () => setReduced(query.matches);
+    const visibility = () => setForeground(!document.hidden);
     query.addEventListener('change', change);
+    document.addEventListener('visibilitychange', visibility);
     const observer = new IntersectionObserver(entries => {
-      if (entries.some(entry => entry.isIntersecting)) { setVisible(true); observer.disconnect(); }
-    }, { threshold: .45 });
+      setVisible(entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= .45));
+    }, { threshold: [0, .45] });
     if (container.current) observer.observe(container.current);
-    return () => { query.removeEventListener('change', change); observer.disconnect(); };
+    return () => { observer.disconnect(); query.removeEventListener('change', change); document.removeEventListener('visibilitychange', visibility); };
   }, []);
   useEffect(() => {
-    if (!visible || reduced) return;
-    // The first card starts on entry; each of the five cards gets the same reading time.
-    const timers = statuses.slice(1).map((_, index) => window.setTimeout(() => setStep(index + 1), index * slideDuration));
-    return () => timers.forEach(window.clearTimeout);
-  }, [visible, reduced, replay]);
-  const stage = reduced ? 6 : step;
-  const card = (index: number, name: string) => `flow-card ${name}${stage === index || (stage === 0 && index === 1) ? ' is-active' : ''}`;
-  return <div ref={container} className="mechanism" role="group" aria-label="締切変更の流れ" data-stage={stage}>
-    <div className="flow-progress" aria-label={stage === 6 ? '全体' : `${Math.max(1, stage)} / 5`}>
-      <span>{stage === 6 ? '全体' : `${Math.max(1, stage)} / 5`}</span>
-      <span className="flow-dots" aria-hidden="true">{[1, 2, 3, 4, 5].map(index => <i key={index} className={stage >= index ? 'is-past' : ''} />)}</span>
-      <span className="flow-status" role="status">{statuses[stage]}</span>
-    </div>
-    <div className={`flow-board${stage === 6 ? ' is-overview' : ''}`}>
-      <div className={card(1, 'flow-teacher')} aria-hidden={stage !== 6 && stage > 1}>
-        <div className="flow-content"><span className="flow-label">01 先生</span><h3>お知らせ</h3>
-          <p className="flow-notice">{stage >= 1 ? 'レポートの締切を11/13に延ばします。' : '第3回レポート（要約と引用）'}</p>
-        </div>
-      </div>
-      <div className={card(2, 'flow-lms')} aria-hidden={stage !== 2 && stage !== 6}>
-        <div className="flow-content lms-skin"><div className="flow-lms-header"><strong>授業支援システム</strong><span>文章表現</span></div>
-          <div className="flow-lms-body"><span className="flow-label">02 LMS</span><h3>課題の締切</h3>
-            <p className="flow-lms-notice">{stage >= 2 ? 'お知らせ 1件：レポートの締切変更' : 'お知らせ 0件'}</p>
-            <p>第3回レポート（要約と引用）</p><Deadline changed={stage >= 2} />
+    if (!playing) return;
+    const timer = window.setTimeout(() => {
+      if (step === 5) setFinished(true);
+      else setStep(value => value + 1);
+    }, duration);
+    return () => window.clearTimeout(timer);
+  }, [playing, step]);
+  function move(delta: number) {
+    const next = Math.max(0, Math.min(5, step + delta));
+    setPaused(true);
+    setStep(next);
+    setFinished(next === 5);
+  }
+  return <div ref={container} className={`mechanism${reduced ? ' is-static' : ''}`} role="group" aria-label="締切変更の流れ"
+    tabIndex={reduced ? undefined : 0} data-stage={step + 1} data-playing={playing} data-finished={finished}
+    onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+    onFocus={event => { if (event.target === event.currentTarget) setPaused(true); }}
+    onKeyDown={event => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') { event.preventDefault(); move(event.key === 'ArrowRight' ? 1 : -1); }
+    }}
+    onTouchStart={event => { const point = event.touches[0]; if (point) touch.current = { x: point.clientX, y: point.clientY }; }}
+    onTouchEnd={event => {
+      const point = event.changedTouches[0]; const start = touch.current; touch.current = null;
+      if (!point || !start) return;
+      const dx = point.clientX - start.x; const dy = point.clientY - start.y;
+      if (Math.abs(dx) >= 45 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1);
+    }}>
+    {reduced ? <div className="flow-static-grid">{mechanismSteps.map((item, index) => <div className="flow-static-item" key={item.title}>
+      <MechanismScene step={index} compact /><div><Explanation step={index} /></div>
+    </div>)}</div> : <>
+      <div className="flow-slide"><MechanismScene step={step} />
+        <div className="flow-copy"><div className="flow-status" role="status" aria-live="polite" aria-atomic="true"><Explanation step={step} /></div>
+          <div className="flow-controls">
+            <button type="button" aria-label="前の段へ" disabled={step === 0} onClick={() => move(-1)}>← 前へ</button>
+            <button type="button" aria-label={finished ? '最初から再生する' : paused ? '再生する' : '一時停止する'} onClick={() => {
+              if (finished) { setStep(0); setFinished(false); setPaused(false); }
+              else setPaused(value => !value);
+            }}>{finished ? '最初から' : paused ? '再生' : '一時停止'}</button>
+            <button type="button" aria-label="次の段へ" disabled={step === 5} onClick={() => move(1)}>次へ →</button>
           </div>
+          <span className="flow-play-state">{finished ? '再生が終わりました' : playing ? '自動再生中' : '停止中'}</span>
         </div>
       </div>
-      <div className={card(3, 'flow-import')} aria-hidden={stage !== 3 && stage !== 6}>
-        <div className="flow-content"><span className="flow-label">03 ToDoku</span><h3>LMSからの取り込み</h3>
-          <div className="flow-open"><span>LMSを開く</span><span aria-hidden="true">→</span><strong>{stage >= 4 ? '取り込み済み' : '課題の取り込み中'}</strong></div>
-        </div>
+      <div className="flow-progress" role="progressbar" aria-label="しくみの進み具合" aria-valuemin={0} aria-valuemax={6} aria-valuenow={finished ? 6 : step} aria-valuetext={`${step + 1} / 6`}>
+        {mechanismSteps.map((item, index) => <span className={index < step || finished ? 'is-past' : index === step ? 'is-current' : ''} key={item.title}>
+          <i key={`${index}-${step}-${playing}`} style={{ animationPlayState: playing ? 'running' : 'paused' }} />
+        </span>)}
       </div>
-      <div className={card(4, 'flow-student')} aria-hidden={stage !== 4 && stage !== 6}>
-        <div className="flow-content app"><span className="flow-label">04 学生</span><h3>時間割とカレンダー</h3>
-          <div className="flow-schedules"><Schedule moved={stage >= 4} /><Schedule calendar moved={stage >= 4} /></div>
-        </div>
-      </div>
-      <div className={card(5, 'flow-supporter')} aria-hidden={stage !== 5 && stage !== 6}>
-        <div className="flow-content app"><span className="flow-label">05 支援担当</span><h3>前回の面談からの変化</h3>
-          <div className={`flow-change${stage >= 5 ? ' is-updated' : ''}`}><strong>第3回レポート（要約と引用）</strong>
-            {stage >= 5 ? <Deadline changed /> : <span>変化なし</span>}
-          </div>
-        </div>
-      </div>
-    </div>
-    <button className="flow-replay" type="button" hidden={reduced} disabled={stage < 6} onClick={() => { setStep(0); setReplay(value => value + 1); }}>もう一度見る</button>
+    </>}
   </div>;
+}
+
+export function MechanismSlides() {
+  const frame = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = frame.current;
+    if (!element) return;
+    const resize = () => {
+      if (canvas.current) canvas.current.style.transform = `scale(${element.clientWidth / 1280})`;
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return <main className="brand mechanism-slides"><div ref={frame} className="mechanism-slide-frame"><div ref={canvas} className="mechanism-slide-canvas">
+    <Mechanism autoplay={new URLSearchParams(window.location.search).get('autoplay') === '1'} />
+  </div></div></main>;
 }

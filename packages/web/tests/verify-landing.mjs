@@ -14,8 +14,11 @@ const checks = {
 const id = process.argv[2];
 const check = checks[id];
 if (!check) throw new Error('unknown-landing-check');
-const result = spawnSync('node', ['packages/web/tests/run-landing-browser.mjs', check.mode],
-  { env: process.env, encoding: 'utf8', timeout: 58000 });
+const args = process.env.KADAI_WEB_ORIGIN && ['layout', 'flow'].includes(id)
+  ? [`packages/web/tests/landing-${id === 'layout' ? 'chapters' : 'flow'}.browser.mjs`, ...process.argv.slice(3)]
+  : ['packages/web/tests/run-landing-browser.mjs', check.mode];
+const result = spawnSync('node', args,
+  { env: process.env, encoding: 'utf8', timeout: id === 'flow' ? 180000 : 58000 });
 const logfile = `${id}.log`;
 await writeFile(`${directory}/${logfile}`, result.stdout + result.stderr);
 if (result.status !== 0) throw new Error(`landing-${id}-failed; see ${logfile}`);
