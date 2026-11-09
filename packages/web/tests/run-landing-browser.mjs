@@ -30,6 +30,7 @@ try {
   const vite = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', port, '--strictPort'], true);
   await ready(env.KADAI_WEB_ORIGIN, vite);
   const scripts = mode === '--capture' ? ['capture-landing-shots.mjs']
+    : mode === '--small-screens' ? ['small-screens.browser.mjs']
     : mode === '--layout' ? ['landing-chapters.browser.mjs']
     : mode === '--flow' ? ['landing-flow.browser.mjs']
     : mode === '--dialogs' ? ['landing.browser.mjs']

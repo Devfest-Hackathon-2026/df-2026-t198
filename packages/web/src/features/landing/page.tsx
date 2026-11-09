@@ -79,10 +79,10 @@ export function LandingPage() {
       <section className="chapter people-section" id="people" aria-labelledby="people-title">
         <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="people-title">使う人</h2></div></Reveal>
         <div className="product-grid">
-          <Reveal><div className="person-heading"><h3>学生</h3><p>時間割・カレンダーの締切と朝のメール</p></div><Screenshot name="student" alt="学生の時間割" width={685} height={638} caption="時間割と締切" />
+          <Reveal><div className="person-heading"><h3>学生</h3><p>時間割・カレンダーの締切と朝のメール</p></div><Screenshot name="student" alt="学生の時間割" width={685} height={496} caption="時間割と締切" />
             <div className="person-mail"><span>7:30 受信箱</span><strong>今日やること</strong><span>文章表現 レポートの準備</span></div>
           </Reveal>
-          <Reveal order={1}><div className="person-heading"><h3>支援担当（カウンセラーなど）</h3><p>前回の面談から変わった課題</p></div><Screenshot name="session" alt="支援担当の面談画面" width={768} height={312} caption="面談の画面" /></Reveal>
+          <Reveal order={1}><div className="person-heading"><h3>支援担当（カウンセラーなど）</h3><p>前回の面談から変わった課題</p></div><Screenshot name="session" alt="支援担当の面談画面" width={1168} height={667} caption="面談の画面" /></Reveal>
         </div>
         <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
       </section>
