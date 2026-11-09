@@ -101,7 +101,7 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 | 書体 | 用途 | 出典・ライセンス |
 |---|---|---|
 | Space Grotesk | ロゴ・欧文 | [Google Fonts](https://fonts.google.com/specimen/Space+Grotesk)、[OFL](https://github.com/google/fonts/blob/main/ofl/spacegrotesk/OFL.txt) |
-| BIZ UDPGothic | 紹介ページ・学生・面談・体験用LMSの日本語 | [Google Fonts](https://fonts.google.com/specimen/BIZ+UDPGothic)、[OFL](https://github.com/google/fonts/blob/main/ofl/bizudpgothic/OFL.txt) |
+| BIZ UDPGothic | 紹介ページ・学生・面談・体験用LMS、資料・動画・スライドの日本語。構成図PNGの描画と編集用SVGのフォント埋め込み | [Google Fonts](https://fonts.google.com/specimen/BIZ+UDPGothic)、[OFL](https://github.com/google/fonts/blob/main/ofl/bizudpgothic/OFL.txt) |
 | JetBrains Mono | 番号・時刻 | [Google Fonts](https://fonts.google.com/specimen/JetBrains+Mono)、[OFL](https://github.com/google/fonts/blob/main/ofl/jetbrainsmono/OFL.txt) |
 | Zen Kaku Gothic New | 紹介ページの本文と見出し、学生・面談画面の見出し（2026-11-10 追加） | [Google Fonts](https://fonts.google.com/specimen/Zen+Kaku+Gothic+New)、[OFL](https://github.com/google/fonts/blob/main/ofl/zenkakugothicnew/OFL.txt) |
 
@@ -149,3 +149,14 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 - **Open Peeps**：Pablo Stanleyによる人物のイラスト。[公式サイト](https://openpeeps.com/)にCC0と明記。人物の上半身・スマホを持つ姿勢・歩く姿勢と髪形のパスを、役ごとの1色のシルエットに加工した。
 - **react-peeps 0.1.10**：[CeamKrier/react-peeps](https://github.com/CeamKrier/react-peeps)、[npm](https://www.npmjs.com/package/react-peeps)。MIT、Copyright (c) 2020-present, Emre Çakır。作業ツリー外で `npm pack react-peeps` を展開し、必要なパスだけを [peeps-paths.tsx](../packages/web/src/features/landing/story/peeps-paths.tsx) に取り込んだ。複製元のMIT全文は隣接する [LICENSE](../packages/web/src/features/landing/story/LICENSE) に保持。パッケージへの依存は追加していない。
 - 机・ロゴなしのPC・時計・部屋・吹き出し・架空の画面は、この作品のSVGとして描いた。ToDokuのロゴは既存の `TodokuMark` を再利用した。
+
+## 動画・スライドの素材と生成ツール（2026-11-10）
+
+| 名前・出典 | 用途 | ライセンス |
+|---|---|---|
+| [Inter](https://github.com/google/fonts/tree/main/ofl/inter) | 動画・スライドの欧文と数字 | SIL Open Font License 1.1（[OFL](https://github.com/google/fonts/blob/main/ofl/inter/OFL.txt)、Copyright 2020 The Inter Project Authors） |
+| [qrcode 8.2（python-qrcode）](https://github.com/lincolnloop/python-qrcode/tree/v8.2) | スライドのQRを生成。公開紹介ページのURLだけを符号化する。生成ライブラリとQR画像を区別する | BSD-3-Clause。[LICENSE](https://github.com/lincolnloop/python-qrcode/blob/v8.2/LICENSE)末尾にpyqrnative由来部分のMIT表記もあるため、生成用フォルダにはLICENSE全体を保持する |
+
+BIZ UDPGothicとInterは2026-11-10にGoogle FontsのOFLを確認した。書体ファイルの配布・埋め込みでは著作権表示とOFL全文を保持する。文字を描画した動画・画像と書体ファイルを区別する。BIZ UDPGothicの出典とOFLは上の既存行を参照する。
+
+人物シルエットは既存のOpen Peeps（CC0）とreact-peeps（MIT）の記録を参照する。制作記録で確認できた用途を補足したもので、最終動画・Google Slidesでの採用範囲、書体の置換、取り込み後のQRの読み取りは未確認。
