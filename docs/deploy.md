@@ -36,7 +36,7 @@ repoのルートをソースにし、buildpacksがコンテナを作る。ルー
 
 `ENABLE_DEMO_ANNOUNCEMENTS=true` と `GOOGLE_CLOUD_PROJECT` は、体験用LMSの「お知らせを出す」の解析を有効にする設定（[data-shapes.md](data-shapes.md) の体験用データの節）。Cloud Runは `GOOGLE_CLOUD_PROJECT` を自動では入れないので明示する。実物のLMSのお知らせの解析は、この設定でも無効のまま。
 
-`PUBLIC_WEB_ORIGIN` は、今日やることのメールに入れる学生画面のリンク先。上のHostingの公開先を指定する。未設定では `GET /api/v1/digest` が503を返し、体験用LMSの「今朝のメール」も表示できない（ほかのAPIは起動する）。旧拡張のメール送信は、別Issueで切り替えるまで維持する。Issue #162のクラウド送信の準備は末尾を参照。
+`PUBLIC_WEB_ORIGIN` は、今日やることのメールに入れる学生画面のリンク先。上のHostingの公開先を指定する。未設定では `GET /api/v1/digest` が503を返し、体験用LMSの「今朝のメール」も表示できない（ほかのAPIは起動する）。クラウド通知への本人による切替は、下のIssue #274の注記に従う。Issue #162のクラウド送信の準備は末尾を参照。
 
 ビルド時の `NODE_ENV=development` はbuildpacksの自動pruneを止めるために明記する。pnpm 11.8.0ではルートの `pnpm prune --prod` 後にserverの `firebase-admin` も消え、起動できないことを手元とCloud Runで確認した。初回デプロイは開発用の依存もイメージに残す。実行時の `NODE_ENV` は別に `production` にする。依存を小さくまとめる対応は、この制約を解消する別の作業とする。
 
@@ -123,7 +123,7 @@ curl --fail-with-body https://project-00439085-4e2d-44c3-9a8.web.app/api/health
 
 どちらもHTTP 200で `{"status":"ok"}` が返ることを確認する。Hostingの `/student` と `/session` はWebのHTMLを返し、そのHTMLが参照するJS・CSSも取得できること、`/api/missing` はHTMLではなく404になることも確かめる。Cloud RunとHostingの両方で、認証なしの `POST /api/v1/observations` が401になることを確かめる。ビルドID・結果・公開URL・確認日時はPRに残す。C14は台帳のFirestore保存までが条件なので、初回デプロイだけでは完了にしない。
 
-更新後は [READMEの「ブラウザで試す」](../README.md#ブラウザで試す) の1〜6を、学生・支援担当の別ブラウザで最後まで通す。最後に体験をリセットし、両方でログアウトする。メール見本の確認を実際のGmailへの配信成功とは扱わない。
+更新後は [体験ガイドの「手で試す」](demo.md#手で試す) の1〜6を、学生・支援担当の別ブラウザで最後まで通す。最後に体験をリセットし、両方でログアウトする。メール見本の確認を実際のGmailへの配信成功とは扱わない。
 
 確認のパスはIssue #18の再開判断に従って `/api/health` に統一する。旧 `/healthz` と `/api/healthz` は提供しない。Cloud Runの予約パスとの衝突を避けるため、末尾にzを付ける案は採らない。
 
@@ -131,7 +131,9 @@ curl --fail-with-body https://project-00439085-4e2d-44c3-9a8.web.app/api/health
 
 ## 拡張のメールからクラウド通知へ移す（Issue #163）
 
-実行者はorange。以下は手順の記述で、切替を実行した記録ではない。#162の送信元接続とクラウドから本人への実受信（朝・準備前）が通るまで、cloudを有効にしない。11/9 18:00の打ち切りと凍結期間は #152 と [提出の決まり](submission.md) に従う。LMS取得とカレンダー同期は拡張に残す。
+Issue #274以降の通常の利用者は、学生画面の「メール通知の設定」で「通知を有効にする」を押して切り替える。送信元と本人の宛先が利用できる場合の動作・切替済み利用者との互換性は [設定APIの契約](data-shapes.md#通知設定api) に従う。停止しても拡張へは戻さない。新しいCloudリソースの作成や送信元の再設定は不要。
+
+以下は従来の手動切替を必要とする場合の手順で、通常の本人による切替の前提ではない。実行者はorange。手順の記述を切替の実行記録とは扱わない。#162の送信元接続とクラウドから本人への実受信（朝・準備前）が通るまで、cloudを有効にしない。11/9 18:00の打ち切りと凍結期間は #152 と [提出の決まり](submission.md) に従う。LMS取得とカレンダー同期は拡張に残す。
 
 ### 切替前の確認
 
@@ -240,7 +242,7 @@ gcloud run services update kadai-hisho-api --project "$KADAI_PROJECT" --region a
   --update-env-vars=NOTIFICATION_SEND_ENABLED=true
 ```
 
-このフラグだけでは、移行前（owner none/extension、migrationState not-started）の本人は送信対象にならない。別Issueで旧拡張停止・対象者・戻し方を確認してowner cloud/migrationState readyとし、本人が通知を有効にする。古い拡張との二重送信を避けるため、本手順に移行状態を直接書き換えるコマンドは含めない。11/9 18:00までにAC-02/03の実受信が通らなければ切替を止める（#152）。
+このフラグだけでは、移行前の本人は送信対象にならない。Issue #274以降は、本人が学生画面で有効にすると設定APIが切り替える（[設定APIの契約](data-shapes.md#通知設定api)）。通常の利用者を手動で1人ずつ移行する必要はない。本手順には移行状態を直接書き換えるコマンドを含めない。11/9 18:00までにAC-02/03の実受信が通らなければ切替を止める（#152）。
 
 自然時刻の朝と準備前で、予定時刻・処理開始・API受理・本人Gmailの受信を別々に記録する。PC/Chromeを閉じた条件、停止、失効、結果不明も確かめる。Gmailの401/403は接続のやり直し、429は未受理、5xx/応答喪失/不完全な成功応答は結果不明。いずれも送信POSTを自動再送しない。invalid_grant等で止まった送信元は、凍結前に再同意・固定版更新・revision更新で復旧する。
 

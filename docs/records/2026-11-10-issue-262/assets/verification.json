@@ -1,0 +1,97 @@
+{
+  "screenshots": [
+    "page-controls.png",
+    "assets-b.png",
+    "screens.png",
+    "eyecatch.png",
+    "scene-office.png",
+    "scene-bedroom.png",
+    "scene-consultation.png",
+    "scene-meeting.png",
+    "scene-morning.png"
+  ],
+  "observations": [
+    {
+      "operation": "choose scene and palette, then reload",
+      "palette": "b",
+      "scene": "morning",
+      "aspectRatio": "16:9",
+      "controlsFit": true
+    },
+    {
+      "name": "assets-b",
+      "width": 1280,
+      "height": 720,
+      "textOutside": [],
+      "peopleClipped": [],
+      "animations": 0,
+      "rasterImages": 0
+    },
+    {
+      "name": "screens",
+      "width": 1280,
+      "height": 720,
+      "textOutside": [],
+      "peopleClipped": [],
+      "animations": 0,
+      "rasterImages": 0
+    },
+    {
+      "name": "eyecatch",
+      "width": 1280,
+      "height": 720,
+      "textOutside": [],
+      "peopleClipped": [],
+      "animations": 0,
+      "rasterImages": 0
+    },
+    {
+      "name": "scene-office",
+      "width": 1280,
+      "height": 720,
+      "textOutside": [],
+      "peopleClipped": [],
+      "animations": 0,
+      "rasterImages": 0
+    },
+    {
+      "name": "scene-bedroom",
+      "width": 1280,
+      "height": 720,
+      "textOutside": [],
+      "peopleClipped": [],
+      "animations": 0,
+      "rasterImages": 0
+    },
+    {
+      "name": "scene-consultation",
+      "width": 1280,
+      "height": 720,
+      "textOutside": [],
+      "peopleClipped": [],
+      "animations": 0,
+      "rasterImages": 0
+    },
+    {
+      "name": "scene-meeting",
+      "width": 1280,
+      "height": 720,
+      "textOutside": [],
+      "peopleClipped": [],
+      "animations": 0,
+      "rasterImages": 0
+    },
+    {
+      "name": "scene-morning",
+      "width": 1280,
+      "height": 720,
+      "textOutside": [],
+      "peopleClipped": [],
+      "animations": 0,
+      "rasterImages": 0
+    }
+  ],
+  "reducedMotion": "same static frame",
+  "apiRequests": [],
+  "pageErrors": []
+}

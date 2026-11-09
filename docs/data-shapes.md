@@ -146,7 +146,7 @@ Issue #180：`siteFilter` に既知の授業以外の種別（`project`・`works
 - 保存先のキーは従来どおり `system` と `courseId`。別の情報源の文書を上書きしない。同一情報源では観測した授業を置き換える。KULASISが完全に成功した回に限り、見当たらない以前のKULASIS授業を `currentTerm: false` にする。授業サポートや対応照会に失敗した回は時間割全体を送らず、全体の失敗を記録して以前の時間割・対応を保持する（Issue #218）。200以外・通信失敗・認証画面・不明の遷移先を「リンクなし」の成功にしない。サポート画面を取得でき、対応リンクがない場合とは区別する。KULMSのURL・今学期かどうかの値には書き込まない。
 - 表示用の `linkedCourses` は今学期の明示の対応があるKULASIS授業とKULMS授業を1つにする。名前・URL・課題キーはKULMS、曜日・時限はKULASISを優先する。現在の時間割で確認できた対応は表示上の `currentTerm: true` とする。複数のKULASIS授業が同じサイトを指す場合はコマを重複なく合わせる。取れない対応は別々に出す。元データは変えない。
 - 学生・面談画面は同じ関数を使う。締切のカレンダーはKULMSの課題キーと授業名を引き続き使い、KULASISの観測では予定を追加・変更しない。京大の時限の実時刻は未確認なので補わない。
-- 取得の優先順位用に、完全に成功した観測の受領後に対応先siteIdだけを `chrome.storage.local.kulasisMapping` に保存する（Firebase uid・学期付き）。同じ本人・同じ学期の場合だけKULMSの取得へ渡す。対応が変わったらKULMSの取得後の待ち時間を解除し、次にKULMSを開くと新しい優先順位を使う。時間割の保存の正本はサーバーの授業文書で、このキャッシュは別の端末へ同期しない。拡張を入れ直した端末では、KULASISを先に開く。KULMS・KULASISとも取得を試みた後は、部分失敗・全体失敗・送信失敗を含め、本人・接続先ごとに10分待つ。学生の操作による中断だけは即時再開できる。待機はworker再起動後もsession storageから復元する（Issue #218）。
+- 取得の優先順位用に、完全に成功した観測の受領後に対応先siteIdだけを `chrome.storage.local.kulasisMapping` に保存する（Firebase uid・学期付き）。同じ本人・同じ学期の場合だけKULMSの取得へ渡す。対応が変わってもKULMSの取得後の待ち時間は解除せず、待機後の取得で新しい優先順位を使う（D45、Issue #267）。時間割の保存の正本はサーバーの授業文書で、このキャッシュは別の端末へ同期しない。拡張を入れ直した端末では、KULASISを先に開く。KULMS・KULASISとも取得を試みた後は、部分失敗・全体失敗・送信失敗を含め、本人・接続先ごとに6時間待つ。学生の操作による中断だけは即時再開できる。完了時刻は `chrome.storage.local` の `${system}FetchCompletedAt:${uid}` に保存し、ブラウザ再起動後も復元する。旧版のsession storageに同じ本人の完了時刻があればlocal storageへ移す。取得開始前に `GET /api/v1/collection-policy` を読み、`backgroundCollection: enabled` の場合だけ取得する。停止中・通信失敗・不正な応答の場合はLMSを取得しない（D43、Issue #267）。
 - 参照URLは認証情報のない授業ページを組み立てる。採点・提出本文・添付・お知らせは送らない。KULMSのAPIから取った生のJSONやCookieをservice workerへ渡さない。
 
 ## 学生による共有の停止と再開（Issue #257）
@@ -301,23 +301,24 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - 日本時間の7:30以降に朝のまとめを1回、今日の有効な準備の開始30分前から開始前までにその準備1件のメールを送る。Chromeの起動・拡張の実行・有効な認可が前提。予定の再取得は通常15分間隔で、送信対象の時刻にも本文を取得する。対象が空なら送らない。
 - 送信前に当日の送信記録を `chrome.storage.local` へ置く。応答が失われた場合も同じメールを自動再送せず、設定画面でGmailの確認を促す。メール本文は保存しない。朝のまとめ・準備ごとの送信と、無効化・本人変更・認可・本文の安全検査は `packages/extension/tests/digest-browser.test.mjs` で検証する。実際のGmailへの配信はこの試験の対象外。
 
-## クラウド通知の共通部分（Issue #156、送り方と切替は未接続）
+## クラウド通知の共通部分（Issue #156）
 
-#153 のN1〜N4を具体化した契約。型は `NotificationSettings`・`NotificationStatus`・`NotificationTarget`・`NotificationDelivery`。契約と規則のmergeにはorangeの確認が必要。既存の拡張送信・GET digest・準備操作はこのPRでは変更しない。
+#153 のN1〜N4を具体化した契約。型は `NotificationSettings`・`NotificationStatus`・`NotificationTarget`・`NotificationDelivery`。送信元はD36、本人による切替はD46に従う。
 
 | 保存先 | 内容と権限 |
 |---|---|
-| `students/{uid}/notificationSettings/current` | `enabled`、`deliveryOwner: none/extension/cloud`、正の整数`version`、`timeZone: Asia/Tokyo`、`morningTime: 07:30`、`recipientUid`、`migrationState: not-started/ready`、`updatedAt`。本人だけread。全client write deny。設定APIは下記。移行は別Issue。 |
+| `students/{uid}/notificationSettings/current` | `enabled`、`deliveryOwner: none/extension/cloud`、正の整数`version`、`timeZone: Asia/Tokyo`、`morningTime: 07:30`、`recipientUid`、`migrationState: not-started/ready`、任意の`cloudSince`（UTC ISO日時）、`updatedAt`。本人だけread。全client write deny。設定APIは下記。 |
 | `students/{uid}/notificationStatus/current` | `state`、`settingsVersion`、`updatedAt`、`lastAcceptedAt`、`errorCode`。本人だけread、server write。API受理は受信トレイへの到着確認ではない。支援担当の共有対象に含めない。 |
 | `students/{uid}/notificationDeliveries/{key}` | 対象・時間窓・予定の版・設定の版・状態・attempt・予約/開始/応答時刻。全client read/write deny。宛先・本文・認証情報・秘密の参照は保存しない。 |
 
-設定欠損・OFF・cloud以外・本人UID不一致・移行未完了・体験アカウントは対象外。宛先はFirebase Authの無効でなくメール確認済みの本人から取得し、リクエストから宛先を受け取らない。Issue #162でA1のsenderと本人の設定APIを接続する。拡張からの切替は別Issue。
+設定欠損・OFF・cloud以外・本人UID不一致・移行未完了・体験アカウントは対象外。宛先はFirebase Authの無効でなくメール確認済みの本人から取得し、リクエストから宛先を受け取らない。送信元と本人の宛先が利用可能なら、本人の有効化操作で切り替える（Issue #274）。
 
 `POST /api/internal/notifications/tick` は本文/queryなし。`NOTIFICATION_OIDC_AUDIENCE` と `NOTIFICATION_SCHEDULER_SERVICE_ACCOUNT` で指定した、GoogleのRS256署名・issuer・aud・有効期限・確認済みサービスアカウントを検証する。Firebase利用者tokenとSchedulerを名乗るheaderは使わない。既存APIのFirebase認証は維持する。許可したサービスアカウントのtokenを発行できる権限自体はCloud IAMで制限する必要があり、本PRで実設定は検証しない。
 
 `PUBLIC_WEB_ORIGIN` と上のOIDC設定がないと入口は503。既定はdry-run。実送信は `NOTIFICATION_SEND_ENABLED=true` に加えてsenderの接続が必要。接続条件は [deploy.md](deploy.md#専用gmailの通知準備issue-162実行はorange)。dry-runは候補数だけを返し、送信台帳・本人状態を変更しない。処理終了を待って200と `{ dryRun, candidates, attempted }` を返す。未認証401、不正本文/query400、未設定503、処理失敗500。応答はno-store、失敗は固定コードのみ。
 
 - 朝は日本時間07:30以上08:00未満、準備前は開始30分前以上・開始未満。翌日00時台の予定も前日中に選ぶ。朝のキーはUID・日本日付・morning、準備前はUID・planId・正規化した開始日時・reminderのJSONのSHA-256。設定/予定の版をキーに足さず、同じ日時に戻してもaccepted/unknownは再送しない。
+- `cloudSince`より前に時間窓が始まった通知は送らない（等しい時刻は含む）。朝はその日の07:30、準備前は開始30分前と比較する。切替後に始まる準備通知や次の朝は通常の選択条件で送る。`cloudSince`省略は手動移行済みとして従来どおり扱い、既存の送信記録による再送防止を維持する。不正な日時は対象なし。送信開始のtransactionでも再検査する。
 - `pending → reserved → sending → accepted/failed/unknown`。予約と送信開始と結果保存を別のtransactionにし、外部senderはtransactionの外だけで呼ぶ。予約のleaseは2分、attemptを照合して回収し、古いattemptは開始/結果保存できない。送信開始時に最新設定・版・体験プロフィール・課題・予定を同じtransactionで読み直し、不要はskipped、時間外はexpired。停止が先に確定した場合は開始しない。開始が先なら、その1通は停止後にも受理される可能性がある。
 - sendingのlease切れ、応答喪失、受理後の保存失敗はunknown。保存自体が失敗した場合はsendingを残し、後のtickでunknownにする。OFFになった利用者も回収対象。sending/unknownをpendingへ戻さない。failedは確実な未受理だけで、今回はfailed/skippedも自動再試行しない。未送信になる可能性を残す保守的な扱いで、exactly-onceを保証しない。
 - 送信直前の提出・取消・終了・準備完了・移動・通知停止を反映する。締切の瞬間は含み、直後は除く。日付のみは元のtimezoneの当日を含み、時刻を補わない。完了した準備の未提出課題は既存の「次は提出」を使う。メールには接続先ごとの最終成功時刻・一部取得/失敗・72時間以上/取得歴なし・PC停止中のLMS変更は未反映という案内を付ける。既存Webの鮮度表示は変更しない。
@@ -329,13 +330,13 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - 拡張は各Gmail POST前にこのGETを確認する。`cloud`・確認失敗・不正な応答なら送らない。記録なし・`none`・`extension` はサーバーの `enabled` にかかわらず、拡張の本人の同意に従う。確認後も本人・ローカルの同意・日付・準備の期限を再確認してから既存の予約とPOSTへ進む。
 - 旧 `GET /api/v1/digest` は、同じtransactionで通知設定を読み、`deliveryOwner: cloud` ならenabledにかかわらず403で本文を返さない。その他の既存の読み取り条件は維持する。
 - `GET /api/v1/digest/demo-preview` は、同じtransactionで本人に一致する体験学生プロフィールを必須とするメール見本。cloud設定でも表示できるが、実物の利用者・支援担当は403。`/demo-lms` はこの専用経路を使う。旧GETのqueryで見本の判定を切り替えられない。
-- いずれもno-store、未認証401、依存未設定503、内部失敗500、固定エラーのみ。送信や切替は行わない。端末停止・当日記録の引継ぎ・戻し方は [デプロイ手順](deploy.md#拡張のメールからクラウド通知へ移すissue-163) を正本とする。
+- いずれもno-store、未認証401、依存未設定503、内部失敗500、固定エラーのみ。送信や切替は行わない。手動切替時の端末停止・当日記録の引継ぎ・戻し方は [デプロイ手順](deploy.md#拡張のメールからクラウド通知へ移すissue-163) を正本とする。
 
-### 通知設定API（Issue #162、orangeの確認待ち）
+### 通知設定API
 
 - `GET/PUT /api/v1/notification-settings`。Firebase ID tokenを失効確認付きで検証し、そのUIDの設定だけを操作する。共有許可による代理操作はない。体験プロフィールがあるアカウントは403。queryはすべて拒否。
-- GETは `{ settings: NotificationSettings, status: NotificationStatus | null, availability }`。欠損時は保存せず、停止・owner none・移行前・version 1・updatedAt epochの既定値を返す。availabilityは `preparing/ready/authorization-required/migration-pending/recipient-unavailable`。送信元の準備、本人宛先、移行済みの順で判定する。宛先・送信元の秘密は応答に入れない。
-- PUTは1 KiB以下のJSON `{ enabled: boolean, version: 正の整数 }` のみ。UID・宛先・deliveryOwner・migrationStateは指定不可。有効化はavailability readyだけ。停止は送信元・宛先が利用できなくても可能。設定と体験プロフィールを同じtransactionで確認し、変更時にversionを1増やす。同じ値の再送は版と日時を変えない。古い版からの値変更は409。設定保存で送信状態や受理日時を作らない。
+- GETは `{ settings: NotificationSettings, status: NotificationStatus | null, availability }`。欠損時は保存せず、停止・owner none・移行前・version 1・updatedAt epochの既定値を返す。availabilityは `preparing/ready/authorization-required/recipient-unavailable`。送信元の準備、本人宛先の順で判定し、移行前でも両方が利用可能ならreadyとする。宛先・送信元の秘密は応答に入れない。
+- PUTは1 KiB以下のJSON `{ enabled: boolean, version: 正の整数 }` のみ。UID・宛先・deliveryOwner・migrationState・cloudSinceは指定不可。有効化はavailability readyだけ。移行前の有効化では、設定と体験プロフィールを同じtransactionで確認し、`enabled: true, deliveryOwner: cloud, migrationState: ready, cloudSince: サーバーでの切替日時`を同時に保存する。既存のcloud/readyの停止・再開ではcloudSinceの有無と値を維持する。停止は送信元・宛先が利用できなくても可能で、enabledだけをfalseにし、cloudから拡張に戻さない。変更時にversionを1増やす。同じ値の再送は版と日時を変えない。古い版からの値変更・切替は409。設定保存で送信状態や受理日時を作らない。
 - 成功200、未認証401、体験利用者403、不正入力400、競合・未準備409、サイズ超過413、JSON以外415、依存未接続503、内部失敗500。応答はno-store、エラーは固定コードのみ。画面は通信失敗を保存成功とせず、状態の再読取を案内する。
 
 

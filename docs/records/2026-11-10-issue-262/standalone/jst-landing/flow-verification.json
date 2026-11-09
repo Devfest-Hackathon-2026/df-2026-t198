@@ -1,0 +1,170 @@
+[
+  {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "stages": [
+      {
+        "stage": 1,
+        "elapsedMs": 1.6000000014901161,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 2,
+        "elapsedMs": 5013.60000000149,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 3,
+        "elapsedMs": 10021.900000002235,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 4,
+        "elapsedMs": 15030.10000000149,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 5,
+        "elapsedMs": 20037.10000000149,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 6,
+        "elapsedMs": 25039.60000000149,
+        "dimensions": {
+          "height": 800,
+          "viewport": 800,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      }
+    ],
+    "controls": "buttons, scoped arrows, horizontal swipes, vertical scroll, pause, replay, hover, exit",
+    "reducedDiagrams": 6,
+    "requests": 0,
+    "storageUnchanged": true
+  },
+  {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "stages": [
+      {
+        "stage": 1,
+        "elapsedMs": 1.199999999254942,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 2,
+        "elapsedMs": 5011.199999999255,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 3,
+        "elapsedMs": 10016.79999999702,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 4,
+        "elapsedMs": 15020.29999999702,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 5,
+        "elapsedMs": 20021.5,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      },
+      {
+        "stage": 6,
+        "elapsedMs": 25028.29999999702,
+        "dimensions": {
+          "height": 844,
+          "viewport": 844,
+          "contentFits": true,
+          "taskFits": true,
+          "twoLines": true,
+          "noHorizontalOverflow": true
+        }
+      }
+    ],
+    "controls": "buttons, scoped arrows, horizontal swipes, vertical scroll, pause, replay, hover, exit",
+    "reducedDiagrams": 6,
+    "requests": 0,
+    "storageUnchanged": true
+  }
+]

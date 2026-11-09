@@ -1,0 +1,51 @@
+{
+  "observations": [
+    {
+      "edition": "full",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "stages": [
+        "office",
+        "bedroom",
+        "consultation",
+        "meeting",
+        "morning",
+        "summary",
+        "eyecatch"
+      ],
+      "totalMs": 32400,
+      "autoplayFinished": true,
+      "soundPlayed": true,
+      "pauseReplayKeys": true,
+      "reducedFrames": 7,
+      "apiRequests": 0,
+      "storageUnchanged": true
+    },
+    {
+      "edition": "short",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "stages": [
+        "office",
+        "bedroom",
+        "consultation",
+        "meeting",
+        "morning"
+      ],
+      "totalMs": 25000,
+      "autoplayFinished": true,
+      "soundPlayed": true,
+      "pauseReplayKeys": true,
+      "reducedFrames": 5,
+      "apiRequests": 0,
+      "storageUnchanged": true
+    }
+  ],
+  "landingSeparate": true,
+  "defaultPausedMuted": true,
+  "narrowAspectRatio": "16:9"
+}

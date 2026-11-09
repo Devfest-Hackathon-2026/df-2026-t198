@@ -143,3 +143,9 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 ## 紹介ページの構成の参考（Issue #224）
 
 [株式会社ペンマークの企業サイト](https://corp.penmark.jp/)を、Sora提供の画面写しで確認し、見出し・余白・色面の配置だけを参考にした。ToDokuの既存の色・ロゴ・架空の画面を使用し、外部サイトの画像・写真・ロゴ・文章・コードは同梱していない。外部サイトの素材の再利用ライセンスは確認していないため、転載していない。
+
+## しくみの素材見本（Issue #262、2026-11-10）
+
+- **Open Peeps**：Pablo Stanleyによる人物のイラスト。[公式サイト](https://openpeeps.com/)にCC0と明記。人物の上半身・スマホを持つ姿勢・歩く姿勢と髪形のパスを、役ごとの1色のシルエットに加工した。
+- **react-peeps 0.1.10**：[CeamKrier/react-peeps](https://github.com/CeamKrier/react-peeps)、[npm](https://www.npmjs.com/package/react-peeps)。MIT、Copyright (c) 2020-present, Emre Çakır。作業ツリー外で `npm pack react-peeps` を展開し、必要なパスだけを [peeps-paths.tsx](../packages/web/src/features/landing/story/peeps-paths.tsx) に取り込んだ。複製元のMIT全文は隣接する [LICENSE](../packages/web/src/features/landing/story/LICENSE) に保持。パッケージへの依存は追加していない。
+- 机・ロゴなしのPC・時計・部屋・吹き出し・架空の画面は、この作品のSVGとして描いた。ToDokuのロゴは既存の `TodokuMark` を再利用した。

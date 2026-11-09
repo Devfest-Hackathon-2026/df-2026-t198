@@ -39,8 +39,8 @@ try {
     (data[name] || []).forEach((row, i) => batch.set(student.collection(name).doc(`fake-${i}`), row));
   }
   await batch.commit();
-  await student.collection('notificationSettings').doc('current').set({ enabled: false, deliveryOwner: 'cloud', version: 1,
-    timeZone: 'Asia/Tokyo', morningTime: '07:30', recipientUid: uid, migrationState: 'ready', updatedAt: new Date().toISOString() });
+  await student.collection('notificationSettings').doc('current').set({ enabled: false, deliveryOwner: 'extension', version: 1,
+    timeZone: 'Asia/Tokyo', morningTime: '07:30', recipientUid: uid, migrationState: 'not-started', updatedAt: new Date().toISOString() });
   await student.collection('notificationStatus').doc('current').delete();
   await page.goto(`${process.env.KADAI_WEB_ORIGIN}/student`);
   await page.getByRole('button', { name: 'Googleでログイン' }).waitFor();
@@ -51,7 +51,7 @@ try {
   if (phase === 'after') {
     await page.getByText('メール通知の設定', { exact: true }).click();
     const panel = page.getByRole('region', { name: 'メール通知の設定' });
-    await panel.getByText('クラウドからの通知：停止中', { exact: true }).waitFor();
+    await panel.getByText('メール通知：停止中', { exact: true }).waitFor();
     await panel.getByText('まだ送信の記録はありません。', { exact: true }).waitFor();
     let puts = 0;
     page.on('request', request => { if (request.url().endsWith('/api/v1/notification-settings') && request.method() === 'PUT') puts++; });
@@ -60,13 +60,22 @@ try {
       await route.continue();
     });
     await panel.getByRole('button', { name: '通知を有効にする' }).evaluate(button => { button.click(); button.click(); });
-    await panel.getByText('クラウドからの通知：有効', { exact: true }).waitFor();
+    await panel.getByText('メール通知：有効', { exact: true }).waitFor();
     assert.equal(puts, 1, 'double click issues one mutation');
-    assert.equal((await student.collection('notificationSettings').doc('current').get()).data().enabled, true);
+    const settings = (await student.collection('notificationSettings').doc('current').get()).data();
+    assert.equal(settings.enabled, true); assert.equal(settings.deliveryOwner, 'cloud');
+    assert.equal(settings.migrationState, 'ready'); assert.ok(Number.isFinite(Date.parse(settings.cloudSince)));
+    await panel.getByRole('status').getByText('朝のまとめは次の07:30から', { exact: false }).waitFor();
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 960 });
+      assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
+      await page.screenshot({ path: `${evidence}/cutover-${width}.png`, fullPage: true });
+    }
+    await page.setViewportSize({ width: 1280, height: 960 });
     await page.unroute('**/api/v1/notification-settings');
     await page.reload();
     await page.getByText('メール通知の設定', { exact: true }).click();
-    await panel.getByText('クラウドからの通知：有効', { exact: true }).waitFor();
+    await panel.getByText('メール通知：有効', { exact: true }).waitFor();
     await panel.getByText('まだ送信の記録はありません。', { exact: true }).waitFor();
     await page.route('**/api/v1/notification-settings', route => route.request().method() === 'PUT' ? route.abort('failed') : route.continue());
     await panel.getByRole('button', { name: '通知を停止する' }).click();
@@ -74,9 +83,11 @@ try {
     assert.equal(await panel.getByRole('button', { name: '通知を有効にする' }).count(), 0);
     await page.unroute('**/api/v1/notification-settings');
     await panel.getByRole('button', { name: '状態を更新' }).click();
-    await panel.getByText('クラウドからの通知：有効', { exact: true }).waitFor();
+    await panel.getByText('メール通知：有効', { exact: true }).waitFor();
     await panel.getByRole('button', { name: '通知を停止する' }).click();
-    await panel.getByText('クラウドからの通知：停止中', { exact: true }).waitFor();
+    await panel.getByText('メール通知：停止中', { exact: true }).waitFor();
+    const stopped = (await student.collection('notificationSettings').doc('current').get()).data();
+    assert.equal(stopped.enabled, false); assert.equal(stopped.deliveryOwner, 'cloud');
     for (const state of ['accepted', 'failed', 'unknown']) {
       await student.collection('notificationStatus').doc('current').set({ state, settingsVersion: 2,
         updatedAt: '2030-11-11T07:31:00+09:00', lastAcceptedAt: '2030-11-11T07:30:00+09:00',
@@ -96,8 +107,7 @@ try {
     assert.equal(await second.getByText('メール通知の設定', { exact: true }).count(), 0);
     await login(second, outsider);
     await second.getByText('メール通知の設定', { exact: true }).click();
-    await second.getByText('送信の切り替えが済むと有効にできます。', { exact: false }).waitFor();
-    assert.equal(await second.getByRole('button', { name: '通知を有効にする' }).isDisabled(), true);
+    assert.equal(await second.getByRole('button', { name: '通知を有効にする' }).isEnabled(), true);
     const accessCheck = async () => second.evaluate(async owner => {
       const { firebase } = await import('/src/shared/firebase.ts');
       const token = await firebase.auth.currentUser.getIdToken();

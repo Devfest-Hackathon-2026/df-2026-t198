@@ -10,12 +10,16 @@ import { MechanismSlides } from './features/landing/mechanism';
 import { useSessionAccess } from './shared/auth/session-access';
 
 const UiGallery = import.meta.env.DEV ? lazy(() => import('./shared/ui/gallery')) : null;
+const StorySlides = lazy(() => import('./features/landing/story/player'));
+const StoryAssetsPage = lazy(() => import('./features/landing/story/page'));
 
 export function App() {
   const path = usePathname();
   return <><NetworkProgress /><Route path={path} /></>;
 }
 function Route({ path }: { path: string }) {
+  if (path === '/slides/story') return <Suspense fallback={<p role="status">映像を開いています…</p>}><StorySlides /></Suspense>;
+  if (path === '/slides/story-assets') return <Suspense fallback={<p role="status">見本を開いています…</p>}><StoryAssetsPage /></Suspense>;
   if (path === '/slides/mechanism') return <MechanismSlides />;
   if (path === '/dev/ui' && UiGallery) return <Suspense fallback={<p role="status">見本を開いています…</p>}><UiGallery /></Suspense>;
   if (path === '/') return <LandingPage />;

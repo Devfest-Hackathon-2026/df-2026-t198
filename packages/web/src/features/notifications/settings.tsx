@@ -9,7 +9,6 @@ interface SettingsView { settings: NotificationSettings; status: NotificationSta
 const availabilityText: Record<string, string> = {
   preparing: '通知の送信元は準備中です。今は有効にできません。',
   'authorization-required': '送信元の接続をやり直す必要があります。運営が確認するまで通知を送れません。',
-  'migration-pending': 'クラウドからの通知は準備中です。送信の切り替えが済むと有効にできます。',
   'recipient-unavailable': 'ログインしたGoogleアカウントのメールアドレスを確認できません。今は有効にできません。',
 };
 const statusText: Record<string, string> = {
@@ -18,18 +17,23 @@ const statusText: Record<string, string> = {
   failed: '通知を送れませんでした。', unknown: '送信の結果が分かりません。重複を避けるため、この通知は自動で送り直しません。',
   skipped: '予定や設定が変わったため、この通知は送りませんでした。', expired: '通知する時刻を過ぎたため、この通知は送りませんでした。',
 };
+const savedText = {
+  cutover: '通知を有効にしました。朝のまとめは次の07:30から、今日やることがある日に送ります。切り替え前に通知の時刻を過ぎた分は送りません。',
+  enabled: '通知を有効にしました。',
+  stopped: '通知を停止しました。拡張機能からも送りません。',
+};
 const dateText = (value: string) => new Date(value).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', hourCycle: 'h23' });
 
 export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | 'getIdToken'> }) {
   const [view, setView] = useState<SettingsView | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<keyof typeof savedText | null>(null);
   const locked = useRef(false);
   const active = useRef(false);
   const request = async (input?: { enabled: boolean; version: number }) => {
     if (locked.current) return;
-    locked.current = true; setBusy(true); setError(''); setSaved(false);
+    locked.current = true; setBusy(true); setError(''); setSaved(null);
     try {
       const token = await user.getIdToken();
       const response = await serverFetch('/api/v1/notification-settings', {
@@ -48,7 +52,11 @@ export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | '
         return;
       }
       const next = await response.json() as SettingsView;
-      if (active.current) { setView(next); setSaved(!!input); }
+      if (active.current) {
+        setView(next);
+        setSaved(!input ? null : !next.settings.enabled ? 'stopped' :
+          next.settings.cloudSince !== view?.settings.cloudSince ? 'cutover' : 'enabled');
+      }
     } catch {
       if (active.current) {
         if (input) setView(null);
@@ -79,7 +87,7 @@ export function NotificationSettingsPanel({ user }: { user: Pick<User, 'uid' | '
         {view.status && <p className="muted">通知の記録：{dateText(view.status.updatedAt)} 時点（日本時間）</p>}
       </>}
       <Button className="plain-button" busy={busy} busyLabel="確認中…" onClick={() => void request()}>状態を更新</Button>
-      {saved && <p role="status">通知の設定を保存しました。</p>}
+      {saved && <p role="status">{savedText[saved]}</p>}
       {error && <p role="alert">{error}</p>}
     </section>
   </details>;

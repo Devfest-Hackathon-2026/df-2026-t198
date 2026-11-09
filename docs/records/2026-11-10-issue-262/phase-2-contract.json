@@ -1,0 +1,101 @@
+{
+  "schema_version": 2,
+  "root": "../../..",
+  "recipient": "初めてToDokuを見る人と、映像を使うSora",
+  "purpose": "LMSの締切変更が学生の閲覧をきっかけに共有され、面談で準備を決める流れを追える。",
+  "conditions": [
+    "5場面・まとめ・ロゴ",
+    "紹介ページ1280/390と単独1280×720",
+    "動きを減らす設定と任意移動"
+  ],
+  "assumptions": [
+    "架空データだけ",
+    "ローカルのビルド済みpreviewを起動済み",
+    "既存Playwrightを指定"
+  ],
+  "request": {
+    "reference": "Issue #262と合意済み第2段階の要件",
+    "source_refs": [
+      "docs/records/2026-11-10-issue-262/phase-2-plan.md"
+    ]
+  },
+  "plan_alignment": {
+    "status": "checked",
+    "reason": "しくみの映像・素材・操作とその記録に限定し、製品の他画面とデプロイは変更しない。"
+  },
+  "artifact_paths": [
+    "packages/web/src/features/landing/mechanism.tsx",
+    "packages/web/src/features/landing/mechanism.css",
+    "packages/web/src/features/landing/story",
+    "packages/web/src/shared/styles/tokens.css",
+    "out/issue-262/mechanism.mp4",
+    "docs/records/2026-11-10-issue-262/recording-proof.json"
+  ],
+  "verification_paths": [
+    "packages/web/tests/verify-landing.mjs",
+    "packages/web/tests/landing-flow.browser.mjs",
+    "packages/web/tests/landing-chapters.browser.mjs",
+    "packages/web/tests/mechanism-story.test.tsx",
+    "packages/web/tests/story-assets.browser.mjs",
+    "scripts/record-mechanism.mjs"
+  ],
+  "intent_paths": [
+    "docs/records/2026-11-10-issue-262/phase-2-plan.md"
+  ],
+  "requirements": [
+    {
+      "id": "flow",
+      "operation": "全場面の進行・時計・入室・予定・操作・静止一覧をブラウザで確かめて撮る。",
+      "expected_result": "順序と書き換えが一致し、一時停止・任意移動と両幅で表示が崩れない。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "layout",
+      "operation": "紹介ページの全章を1280/390で開く。",
+      "expected_result": "しくみの変更後も各章が一画面に収まり、横にはみ出さない。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "reading",
+      "operation": "画像と音声つきMP4を確認する。",
+      "expected_result": "人物の行動・締切変更・一緒に決める準備が読め、時計と道具が自然に置かれ、音と動作が対応する。",
+      "verification": "semantic",
+      "review_evidence": [
+        "両幅の全場面",
+        "置時計の拡大",
+        "録画フレームと音声トラックの確認"
+      ],
+      "evidence_required": true
+    }
+  ],
+  "commands": [
+    {
+      "id": "browser-flow",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "flow"
+      ],
+      "covers": [
+        "flow"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    },
+    {
+      "id": "browser-layout",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-landing.mjs",
+        "layout"
+      ],
+      "covers": [
+        "layout"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    }
+  ]
+}
