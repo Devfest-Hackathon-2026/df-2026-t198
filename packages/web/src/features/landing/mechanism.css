@@ -1,73 +1,117 @@
 .landing .mechanism { position: relative; }
-.landing .flow-source { display: grid; grid-template-columns: .85fr 44px 1.3fr; align-items: center; }
-.landing .flow-label { font: 12px/1.5 var(--mono); }
-.landing .flow-teacher { padding: 24px; border: 1px solid currentColor; border-radius: var(--radius-md); }
-.landing .flow-teacher h3 { margin: 8px 0; }
-.landing .flow-notice { min-height: 3.6em; font-size: 15px; }
-.landing .flow-teacher.is-issued { background: var(--paper); color: var(--ink); }
-.landing .flow-arrow { text-align: center; font-size: 26px; }
-.landing .flow-lms { background: var(--sheet); color: var(--ink); border: 1px solid var(--line-strong); border-radius: var(--radius-md); overflow: hidden; }
-.landing .flow-lms-header { display: flex; justify-content: space-between; gap: 12px; padding: 8px 16px; background: var(--accent); color: var(--on-ink); font-size: 13px; }
-.landing .flow-lms-body { display: grid; gap: 6px; padding: 12px 16px; font-size: 14px; }
-.landing .flow-lms-notice { padding-bottom: 6px; border-bottom: 1px solid var(--rule); font-size: 12px; }
-.landing .flow-open { padding: 4px 10px; background: var(--done-soft); font-size: 12px; }
-.landing .flow-open.is-open { background: var(--accent-soft); color: var(--accent); }
-.landing .flow-deadline { display: flex; flex-wrap: wrap; gap: 2px 8px; font: 12px/1.6 var(--mono); }
+.landing .flow-progress { display: flex; align-items: center; gap: 16px; min-height: 40px; margin-bottom: 12px; font: 13px/1.6 var(--jp); }
+.landing .flow-progress > span:first-child { min-width: 3em; font-family: var(--mono); }
+.landing .flow-dots { display: flex; gap: 7px; }
+.landing .flow-dots i { width: 5px; height: 5px; border: 1px solid currentColor; border-radius: 50%; }
+.landing .flow-dots i.is-past { background: currentColor; }
+.landing .flow-status { margin-left: auto; }
+.landing .flow-board { position: relative; height: 400px; }
+.landing .flow-card { position: absolute; top: 0; left: 0; box-sizing: border-box; width: 100%; height: 100%; display: grid; place-items: center; padding: 32px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--paper); color: var(--ink); opacity: 0; transform: scale(.86); visibility: hidden; transition: opacity 550ms ease, transform 550ms ease, left 550ms ease, top 550ms ease, width 550ms ease, height 550ms ease, visibility 550ms; }
+.landing .flow-card.is-active { opacity: 1; transform: scale(1); visibility: visible; z-index: 1; }
+.landing .flow-content { box-sizing: border-box; width: min(100%, 720px); min-width: 0; }
+.landing .flow-label { display: block; margin-bottom: 12px; font: 13px/1.5 var(--mono); }
+.landing .flow-card h3 { margin-bottom: 20px; font-size: 32px; }
+.landing .flow-notice { max-width: 24em; font-size: 28px; line-height: 1.8; }
+.landing .flow-teacher .flow-content { padding-left: 28px; border-left: 4px solid var(--accent); }
+.landing .flow-lms .flow-content { border: 1px solid var(--rule); background: var(--sheet); }
+.landing .flow-lms-header { display: flex; justify-content: space-between; gap: 12px; padding: 12px 20px; background: var(--accent); color: var(--on-ink); font-size: 14px; }
+.landing .flow-lms-body { display: grid; gap: 12px; padding: 20px; font-size: 18px; }
+.landing .flow-lms-body h3 { margin: 0; }
+.landing .flow-lms-body .flow-label { margin: 0; }
+.landing .flow-lms-notice { padding-bottom: 10px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+.landing .flow-deadline { display: flex; flex-wrap: wrap; gap: 2px 10px; font: 18px/1.6 var(--mono); }
 .landing .flow-deadline s { color: var(--ink-muted); }
 .landing .flow-deadline s + strong { color: var(--change-text); }
-.landing .flow-bridge { display: flex; align-items: center; gap: 16px; padding: 14px 0; font-size: 13px; }
-.landing .flow-bridge > span:first-child { font-size: 24px; }
-.landing .flow-status { margin-left: auto; }
-.landing .flow-destinations { display: grid; grid-template-columns: 1fr 1fr .9fr; gap: 16px; }
-.landing :is(.flow-schedule, .flow-supporter) { min-width: 0; background: var(--paper); color: var(--ink); border-radius: var(--radius-md); padding: 14px; }
-.landing .flow-destinations h3 { font-size: 16px; margin-bottom: 12px; }
-.landing .flow-days { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font: 11px/1.6 var(--mono); }
+.landing .flow-open { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 24px; background: var(--accent-soft); color: var(--accent-text); font-size: 24px; }
+.landing .flow-schedules { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.landing .flow-schedule { min-width: 0; }
+.landing .flow-schedule h4 { margin: 0 0 12px; font-size: 18px; }
+.landing .flow-days { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font: 13px/1.6 var(--mono); }
 .landing .flow-days span { padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
-.landing .flow-track { position: relative; padding-top: 8px; height: 92px; }
-.landing .flow-event { box-sizing: border-box; width: calc(50% - 4px); height: 84px; padding: 8px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: 11px; line-height: 1.5; transition: transform 1200ms ease-in-out; }
-.landing .flow-event > span:first-child { display: block; margin-bottom: 4px; }
+.landing .flow-track { position: relative; padding-top: 8px; height: 128px; }
+.landing .flow-event { box-sizing: border-box; width: calc(50% - 4px); height: 128px; padding: 8px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: 13px; line-height: 1.5; transition: transform 1200ms ease-in-out; }
+.landing .flow-event > span:first-child { display: block; margin-bottom: 6px; }
+.landing .flow-event .flow-deadline { font-size: 12px; }
 .landing .is-moved .flow-event { transform: translateX(calc(100% + 8px)); }
-.landing .flow-event .flow-deadline { font-size: 10px; }
-.landing .flow-supporter { display: flex; flex-direction: column; gap: 8px; border: 2px solid transparent; font-size: 12px; }
-.landing .flow-supporter h3 { margin: 0; }
-.landing .flow-supporter.is-updated { border-color: var(--change-text); }
+.landing .flow-change { display: grid; gap: 16px; padding: 24px; border: 2px solid var(--line-strong); font-size: 22px; }
+.landing .flow-change.is-updated { border-color: var(--change-text); }
 .landing .flow-replay { display: block; margin: 12px 0 0 auto; min-height: var(--target); padding: 4px 8px; border: 0; background: transparent; color: inherit; font: 13px var(--jp); text-decoration: underline; cursor: pointer; }
 .landing .flow-replay:disabled { opacity: .55; cursor: default; }
 .landing .flow-replay[hidden] { display: none; }
-/* Emphasis: the part that just changed grows a little and returns. */
-@keyframes flow-pop { 0%, 100% { transform: scale(1); } 45% { transform: scale(var(--pop, 1.05)); } }
-.landing .flow-pulse { animation: flow-pop 900ms ease-in-out; transform-origin: center; }
-.landing .flow-deadline.flow-pulse { --pop: 1.3; display: inline-flex; transform-origin: left center; }
-.landing .flow-lms-notice.flow-pulse, .landing .flow-open.flow-pulse { --pop: 1.08; transform-origin: left center; }
-/* The schedule waits for its event to finish sliding before it pops. */
-.landing .flow-schedule.flow-pulse { --pop: 1.04; animation-delay: 1200ms; }
-.landing .flow-schedule .flow-deadline.flow-pulse { animation-delay: 1200ms; }
-.landing .flow-supporter.flow-pulse { --pop: 1.05; }
-@media (prefers-reduced-motion: reduce) { .landing .flow-pulse { animation: none; } }
+/* The same five cards shrink into their places; events keep their DOM identity. */
+.landing .is-overview .flow-card { left: var(--x); top: var(--y); width: var(--w); height: var(--h); padding: 14px; opacity: 1; transform: scale(1); visibility: visible; }
+.landing .flow-teacher { --x: 0%; --y: 0%; --w: 30%; --h: 44%; }
+.landing .flow-lms { --x: 32%; --y: 0%; --w: 36%; --h: 44%; }
+.landing .flow-import { --x: 70%; --y: 0%; --w: 30%; --h: 44%; }
+.landing .flow-student { --x: 0%; --y: 48%; --w: 64%; --h: 52%; }
+.landing .flow-supporter { --x: 66%; --y: 48%; --w: 34%; --h: 52%; }
+.landing .is-overview .flow-label { margin-bottom: 6px; font-size: 11px; }
+.landing .is-overview .flow-card h3 { margin-bottom: 8px; font-size: 17px; }
+.landing .is-overview .flow-notice { font-size: 15px; }
+.landing .is-overview .flow-teacher .flow-content { padding-left: 12px; }
+.landing .is-overview .flow-lms-header { padding: 4px 8px; font-size: 10px; }
+.landing .is-overview .flow-lms-body { padding: 8px; gap: 4px; font-size: 11px; }
+.landing .is-overview .flow-lms-body h3 { display: none; }
+.landing .is-overview .flow-lms-notice { padding-bottom: 4px; font-size: 10px; }
+.landing .is-overview .flow-deadline { font-size: 12px; }
+.landing .is-overview .flow-open { padding: 12px; gap: 8px; font-size: 14px; }
+.landing .is-overview .flow-student .flow-content { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; }
+.landing .is-overview .flow-student :is(.flow-label, h3) { margin: 0; }
+.landing .is-overview .flow-schedules { grid-column: 1 / -1; gap: 16px; margin-top: 8px; }
+.landing .is-overview .flow-schedule h4 { margin-bottom: 4px; font-size: 13px; }
+.landing .is-overview .flow-days { font-size: 11px; }
+.landing .is-overview .flow-days span { padding-bottom: 4px; }
+.landing .is-overview .flow-track { height: 80px; }
+.landing .is-overview .flow-event { height: 80px; font-size: 11px; }
+.landing .is-overview .flow-event .flow-deadline { font-size: 10px; }
+.landing .is-overview .flow-change { gap: 8px; padding: 12px; font-size: 14px; }
 @media (max-width: 700px) {
-  .landing .flow-source { grid-template-columns: 1fr; gap: 8px; }
-  .landing .flow-teacher { padding: 10px 12px; }
-  .landing .flow-teacher h3 { display: inline; margin: 0 0 0 12px; font-size: 14px; }
-  .landing .flow-notice { min-height: 1.8em; font-size: 12px; }
-  .landing .flow-arrow { display: none; }
-  .landing .flow-lms-header { padding: 6px 12px; font-size: 11px; }
-  .landing .flow-lms-body { gap: 4px; padding: 8px 12px; font-size: 12px; }
-  .landing .flow-lms-body .flow-label { display: none; }
-  .landing .flow-lms-notice, .landing .flow-open { font-size: 11px; }
-  .landing .flow-bridge { flex-wrap: wrap; gap: 4px 12px; padding: 8px 0; font-size: 11px; }
-  .landing .flow-status { flex-basis: 100%; margin: 0; min-height: 1.8em; }
-  .landing .flow-destinations { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .landing .flow-schedule { padding: 10px 8px; }
-  .landing .flow-destinations h3 { font-size: 12px; margin-bottom: 8px; }
-  .landing .flow-days { gap: 4px; font-size: 9px; }
-  .landing .flow-event { width: calc(50% - 2px); height: 108px; padding: 4px; font-size: 10px; }
-  .landing .flow-event .flow-deadline { font-size: 9px; }
-  .landing .flow-track { height: 108px; }
-  .landing .is-moved .flow-event { transform: translateX(calc(100% + 4px)); }
-  .landing .flow-supporter { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 8px 10px; font-size: 10px; }
-  .landing .flow-supporter h3 { margin: 0; }
-  .landing .flow-replay { margin-top: 4px; }
+  .landing .flow-progress { flex-wrap: wrap; gap: 6px 12px; min-height: 56px; font-size: 12px; }
+  .landing .flow-status { flex-basis: 100%; margin: 0; }
+  .landing .flow-board { height: 500px; }
+  .landing .flow-card { padding: 20px; }
+  .landing .flow-card h3 { font-size: 24px; }
+  .landing .flow-notice { font-size: 24px; }
+  .landing .flow-lms-header { padding: 8px 12px; font-size: 12px; }
+  .landing .flow-lms-body { padding: 16px 12px; font-size: 16px; }
+  .landing .flow-open { flex-direction: column; padding: 20px; font-size: 20px; }
+  .landing .flow-schedules { grid-template-columns: 1fr; gap: 24px; }
+  .landing .flow-schedule h4 { font-size: 15px; }
+  .landing .flow-track, .landing .flow-event { height: 108px; }
+  .landing .flow-event { font-size: 12px; }
+  .landing .flow-event .flow-deadline { font-size: 11px; }
+  .landing .flow-change { padding: 16px; font-size: 18px; }
+  .landing .is-overview .flow-card { padding: 10px; }
+  .landing .flow-teacher { --x: 0%; --y: 0%; --w: 48%; --h: 28%; }
+  .landing .flow-lms { --x: 51%; --y: 0%; --w: 49%; --h: 28%; }
+  .landing .flow-import { --x: 0%; --y: 30%; --w: 100%; --h: 15%; }
+  .landing .flow-student { --x: 0%; --y: 47%; --w: 100%; --h: 32%; }
+  .landing .flow-supporter { --x: 0%; --y: 81%; --w: 100%; --h: 19%; }
+  .landing .is-overview .flow-card h3 { font-size: 13px; margin-bottom: 4px; }
+  .landing .is-overview .flow-label { font-size: 10px; margin-bottom: 4px; }
+  .landing .is-overview .flow-notice { font-size: 12px; }
+  .landing .is-overview .flow-teacher .flow-content { padding-left: 8px; }
+  .landing .is-overview .flow-lms-header { font-size: 9px; padding: 3px 4px; }
+  .landing .is-overview .flow-lms-header span, .landing .is-overview .flow-lms-notice { display: none; }
+  .landing .is-overview .flow-lms-body { padding: 4px; font-size: 10px; }
+  .landing .is-overview .flow-lms .flow-deadline { font-size: 10px; }
+  .landing .is-overview .flow-open { flex-direction: row; padding: 4px 8px; font-size: 12px; }
+  .landing .is-overview :is(.flow-import, .flow-student) .flow-content { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; }
+  .landing .is-overview :is(.flow-import, .flow-student) :is(.flow-label, h3) { margin: 0; }
+  .landing .is-overview .flow-import .flow-open { grid-column: 1 / -1; margin-top: 4px; padding: 0; }
+  .landing .is-overview .flow-schedules { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .landing .is-overview .flow-schedule h4 { font-size: 11px; }
+  .landing .is-overview .flow-days { font-size: 9px; }
+  .landing .is-overview .flow-track { padding-top: 4px; height: 66px; }
+  .landing .is-overview .flow-event { height: 66px; padding: 4px; font-size: 9px; }
+  .landing .is-overview .flow-event .flow-deadline { font-size: 9px; }
+  .landing .is-overview .flow-event > span:first-child { margin-bottom: 2px; }
+  .landing .is-overview .flow-change { border-width: 0; border-left-width: 2px; padding: 0 8px; gap: 2px; font-size: 11px; }
+  .landing .is-overview .flow-supporter .flow-content { display: grid; grid-template-columns: 1fr 1.1fr; column-gap: 8px; }
+  .landing .is-overview .flow-supporter .flow-label { grid-column: 1; }
+  .landing .is-overview .flow-supporter h3 { grid-column: 1; }
+  .landing .is-overview .flow-change { grid-column: 2; grid-row: 1 / 3; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .landing .flow-event { transition: none; }
+  .landing .flow-card, .landing .flow-event { transition: none; }
 }

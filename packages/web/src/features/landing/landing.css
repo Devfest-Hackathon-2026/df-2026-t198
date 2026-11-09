@@ -50,7 +50,7 @@ html.landing-scroll { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
 .landing .how-section { background: var(--accent); color: var(--white); }
 .landing .how-section .eyebrow { color: inherit; }
 .landing .people-section { background: var(--surface); }
-.landing .try-section { background: var(--paper); }
+.landing .try-section { background: var(--accent-soft); }
 .landing .start-section { background: var(--ink); color: var(--paper); }
 .landing .start-section .eyebrow { color: inherit; }
 .landing .privacy-section { background: var(--accent-soft); }
@@ -71,16 +71,15 @@ html.landing-scroll { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
 .landing .close-shot { min-height: var(--target); padding: 8px 20px; border: 1px solid var(--ink); border-radius: 100px; background: var(--paper); color: var(--ink); font: inherit; cursor: pointer; }
 .landing .shot-dialog img { display: block; width: 100%; height: auto; }
 html.landing-scroll:has(dialog[open]) { overflow: hidden; }
-.landing .trial-entry { padding: 56px; background: var(--white); border-radius: var(--radius-md); }
-.landing .trial-launch { display: flex; align-items: center; gap: 32px; margin-top: 0; }
-.landing .trial-launch h3 { font-size: 32px; }
+.landing .trial-entry { padding: 40px 32px; border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.landing .trial-launch { display: flex; align-items: center; gap: 32px; margin-top: 0; justify-content: center; }
 .landing .trial-entry .demo-login { margin: 0; border: 0; padding: 0; background: transparent; }
 .landing .trial-entry .demo-login button { min-height: 64px; padding: 14px 32px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 100px; font: 700 17px var(--jp); }
 /* One entry opens the shared student/supporter experience in /demo-lms. */
 .landing .trial-entry .demo-login button:nth-of-type(2) { display: none; }
 .landing .trial-entry:has(.demo-login) .shared-fallback { display: none; }
 .landing .trial-entry .shared-fallback { min-height: 64px; font-size: 17px; }
-.landing .judge-guide { margin-top: 24px; font-size: 13px; color: var(--muted); }
+.landing .judge-guide { margin-top: 24px; font-size: 13px; color: var(--muted); text-align: center; }
 .landing .judge-link { text-decoration: underline; }
 .landing .setup-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; list-style: none; padding: 0; margin: 0 0 36px; }
 .landing .setup-steps li { display: grid; align-content: start; justify-items: start; gap: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
@@ -100,7 +99,26 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
 .landing .chapter-nav a[aria-current]::after { background: var(--ink); }
 .landing .chapter-nav a span { display: none; position: absolute; right: 28px; width: max-content; padding: 4px 12px; background: var(--paper); font-size: 12px; }
 .landing .chapter-nav a:is(:hover, :focus-visible) span { display: block; }
+/* The people chapter pairs each role with a short label and a visible product detail. */
+.landing .person-heading { min-height: 84px; }
+.landing .person-heading p { margin-top: 8px; font-size: 16px; }
+.landing .person-mail { display: grid; grid-template-columns: auto 1fr; gap: 2px 16px; margin-top: 14px; padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--white); font-size: 12px; }
+.landing .person-mail strong { font-size: 15px; }
+.landing .person-mail > span:last-child { grid-column: 2; }
+.landing .try-section h2 { font-size: clamp(48px, 6vw, 80px); }
+.landing .trial-preview { display: flex; align-items: center; gap: 20px; padding: 32px; background: var(--ink); color: var(--paper); border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.landing .trial-preview .todoku-logo { margin-right: auto; font-size: 40px; color: var(--paper); }
+.landing .trial-preview > span:not(.todoku-logo) { padding-left: 16px; border-left: 1px solid var(--paper); font-size: 14px; }
 @media (max-width: 700px) {
+  .landing .person-heading { min-height: 0; }
+  .landing .person-heading p { margin-top: 4px; font-size: 13px; }
+  .landing .people-section .product-grid { gap: 22px; }
+  .landing .people-section .shot { height: 17svh; }
+  .landing .person-mail { margin-top: 10px; padding: 8px 12px; gap: 0 12px; font-size: 10px; }
+  .landing .person-mail strong { font-size: 13px; }
+  .landing .trial-preview { flex-wrap: wrap; gap: 12px; padding: 24px; }
+  .landing .trial-preview .todoku-logo { flex-basis: 100%; margin-bottom: 12px; }
+  .landing .trial-preview > span:not(.todoku-logo) { padding-left: 10px; font-size: 11px; }
   .landing-header { padding: 24px; flex-wrap: wrap; }
   .landing-header .todoku-logo { font-size: 26px; }
   .landing-header nav { padding: 12px 18px; gap: 18px; flex-wrap: wrap; font-size: 12px; }
@@ -126,8 +144,7 @@ html.landing-scroll:has(dialog[open]) { overflow: hidden; }
   .landing .section-heading { margin-bottom: 22px; }
   .landing .setup-steps, .landing .privacy-list { grid-template-columns: minmax(0, 1fr); gap: 36px; }
 
-  .landing .trial-entry { padding: 32px 24px; }
-  .landing .trial-launch h3 { font-size: 24px; }
+  .landing .trial-entry { padding: 28px 24px; }
   .landing .trial-launch { flex-direction: column; align-items: stretch; gap: 14px; margin-top: 0; }
   .landing .trial-entry .demo-login button { width: 100%; padding-inline: 20px; }
   .landing .judge-guide { margin-top: 22px; line-height: 1.8; }

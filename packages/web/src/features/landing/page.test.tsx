@@ -59,3 +59,15 @@ it('opens both synthetic screenshots in named dialogs instead of navigating to a
     expect(html).toContain(`aria-label="${label}を拡大する"`);
   }
 });
+
+it('introduces the people before the mechanism and ends with the trial entry', () => {
+  const html = renderToStaticMarkup(<LandingPage />);
+  const main = html.slice(html.indexOf('<main>'), html.indexOf('</main>'));
+  expect([...main.matchAll(/<section[^>]+id="([^"]+)"/g)].map(match => match[1]))
+    .toEqual(['home', 'people', 'how', 'start', 'privacy', 'try']);
+  expect(main.match(/class="trial-entry"/g)).toHaveLength(1);
+  expect(main).toContain('時間割・カレンダーの締切と朝のメール');
+  expect(main).toContain('前回の面談から変わった課題');
+  expect(main).toContain('授業ごとの課題と締切をまとめ、その日にやることを毎朝メールで届けます。');
+  expect(html.match(/class="flow-card /g)).toHaveLength(5);
+});
