@@ -45,6 +45,7 @@ try {
     await page.evaluate(() => globalThis.scrollTo(0, 0));
     await page.waitForTimeout(600);
     await page.waitForFunction(() => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === '#home');
+    await page.waitForFunction(() => Math.abs(globalThis.scrollY) < 1);
     assert.equal(await page.locator('.landing-home').isVisible(), true);
     assert.equal(await page.locator('.landing-home').evaluate(el => el.getBoundingClientRect().top >= 0), true, 'home logo remains in the opening viewport');
     await page.screenshot({ path: `${evidence}/hero-${width}.png` });
