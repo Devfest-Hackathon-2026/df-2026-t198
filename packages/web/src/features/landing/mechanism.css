@@ -27,17 +27,15 @@
 .scene-mail rect { fill: var(--accent-soft); }
 .scene-envelope { fill: none; stroke: var(--accent); stroke-width: 3; }
 .scene-mail { animation: mechanism-mail 1s ease-in-out both; }
-.flow-task { position: absolute; left: 5%; top: 20%; width: 43%; box-sizing: border-box; padding: 12px; border: 2px solid var(--accent); border-radius: 10px; background: var(--white); color: var(--ink); font-size: 12px; line-height: 1.5; box-shadow: 4px 5px 0 var(--surface); transition: left 1s ease-in-out, top 1s ease-in-out, transform 1s ease-in-out; }
+.flow-task { position: absolute; left: 39.5%; top: 4%; width: 22%; box-sizing: border-box; padding: 10px; border: 2px solid var(--accent); border-radius: 10px; background: var(--white); color: var(--ink); font-size: 12px; line-height: 1.5; box-shadow: 4px 5px 0 var(--surface); transition: left 1s ease-in-out, top 1s ease-in-out, transform 1s ease-in-out; }
 .flow-task > span { display: block; margin-bottom: 4px; color: var(--muted); }
 .flow-task strong { display: block; font-size: clamp(12px, 1.25vw, 17px); }
 .flow-task strong span { display: block; }
 .flow-task-date { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-family: var(--mono); }
 .flow-task-date b { color: var(--accent-text); }
-.flow-scene-2 .flow-task { top: 61%; }
-.flow-scene-3 .flow-task { left: 29%; top: 66%; transform: scale(1.02); }
-.flow-scene-4 .flow-task { left: 29%; top: 40%; }
-.flow-scene-5 .flow-task { left: 53%; top: 43%; }
-.flow-scene-6 .flow-task { left: 5%; top: 40%; }
+/* The card waits in the empty space next to the device in focus, so it never covers a device, the hub or a label. */
+.flow-scene-2 .flow-task, .flow-scene-4 .flow-task, .flow-scene-6 .flow-task { left: 41%; top: 68%; }
+.flow-scene-3 .flow-task { transform: scale(1.02); }
 .flow-copy { min-width: 0; color: var(--white); }
 .flow-number { font: 500 16px/1.5 var(--mono); }
 .mechanism .flow-status h3 { margin: 16px 0; font-size: clamp(21px, 2.2vw, 30px); line-height: 1.5; }
@@ -70,7 +68,11 @@
   .flow-task { padding: 8px; font-size: 10px; }
   .flow-task strong { font-size: 12px; }
   .flow-task-date { gap: 6px; font-size: 10px; }
-  .flow-scene-3 .flow-task { top: 60%; }
+  .flow-task { left: 38.5%; width: 25%; padding: 4px 5px; }
+  .flow-task > span, .flow-task strong span { display: none; }
+  .flow-task strong { font-size: 10px; }
+  .flow-task-date { gap: 4px; margin-top: 2px; font-size: 9px; }
+  .flow-scene-2 .flow-task, .flow-scene-4 .flow-task, .flow-scene-6 .flow-task { left: 40%; }
   .flow-copy { padding-inline: 2px; }
   .mechanism .flow-status h3 { margin: 8px 0; font-size: 22px; }
   .mechanism .flow-description { font-size: 13px; line-height: 1.8; }
@@ -87,10 +89,10 @@
 }
 /* Keep the recording composition at 1280×720; resize the complete canvas on small screens. */
 .mechanism-slides .flow-slide { grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 32px; }
-.mechanism-slides .flow-task { padding: 12px; font-size: 12px; }
+.mechanism-slides .flow-task { left: 39.5%; width: 22%; padding: 10px; font-size: 12px; }
+.mechanism-slides .flow-scene-2 .flow-task, .mechanism-slides .flow-scene-4 .flow-task, .mechanism-slides .flow-scene-6 .flow-task { left: 41%; }
 .mechanism-slides .flow-task strong { font-size: 17px; }
 .mechanism-slides .flow-task-date { gap: 10px; font-size: 12px; }
-.mechanism-slides .flow-scene-3 .flow-task { top: 66%; }
 .mechanism-slides .flow-status h3 { margin: 16px 0; font-size: 30px; }
 .mechanism-slides .flow-description { font-size: 14px; line-height: 1.9; }
 .mechanism-slides .flow-controls { margin-top: 28px; }
