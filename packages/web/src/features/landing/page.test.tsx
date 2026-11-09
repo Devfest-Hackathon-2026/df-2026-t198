@@ -70,8 +70,9 @@ it('introduces the people before the mechanism and ends with the trial entry', (
   expect(main).toContain('次にやることを一緒に決められます。');
   expect(main).toContain('授業ごとの課題と締切を時間割にまとめ、支援担当と共有します。');
   expect(html.match(/class="flow-scene"/g)).toHaveLength(1);
-  expect(html.match(/data-task="report"/g)).toHaveLength(1);
+  expect(html.match(/class="node-body"/g)).toHaveLength(5);
+  expect(html).not.toContain('class="flow-task"');
   const progress = html.slice(html.indexOf('role="progressbar"'));
-  expect(progress.match(/<i /g)).toHaveLength(6);
+  expect(progress.match(/<i>/g)).toHaveLength(6);
   for (const label of ['前の段へ', '次の段へ', '一時停止する']) expect(html).toContain(`aria-label="${label}"`);
 });
