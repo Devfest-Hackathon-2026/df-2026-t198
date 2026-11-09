@@ -173,3 +173,30 @@ it('shows the mail state: receiving, not ready with its reason, and a failed che
     expect(failed.mail.request).toHaveBeenCalledWith();
   } finally { await failed.close(); }
 });
+
+it('does not say "receiving" while the setting is on but mail cannot go out', async () => {
+  for (const [availability, reason] of [['preparing', '通知の送信元は準備中です。今はメールを送れません。'],
+    ['authorization-required', '運営が確認するまで、メールを送れません。'], ['recipient-unavailable', '今はメールを送れません。']]) {
+    const view = await mount({ state: 'connected', mail: mailState({}, availability, true) });
+    try {
+      expect(view.host.textContent).toContain('準備中');
+      expect(view.host.textContent).toContain(reason);
+      expect(view.host.textContent).not.toContain('受け取り中');
+      expect(view.host.textContent).not.toContain('メールが届きます');
+      expect(view.buttons()).toEqual([]);
+    } finally { await view.close(); }
+  }
+  const status = { settingsVersion: 4, updatedAt: '2030-11-10T00:00:00.000Z', lastAcceptedAt: null };
+  for (const failure of [{ ...status, state: 'failed', errorCode: 'not-accepted' }, { ...status, state: 'skipped', errorCode: 'authorization-required' }] as const) {
+    const base = mailState({}, 'ready', true);
+    const view = await mount({ state: 'connected', mail: { ...base, view: { ...base.view!, status: failure } } });
+    try {
+      expect(view.host.textContent).toContain('送れませんでした');
+      expect(view.host.textContent).not.toContain('受け取り中');
+    } finally { await view.close(); }
+  }
+  // An accepted or still unknown earlier send does not hide the normal state.
+  const base = mailState({}, 'ready', true);
+  const fine = await mount({ state: 'connected', mail: { ...base, view: { ...base.view!, status: { ...status, state: 'accepted', errorCode: null } } } });
+  try { expect(fine.host.textContent).toContain('受け取り中'); } finally { await fine.close(); }
+});

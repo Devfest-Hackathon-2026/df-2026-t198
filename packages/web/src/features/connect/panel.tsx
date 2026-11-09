@@ -21,6 +21,12 @@ const failureText: Record<string, string> = {
   'sync-failed': '予定をカレンダーに入れられませんでした。しばらくしてから、もう一度お試しください。',
   unconfigured: 'この拡張機能では、Google カレンダーにつなげません。',
 };
+/** Shown while the setting stays on but the sender cannot deliver. */
+const notReadyText: Record<string, string> = {
+  preparing: '通知の送信元は準備中です。今はメールを送れません。',
+  'authorization-required': '送信元の接続をやり直す必要があります。運営が確認するまで、メールを送れません。',
+  'recipient-unavailable': 'ログインしたGoogleアカウントのメールアドレスを確認できません。今はメールを送れません。',
+};
 function resultText(reply: ExtensionReply | null): { tone: 'status' | 'alert'; text: string } {
   if (!reply) return { tone: 'alert', text: '拡張機能から返事がありませんでした。Chromeの拡張機能を確かめて、もう一度お試しください。' };
   if (reply.ok) return { tone: 'status', text: reply.synced === false ? 'カレンダーを用意しました。予定はまだ入っていません。' : 'Google カレンダーに予定を入れました。' };
@@ -78,13 +84,19 @@ function CalendarSetting({ uid, link, ask }: { uid: string; link: CalendarLink |
 
 function MailSetting({ mail: { view, busy, error, saved, request } }: { mail: NotificationController }) {
   const ready = view?.availability === 'ready';
+  const enabled = view?.settings.enabled === true;
+  // "Enabled" alone does not mean mail goes out: the sender can be unavailable, or the last send can have failed.
+  const failed = view?.status?.state === 'failed' || view?.status?.errorCode === 'authorization-required';
+  const receiving = enabled && ready && !failed;
   return <div className="connect-item">
-    {view?.settings.enabled && <><p className="connect-state"><b>朝のメール</b><span className="connect-chip connect-chip-connected">受け取り中</span></p>
+    {receiving && <><p className="connect-state"><b>朝のメール</b><span className="connect-chip connect-chip-connected">受け取り中</span></p>
       <p className="connect-note">課題がある朝は、メールが届きます。止めるときは、下の「メール通知の設定」を開いてください。</p></>}
-    {view && !view.settings.enabled && ready && <Button variant="primary" busy={busy} busyLabel="保存中…"
+    {enabled && ready && failed && <><p className="connect-state"><b>朝のメール</b><span className="connect-chip connect-chip-failed">送れませんでした</span></p>
+      <p className="connect-note">前のメールを送れませんでした。詳しくは、下の「メール通知の設定」を開いてください。</p></>}
+    {view && !enabled && ready && <Button variant="primary" busy={busy} busyLabel="保存中…"
       onClick={() => void request({ enabled: true, version: view.settings.version })}>朝のメールを受け取る</Button>}
-    {view && !view.settings.enabled && !ready && <><p className="connect-state"><b>朝のメール</b><span className="connect-chip connect-chip-pending">準備中</span></p>
-      <p className="connect-note">{availabilityText[view.availability] ?? '今は有効にできません。'}</p></>}
+    {view && !ready && <><p className="connect-state"><b>朝のメール</b><span className="connect-chip connect-chip-pending">準備中</span></p>
+      <p className="connect-note">{enabled ? notReadyText[view.availability] ?? '今はメールを送れません。' : availabilityText[view.availability] ?? '今は有効にできません。'}</p></>}
     {!view && !error && <p className="connect-note">朝のメールの状態を確かめています…</p>}
     {!view && error && <><p className="connect-note"><b>朝のメール</b>{error}</p>
       <Button busy={busy} busyLabel="確認中…" onClick={() => void request()}>もう一度確かめる</Button></>}

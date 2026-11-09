@@ -40,7 +40,8 @@ const worker = await bundle('service-worker', [{ name: 'no-external-accounts', s
        export const browserProbe = () => { throw new Error('interactive-auth-forbidden'); };
       export const browserConnect = () => { throw new Error('interactive-auth-forbidden'); };`
     : path === 'calendar' ? `export const startCalendarSync = () => {}; export const handleCalendarMessage = () => undefined;
-       export const syncCalendarInBackground = async () => {};`
+       export const syncCalendarInBackground = async () => {};
+       export const syncCalendar = async () => {};`
       : `export const startDigest = () => {}; export const handleDigestMessage = () => undefined;` }));
 } }]);
 

@@ -1,67 +1,66 @@
-import type { ReactNode } from 'react';
+import { useImperativeHandle, useLayoutEffect, useRef, type ReactNode, type Ref } from 'react';
+import { bindScene, layouts, routeKeys, type NodeKey } from './mechanism-motion';
 
-const focuses = ['teacher', 'student', 'todoku', 'phone', 'supporter', 'phone'];
-const crops = ['0 0 320 240', '0 265 330 235', '235 135 300 245', '440 240 280 275', '430 0 290 240', '440 240 280 275'];
-
-function Device({ x, y, name, active, children }: { x: number; y: number; name: string; active: boolean; children: ReactNode }) {
-  return <g transform={`translate(${x} ${y})`} className={`scene-device${active ? ' is-focus' : ''}`}>
-    <rect className="scene-halo" x="-12" y="-30" width="266" height="202" rx="20" />
-    <text className="scene-label" x="0" y="-8">{name}</text>
-    <rect className="scene-shell" width="240" height="140" rx="10" />
-    <rect className="scene-screen" x="10" y="10" width="220" height="116" rx="3" />
-    <path className="scene-base" d="M-10 140H250L236 152H4Z" />{children}
+export interface SceneHandle { draw: (step: number, elapsed: number) => void }
+function Card({ node, at, children, app = false }: { node: NodeKey; at: readonly [number, number]; children: ReactNode; app?: boolean }) {
+  return <g className={`node${app ? ' app' : ''}`} data-node={node} transform={`translate(${at.join(' ')})`}>
+    <rect className="node-ring" data-k={`ring${node}`} x="-5" y="-5" width="138" height="82" rx="14" />
+    <rect className="node-body" width="128" height="72" rx="10" />{children}
   </g>;
 }
-
-export function MechanismScene({ step, compact = false }: { step: number; compact?: boolean }) {
-  const focus = focuses[step];
-  return <div className={`flow-board flow-scene-${step + 1}${compact ? ' is-compact' : ''}`} data-focus={focus}>
-    <svg className="flow-scene" viewBox={compact ? crops[step] : '0 0 720 520'} aria-hidden="true">
-      <path className="scene-wire" d="M155 155V360H350V255H575M470 255H590V350" />
-      <Device x={30} y={55} name="先生 · LMS" active={focus === 'teacher'}>
-        <text className="scene-small" x="25" y="36">課題の締切</text>
-        <text className="scene-old" x="25" y="65">11/12 17:00</text><path className="scene-strike" d="M23 59H142" />
-        <text className="scene-date" x="25" y="100">11/13 17:00</text>
-      </Device>
-      <Device x={30} y={345} name="学生 · ノートPC" active={focus === 'student'}>
-        <text className="scene-small" x="25" y="36">LMS</text><path className="scene-rule" d="M25 50H210M25 76H145M25 102H180" />
-        {step >= 1 && <g className="scene-extension"><rect x="140" y="18" width="78" height="28" rx="5" /><text x="144" y="37">拡張機能</text></g>}
-      </Device>
-      <g className={`scene-todoku${focus === 'todoku' ? ' is-focus' : ''}`} transform="translate(316 191)">
-        <rect className="scene-halo" x="-14" y="-20" width="152" height="150" rx="28" />
-        <rect className="scene-hub" width="124" height="110" rx="24" />
-        <path className="scene-logo" d="M28 30H66V70H48V48H28M76 30H96V70H76" />
-        <text className="scene-hub-label" x="62" y="94" textAnchor="middle">ToDoku</text>
-        <text className="scene-label" x="62" y="144" textAnchor="middle">台帳</text>
-      </g>
-      <Device x={455} y={55} name="支援担当 · PC" active={focus === 'supporter'}>
-        <text className="scene-small" x="25" y="36">面談</text>
-        <text className={step >= 4 ? 'scene-date' : 'scene-small'} x="25" y="72">{step >= 4 ? '締切が変わった' : '変化なし'}</text>
-        {step >= 4 && <text className="scene-small" x="25" y="106">11/12 → 11/13</text>}
-      </Device>
-      <g className={`scene-phone app${focus === 'phone' ? ' is-focus' : ''}`} transform="translate(500 307)">
-        <rect className="scene-halo" x="-15" y="-28" width="200" height="237" rx="26" />
-        <text className="scene-label" x="0" y="-8">学生 · スマホ</text>
-        <rect className="scene-shell" width="170" height="196" rx="20" />
-        <rect className="scene-screen" x="9" y="12" width="152" height="171" rx="12" />
-        {step < 5 ? <>
-          <text className="scene-small" x="21" y="38">カレンダー・時間割</text>
-          <text className="scene-small" x="22" y="68">11/12</text><text className="scene-small" x="94" y="68">11/13</text>
-          <path className="scene-rule" d="M85 77V165" />
-          {[0, 1].map(row => <g className={`scene-event${step >= 3 ? ' is-moved' : ''}`} key={row} transform={`translate(18 ${84 + row * 43})`}>
-            <rect width="62" height="34" rx="4" /><text x="7" y="22">17:00</text>
-          </g>)}
-        </> : <g className="scene-mail">
-          <text className="scene-date" x="24" y="42">翌朝 7:30</text>
-          <rect x="22" y="58" width="126" height="106" rx="8" />
-          <path className="scene-envelope" d="M39 76H131V119H39ZM39 76L85 103L131 76" />
-          <text className="scene-small" x="30" y="146">今日やること</text>
-        </g>}
-      </g>
+function Value({ prefix }: { prefix: string }) {
+  return <><g data-k={`${prefix}Old`}><text className="node-value" x="12" y="59">11/12</text></g>
+    <path className="node-strike" data-k={`${prefix}Strike`} d="M84 55H122" />
+    <rect className="scene-marker" data-k={`${prefix}Mark`} x="8" y="40" width="74" height="24" rx="3" />
+    <text className="node-value is-new" data-k={`${prefix}New`} x="12" y="59">11/13</text></>;
+}
+export function MechanismScene({ ref, step = 0, compact = false, still = false }: { ref?: Ref<SceneHandle>; step?: number; compact?: boolean; still?: boolean }) {
+  const svg = useRef<SVGSVGElement>(null);
+  const draw = useRef<SceneHandle['draw']>(() => {});
+  const layout = layouts[compact ? 'compact' : 'wide'];
+  useLayoutEffect(() => {
+    if (!svg.current) return;
+    draw.current = bindScene(svg.current, layout);
+    draw.current(step, still ? Infinity : 0);
+  }, [layout, step, still]);
+  useImperativeHandle(ref, () => ({ draw: (stage, elapsed) => draw.current(stage, elapsed) }), []);
+  return <div className={`flow-board${compact ? ' is-compact' : ''}`}>
+    <svg ref={svg} className="flow-scene" viewBox={`0 0 ${layout.w} ${layout.h}`} aria-hidden="true" focusable="false">
+      <g className="scene-wires">{routeKeys.map(key => <path key={key} d={layout.routes[key]} />)}</g>
+      <g className="scene-lit">{routeKeys.map(key => <path key={key} data-k={key} d={layout.routes[key]} />)}</g>
+      <Card node="T" at={layout.at.T}><text className="node-label" x="12" y="21">先生のLMS</text><Value prefix="t" /></Card>
+      <Card node="S" at={layout.at.S}>
+        <text className="node-label" x="12" y="21">学生のPC</text>
+        <g data-k="sOpen"><text className="node-link" x="12" y="55">LMSを開く</text><path className="node-link-line" d="M12 59H75" /></g>
+        <rect className="scene-marker" data-k="sMark" x="8" y="40" width="74" height="24" rx="3" />
+        <text className="node-value is-new" data-k="sNew" x="12" y="59">11/13</text>
+        <g className="node-ext" data-k="sExt"><rect x="68" y="-10" width="56" height="19" rx="9.5" /><text x="96" y="3.5" textAnchor="middle">拡張機能</text></g>
+      </Card>
+      <Card node="H" at={layout.at.H}>
+        <g className="node-logo"><rect x="10" y="8" width="20" height="20" rx="5" /><path d="M13.2 14H20.8V22H17.2V17.6H13.2ZM22.8 14H26.8V22H22.8Z" /></g>
+        <text className="node-label is-tight" x="34" y="22">ToDokuの台帳</text><Value prefix="h" />
+      </Card>
+      <Card node="M" at={layout.at.M} app>
+        <text className="node-label" x="12" y="21">学生のスマホ</text>
+        <text className="node-time scene-mono" data-k="mTime" x="118" y="21" textAnchor="end">7:30</text>
+        <g data-k="mCal"><text className="node-day scene-mono" x="12" y="40">11/12</text><text className="node-day scene-mono" x="70" y="40">11/13</text>
+          <path className="node-divider" d="M64 30V66" />
+          <g className="node-chip is-ghost" data-k="mGhost"><rect x="10" y="45" width="48" height="20" rx="4" /><text x="34" y="59" textAnchor="middle">17:00</text></g>
+          <g className="node-chip" data-k="mChip"><rect x="10" y="45" width="48" height="20" rx="4" /><text x="34" y="59" textAnchor="middle">17:00</text></g>
+          <rect className="scene-marker" data-k="mMark" x="68" y="66" width="48" height="3.5" rx="1.5" />
+        </g>
+        <g data-k="mMail"><path className="node-envelope" d="M12 31H30V44H12ZM12 31L21 38L30 31" />
+          <rect className="scene-marker" data-k="mMailMark" x="34" y="29" width="80" height="19" rx="3" />
+          <text className="node-mail" x="36" y="43">今日やること</text><text className="node-mail-sub scene-mono" x="12" y="62">締切 11/13 17:00</text>
+        </g>
+      </Card>
+      <Card node="P" at={layout.at.P}><text className="node-label" x="12" y="21">支援担当のPC</text>
+        <text className="node-muted" data-k="pBefore" x="12" y="55">変化なし</text><path className="node-strike" data-k="pStrike" d="M10 51H64" />
+        <g data-k="pAfter"><rect className="scene-marker" data-k="pMark" x="8" y="30" width="98" height="19" rx="3" />
+          <text className="node-alert" x="12" y="44">締切が変わった</text><text className="node-change scene-mono" x="12" y="63">11/12 → 11/13</text></g>
+      </Card>
+      <circle className="scene-pulse" data-k="pulse" r="4" /><circle className="scene-ripple" data-k="ripple" r="10" />
+      <g className="scene-cursor" data-k="cursor"><circle className="scene-ring" data-k="clickRing" r="10" /><path d="M0 0V18L4.3 13.9L7.7 21.2L10.6 20L7.4 12.8H13.1Z" /></g>
     </svg>
-    {!compact && <div className="flow-task" data-task="report">
-      <span>文章表現</span><strong>第3回レポート<span>（要約と引用）</span></strong>
-      <div className="flow-task-date"><s>11/12</s><b>11/13 17:00</b></div>
-    </div>}
   </div>;
 }

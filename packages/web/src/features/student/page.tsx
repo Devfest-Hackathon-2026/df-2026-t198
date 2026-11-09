@@ -145,7 +145,8 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
   return <OperationMessages>
     <div className="student-workspace">
     {planLink}
-    <div className="student-heading td-stage"><h1>時間割と課題</h1></div>
+    <div className="student-heading td-stage"><h1>時間割と課題</h1>
+      <p className="student-today"><time dateTime={new Date(now).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })}>{new Date(now).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short' })}</time></p></div>
     {setup}
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
@@ -164,9 +165,9 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
     <section className="student-timetable" aria-label="時間割"><h2>時間割</h2>
     <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
       <div><ScrollFrame scrollRef={timetable} className="timetable-scroll" label="授業と次の締切"><table className="timetable" style={{ '--periods': periods } as CSSProperties}><caption className="sr-only">授業と次の締切</caption>
-        <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d} data-weekday={d + 1}>{'月火水木金土日'[d]}</th>)}</tr></thead>
+        <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d} data-weekday={d + 1} data-today={d + 1 === weekday || undefined}>{'月火水木金土日'[d]}</th>)}</tr></thead>
         <tbody>{Array.from({ length: periods }, (_, p) => <tr key={p}><th scope="row">{p + 1}限</th>
-          {Array.from({ length: days }, (_, d) => <td key={d}><div className="timetable-slot">{courses.filter(c =>
+          {Array.from({ length: days }, (_, d) => <td key={d} data-today={d + 1 === weekday || undefined}><div className="timetable-slot">{courses.filter(c =>
             c.slots.some(slot => slot.weekday === d + 1 && slot.period === p + 1)).map(c => {
             const items = courseEntries(c);
             const next = items[0];

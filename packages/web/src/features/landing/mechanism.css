@@ -1,41 +1,53 @@
 .mechanism { min-width: 0; color: var(--ink); font-family: var(--jp); touch-action: pan-y; }
-.flow-slide { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); align-items: center; gap: 32px; }
-.flow-board { position: relative; min-width: 0; aspect-ratio: 720 / 520; border-radius: 20px; background: var(--paper); overflow: hidden; }
+.flow-slide { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr); align-items: center; gap: 40px; }
+.mechanism.is-narrow .flow-slide { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.flow-board { position: relative; min-width: 0; aspect-ratio: 712 / 320; border-radius: 20px; background: var(--paper); overflow: hidden; }
+.flow-board.is-compact { aspect-ratio: 1; }
 .flow-scene { display: block; width: 100%; height: 100%; overflow: visible; font-family: var(--jp); }
 .flow-scene text { fill: var(--ink); }
-.scene-label { font-size: 19px; font-weight: 700; }
-.scene-small, .scene-old { font-size: 17px; }
-.scene-date { font-size: 21px; font-weight: 700; fill: var(--accent-text) !important; }
-.scene-halo { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; opacity: 0; transition: opacity 1s ease-in-out; }
-.is-focus > .scene-halo { opacity: 1; }
-.scene-shell { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
-.scene-screen { fill: var(--white); transition: fill 1s ease-in-out; }
-.flow-scene-2 .scene-device.is-focus .scene-screen { fill: var(--accent-soft); }
-.scene-base { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
-.scene-rule, .scene-wire { fill: none; stroke: var(--line-strong); stroke-width: 2; }
-.scene-wire { stroke-dasharray: 5 8; }
-.scene-strike { stroke: var(--ink); stroke-width: 2; }
-.mechanism[data-playing='true'] .flow-scene-1 .scene-date,
-.mechanism[data-playing='true'] .flow-scene-1 .scene-strike { animation: mechanism-deadline 1s ease-in-out both; }
-.scene-hub, .scene-extension rect { fill: var(--accent); }
-.scene-logo { fill: var(--white); }
-.flow-scene .scene-hub-label, .flow-scene .scene-extension text { fill: var(--white); font-size: 18px; }
-.scene-event { transition: translate 1s ease-in-out; }
-.scene-event rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
-.scene-event text { font-size: 17px; }
-.scene-event.is-moved { translate: 72px 0; }
-.scene-mail rect { fill: var(--accent-soft); }
-.scene-envelope { fill: none; stroke: var(--accent); stroke-width: 3; }
-.scene-mail { animation: mechanism-mail 1s ease-in-out both; }
-.flow-task { position: absolute; left: 39.5%; top: 4%; width: 22%; box-sizing: border-box; padding: 10px; border: 2px solid var(--accent); border-radius: 10px; background: var(--white); color: var(--ink); font-size: 12px; line-height: 1.5; box-shadow: 4px 5px 0 var(--surface); transition: left 1s ease-in-out, top 1s ease-in-out, transform 1s ease-in-out; }
-.flow-task > span { display: block; margin-bottom: 4px; color: var(--muted); }
-.flow-task strong { display: block; font-size: clamp(12px, 1.25vw, 17px); }
-.flow-task strong span { display: block; }
-.flow-task-date { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-family: var(--mono); }
-.flow-task-date b { color: var(--accent-text); }
-/* The card waits in the empty space next to the device in focus, so it never covers a device, the hub or a label. */
-.flow-scene-2 .flow-task, .flow-scene-4 .flow-task, .flow-scene-6 .flow-task { left: 41%; top: 68%; }
-.flow-scene-3 .flow-task { transform: scale(1.02); }
+.scene-mono { font-family: var(--mono); }
+
+/* 線：ふだんは細く薄く、課題が通った所だけ朱 */
+.scene-wires path { fill: none; stroke: var(--line); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.scene-lit path { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+
+/* カード：見出しと締切の値だけ */
+.node-body { fill: var(--white); stroke: var(--line); stroke-width: 1.5; }
+.node-ring { fill: none; stroke: var(--accent); stroke-width: 2.5; opacity: 0; }
+.flow-scene .node-label { font-size: 13px; font-weight: 700; fill: var(--muted); }
+.flow-scene .node-label.is-tight { font-size: 12px; }
+.node-value { font: 700 22px var(--mono); }
+.flow-scene .node-value.is-new { fill: var(--accent-text); }
+.node-strike { fill: none; stroke: var(--accent-text); stroke-width: 2; stroke-linecap: round; }
+.scene-marker { fill: var(--marker); }
+.node-logo rect { fill: var(--accent); }
+.node-logo path { fill: var(--white); }
+.node-ext rect { fill: var(--white); stroke: var(--accent); stroke-width: 1.5; }
+.flow-scene .node-ext text { font-size: 11px; font-weight: 700; fill: var(--accent-text); }
+.flow-scene .node-link { font-size: 13px; font-weight: 700; fill: var(--accent-text); }
+.node-link-line { stroke: var(--accent-text); stroke-width: 1.2; }
+.flow-scene .node-muted { font-size: 13px; fill: var(--muted); }
+.flow-scene .node-alert { font-size: 13px; font-weight: 700; fill: var(--accent-text); }
+.flow-scene .node-change { font-size: 12px; font-weight: 500; }
+.flow-scene .node-day { font-size: 11px; fill: var(--muted); }
+.node-divider { stroke: var(--line); stroke-width: 1.5; }
+.node-chip rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.flow-scene .node-chip text { font: 700 12px var(--mono); fill: var(--accent); }
+.node-chip.is-ghost { opacity: 0; }
+.node-chip.is-ghost rect { fill: none; stroke: var(--line-strong); stroke-dasharray: 3 3; }
+.flow-scene .node-chip.is-ghost text { fill: var(--muted); font-weight: 500; }
+.flow-scene .node-time { font-size: 12px; font-weight: 700; fill: var(--accent); }
+.node-envelope { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; }
+.flow-scene .node-mail { font-size: 13px; font-weight: 700; }
+.flow-scene .node-mail-sub { font-size: 11px; }
+/* 案B：マーカーの上の小さな文字は墨にする（朱と黄色では文字の濃さが足りない） */
+.mechanism .flow-scene .node-alert { fill: var(--ink); }
+
+.scene-pulse { fill: var(--accent); }
+.scene-cursor, .scene-ripple, .scene-pulse { opacity: 0; }
+.scene-ripple { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.scene-cursor path { fill: var(--ink); stroke: var(--white); stroke-width: 1.5; stroke-linejoin: round; }
+.scene-ring { fill: none; stroke: var(--ink); stroke-width: 2; }
 .flow-copy { min-width: 0; color: var(--white); }
 .flow-number { font: 500 16px/1.5 var(--mono); }
 .mechanism .flow-status h3 { margin: 16px 0; font-size: clamp(21px, 2.2vw, 30px); line-height: 1.5; }
@@ -50,7 +62,6 @@
 .flow-progress > span { flex: 1; overflow: hidden; background: var(--accent-soft); border-radius: 10px; }
 .flow-progress i { display: block; height: 100%; background: var(--ink); transform: scaleX(0); transform-origin: left; }
 .flow-progress .is-past i { transform: scaleX(1); }
-.flow-progress .is-current i { animation: mechanism-progress 5s linear both; }
 .flow-static-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .flow-static-item { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; border-radius: 12px; background: var(--paper); }
 .flow-static-item .flow-board { width: 100px; height: 100px; aspect-ratio: auto; }
@@ -60,26 +71,15 @@
 .mechanism-slides { display: grid; place-items: center; width: 100%; min-height: 100svh; padding: 0; background: var(--ink); }
 .mechanism-slide-frame { position: relative; width: min(100vw, 177.7778svh); aspect-ratio: 16 / 9; overflow: hidden; background: var(--accent); }
 .mechanism-slide-canvas { position: absolute; inset: 0 auto auto 0; box-sizing: border-box; display: grid; align-items: center; width: 1280px; height: 720px; padding: 64px; transform-origin: top left; }
-@keyframes mechanism-progress { to { transform: scaleX(1); } }
-@keyframes mechanism-mail { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes mechanism-deadline { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 700px) {
-  .flow-slide { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .flow-task { padding: 8px; font-size: 10px; }
-  .flow-task strong { font-size: 12px; }
-  .flow-task-date { gap: 6px; font-size: 10px; }
-  .flow-task { left: 38.5%; width: 25%; padding: 4px 5px; }
-  .flow-task > span, .flow-task strong span { display: none; }
-  .flow-task strong { font-size: 10px; }
-  .flow-task-date { gap: 4px; margin-top: 2px; font-size: 9px; }
-  .flow-scene-2 .flow-task, .flow-scene-4 .flow-task, .flow-scene-6 .flow-task { left: 40%; }
+  .flow-slide { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .flow-copy { padding-inline: 2px; }
   .mechanism .flow-status h3 { margin: 8px 0; font-size: 22px; }
   .mechanism .flow-description { font-size: 13px; line-height: 1.8; }
-  .flow-controls { margin-top: 18px; }
+  .flow-controls { margin-top: 16px; }
   .flow-controls button { flex: 1; }
   .flow-play-state { margin-top: 8px; }
-  .mechanism .flow-progress { margin-top: 16px; }
+  .mechanism .flow-progress { margin-top: 14px; }
   .flow-static-grid { grid-template-columns: minmax(0, 1fr); gap: 7px; }
   .flow-static-item { grid-template-columns: 70px minmax(0, 1fr); gap: 8px; padding: 6px; }
   .flow-static-item .flow-board { width: 70px; height: 70px; border-radius: 6px; }
@@ -87,12 +87,8 @@
   .flow-static-item .flow-description { font-size: 10px; line-height: 1.7; }
   .flow-static-item .flow-number { font-size: 10px; }
 }
-/* Keep the recording composition at 1280×720; resize the complete canvas on small screens. */
-.mechanism-slides .flow-slide { grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 32px; }
-.mechanism-slides .flow-task { left: 39.5%; width: 22%; padding: 10px; font-size: 12px; }
-.mechanism-slides .flow-scene-2 .flow-task, .mechanism-slides .flow-scene-4 .flow-task, .mechanism-slides .flow-scene-6 .flow-task { left: 41%; }
-.mechanism-slides .flow-task strong { font-size: 17px; }
-.mechanism-slides .flow-task-date { gap: 10px; font-size: 12px; }
+/* Scale the entire recording composition, keeping its wide layout on narrow screens. */
+.mechanism-slides .flow-slide { grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr); gap: 40px; }
 .mechanism-slides .flow-status h3 { margin: 16px 0; font-size: 30px; }
 .mechanism-slides .flow-description { font-size: 14px; line-height: 1.9; }
 .mechanism-slides .flow-controls { margin-top: 28px; }
