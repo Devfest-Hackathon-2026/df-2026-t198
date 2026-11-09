@@ -1,6 +1,6 @@
 # Issue #249 検証記録
 
-比較元は作業開始時の `397da2f`。Auth・FirestoreエミュレーターとChromiumを使い、架空の授業・課題だけで確認した。merge・デプロイ・実物のLMSへの接続は行っていない。
+比較元は作業開始時の `397da2f`。Auth・FirestoreエミュレーターとChromiumを使い、架空の授業・課題だけで確認した。作業中に入ったmain `5d35347` を作業ブランチへ取り込み、統合後も検査とブラウザ試験を再実行した。PRのmerge・デプロイ・実物のLMSへの接続は行っていない。
 
 ## 時間割
 
@@ -19,7 +19,7 @@
 
 ## 試験
 
-- `pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm progress --check && pnpm check:samples`：すべて終了コード0。core 274・extension 509・server 312・web 215件が成功。既定のserver 128件・web 2件はskip。見本17ファイルが成功し、実物との比較は手元資料がないためskip。
+- `pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm progress --check && pnpm check:samples`：統合後もすべて終了コード0。core 274・extension 509・server 319・web 218件が成功。既定のserver 129件・web 2件はskip。見本17ファイルが成功し、実物との比較は手元資料がないためskip。
 - 審査QA：比較元は共通資料の28/28、今回も28/28（[結果](qa/operations.json)）。M6：PLAN.mdの比較元8/8から今回8/8（[結果](m6/m6.json)）。既存の分母・手順・保存数・再送の判定は維持した。
 - `pnpm test:public-demo:browser`：成功。役割別の入口、ログイン失敗、締切変更と支援担当の即時更新、上限の案内、やり直しを確認した。
 - 審査リンク18項目（[結果](judge-links/judge-links.json)）、授業色14項目（[結果](colors/after.json)）、手入力課題9項目（[結果](manual/operations.json)）が成功。追加したブラウザ試験と学生の既存試験も成功。
