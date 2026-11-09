@@ -123,7 +123,7 @@ curl --fail-with-body https://project-00439085-4e2d-44c3-9a8.web.app/api/health
 
 どちらもHTTP 200で `{"status":"ok"}` が返ることを確認する。Hostingの `/student` と `/session` はWebのHTMLを返し、そのHTMLが参照するJS・CSSも取得できること、`/api/missing` はHTMLではなく404になることも確かめる。Cloud RunとHostingの両方で、認証なしの `POST /api/v1/observations` が401になることを確かめる。ビルドID・結果・公開URL・確認日時はPRに残す。C14は台帳のFirestore保存までが条件なので、初回デプロイだけでは完了にしない。
 
-更新後は [READMEの「ブラウザで試す」](../README.md#ブラウザで試す) の1〜6を、学生・支援担当の別ブラウザで最後まで通す。最後に体験をリセットし、両方でログアウトする。メール見本の確認を実際のGmailへの配信成功とは扱わない。
+更新後は [体験ガイドの「手で試す」](demo.md#手で試す) の1〜6を、学生・支援担当の別ブラウザで最後まで通す。最後に体験をリセットし、両方でログアウトする。メール見本の確認を実際のGmailへの配信成功とは扱わない。
 
 確認のパスはIssue #18の再開判断に従って `/api/health` に統一する。旧 `/healthz` と `/api/healthz` は提供しない。Cloud Runの予約パスとの衝突を避けるため、末尾にzを付ける案は採らない。
 
