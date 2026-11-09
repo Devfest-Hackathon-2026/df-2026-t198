@@ -32,11 +32,13 @@ try {
   await student.goto(`${base}/`);
   const entry = student.getByRole('region', { name: '体験版に入る', exact: true });
   await entry.getByRole('button', { name: '学生として試す', exact: true }).waitFor();
-  assert.match(await entry.innerText(), /別のブラウザか別の端末/);
+  // Since #244 the landing entry shows only the buttons; the three-pane trial needs no second browser.
+  assert.doesNotMatch(await entry.innerText(), /別のブラウザか別の端末/);
   const rejectLogin = route => route.fulfill({ status: 400, contentType: 'application/json',
     body: JSON.stringify({ error: { message: 'EMAIL_NOT_FOUND' } }) });
   await student.route('**/accounts:signInWithPassword?*', rejectLogin);
-  for (const role of ['学生', '支援担当']) {
+  // The landing page shows only the student entry (#244); the supporter entry stays on /demo-lms.
+  for (const role of ['学生']) {
     await entry.getByRole('button', { name: `${role}として試す`, exact: true }).click();
     await entry.getByRole('alert').filter({ hasText: '体験版に入れませんでした。少し待ってからもう一度押すか、説明資料のアカウントで入ってください。' }).waitFor();
     assert.doesNotMatch(await entry.innerText(), /EMAIL_NOT_FOUND|FirebaseError|auth\//);
@@ -50,7 +52,7 @@ try {
   await restoredEntry.click(); await student.waitForURL(`${base}/demo-lms`);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   assert.equal(await student.getByRole('region', { name: '体験版に入る', exact: true }).count(), 0);
-  await supporter.goto(`${base}/`);
+  await supporter.goto(`${base}/demo-lms`);
   await supporter.getByRole('button', { name: '支援担当として試す', exact: true }).click();
   await supporter.waitForURL(`${base}/session`);
   await supporter.getByRole('link', { name: '田中 太郎', exact: true }).click();
