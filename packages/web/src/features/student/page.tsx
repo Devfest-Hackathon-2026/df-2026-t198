@@ -20,7 +20,9 @@ import { OperationMessages } from '../../shared/ui/operation-messages';
 import { firebase } from '../../shared/firebase';
 import { watchAccount, type StudentState } from './data';
 import { type StudentCourse, type StudentData } from '../../shared/assignments/types';
-import { NotificationSettingsPanel } from '../notifications/settings';
+import { NotificationSettingsView, useNotificationSettings } from '../notifications/settings';
+import { ConnectPanel } from '../connect/panel';
+import type { User } from 'firebase/auth';
 import { SharingPanel } from '../sharing/panel';
 import { CourseColorProvider, useCourseColors } from '../../shared/course-color-context';
 
@@ -65,11 +67,11 @@ function AssignmentRow({ item, courseName }: { item: LedgerAssignment; courseNam
     <LmsSourceLink item={item} courseName={courseName} />
   </li>;
 }
-interface StudentViewProps { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode }
+interface StudentViewProps { data: StudentData; now?: number; calendar?: boolean; actions?: PlanActions | undefined; manualActions?: ManualAssignmentActions | undefined; planLink?: ReactNode; setup?: ReactNode }
 export function StudentView(props: StudentViewProps) {
   return <CourseColorProvider courses={props.data.courses}><StudentContent {...props} /></CourseColorProvider>;
 }
-function StudentContent({ data, now = Date.now(), calendar = false, actions, manualActions, planLink }: StudentViewProps) {
+function StudentContent({ data, now = Date.now(), calendar = false, actions, manualActions, planLink, setup }: StudentViewProps) {
   const courseColor = useCourseColors();
   data = { ...data, courses: linkedCourses(data.courses) };
   const [tab, setTab] = useState(planLink ? 'preparation' : 'deadlines');
@@ -144,6 +146,7 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
     <div className="student-workspace">
     {planLink}
     <div className="student-heading td-stage"><h1>時間割と課題</h1></div>
+    {setup}
     {!data.online && <p role="status" className="notice">接続を確かめています。前に開いたときの内容を表示することがあります。</p>}
     {data.fetchStates.map(state => {
       const last = state.lastSucceededAt;
@@ -215,6 +218,16 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
     </div>
   </OperationMessages>;
 }
+/** The signed-in student's own page: the mail setting is shared by the top buttons and the panel below. */
+function StudentAccount({ user, data, now, showOwnSession }: { user: User; data: StudentData; now: number; showOwnSession: boolean }) {
+  const mail = useNotificationSettings(user);
+  return <><StudentView data={data} now={now} calendar setup={<ConnectPanel user={user} mail={mail} />}
+    planLink={window.location.pathname === '/student/plan' && <PlanLinkAction user={user} data={data} />}
+    actions={planActions(user, user.uid)} manualActions={manualAssignmentActions(user, user.uid)} />
+    <NotificationSettingsView controller={mail} />
+    <SharingPanel user={user} />
+    {showOwnSession && <a href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談日時を見る・変える</a>}</>;
+}
 export function StudentPage({ showOwnSession = false }: { showOwnSession?: boolean }) {
   const [state, setState] = useState<StudentState>({ status: 'loading' });
   const [authError, setAuthError] = useState(false);
@@ -229,13 +242,9 @@ export function StudentPage({ showOwnSession = false }: { showOwnSession?: boole
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin returnTo={window.location.pathname === '/student/plan' ? window.location.pathname + window.location.search : undefined} />
       <Button className="plain-button" busy={authBusy} busyLabel="ログイン中…" onClick={() => accountAction(client.login)}>Googleでログイン</Button></> :
       <><Button className="logout student-logout" busy={authBusy} busyLabel="ログアウト中…" onClick={() => accountAction(client.logout)}>ログアウト</Button>
-        {state.status === 'ready' ? <><StudentView key={client.auth.currentUser?.uid} data={state} now={now} calendar
-          planLink={window.location.pathname === '/student/plan' && client.auth.currentUser && <PlanLinkAction user={client.auth.currentUser} data={state} />}
-          actions={client.auth.currentUser ? planActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined}
-          manualActions={client.auth.currentUser ? manualAssignmentActions(client.auth.currentUser, client.auth.currentUser.uid) : undefined} />
-          {client.auth.currentUser && <><NotificationSettingsPanel key={client.auth.currentUser.uid} user={client.auth.currentUser} />
-            <SharingPanel key={`sharing-${client.auth.currentUser.uid}`} user={client.auth.currentUser} />
-            {showOwnSession && <a href={`/session/${encodeURIComponent(client.auth.currentUser.uid)}`}>自分の面談日時を見る・変える</a>}</>}</> : state.status === 'error' ? <FetchState state="error" title="課題を表示できませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を読み込んでいます…" lines={6} />}</>}
+        {state.status === 'ready' ? (client.auth.currentUser
+          ? <StudentAccount key={client.auth.currentUser.uid} user={client.auth.currentUser} data={state} now={now} showOwnSession={showOwnSession} />
+          : <StudentView data={state} now={now} calendar />) : state.status === 'error' ? <FetchState state="error" title="課題を表示できませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を読み込んでいます…" lines={6} />}</>}
     {authError && <p role="alert">ログイン状態を変更できませんでした。もう一度お試しください。</p>}
   </>;
 }
