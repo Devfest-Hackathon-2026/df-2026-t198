@@ -70,6 +70,7 @@ export function LandingPage() {
         <Staged className="hero-copy">
           <h1 id="landing-title"><span>学生がすることは、</span><span>いつものLMSを</span><span>開くことだけです</span></h1>
           <p className="hero-lead">授業ごとの課題と締切を時間割にまとめ、支援担当と共有します。やることがある日は、朝にメールで知らせます。</p>
+          <p className="hero-setup">はじめに一度だけ、Chrome 拡張を入れて Google でログインします。</p>
           <div className="hero-actions"><a className="pill primary" href="#try">体験版を開く <span aria-hidden="true">↗</span></a><a className="text-link" href="#start">自分の大学で使う <span aria-hidden="true">↗</span></a></div>
         </Staged>
         <HeroVisual />
@@ -80,10 +81,10 @@ export function LandingPage() {
         <Reveal><div className="section-heading"><span className="chapter-number">01</span><h2 id="people-title">課題を一か所にまとめ、支援担当と共有します</h2></div></Reveal>
         <div className="product-grid people-grid">
           <Reveal><div className="person-statement"><h3>学生</h3><p><span>課題と締切が時間割にまとまり、</span><span>やることがある日は朝にメールが届きます。</span></p></div>
-            <div className="person-thumb"><Screenshot name="student" alt="学生の時間割" width={685} height={496} caption="学生の時間割" /></div>
+            <div className="person-thumb"><Screenshot name="student" alt="学生の時間割" width={782} height={498} caption="学生の時間割" /></div>
           </Reveal>
           <Reveal order={1}><div className="person-statement"><h3>支援担当（カウンセラーなど）</h3><p><span>学生と同じ課題の一覧を見て、</span><span>次にやることを一緒に決められます。</span></p></div>
-            <div className="person-thumb"><Screenshot name="session" alt="支援担当の面談画面" width={1168} height={667} caption="面談の画面" /></div>
+            <div className="person-thumb"><Screenshot name="session" alt="支援担当の面談画面" width={1200} height={650} caption="面談の画面" /></div>
           </Reveal>
         </div>
         <a className="next-chapter" href="#how">しくみ <span aria-hidden="true">↓</span></a>
@@ -115,7 +116,7 @@ export function LandingPage() {
 
       <section className="chapter try-section" id="try" aria-labelledby="try-title">
         <Reveal><div className="section-heading"><span className="chapter-number">05</span><h2 id="try-title">体験版</h2></div>
-          <div className="trial-preview" aria-hidden="true"><TodokuLogo /><span>時間割と締切</span><span>朝のメール</span><span>面談の画面</span></div>
+          <p className="trial-lead">架空の授業と課題で、学生と支援担当の画面を試せます。</p>
           <DemoEntries />
         </Reveal>
         <a className="next-chapter" href="#home">トップに戻る <span aria-hidden="true">↑</span></a>

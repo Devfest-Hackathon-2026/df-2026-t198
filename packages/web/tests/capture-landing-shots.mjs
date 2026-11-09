@@ -29,7 +29,7 @@ const demo = await studentContext.newPage();
 const student = await studentContext.newPage();
 const session = await supporterContext.newPage();
 // Keep the client after this day's real server history, without changing stored change records.
-const fixedTime = '2026-11-09T23:50:00+09:00';
+const fixedTime = '2026-11-10T23:50:00+09:00';
 assert(Date.now() < Date.parse(fixedTime), 'capture clock must be later than server history; choose a new fictional capture day');
 const output = new URL('../public/landing/', import.meta.url);
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i189-evidence';
@@ -121,27 +121,27 @@ try {
   await demo.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   // The teacher changes the source first; the student still shows the old date.
   assert.equal(await student.locator('.previous-deadline').count(), 0);
-  assert.match(await student.locator('.course-panel .deadline').first().innerText(), /11\/12 17:00/);
+  assert.match(await student.locator('.course-panel .deadline').first().innerText(), /11\/13 17:00/);
   await demo.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   const changed = student.locator('.course-panel .deadline.changed');
   await changed.waitFor();
   const previous = student.locator('.course-panel .previous-deadline');
   await previous.waitFor();
-  assert.match(await changed.innerText(), /11\/13 17:00/);
-  assert.match(await previous.innerText(), /11\/12 17:00/);
+  assert.match(await changed.innerText(), /11\/14 17:00/);
+  assert.match(await previous.innerText(), /11\/13 17:00/);
   assert.equal(await changed.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
   assert.match(await previous.evaluate(node => globalThis.getComputedStyle(node).textDecorationLine), /line-through/);
   const course = student.locator('.course-cell').filter({ hasText: courses[0] });
-  await course.locator('.deadline').filter({ hasText: '11/13 17:00' }).waitFor();
+  await course.locator('.deadline').filter({ hasText: '11/14 17:00' }).waitFor();
   await student.getByRole('button', { name: '閉じる', exact: true }).click();
   assert.equal(await table.evaluate(node => node.scrollWidth <= node.clientWidth), true, 'all weekdays fit the captured timetable');
   await capture(student, 'student', table, course);
   const changes = session.getByRole('region', { name: '前回の面談からの変化', exact: true });
-  await changes.getByText('締切が 11/12 17:00 から 11/13 17:00 に変わりました', { exact: false }).waitFor();
+  await changes.getByText('締切が 11/13 17:00 から 11/14 17:00 に変わりました', { exact: false }).waitFor();
   await session.getByRole('region', { name: '次の面談までの締切', exact: true })
     .getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
   const changedRow = session.locator('.td-table tbody tr').filter({ hasText: '第3回レポート（要約と引用）' });
-  await changedRow.getByText('11/13 17:00', { exact: false }).waitFor();
+  await changedRow.getByText('11/14 17:00', { exact: false }).waitFor();
   await session.getByRole('link', { name: /① 確かめる/ }).waitFor();
   await session.getByRole('link', { name: /② 相談する/ }).waitFor();
   // Include the current two-view navigation and the deadline table in the asset.
