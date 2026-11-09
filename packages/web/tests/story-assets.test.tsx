@@ -2,14 +2,14 @@ import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import StoryAssetsPage from '../src/features/landing/story/page';
-import { StoryCatalog, StoryColorsCatalog } from '../src/features/landing/story/catalog';
-import { storyPalettes } from '../src/features/landing/story/people';
+import { StoryCatalog } from '../src/features/landing/story/catalog';
+import { storyPalette } from '../src/features/landing/story/people';
 import { StoryClock } from '../src/features/landing/story/props';
 import { StoryScene } from '../src/features/landing/story/scenes';
 import { StoryScreen } from '../src/features/landing/story/screens';
 
 it('provides the seven requested role/pose combinations as inline SVG', () => {
-  const html = renderToStaticMarkup(<StoryCatalog palette={storyPalettes[0]} />);
+  const html = renderToStaticMarkup(<StoryCatalog palette={storyPalette} />);
   for (const [role, poses] of [['teacher', ['desk']], ['student', ['desk', 'phone', 'walking', 'seated']], ['supporter', ['desk', 'seated']]] as const) {
     for (const pose of poses) expect(html).toContain(`data-role="${role}" data-pose="${pose}"`);
   }
@@ -18,17 +18,21 @@ it('provides the seven requested role/pose combinations as inline SVG', () => {
   for (const room of ['研究室の背景', '学生の部屋の背景', '相談室の背景']) expect(html).toContain(room);
 });
 
-it('compares three palettes on both specified grounds and includes the student app blue', () => {
-  const html = renderToStaticMarkup(<StoryColorsCatalog />);
-  expect(storyPalettes).toHaveLength(3);
+it('uses only the chosen ink, deep blue and purple palette', () => {
   const tokens = readFileSync(new URL('../src/shared/styles/tokens.css', import.meta.url), 'utf8');
-  expect(tokens).toContain('--story-student-a: #2456B0');
-  for (const palette of storyPalettes) {
-    expect(new Set(Object.values(palette.colors)).size).toBe(3);
-    expect(html).toContain(palette.name);
-  }
-  expect(html).toContain('fill="var(--accent)"');
-  expect(html).toContain('fill="var(--paper)"');
+  for (const token of ['--story-teacher: #292C31', '--story-student: #16386C', '--story-supporter: #64446E']) expect(tokens).toContain(token);
+  expect(tokens).not.toMatch(/--story-(?:teacher|student|supporter)-[abc]/);
+  const html = renderToStaticMarkup(<StoryAssetsPage search="?view=assets" />);
+  expect(html).not.toContain('3配色');
+  expect(html).not.toContain('aria-label="配色"');
+});
+
+it('draws the consultation clock with a wooden case, blue LCD and four seven-segment digits', () => {
+  const html = renderToStaticMarkup(<StoryClock kind="table" hour={10} minute={30} size={120} />);
+  expect(html).toContain('木枠のデジタル置時計 10:30');
+  expect(html).toContain('var(--story-clock-wood)');
+  expect(html).toContain('var(--story-lcd)');
+  expect([...html.matchAll(/data-digit="(\d)"/g)].map(match => match[1])).toEqual(['1', '0', '3', '0']);
 });
 
 it.each([
@@ -38,7 +42,7 @@ it.each([
   ['meeting', '火 10:30', '面談', '準備を入れる前の時間割'],
   ['morning', '水 07:30', '翌朝の学生の部屋', '今日やること'],
 ] as const)('renders the correct static scene: %s', (scene, time, room, content) => {
-  const html = renderToStaticMarkup(<StoryScene scene={scene} palette={storyPalettes[0]} />);
+  const html = renderToStaticMarkup(<StoryScene scene={scene} />);
   for (const text of [time, room, content]) expect(html).toContain(text);
   expect(html).not.toMatch(/<animate|<audio|<video|<foreignObject/);
 });
@@ -70,5 +74,5 @@ it('opens the requested scene/palette directly and falls back for unknown query 
   expect(html).not.toContain('story-toolbar');
   const fallback = renderToStaticMarkup(<StoryAssetsPage search="?view=unknown&scene=unknown&palette=unknown" />);
   expect(fallback).toContain('data-view="assets"');
-  expect(fallback).toContain('data-palette="a"');
+  expect(fallback).toContain('data-palette="b"');
 });

@@ -1,5 +1,5 @@
-import { StoryPerson, roleNames, storyPalettes, type StoryPalette, type StoryPose, type StoryRole } from './people';
-import { StoryBrand, StoryClock, StoryDesk, StoryLaptop, StoryRoom, storyPaper } from './props';
+import { StoryPerson, type StoryPalette, type StoryPose, type StoryRole } from './people';
+import { StoryBrand, StoryClock, StoryDesk, StoryLaptop, StoryRoom } from './props';
 import { StorySheet } from './scenes';
 import { StoryPhone, StoryScreen, type StoryScreenKind } from './screens';
 
@@ -41,20 +41,5 @@ export function StoryScreensCatalog() {
       x={43 + (index % 3) * 402} y={115 + Math.floor(index / 3) * 251} width={386} height={248} />)}
     <StoryPhone screen="calendar" x={908} y={387} width={116} />
     <StoryPhone screen="mail" x={1082} y={387} width={116} />
-  </StorySheet>;
-}
-
-export function StoryColorsCatalog() {
-  return <StorySheet label="配色の比較" title="3人を見分ける配色を選ぶ" footer="上段は生成り、下段は朱色。同じ人物・大きさで比較しています。">
-    {storyPalettes.map((palette, index) => <g key={palette.id} transform={`translate(${48 + index * 403} 133)`}>
-      <text x="0" y="17" fontSize="20" fontWeight="700">{palette.name}</text>
-      <rect y="50" width="377" height="170" rx="6" fill={storyPaper} stroke="var(--line)" />
-      <rect y="250" width="377" height="170" rx="6" fill="var(--accent)" />
-      {(['teacher', 'student', 'supporter'] as StoryRole[]).map((role, roleIndex) => <g key={role}>
-        {[57, 257].map(y => <StoryPerson key={y} role={role} color={palette.colors[role]} x={11 + roleIndex * 125} y={y} width={110} height={152} />)}
-        <text x={66 + roleIndex * 125} y="239" textAnchor="middle" fontSize="14">{roleNames[role]}</text>
-        <text x={66 + roleIndex * 125} y="446" textAnchor="middle" fontSize="13" className="story-time">{roleNames[role]}</text>
-      </g>)}
-    </g>)}
   </StorySheet>;
 }

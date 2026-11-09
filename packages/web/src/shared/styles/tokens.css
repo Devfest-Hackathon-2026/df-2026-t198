@@ -48,18 +48,16 @@
   --font-mono: "Google Sans Code", "BIZ UDPGothic", ui-monospace, monospace;
 }
 
-/* Static story assets; role colours are options for the material preview. */
+/* SVG story materials. */
 :root {
   --story-ink: #252D32;
-  --story-teacher-a: #283F39;
-  --story-student-a: #2456B0;
-  --story-supporter-a: #78572C;
-  --story-teacher-b: #292C31;
-  --story-student-b: #16386C;
-  --story-supporter-b: #64446E;
-  --story-teacher-c: #304D35;
-  --story-student-c: #155267;
-  --story-supporter-c: #753F38;
+  --story-teacher: #292C31;
+  --story-student: #16386C;
+  --story-supporter: #64446E;
+  --story-clock-wood: #DAC19A;
+  --story-clock-grain: #BEA078;
+  --story-lcd: #BDEAF5;
+  --story-lcd-ink: #16465A;
   --story-wood: #C9B999;
   --story-laptop: #A5AFB5;
   --story-laptop-base: #CED4D4;

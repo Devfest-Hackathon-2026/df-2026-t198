@@ -24,9 +24,9 @@ try {
     await page.evaluate(() => globalThis.document.fonts.ready);
   }
   await open();
-  assert.equal(await page.getByRole('navigation', { name: '見本の種類' }).getByRole('button').count(), 5);
+  assert.equal(await page.getByRole('navigation', { name: '見本の種類' }).getByRole('button').count(), 4);
   await page.getByRole('button', { name: '場面の見本' }).click();
-  await page.getByLabel('配色', { exact: true }).selectOption('b');
+  assert.equal(await page.getByLabel('配色', { exact: true }).count(), 0);
   await page.getByLabel('場面', { exact: true }).selectOption('morning');
   assert.match(await page.locator('.story-sheet').textContent(), /水 07:30.*今日やること/);
   await page.reload();
@@ -39,9 +39,9 @@ try {
   observations.push({ operation: 'choose scene and palette, then reload', palette: 'b', scene: 'morning', aspectRatio: '16:9', controlsFit: true });
 
   const shots = [
-    ['assets-a', 'view=assets&palette=a'], ['assets-b', 'view=assets&palette=b'], ['assets-c', 'view=assets&palette=c'],
-    ['palettes', 'view=colors'], ['screens', 'view=screens'], ['eyecatch', 'view=brand'],
-    ...['office', 'bedroom', 'consultation', 'meeting', 'morning'].map(scene => [`scene-${scene}`, `view=scene&scene=${scene}&palette=a`]),
+    ['assets-b', 'view=assets'],
+    ['screens', 'view=screens'], ['eyecatch', 'view=brand'],
+    ...['office', 'bedroom', 'consultation', 'meeting', 'morning'].map(scene => [`scene-${scene}`, `view=scene&scene=${scene}`]),
   ];
   for (const [name, query] of shots) {
     await open(`capture=1&${query}`);
@@ -67,7 +67,7 @@ try {
     screenshots.push(`${name}.png`);
     observations.push({ name, width: 1280, height: 720, ...measurements });
   }
-  await open('capture=1&view=scene&scene=meeting&palette=a');
+  await open('capture=1&view=scene&scene=meeting');
   const motion = await page.locator('.story-sheet').innerHTML();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   assert.equal(await page.locator('.story-sheet').innerHTML(), motion, 'reduced motion keeps the same static frame');
@@ -77,6 +77,6 @@ try {
   assert.equal(await page.locator('a[href*="/slides/story-assets"]').count(), 0, 'no introduction link to the preview');
   await writeFile(`${output}/verification.json`, JSON.stringify({ screenshots, observations, reducedMotion: 'same static frame', apiRequests, pageErrors: errors }, null, 2));
   log(JSON.stringify({ observations: [{ requirement_id: 'preview', status: 'pass',
-    observed: { captures: screenshots.length, dimensions: '1280x720', scenes: 5, palettes: 3, noMotion: true, apiRequests: 0, controlsAndReload: true },
+    observed: { captures: screenshots.length, dimensions: '1280x720', scenes: 5, palettes: 1, noMotion: true, apiRequests: 0, controlsAndReload: true },
     evidence_files: [...screenshots, 'verification.json'] }] }));
 } finally { await browser.close(); }

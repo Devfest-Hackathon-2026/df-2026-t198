@@ -26,6 +26,15 @@ export function StoryClock({ kind, hour, minute, x = 0, y = 0, size = 100 }: {
   kind: 'wall' | 'phone' | 'table'; hour: number; minute: number; x?: number; y?: number; size?: number;
 }) {
   const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  if (kind === 'table') return <svg x={x} y={y} width={size} height={size * .45} viewBox="0 0 240 108" role="img" aria-label={`木枠のデジタル置時計 ${time}`} data-clock="table" data-time={time}>
+    <rect x="1" y="1" width="238" height="106" rx="9" fill="var(--story-clock-wood)" stroke="var(--story-clock-grain)" strokeWidth="2" />
+    <path d="M10 8h220M10 99h220M7 16v75M233 16v75" stroke="var(--story-clock-grain)" opacity=".6" />
+    <rect x="13" y="15" width="214" height="78" rx="5" fill="var(--story-lcd)" stroke="var(--story-lcd-ink)" strokeWidth="2" />
+    <g transform="translate(26 25)" fill="var(--story-lcd-ink)">
+      {[...time].map((digit, index) => digit === ':' ? <g key={index} transform="translate(86 0)"><rect x="0" y="15" width="5" height="5" /><rect x="0" y="37" width="5" height="5" /></g>
+        : <SevenSegment key={index} digit={Number(digit)} x={index < 2 ? index * 42 : 98 + (index - 3) * 42} />)}
+    </g>
+  </svg>;
   if (kind === 'phone') return <svg x={x} y={y} width={size} height={size * 1.5} viewBox="0 0 140 210" role="img" aria-label={`スマホの時計 ${time}`}>
     <rect x="3" y="3" width="134" height="204" rx="19" fill={storyInk} />
     <rect x="9" y="9" width="122" height="192" rx="14" fill="var(--story-phone)" />
@@ -35,7 +44,6 @@ export function StoryClock({ kind, hour, minute, x = 0, y = 0, size = 100 }: {
     <path d="M52 188h36" stroke={storyInk} strokeWidth="3" strokeLinecap="round" />
   </svg>;
   return <svg x={x} y={y} width={size} height={size * 1.18} viewBox="0 0 120 142" role="img" aria-label={`${kind === 'wall' ? '壁掛け時計' : '置時計'} ${time}`}>
-    {kind === 'table' && <><path d="M30 104l-8 18m68-18 8 18" stroke={storyInk} strokeWidth="7" /><path d="M20 14q-16-16-19 3m99-3q16-16 19 3" fill="none" stroke={storyInk} strokeWidth="6" /></>}
     <circle cx="60" cy="59" r="51" fill={storyPaper} stroke={storyInk} strokeWidth="4" />
     {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(angle => <path key={angle} d="M60 14v7" stroke={storyInk} strokeWidth="2" transform={`rotate(${angle} 60 59)`} />)}
     <path data-hand="hour" d="M60 59V33" stroke={storyInk} strokeWidth="5" strokeLinecap="round" transform={`rotate(${(hour % 12) * 30 + minute / 2} 60 59)`} />
@@ -43,6 +51,12 @@ export function StoryClock({ kind, hour, minute, x = 0, y = 0, size = 100 }: {
     <circle cx="60" cy="59" r="4" fill={storyInk} />
     <text x="60" y="140" textAnchor="middle" fontSize="16" className="story-time">{time}</text>
   </svg>;
+}
+
+function SevenSegment({ digit, x }: { digit: number; x: number }) {
+  const paths = ['M5 0h25l-4 5H9Z', 'M31 2v24l-5-4V7Z', 'M31 30v24l-5-5V34Z', 'M5 56l4-5h17l4 5Z', 'M3 30l5 4v15l-5 5Z', 'M3 2l5 5v15l-5 4Z', 'M5 28l4-3h17l4 3-4 3H9Z'];
+  const segments = ['abcdef', 'bc', 'abdeg', 'abcdg', 'bcfg', 'acdfg', 'acdefg', 'abc', 'abcdefg', 'abcdfg'][digit] ?? '';
+  return <g transform={`translate(${x} 0)`} data-digit={digit}>{paths.map((d, index) => <path key={d} d={d} opacity={segments.includes('abcdefg'[index]!) ? 1 : .055} />)}</g>;
 }
 
 export function StoryRoom({ kind, daylight = false, x = 0, y = 0, width = 600, height = 430 }: {
@@ -53,13 +67,17 @@ export function StoryRoom({ kind, daylight = false, x = 0, y = 0, width = 600, h
       <path d="M20 372H580" />
       {kind === 'office' && <><path d="M33 50H182V330H33ZM33 141H182M33 235H182" />
         {[51, 78, 112, 143].map((book, index) => <g key={book}><path d={`M${book} 68v70h19V68ZM${book} 163v69h19v-69`} fill={index % 2 ? 'var(--story-book)' : 'var(--surface)'} /></g>)}
-        <path d="M355 48H560V229H355ZM457 48V229M355 139H560" /><path d="M365 218l60-40 30 16 52-43 43 67" stroke="var(--line)" /></>}
+        <g aria-label="研究の図があるホワイトボード"><rect x="352" y="42" width="220" height="176" rx="3" fill="var(--story-sheet)" />
+          <path d="M367 191h184M376 185V65M390 164l29-42 29 16 35-51 55 22M395 75h40m-20-9v18M488 164l15-16 16 16-16 15ZM450 167h28M530 162h22" stroke="var(--story-border)" />
+        </g>
+        <g aria-label="資料のファイル"><path d="M48 258h21v66H48ZM76 252h25v72H76ZM108 263h24v61h-24ZM140 255h25v69h-25Z" fill="var(--story-book)" /><path d="M53 271h10m19-5h13m19 11h12m20-8h13" /></g>
+        <g aria-label="2台目のモニター"><rect x="433" y="254" width="125" height="81" rx="4" fill="var(--story-laptop)" stroke="var(--story-ink)" /><path d="M495 335v25m-28 0h56" stroke="var(--story-ink)" strokeWidth="5" /></g></>}
       {kind === 'bedroom' && <><rect x="365" y="32" width="192" height="170" fill={daylight ? 'var(--story-day)' : 'var(--story-night)'} /><path d="M461 32V202M365 119H557" />
         {daylight ? <circle cx="516" cy="70" r="17" fill="var(--story-sun)" stroke="none" /> : <path d="M512 58a24 24 0 0 0 21 34 26 26 0 0 1-21-34Z" fill="var(--story-moon)" stroke="none" />}
         <path d="M18 290h175q18 0 18 18v62H18ZM18 322h193M18 370v29m178-29v29M26 282h58v35H26Z" fill="var(--story-bedding)" />
         <path d="M41 281v-57h12v58" /></>}
-      {kind === 'consultation' && <><path d="M500 340l-9-81h62l-9 81ZM524 263V141" fill="var(--story-book)" />
-        <path d="M524 215q-61-13-51-58 46 2 51 58ZM524 186q6-47 47-50 8 38-47 50ZM523 246q-41-2-44-31 36-8 44 31Z" fill="var(--story-leaf)" />
+      {kind === 'consultation' && <><path d="M500 372l-9-81h62l-9 81ZM524 295V173" fill="var(--story-book)" />
+        <path d="M524 247q-61-13-51-58 46 2 51 58ZM524 218q6-47 47-50 8 38-47 50ZM523 278q-41-2-44-31 36-8 44 31Z" fill="var(--story-leaf)" />
         <path d="M48 57H218V190H48Z" /><path d="M67 169l42-55 31 30 26-43 36 68Z" fill="var(--surface)" />
         <path d="M84 307h120m-104 0v65m89-65v65" /></>}
     </g>

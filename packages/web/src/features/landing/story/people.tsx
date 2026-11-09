@@ -3,12 +3,11 @@ import { BlazerBody, DeviceBody, ExplainingBody, HoodieBody, StudentHead, Suppor
 export type StoryRole = 'teacher' | 'student' | 'supporter';
 export type StoryPose = 'desk' | 'phone' | 'walking' | 'seated';
 export const roleNames: Record<StoryRole, string> = { teacher: '先生', student: '学生', supporter: '支援担当' };
-export const storyPalettes = [
-  { id: 'a', name: 'A · 学生アプリの青', note: '先生は深緑、学生はアプリと同じ青、支援担当は黄土色。', colors: { teacher: 'var(--story-teacher-a)', student: 'var(--story-student-a)', supporter: 'var(--story-supporter-a)' } },
-  { id: 'b', name: 'B · 深い青と紫', note: '先生は墨色、学生は濃紺、支援担当は紫。輪郭を濃く見せる組。', colors: { teacher: 'var(--story-teacher-b)', student: 'var(--story-student-b)', supporter: 'var(--story-supporter-b)' } },
-  { id: 'c', name: 'C · 緑と青と茶', note: '先生は緑、学生は青緑、支援担当は茶色。落ち着いた色の組。', colors: { teacher: 'var(--story-teacher-c)', student: 'var(--story-student-c)', supporter: 'var(--story-supporter-c)' } },
-] as const;
-export type StoryPalette = typeof storyPalettes[number];
+export const storyPalette = {
+  name: '先生は墨、学生は深い青、支援担当は紫',
+  colors: { teacher: 'var(--story-teacher)', student: 'var(--story-student)', supporter: 'var(--story-supporter)' },
+} as const;
+export type StoryPalette = typeof storyPalette;
 
 export function StoryPerson({ role, pose = 'desk', color, x = 0, y = 0, width = 200, height = 250 }: {
   role: StoryRole; pose?: StoryPose; color: string; x?: number; y?: number; width?: number; height?: number;

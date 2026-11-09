@@ -59,7 +59,7 @@ export function StoryScreen({ kind, x = 0, y = 0, width = 535, height = 370 }: {
       {kind === 'lms' && <>
         <text y="84" fontSize="16">変更前</text><text x="132" y="84" fontSize="27" className="story-time">11/12 17:00</text>
         <path d="M132 93H316" stroke="var(--line-strong)" strokeWidth="2" />
-        <text y="145" fontSize="16">変更後</text><text x="132" y="145" fontSize="29" fontWeight="700" fill="var(--story-student-a)" className="story-time">11/13 17:00</text>
+        <text y="145" fontSize="16">変更後</text><text x="132" y="145" fontSize="29" fontWeight="700" fill="var(--story-student)" className="story-time">11/13 17:00</text>
         <rect y="184" width="481" height="44" rx="5" fill="var(--story-success-soft)" /><text x="16" y="212" fontSize="17">先生が締切を1日延ばしました</text>
       </>}
       {kind === 'change' && <>
@@ -76,7 +76,7 @@ export function StoryScreen({ kind, x = 0, y = 0, width = 535, height = 370 }: {
       {kind === 'calendar' && <>
         <text y="82" fontSize="18">締切が移ったあとの予定</text>
         <rect y="105" width="481" height="103" rx="5" fill="var(--story-blue-soft)" />
-        <text x="18" y="146" fontSize="31" fontWeight="700" fill="var(--story-student-a)" className="story-time">11/13 17:00</text>
+        <text x="18" y="146" fontSize="31" fontWeight="700" fill="var(--story-student)" className="story-time">11/13 17:00</text>
         <text x="18" y="181" fontSize="18">第3回レポートの締切</text>
         <text y="242" fontSize="17">11/12 17:00 から変更</text>
       </>}

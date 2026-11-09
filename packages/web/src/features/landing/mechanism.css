@@ -1,107 +1,88 @@
-.mechanism { min-width: 0; color: var(--ink); font-family: var(--jp); touch-action: pan-y; }
-.flow-slide { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); align-items: center; gap: 32px; }
-.flow-board { position: relative; min-width: 0; aspect-ratio: 720 / 520; border-radius: 20px; background: var(--paper); overflow: hidden; }
-.flow-scene { display: block; width: 100%; height: 100%; overflow: visible; font-family: var(--jp); }
-.flow-scene text { fill: var(--ink); }
-.scene-label { font-size: 19px; font-weight: 700; }
-.scene-small, .scene-old { font-size: 17px; }
-.scene-date { font-size: 21px; font-weight: 700; fill: var(--accent-text) !important; }
-.scene-halo { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; opacity: 0; transition: opacity 1s ease-in-out; }
-.is-focus > .scene-halo { opacity: 1; }
-.scene-shell { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
-.scene-screen { fill: var(--white); transition: fill 1s ease-in-out; }
-.flow-scene-2 .scene-device.is-focus .scene-screen { fill: var(--accent-soft); }
-.scene-base { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
-.scene-rule, .scene-wire { fill: none; stroke: var(--line-strong); stroke-width: 2; }
-.scene-wire { stroke-dasharray: 5 8; }
-.scene-strike { stroke: var(--ink); stroke-width: 2; }
-.mechanism[data-playing='true'] .flow-scene-1 .scene-date,
-.mechanism[data-playing='true'] .flow-scene-1 .scene-strike { animation: mechanism-deadline 1s ease-in-out both; }
-.scene-hub, .scene-extension rect { fill: var(--accent); }
-.scene-logo { fill: var(--white); }
-.flow-scene .scene-hub-label, .flow-scene .scene-extension text { fill: var(--white); font-size: 18px; }
-.scene-event { transition: translate 1s ease-in-out; }
-.scene-event rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; }
-.scene-event text { font-size: 17px; }
-.scene-event.is-moved { translate: 72px 0; }
-.scene-mail rect { fill: var(--accent-soft); }
-.scene-envelope { fill: none; stroke: var(--accent); stroke-width: 3; }
-.scene-mail { animation: mechanism-mail 1s ease-in-out both; }
-.flow-task { position: absolute; left: 39.5%; top: 4%; width: 22%; box-sizing: border-box; padding: 10px; border: 2px solid var(--accent); border-radius: 10px; background: var(--white); color: var(--ink); font-size: 12px; line-height: 1.5; box-shadow: 4px 5px 0 var(--surface); transition: left 1s ease-in-out, top 1s ease-in-out, transform 1s ease-in-out; }
-.flow-task > span { display: block; margin-bottom: 4px; color: var(--muted); }
-.flow-task strong { display: block; font-size: clamp(12px, 1.25vw, 17px); }
-.flow-task strong span { display: block; }
-.flow-task-date { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-family: var(--mono); }
-.flow-task-date b { color: var(--accent-text); }
-/* The card waits in the empty space next to the device in focus, so it never covers a device, the hub or a label. */
-.flow-scene-2 .flow-task, .flow-scene-4 .flow-task, .flow-scene-6 .flow-task { left: 41%; top: 68%; }
-.flow-scene-3 .flow-task { transform: scale(1.02); }
-.flow-copy { min-width: 0; color: var(--white); }
-.flow-number { font: 500 16px/1.5 var(--mono); }
-.mechanism .flow-status h3 { margin: 16px 0; font-size: clamp(21px, 2.2vw, 30px); line-height: 1.5; }
-.mechanism .flow-description { margin: 0; font-size: 14px; line-height: 1.9; }
-.flow-description span { display: block; white-space: nowrap; }
-.flow-controls { display: flex; gap: 8px; margin-top: 28px; }
-.flow-controls button { min-width: 70px; min-height: 48px; padding: 8px 12px; border: 1px solid var(--white); border-radius: 100px; background: var(--paper); color: var(--ink); font: 700 13px var(--jp); cursor: pointer; }
+.mechanism { min-width: 0; color: var(--paper); font-family: var(--jp); touch-action: pan-y; }
+.flow-number { font: 500 14px/1.5 var(--mono); }
+.mechanism .flow-status { position: relative; padding-right: 380px; min-height: 78px; }
+.mechanism .flow-status h3 { margin: 4px 0 10px; font-size: 24px; line-height: 1.5; }
+.mechanism .flow-description { margin: 0; font-size: 14px; line-height: 1.8; }
+.flow-description span { display: block; }
+.flow-status .flow-description { position: absolute; right: 0; top: 13px; width: 370px; }
+.story-film { position: relative; width: 100%; min-width: 0; height: 350px; border-radius: 12px; overflow: hidden; background: var(--paper); color: var(--story-ink); fill: var(--story-ink); }
+.story-two-shot { display: grid; grid-template-columns: 1.05fr 1fr; grid-template-rows: minmax(0, 1fr); align-items: center; }
+.story-room-shot, .story-screen-shot { width: 100%; min-width: 0; min-height: 0; }
+.story-room-shot { position: absolute; inset: 0 auto auto 0; display: block; width: calc(51.2% + 48.8% * var(--story-zoom, 0)); height: 100%; z-index: 1; }
+.story-screen-shot { grid-column: 2; height: 100%; padding-right: 12px; box-sizing: border-box; }
+.story-action-screen { width: 100%; height: 100%; display: block; }
+.story-film text { font-family: var(--jp); }
+.story-film .story-time { font-family: var(--mono); }
+.story-eyecatch { display: grid; place-items: center; }
+.story-eyecatch > svg { width: min(70%, 600px); height: 100%; }
+.story-wordmark { font-family: var(--sans) !important; letter-spacing: -.02em; }
+.story-summary { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; padding: 12px 24px; }
+.story-summary-places { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center; }
+.story-summary-places svg { display: block; width: 100%; height: 180px; }
+.story-summary-places span { font-size: 17px; font-weight: 700; }
+.story-summary-lines { display: block; width: 100%; height: 60px; overflow: visible; }
+.mechanism .story-summary-result { margin: 4px 0 0; text-align: center; font-size: 18px; font-weight: 700; }
+.flow-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
+.flow-controls { display: flex; gap: 8px; }
+.flow-controls button { min-width: 72px; min-height: 44px; padding: 7px 14px; border: 1px solid var(--paper); border-radius: 100px; background: var(--paper); color: var(--ink); font: 700 13px var(--jp); cursor: pointer; }
 .flow-controls button:disabled { opacity: .5; cursor: default; }
 .flow-controls button:focus-visible, .mechanism:focus-visible { outline: 3px solid var(--marker); outline-offset: 4px; }
-.flow-play-state { display: block; min-height: 22px; margin-top: 12px; font-size: 12px; }
-.mechanism .flow-progress { display: flex; gap: 8px; height: 5px; margin-top: 24px; }
+.flow-controls .flow-sound { background: transparent; color: var(--paper); }
+.flow-play-state { font-size: 12px; }
+.mechanism .flow-progress { display: flex; gap: 8px; height: 4px; margin-top: 12px; }
 .flow-progress > span { flex: 1; overflow: hidden; background: var(--accent-soft); border-radius: 10px; }
-.flow-progress i { display: block; height: 100%; background: var(--ink); transform: scaleX(0); transform-origin: left; }
-.flow-progress .is-past i { transform: scaleX(1); }
-.flow-progress .is-current i { animation: mechanism-progress 5s linear both; }
-.flow-static-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.flow-static-item { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; border-radius: 12px; background: var(--paper); }
-.flow-static-item .flow-board { width: 100px; height: 100px; aspect-ratio: auto; }
-.flow-static-item .flow-number { font-size: 11px; }
-.flow-static-item h3 { margin: 2px 0 5px; font-size: 15px; line-height: 1.5; }
-.flow-static-item .flow-description { font-size: 11px; }
+.flow-progress i { display: block; height: 100%; background: var(--ink); transform-origin: left; }
+.flow-static-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.flow-static-item { display: grid; grid-template-columns: 145px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px; border-radius: 8px; background: var(--paper); color: var(--ink); }
+.flow-static-item .story-film { height: 90px; }
+.flow-static-item .story-room-shot { height: 90px; }
+.flow-static-item .story-screen-shot { padding-right: 1px; }
+.flow-static-item .flow-number { font-size: 10px; }
+.mechanism .flow-static-item h3 { margin: 2px 0; font-size: 14px; line-height: 1.4; }
+.flow-static-item .flow-description { font-size: 11px; line-height: 1.6; }
+.flow-static-item .story-summary { padding: 2px; }
+.flow-static-item .story-summary-places svg { height: 40px; }
+.flow-static-item .story-summary-places span, .flow-static-item .story-summary-result, .flow-static-item .story-summary-lines { display: none; }
 .mechanism-slides { display: grid; place-items: center; width: 100%; min-height: 100svh; padding: 0; background: var(--ink); }
 .mechanism-slide-frame { position: relative; width: min(100vw, 177.7778svh); aspect-ratio: 16 / 9; overflow: hidden; background: var(--accent); }
-.mechanism-slide-canvas { position: absolute; inset: 0 auto auto 0; box-sizing: border-box; display: grid; align-items: center; width: 1280px; height: 720px; padding: 64px; transform-origin: top left; }
-@keyframes mechanism-progress { to { transform: scaleX(1); } }
-@keyframes mechanism-mail { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes mechanism-deadline { from { opacity: 0; } to { opacity: 1; } }
+.mechanism-slide-canvas { position: absolute; inset: 0 auto auto 0; box-sizing: border-box; display: grid; align-items: center; width: 1280px; height: 720px; padding: 36px 48px; transform-origin: top left; }
+.mechanism-slides .story-film { height: 455px; }
+.mechanism-slides .story-room-shot { height: 455px; }
+.mechanism-slides .flow-status { min-height: 91px; }
+.mechanism-slides .flow-status h3 { font-size: 30px; }
+.mechanism-slides .story-summary-places svg { height: 225px; }
+.mechanism-slides .story-summary-lines { height: 90px; }
+.mechanism-slides .flow-static-item .story-film, .mechanism-slides .flow-static-item .story-room-shot { height: 90px; }
 @media (max-width: 700px) {
-  .flow-slide { grid-template-columns: minmax(0, 1fr); gap: 20px; }
-  .flow-task { padding: 8px; font-size: 10px; }
-  .flow-task strong { font-size: 12px; }
-  .flow-task-date { gap: 6px; font-size: 10px; }
-  .flow-task { left: 38.5%; width: 25%; padding: 4px 5px; }
-  .flow-task > span, .flow-task strong span { display: none; }
-  .flow-task strong { font-size: 10px; }
-  .flow-task-date { gap: 4px; margin-top: 2px; font-size: 9px; }
-  .flow-scene-2 .flow-task, .flow-scene-4 .flow-task, .flow-scene-6 .flow-task { left: 40%; }
-  .flow-copy { padding-inline: 2px; }
-  .mechanism .flow-status h3 { margin: 8px 0; font-size: 22px; }
-  .mechanism .flow-description { font-size: 13px; line-height: 1.8; }
-  .flow-controls { margin-top: 18px; }
-  .flow-controls button { flex: 1; }
-  .flow-play-state { margin-top: 8px; }
-  .mechanism .flow-progress { margin-top: 16px; }
-  .flow-static-grid { grid-template-columns: minmax(0, 1fr); gap: 7px; }
-  .flow-static-item { grid-template-columns: 70px minmax(0, 1fr); gap: 8px; padding: 6px; }
-  .flow-static-item .flow-board { width: 70px; height: 70px; border-radius: 6px; }
-  .flow-static-item h3 { margin: 0 0 3px; font-size: 13px; }
-  .flow-static-item .flow-description { font-size: 10px; line-height: 1.7; }
-  .flow-static-item .flow-number { font-size: 10px; }
+  .landing .mechanism .flow-status { padding: 0; min-height: 124px; }
+  .landing .mechanism .flow-status h3 { font-size: 19px; margin: 4px 0 7px; }
+  .landing .mechanism .flow-number { font-size: 12px; }
+  .landing .mechanism .flow-status .flow-description { position: static; width: auto; font-size: 13px; }
+  .landing .mechanism .story-film { height: 360px; }
+  .landing .mechanism .story-two-shot { grid-template-columns: 1fr; grid-template-rows: 142px 218px; }
+  .landing .mechanism .story-room-shot { width: 100%; height: calc(142px + 218px * var(--story-zoom, 0)); }
+  .landing .mechanism .story-screen-shot { grid-column: 1; grid-row: 2; width: 100%; height: 218px; padding: 0 5px; }
+  .landing .mechanism .story-action-screen { width: 100%; height: 100%; }
+  .landing .mechanism .flow-footer { flex-wrap: wrap; gap: 6px; }
+  .landing .mechanism .flow-controls { width: 100%; gap: 6px; }
+  .landing .mechanism .flow-controls button { flex: 1; min-width: 0; padding-inline: 8px; font-size: 12px; }
+  .landing .mechanism .flow-play-state { font-size: 11px; }
+  .landing .mechanism .story-summary { padding: 16px 8px; }
+  .landing .mechanism .story-summary-places { gap: 3px; }
+  .landing .mechanism .story-summary-places svg { height: 150px; }
+  .landing .mechanism .story-summary-places span { display: block; font-size: 12px; }
+  .landing .mechanism .story-summary-lines { height: 90px; }
+  .landing .mechanism .story-summary-result { font-size: 14px; }
+  .landing .mechanism .flow-static-grid { grid-template-columns: 1fr; gap: 5px; }
+  .landing .mechanism .flow-static-item { grid-template-columns: 84px minmax(0, 1fr); padding: 5px; gap: 6px; min-height: 64px; }
+  .landing .mechanism .flow-static-item .story-film { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; height: 56px; }
+  .landing .mechanism .flow-static-item .story-room-shot { width: 51.2%; height: 56px; }
+  .landing .mechanism .flow-static-item .story-screen-shot { grid-column: 2; grid-row: 1; width: auto; height: auto; padding: 0; }
+  .landing .mechanism .flow-static-item .flow-number { font-size: 9px; }
+  .landing .mechanism .flow-static-item h3 { font-size: 12px; }
+  .landing .mechanism .flow-static-item .flow-description { font-size: 10px; line-height: 1.4; }
+  .landing .mechanism .flow-static-item .story-summary-places svg { height: 38px; }
 }
-/* Keep the recording composition at 1280×720; resize the complete canvas on small screens. */
-.mechanism-slides .flow-slide { grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 32px; }
-.mechanism-slides .flow-task { left: 39.5%; width: 22%; padding: 10px; font-size: 12px; }
-.mechanism-slides .flow-scene-2 .flow-task, .mechanism-slides .flow-scene-4 .flow-task, .mechanism-slides .flow-scene-6 .flow-task { left: 41%; }
-.mechanism-slides .flow-task strong { font-size: 17px; }
-.mechanism-slides .flow-task-date { gap: 10px; font-size: 12px; }
-.mechanism-slides .flow-status h3 { margin: 16px 0; font-size: 30px; }
-.mechanism-slides .flow-description { font-size: 14px; line-height: 1.9; }
-.mechanism-slides .flow-controls { margin-top: 28px; }
-.mechanism-slides .flow-controls button { flex: none; }
-.mechanism-slides .flow-progress { margin-top: 24px; }
-.mechanism-slides .flow-static-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.mechanism-slides .flow-static-item { grid-template-columns: 100px minmax(0, 1fr); padding: 10px; gap: 12px; }
-.mechanism-slides .flow-static-item .flow-board { width: 100px; height: 100px; }
-.mechanism-slides .flow-static-item .flow-description { font-size: 11px; }
 @media (prefers-reduced-motion: reduce) {
   .mechanism *, .mechanism *::before, .mechanism *::after { animation: none !important; transition: none !important; }
 }
