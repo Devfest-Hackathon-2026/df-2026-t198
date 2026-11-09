@@ -54,7 +54,9 @@ export function notificationTargets(snapshot: NotificationSnapshot, now: Date, o
       scheduledAt: new Date(starts - 30 * 60_000).toISOString(), expiresAt: new Date(starts).toISOString(),
       planId: plan.planId, startsAt: new Date(starts).toISOString(), planRevision: plan.revision });
   }
-  return targets;
+  // Missing cloudSince denotes a completed manual migration with its existing send history.
+  const since = snapshot.settings!.cloudSince;
+  return since === undefined ? targets : targets.filter(target => Date.parse(target.scheduledAt) >= Date.parse(since));
 }
 function freshness(snapshot: NotificationSnapshot, now: Date): string {
   const systems = new Set(activeAssignments(snapshot, now).map(row => row.key.system));

@@ -8,7 +8,7 @@ export class NotificationNotReady extends Error {}
 export interface NotificationSettingsView {
   settings: NotificationSettings;
   status: NotificationStatus | null;
-  availability: SenderState | 'migration-pending' | 'recipient-unavailable';
+  availability: SenderState | 'recipient-unavailable';
 }
 export function createNotificationSettingsStore(db: Firestore, options: {
   checkSender: () => Promise<SenderState>;
@@ -30,15 +30,17 @@ export function createNotificationSettingsStore(db: Firestore, options: {
         updatedAt: new Date(0).toISOString() };
       if (current.recipientUid !== uid) throw new SessionForbidden();
       const migrated = current.deliveryOwner === 'cloud' && current.migrationState === 'ready';
-      const availability = sender !== 'ready' ? sender : !recipient || !singleMailbox(recipient) ? 'recipient-unavailable' :
-        !migrated ? 'migration-pending' : 'ready';
+      const availability = sender !== 'ready' ? sender : !recipient || !singleMailbox(recipient) ? 'recipient-unavailable' : 'ready';
       let settings = current;
       if (input) {
         if (input.enabled && availability !== 'ready') throw new NotificationNotReady();
-        if (current.version !== input.version && current.enabled !== input.enabled) throw new NotificationSettingsConflict();
-        if (current.enabled !== input.enabled || !saved) {
+        const cutover = input.enabled && !migrated;
+        if (current.version !== input.version && (current.enabled !== input.enabled || cutover)) throw new NotificationSettingsConflict();
+        if (current.enabled !== input.enabled || cutover || !saved) {
+          const now = (options.clock?.() ?? new Date()).toISOString();
           settings = { ...current, enabled: input.enabled, version: current.version + 1,
-            updatedAt: (options.clock?.() ?? new Date()).toISOString() };
+            ...(cutover ? { deliveryOwner: 'cloud', migrationState: 'ready', cloudSince: now } as const : {}),
+            updatedAt: now };
           tx.set(ref, settings);
         }
       }

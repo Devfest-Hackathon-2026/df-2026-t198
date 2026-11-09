@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import type { NotificationDelivery, NotificationTarget } from '@kadai-hisho/core';
 import { createNotificationStore } from '../src/notifications/store.js';
 import { createNotificationDispatch, type NotificationSender } from '../src/notifications/dispatch.js';
+import { createNotificationSettingsStore } from '../src/notifications/settings.js';
 import { notificationTargets } from '../src/notifications/targets.js';
 import { sessionEmulatorFixture } from './session-emulator-fixture.js';
 import { notificationFixture, origin, recipient } from './notification-fixture.js';
@@ -85,6 +86,33 @@ describe.skipIf(process.env['RUN_NOTIFICATION_EMULATOR_TESTS'] !== '1')('durable
     const text = JSON.stringify((await delivery(target.key).get()).data());
     expect(text).not.toContain(recipient); expect(text).not.toContain('架空のレポート');
     expect((await student().collection('notificationStatus').doc('current').get()).data()).toMatchObject({ state: 'accepted', lastAcceptedAt: now.toISOString() });
+  });
+  it('self-service cutover skips elapsed windows, sends later windows and the next morning, and stays cloud on stop', async () => {
+    now = new Date('2030-11-11T07:45:00+09:00');
+    await settings().update({ enabled: false, deliveryOwner: 'extension', migrationState: 'not-started' });
+    const change = createNotificationSettingsStore(fixture.db, {
+      checkSender: async () => 'ready', resolveRecipient: recipientFor, clock: () => now,
+    });
+    await change(uid, { enabled: true, version: 1 });
+    expect(await dispatch()()).toMatchObject({ candidates: 0, attempted: 0 });
+    expect((await student().collection('notificationDeliveries').get()).empty).toBe(true);
+    now = new Date('2030-11-11T12:30:00+09:00');
+    expect((await dispatch()()).attempted).toBe(1);
+    await change(uid, { enabled: false, version: 2 });
+    expect((await settings().get()).data()).toMatchObject({ enabled: false, deliveryOwner: 'cloud', migrationState: 'ready' });
+    now = new Date('2030-11-12T07:30:00+09:00');
+    expect((await dispatch()()).attempted).toBe(0);
+    await change(uid, { enabled: true, version: 3 });
+    expect((await dispatch()()).attempted).toBe(1);
+    expect(send).toHaveBeenCalledTimes(2);
+  });
+  it('does not send an elapsed reminder after self-service cutover, even from an old reservation', async () => {
+    const target = await queued(), attempt = (await store.reserve(uid, target.key))!;
+    now = new Date('2030-11-11T12:45:00+09:00');
+    await settings().update({ cloudSince: now.toISOString() });
+    expect(await store.start(uid, target.key, attempt)).toBeNull();
+    expect((await dispatch()()).attempted).toBe(0);
+    expect(send).not.toHaveBeenCalled();
   });
   it('reclaims only reservations and prevents a stale attempt from starting or recording a result', async () => {
     const target = await queued();
