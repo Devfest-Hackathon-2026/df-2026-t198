@@ -36,7 +36,8 @@ beforeEach(() => {
   const at = new Date().toISOString();
   for (const uid of ['student-a', 'student-b']) {
     const sample = observation(); sample.assignments[0]!.title = uid === 'student-a' ? '数学のレポート' : '物理の演習';
-    sample.assignments[0]!.deadline = { kind: 'date', date: new Date(Date.now() + 86400_000).toISOString().slice(0, 10),
+    // Use the Japan date so the deadline stays tomorrow between 00:00 and 09:00 JST, when the UTC date lags behind.
+    sample.assignments[0]!.deadline = { kind: 'date', date: new Date(Date.now() + 86400_000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }),
       dueText: '架空の日付', timeZone: 'Asia/Tokyo' };
     const applied = applyObservation([], sample, at);
     applied.assignments[0]!.reviewReasons = [{ kind: 'unreadable-deadline', detail: 'unreadable' }];

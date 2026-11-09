@@ -60,7 +60,12 @@ async function login(page, role) {
 async function capture(page, name, anchor, target) {
   await page.evaluate(() => globalThis.document.fonts.ready);
   await anchor.scrollIntoViewIfNeeded();
-  const box = await anchor.boundingBox();
+  let box = await anchor.boundingBox();
+  if (name === 'session') {
+    const heading = await page.locator('.session-heading').boundingBox();
+    const primary = await page.locator('.session-primary').boundingBox();
+    box = { x: box.x, y: heading.y, width: box.width, height: primary.y + primary.height - heading.y };
+  }
   if (target) {
     const targetBox = await target.boundingBox();
     assert(targetBox.x >= box.x && targetBox.x + targetBox.width <= box.x + box.width &&
@@ -71,7 +76,8 @@ async function capture(page, name, anchor, target) {
     node.style.outline = '3px solid var(--change-text)';
     node.style.outlineOffset = '3px';
   });
-  const buffer = await anchor.screenshot({ path: new URL(`${name}.png`, output).pathname, animations: 'disabled' });
+  const screenshot = { path: new URL(`${name}.png`, output).pathname, animations: 'disabled' };
+  const buffer = name === 'session' ? await page.screenshot({ ...screenshot, clip: box }) : await anchor.screenshot(screenshot);
   shots.push({ name, viewport: page.viewportSize(), width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20),
     ...(target ? { highlighted: await target.innerText() } : {}), sha256: createHash('sha256').update(buffer).digest('hex') });
   if (target) await target.evaluate(node => { node.style.removeProperty('outline'); node.style.removeProperty('outline-offset'); });
@@ -89,12 +95,11 @@ try {
   await login(demo, 'student');
   const home = demo.getByRole('region', { name: '体験用LMSの授業一覧', exact: true });
   assert.deepEqual(await home.locator('.demo-course h2').allTextContents(), courses);
-  // Refresh the older standalone LMS asset too, even though the current page uses the two reader views.
+  // Check all six courses without replacing the unused standalone LMS asset.
   const lmsBody = demo.locator('[data-demo-pane="lms"] .demo-pane-body');
   // Expand only this capture page's scrollbox so the asset includes all six courses.
   await lmsBody.evaluate(node => { node.style.height = 'auto'; node.style.overflow = 'visible'; });
   assert.equal(await lmsBody.evaluate(node => node.scrollHeight <= node.clientHeight), true);
-  await capture(demo, 'lms', home, null);
   await lmsBody.evaluate(node => { node.style.removeProperty('height'); node.style.removeProperty('overflow'); });
   // The original starts just above the home panel, leaving its 36px top margin.
   await demo.getByRole('button', { name: 'LMSを開く', exact: true }).click();
@@ -126,9 +131,8 @@ try {
   assert.match(await previous.innerText(), /11\/12 17:00/);
   assert.equal(await changed.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
   assert.match(await previous.evaluate(node => globalThis.getComputedStyle(node).textDecorationLine), /line-through/);
-  await capture(student, 'updated', student.locator('.course-panel'), changed);
   const course = student.locator('.course-cell').filter({ hasText: courses[0] });
-  await course.locator('.previous-deadline').waitFor();
+  await course.locator('.deadline').filter({ hasText: '11/13 17:00' }).waitFor();
   await student.getByRole('button', { name: '閉じる', exact: true }).click();
   assert.equal(await table.evaluate(node => node.scrollWidth <= node.clientWidth), true, 'all weekdays fit the captured timetable');
   await capture(student, 'student', table, course);
@@ -136,13 +140,16 @@ try {
   await changes.getByText('締切が 11/12 17:00 から 11/13 17:00 に変わりました', { exact: false }).waitFor();
   await session.getByRole('region', { name: '次の面談までの締切', exact: true })
     .getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
-  const changedRow = changes.locator('li').filter({ hasText: '締切が 11/12 17:00 から 11/13 17:00 に変わりました' });
-  await session.setViewportSize({ width: 800, height: 1100 });
-  await capture(session, 'session', changes, changedRow);
+  const changedRow = session.locator('.td-table tbody tr').filter({ hasText: '第3回レポート（要約と引用）' });
+  await changedRow.getByText('11/13 17:00', { exact: false }).waitFor();
+  await session.getByRole('link', { name: /① 確かめる/ }).waitFor();
+  await session.getByRole('link', { name: /② 相談する/ }).waitFor();
+  // Include the current two-view navigation and the deadline table in the asset.
+  await capture(session, 'session', session.locator('.session-page'), changedRow);
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/capture-results.json`, JSON.stringify({ status: 'pass', fixedTime,
     viewport: options.viewport, serverClock: 'real; history timestamps may differ', shots, browserErrors: errors }, null, 2));
-  log('PASS landing capture: four fictional assets, same highlighted changed deadline in student/session, six courses and session history.');
+  log('PASS landing capture: current student/session assets, same highlighted changed deadline, six courses and two-view navigation.');
 } finally {
   await browser.close();
   await db.terminate();
