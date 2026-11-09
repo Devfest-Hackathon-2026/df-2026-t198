@@ -5,7 +5,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { log } from 'node:console';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const base = 'http://127.0.0.1:5182';
+const base = process.env.KADAI_WEB_ORIGIN || 'http://127.0.0.1:5182';
 const evidence = process.env.ARTIFACT_EVIDENCE_DIR || '/tmp/kadai-i224-evidence';
 await mkdir(evidence, { recursive: true });
 const browser = await chromium.launch({ headless: true });
