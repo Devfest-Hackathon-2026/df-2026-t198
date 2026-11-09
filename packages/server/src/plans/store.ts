@@ -7,8 +7,14 @@ import { documentKey } from '../observations/store.js';
 import { SessionForbidden } from '../sessions/store.js';
 import { isDemoStudent } from '../demo/store.js';
 
-export class PlanConflict extends Error {}
-export class PlanAfterDeadline extends PlanConflict {}
+export type PlanConflictCode = 'plan-conflict' | 'plan-after-deadline' | 'plan-class-conflict' |
+  'plan-overlap' | 'plan-in-past' | 'plan-assignment-unavailable';
+export class PlanConflict extends Error {
+  constructor(readonly code: PlanConflictCode = 'plan-conflict') { super(code); }
+}
+export class PlanAfterDeadline extends PlanConflict {
+  constructor() { super('plan-after-deadline'); }
+}
 export interface PlanStore {
   save(actor: string, studentUid: string, planId: string, input: PreparationPlanInput | null): Promise<PreparationPlan>;
 }
@@ -53,9 +59,13 @@ export function createPlanStore(db: Firestore, syncDemo: (uid: string) => Promis
         });
         const weekday = new Date(`${input.date}T00:00:00Z`).getUTCDay() || 7;
         if (assignment && preparationAfterDeadline(input.startsAt, assignment.officialDeadline?.deadline)) throw new PlanAfterDeadline();
-        if (!assignment || assignment.presenceState === 'cancelled' || assignment.submission === 'submitted' ||
-          Date.parse(input.startsAt) <= Date.now() || overlaps || courses.docs.some(doc => (doc.data() as Course).slots.some(slot =>
-            slot.weekday === weekday && slot.period === input.period))) throw new PlanConflict();
+        if (!assignment || assignment.presenceState === 'cancelled' || assignment.submission === 'submitted') {
+          throw new PlanConflict('plan-assignment-unavailable');
+        }
+        if (Date.parse(input.startsAt) <= Date.now()) throw new PlanConflict('plan-in-past');
+        if (courses.docs.some(doc => (doc.data() as Course).slots.some(slot =>
+          slot.weekday === weekday && slot.period === input.period))) throw new PlanConflict('plan-class-conflict');
+        if (overlaps) throw new PlanConflict('plan-overlap');
         const now = new Date().toISOString();
         next = { ...input, planId, title: assignment.latest.title, decidedOn: new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }),
           timeZone: 'Asia/Tokyo', confirmedBy: actor, createdByRole: actor === studentUid ? 'student' : 'supporter',

@@ -100,7 +100,7 @@ describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A prepar
     const response = await request(supporter, student, id, 'PUT', { ...input, assignment, period,
       startsAt: `${input.date}T${start}:00+09:00`, endsAt: `${input.date}T${end}:00+09:00` });
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ error: 'plan-conflict' });
+    expect(await response.json()).toEqual({ error: 'plan-overlap' });
     expect((await plans().doc(id).get()).exists).toBe(false);
     expect((await items().get()).docs.map(doc => doc.data())).toEqual(before);
   });
@@ -112,6 +112,30 @@ describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A prepar
         startsAt: `${input.date}T${start}:00+09:00`, endsAt: `${input.date}T${end}:00+09:00` })).status).toBe(200);
     }
     expect((await plans().get()).size).toBe(3);
+  });
+  it.each([
+    ['class', { period: 2 }, 'plan-class-conflict'],
+    ['past', { date: '2000-11-11', startsAt: '2000-11-11T13:00:00+09:00', endsAt: '2000-11-11T14:30:00+09:00' }, 'plan-in-past'],
+    ['missing assignment', { assignment: { ...input.assignment, sourceId: 'missing' } }, 'plan-assignment-unavailable'],
+  ])('explains a %s rejection without partial writes', async (_name, patch, code) => {
+    const id = randomUUID(); const before = (await items().get()).docs.map(doc => doc.data());
+    const response = await request(student, student, id, 'PUT', { ...input, ...patch });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: code });
+    expect((await plans().doc(id).get()).exists).toBe(false);
+    expect((await items().get()).docs.map(doc => doc.data())).toEqual(before);
+  });
+  it.each([{ submission: 'submitted' }, { presenceState: 'cancelled' }])('explains an unavailable assignment: %j', async patch => {
+    const ref = fixture.db.doc(`students/${student}/assignments/${documentKey(input.assignment.system, input.assignment.sourceId)}`);
+    const original = (await ref.get()).data()!;
+    try {
+      await ref.update(patch);
+      const response = await request(student, student, randomUUID());
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: 'plan-assignment-unavailable' });
+      expect((await plans().get()).empty).toBe(true);
+      expect((await items().get()).empty).toBe(true);
+    } finally { await ref.set(original); }
   });
   it('allows the same time after another assignment plan is cancelled', async () => {
     const assignment = await secondAssignment(); const id = randomUUID();
@@ -146,12 +170,16 @@ describe.skipIf(process.env['RUN_PLAN_EMULATOR_TESTS'] !== '1')('option A prepar
     const before = (await plans().doc(id).get()).updateTime;
     expect((await request(supporter, student, id)).status).toBe(200);
     expect((await plans().doc(id).get()).updateTime).toEqual(before);
-    expect((await request(supporter, student, id, 'PUT', { ...input, period: 4 })).status).toBe(409);
+    const mismatch = await request(supporter, student, id, 'PUT', { ...input, period: 4 });
+    expect(mismatch.status).toBe(409);
+    expect(await mismatch.json()).toEqual({ error: 'plan-conflict' });
     expect((await request(student, student, id, 'DELETE')).status).toBe(200);
     expect((await plans().doc(id).get()).data()).toMatchObject({ status: 'cancelled', revision: 2 });
     expect((await target()).data()!['mockEvents'][calendar['eventId']]).toBeUndefined();
     expect((await request(student, student, id, 'DELETE')).status).toBe(200);
-    expect((await request(supporter, student, id)).status).toBe(409); // Delayed create cannot undo removal.
+    const delayed = await request(supporter, student, id);
+    expect(delayed.status).toBe(409); // Delayed create cannot undo removal.
+    expect(await delayed.json()).toEqual({ error: 'plan-conflict' });
     expect((await plans().doc(id).get()).data()!['status']).toBe('cancelled');
   });
   it('allows self-created plans, rejects outsiders and revoked supporters without partial writes', async () => {
