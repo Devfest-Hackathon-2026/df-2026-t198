@@ -32,9 +32,9 @@ try {
         if (globalThis.drop) throw new Error('synthetic-private-transport-error');
         if (message.type === 'digest-setting') {
           if (globalThis.deny) return { ok: false, enabled: globalThis.preference, problem: globalThis.problem };
-          globalThis.preference = message.enabled;
+          globalThis.preference = globalThis.cloudOwned ? false : message.enabled;
         }
-        return { ok: true, enabled: globalThis.preference, problem: globalThis.problem };
+        return { ok: true, enabled: globalThis.preference, problem: globalThis.problem, cloudOwned: globalThis.cloudOwned };
       } } };
     });
     await page.goto('https://extension.example.test/options.html');
@@ -58,6 +58,10 @@ try {
     await status.getByText('メール送信の許可を確認できません。「毎朝、今日やることをGmailで受け取る」を入れ直してください。', { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), true);
     await page.screenshot({ path: `${dir}/options-authorization-${name}.png`, fullPage: true });
+    await page.evaluate(() => { globalThis.cloudOwned = true; });
+    await toggle.click();
+    await status.getByText('メール通知は学生画面で設定します。この拡張機能からは送りません。', { exact: true }).waitFor();
+    assert.equal(await toggle.isChecked(), false);
     await page.evaluate(() => { globalThis.drop = true; }); await toggle.click();
     await page.waitForFunction(() => globalThis.document.querySelector('#digest-status').textContent.includes('開き直して'));
     assert.equal((await page.locator('body').textContent()).includes('synthetic-private'), false);

@@ -62,6 +62,7 @@ async function digestSetting(enabled?: boolean) {
       ? { type: 'digest-status' } : { type: 'digest-setting', enabled });
     digestToggle.checked = result.enabled;
     digestStatus.textContent = !result.ok ? 'メールの設定を確認できませんでした。Googleとの接続を確認して、もう一度操作してください。'
+      : result.cloudOwned ? 'メール通知は学生画面で設定します。この拡張機能からは送りません。'
       : result.problem === 'send-unconfirmed' ? '届いたか確認できないメールがあります。Gmailを確認してください。同じメールは自動で送り直しません。'
       : result.problem === 'authorization-required' ? 'メール送信の許可を確認できません。「毎朝、今日やることをGmailで受け取る」を入れ直してください。'
       : result.problem ? 'メールを用意できませんでした。しばらくしてから設定画面を開き直してください。'

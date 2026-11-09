@@ -1,0 +1,164 @@
+{
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "stages": 5,
+  "timelineMs": 25000,
+  "audioCapture": "Web Audio output via MediaStreamDestination",
+  "audioOffsetSeconds": 0.8629280000000001,
+  "audioDurationSeconds": 25.617072,
+  "recordedWallSeconds": 25.70239999999851,
+  "cues": [
+    {
+      "frequency": 523,
+      "audioTime": 1.340952380952381
+    },
+    {
+      "frequency": 784,
+      "audioTime": 1.430952380952381
+    },
+    {
+      "frequency": 220,
+      "audioTime": 3.7964625850340137
+    },
+    {
+      "frequency": 277,
+      "audioTime": 3.851462585034014
+    },
+    {
+      "frequency": 330,
+      "audioTime": 3.9064625850340136
+    },
+    {
+      "frequency": 440,
+      "audioTime": 3.9614625850340137
+    },
+    {
+      "frequency": 554,
+      "audioTime": 4.016462585034014
+    },
+    {
+      "frequency": 660,
+      "audioTime": 4.071462585034014
+    },
+    {
+      "frequency": 523,
+      "audioTime": 7.650975056689342
+    },
+    {
+      "frequency": 659,
+      "audioTime": 7.740975056689342
+    },
+    {
+      "frequency": 784,
+      "audioTime": 7.830975056689342
+    },
+    {
+      "frequency": 220,
+      "audioTime": 9.804625850340136
+    },
+    {
+      "frequency": 277,
+      "audioTime": 9.859625850340136
+    },
+    {
+      "frequency": 330,
+      "audioTime": 9.914625850340135
+    },
+    {
+      "frequency": 440,
+      "audioTime": 9.969625850340135
+    },
+    {
+      "frequency": 554,
+      "audioTime": 10.024625850340136
+    },
+    {
+      "frequency": 660,
+      "audioTime": 10.079625850340136
+    },
+    {
+      "frequency": 220,
+      "audioTime": 13.810068027210884
+    },
+    {
+      "frequency": 277,
+      "audioTime": 13.865068027210883
+    },
+    {
+      "frequency": 330,
+      "audioTime": 13.920068027210883
+    },
+    {
+      "frequency": 440,
+      "audioTime": 13.975068027210883
+    },
+    {
+      "frequency": 554,
+      "audioTime": 14.030068027210884
+    },
+    {
+      "frequency": 660,
+      "audioTime": 14.085068027210884
+    },
+    {
+      "frequency": 523,
+      "audioTime": 17.867755102040817
+    },
+    {
+      "frequency": 659,
+      "audioTime": 17.957755102040817
+    },
+    {
+      "frequency": 784,
+      "audioTime": 18.047755102040817
+    },
+    {
+      "frequency": 880,
+      "audioTime": 18.169614512471654
+    },
+    {
+      "frequency": 659,
+      "audioTime": 18.259614512471654
+    },
+    {
+      "frequency": 220,
+      "audioTime": 20.218775510204082
+    },
+    {
+      "frequency": 277,
+      "audioTime": 20.273775510204082
+    },
+    {
+      "frequency": 330,
+      "audioTime": 20.328775510204082
+    },
+    {
+      "frequency": 440,
+      "audioTime": 20.38377551020408
+    },
+    {
+      "frequency": 554,
+      "audioTime": 20.43877551020408
+    },
+    {
+      "frequency": 660,
+      "audioTime": 20.49377551020408
+    },
+    {
+      "frequency": 880,
+      "audioTime": 22.27374149659864
+    },
+    {
+      "frequency": 659,
+      "audioTime": 22.36374149659864
+    }
+  ],
+  "files": {
+    "webm": "out/issue-262/story-short.webm",
+    "audio": "out/issue-262/story-short-audio.webm",
+    "mp4": "out/issue-262/story-short.mp4"
+  },
+  "durationSeconds": 26.539333
+}

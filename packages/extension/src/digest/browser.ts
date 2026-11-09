@@ -58,14 +58,15 @@ async function requestDigest(user: Identity, date: string) {
   if (!response.ok) throw new Error('digest-unavailable');
   return parseDigest(await response.json(), date);
 }
-async function extensionDelivery(user: Identity): Promise<boolean> {
+async function deliveryOwner(user: Identity): Promise<'none' | 'extension' | 'cloud' | null> {
   const response = await fetch(`${probeConfig.apiOrigin}/api/v1/digest/delivery`, { method: 'GET',
     headers: { Authorization: `Bearer ${user.token}` }, credentials: 'omit', redirect: 'error', cache: 'no-store',
     referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(15_000) });
   if (!response.ok) throw new Error('digest-unavailable');
   const setting = await response.json() as { enabled?: unknown; deliveryOwner?: unknown } | null;
   return typeof setting?.enabled === 'boolean' &&
-    (setting.deliveryOwner === 'none' || setting.deliveryOwner === 'extension');
+    (setting.deliveryOwner === 'none' || setting.deliveryOwner === 'extension' || setting.deliveryOwner === 'cloud')
+    ? setting.deliveryOwner : null;
 }
 async function updateProblem(user: Identity, version: number, problem?: string) {
   const saved = await preference();
@@ -127,7 +128,8 @@ async function tick() {
   const secrets = [user.token, token, typeof session['ynuSessionId'] === 'string' ? session['ynuSessionId'] : ''];
   for (const item of due) {
     try {
-      if (!await extensionDelivery(await identity())) return;
+      const delivery = await deliveryOwner(await identity());
+      if (delivery !== 'none' && delivery !== 'extension') return;
       // Complete asynchronous identity/consent checks before reserving a send.
       const current = await identity();
       const consent = await preference();
@@ -188,7 +190,7 @@ export function startDigest() {
   chrome.runtime.onInstalled.addListener(() => { void runDigest(); });
 }
 
-export interface DigestStatus { ok: boolean; enabled: boolean; problem?: string }
+export interface DigestStatus { ok: boolean; enabled: boolean; problem?: string; cloudOwned?: boolean }
 export function handleDigestMessage(message: unknown, sender: chrome.runtime.MessageSender, respond: (status: DigestStatus) => void): boolean | undefined {
   if (!message || typeof message !== 'object' || !('type' in message) ||
     (message.type !== 'digest-status' && message.type !== 'digest-setting')) return undefined;
@@ -207,14 +209,19 @@ export function handleDigestMessage(message: unknown, sender: chrome.runtime.Mes
           await clearAlarms(); respond({ ok: true, enabled: false }); return;
         }
         const user = await identity();
+        const owner = await deliveryOwner(user);
+        if (owner === 'cloud') { respond({ ok: true, enabled: false, cloudOwned: true }); return; }
+        if (owner === null) throw new Error('digest-unavailable');
         await googleToken(user, true);
         if (version !== preferenceVersion) throw new Error('setting-changed');
         await chrome.storage.local.set({ [preferenceKey]: { enabled: true, uid: user.uid, namespace } });
         await ensureAlarms(new Date());
         respond({ ok: true, enabled: true }); void runDigest(); return;
       }
-      if (!saved?.enabled) { respond({ ok: true, enabled: false }); return; }
+      if (!firebaseAuth().currentUser && !saved?.enabled) { respond({ ok: true, enabled: false }); return; }
       const user = await identity();
+      if (await deliveryOwner(user) === 'cloud') { respond({ ok: true, enabled: false, cloudOwned: true }); return; }
+      if (!saved?.enabled) { respond({ ok: true, enabled: false }); return; }
       respond({ ok: true, enabled: matches(saved, user), ...(saved.problem ? { problem: saved.problem } : {}) });
     } catch { respond({ ok: false, enabled: false, problem: 'authorization-required' }); }
   })();

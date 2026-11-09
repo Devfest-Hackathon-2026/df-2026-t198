@@ -187,6 +187,8 @@ export interface NotificationSettings {
   morningTime: '07:30';
   recipientUid: string;
   migrationState: 'not-started' | 'ready';
+  /** Earliest eligible cloud window; omitted for existing manual migrations. */
+  cloudSince?: IsoDateTime;
   updatedAt: IsoDateTime;
 }
 export type NotificationDeliveryState = 'pending' | 'reserved' | 'sending' | 'accepted' |

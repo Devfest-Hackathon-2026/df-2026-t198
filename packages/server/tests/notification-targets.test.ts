@@ -12,6 +12,24 @@ describe('notification windows and latest content (#156 N4)', () => {
   ])('selects the half-open window at %s', (at, kinds) => {
     expect(select(at).map(t => t.kind)).toEqual(kinds);
   });
+  it.each([
+    ['2030-11-11T07:29:59+09:00', '2030-11-11T07:30:00+09:00', ['morning']],
+    ['2030-11-11T07:30:00+09:00', '2030-11-11T07:30:00+09:00', ['morning']],
+    ['2030-11-11T07:30:01+09:00', '2030-11-11T07:45:00+09:00', []],
+    ['2030-11-11T12:30:01+09:00', '2030-11-11T12:45:00+09:00', []],
+    ['2030-11-11T12:30:00+09:00', '2030-11-11T12:45:00+09:00', ['reminder']],
+    ['2030-11-11T12:45:00+09:00', '2030-11-12T07:30:00+09:00', ['morning']],
+  ])('only selects windows starting at or after cutover %s at %s', (since, at, kinds) => {
+    const data = notificationFixture();
+    Object.assign(data.settings!, { cloudSince: since });
+    expect(notificationTargets(data, new Date(at), origin).map(t => t.kind)).toEqual(kinds);
+  });
+  it('preserves manual migrations without cloudSince and refuses an invalid cutover timestamp', () => {
+    const data = notificationFixture();
+    expect(notificationTargets(data, new Date('2030-11-11T12:45:00+09:00'), origin)).toHaveLength(1);
+    Object.assign(data.settings!, { cloudSince: 'invalid' });
+    expect(notificationTargets(data, new Date('2030-11-11T12:45:00+09:00'), origin)).toEqual([]);
+  });
   it('finds next-month midnight preparations and renders their actual date', () => {
     const data = notificationFixture(), plan = data.plans[0]!;
     plan.startsAt = '2030-12-01T00:10:00+09:00'; plan.endsAt = '2030-12-01T01:10:00+09:00'; plan.date = '2030-12-01';

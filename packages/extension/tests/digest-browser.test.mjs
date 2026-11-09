@@ -103,7 +103,7 @@ it('sends just the one preparation mail at 30 minutes, skips elapsed plans, and 
 it('defaults to OFF, requests Gmail permission only on explicit opt-in, and stops when switched off', async () => {
   const f = await fixture({ enabled: false, now: '2026-11-07T10:00:00+09:00' });
   f.startDigest(); await f.runDigest(); expect(await f.message({ type: 'digest-status' })).toEqual({ ok: true, enabled: false });
-  expect(f.fetch).not.toHaveBeenCalled(); expect(f.chrome.identity.getAuthToken).not.toHaveBeenCalled();
+  expect(f.fetch.mock.calls.every(([url]) => url.endsWith('/digest/delivery'))).toBe(true); expect(f.chrome.identity.getAuthToken).not.toHaveBeenCalled();
   expect(await f.message({ type: 'digest-setting', enabled: true })).toEqual({ ok: true, enabled: true });
   await f.runDigest(); expect(f.sent).toHaveLength(1);
   expect(f.chrome.identity.getAuthToken.mock.calls[0][0]).toEqual({ interactive: true, scopes: ['openid', 'email', 'https://www.googleapis.com/auth/gmail.send'] });
@@ -380,4 +380,14 @@ it('stops two devices independently when cloud owns delivery, including after re
     vi.setSystemTime(new Date('2026-11-08T07:30:00+09:00')); f.digest.date = '2026-11-08';
     await restarted.runDigest(); expect(f.sent).toHaveLength(0); expect(f.data[receipts]).toBeUndefined();
   }
+});
+
+it.each([true, false])('keeps cloud ownership when local consent is enabled (cloud enabled=%s)', async enabled => {
+  const f = await fixture({ enabled: false });
+  f.delivery.deliveryOwner = 'cloud'; f.delivery.enabled = enabled;
+  expect(await f.message({ type: 'digest-setting', enabled: true })).toEqual({ ok: true, enabled: false, cloudOwned: true });
+  expect(await f.message({ type: 'digest-status' })).toEqual({ ok: true, enabled: false, cloudOwned: true });
+  expect(f.chrome.identity.getAuthToken).not.toHaveBeenCalled();
+  expect(f.fetch.mock.calls.every(([, options]) => options.method === 'GET')).toBe(true);
+  await f.runDigest(); expect(f.sent).toHaveLength(0);
 });

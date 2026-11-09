@@ -101,11 +101,14 @@ it('sends the next observation with the original Firebase token after a mismatch
 
 it('rejects Gmail opt-in for a different Google account and preserves the next observation identity', async () => {
   const f = await fixture();
+  f.fetch.mockResolvedValue({ ok: true, json: async () => ({ enabled: false, deliveryOwner: 'extension' }) });
   const { handleDigestMessage } = await import('../src/digest/browser.js');
   const result = await new Promise(resolve => handleDigestMessage({ type: 'digest-setting', enabled: true },
     { id: 'extension', url: f.chrome.runtime.getURL('options.html') }, resolve));
   expect(result).toEqual({ ok: false, enabled: false, problem: 'authorization-required' });
   expect(await f.observationIdentity()).toEqual({ uid: 'owner', token: 'synthetic-owner-id-token' });
-  expect(f.fetch).not.toHaveBeenCalled();
+  expect(f.fetch).toHaveBeenCalledExactlyOnceWith('https://api.example.invalid/api/v1/digest/delivery',
+    expect.objectContaining({ method: 'GET', headers: { Authorization: 'Bearer synthetic-owner-id-token' } }));
+  expect(sdk.signIn).toHaveBeenCalledOnce();
   expect(f.chrome.storage.local.set).not.toHaveBeenCalled();
 });
