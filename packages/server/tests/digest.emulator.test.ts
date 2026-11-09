@@ -187,6 +187,21 @@ describe.skipIf(process.env['RUN_DIGEST_EMULATOR_TESTS'] !== '1')('digest and ac
     expect(await response.json()).toEqual({ error: 'plan-after-deadline' });
     expect((await plans().get()).size).toBe(1);
   });
+  it('explains an unavailable assignment for both postponement and sample creation without writing', async () => {
+    await assignmentRef().update({ submission: 'submitted' });
+    const saved = await plans().doc(id).get();
+    const items = student().collection('calendarItems');
+    const before = (await items.get()).docs.map(doc => doc.data());
+    for (const path of [`/api/v1/plans/${id}/later?rev=1`, '/api/v1/digest/demo-plan']) {
+      const response = await request(path);
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: 'plan-assignment-unavailable' });
+    }
+    expect((await plans().doc(id).get()).updateTime).toEqual(saved.updateTime);
+    expect((await plans().get()).size).toBe(1);
+    expect((await items.get()).docs.map(doc => doc.data())).toEqual(before);
+    expect((await student().collection('planActionReceipts').get()).empty).toBe(true);
+  });
   it('returns only the verified recipient and owner data, never a requested uid or recipient', async () => {
     const response = await request(`/api/v1/digest?uid=${owner}&to=other@example.invalid`, owner, 'GET');
     expect(response.status).toBe(200); const digest = await response.json() as { plans: unknown[] };

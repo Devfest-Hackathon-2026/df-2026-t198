@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import type { AssignmentChange, LedgerAssignment } from '../../core/src/types';
+import type { AssignmentChange, LedgerAssignment, PreparationPlan } from '../../core/src/types';
 import { buildSessionView, changeDescription } from '../src/features/session/model';
 import { formatDeadline } from '../src/shared/assignments/deadline-format';
 
@@ -107,4 +107,23 @@ it('formats deadlines without timezone identifiers and describes extensions in a
   expect(changeDescription(change)).toBe('締切が 11/9 17:00 から 11/10 17:00 に変わりました');
   expect(changeDescription({ ...change, before: date('2026-11-09'), after: date('2026-11-10') }))
     .toBe('締切が 2026/11/09（日付のみ） から 2026/11/10（日付のみ） に変わりました');
+});
+
+function savedPlan(extra: Partial<PreparationPlan> = {}): PreparationPlan {
+  return { assignment: { system: 'demo-lms', sourceId: 'task-a' }, date: '2026-11-09', period: 1,
+    startsAt: '2026-11-09T08:50:00+09:00', endsAt: '2026-11-09T10:20:00+09:00',
+    planId: 'fictional-plan', title: '課題A', timeZone: 'Asia/Tokyo', decidedOn: '2026-11-06',
+    confirmedBy: 'fictional-student', createdByRole: 'student', confirmedAt: now.toISOString(),
+    status: 'active', revision: 1, calendarItemKey: 'fictional-calendar', ...extra };
+}
+it.each([
+  ['same time on another assignment', {}, [2, 3]],
+  ['overlap into the next period despite its saved period label', { endsAt: '2026-11-09T10:45:00+09:00' }, [3, 4]],
+  ['adjacent end and start', { endsAt: '2026-11-09T10:30:00+09:00' }, [2, 3]],
+  ['cancelled plan', { status: 'cancelled' as const }, [1, 2]],
+])('suggests only available periods with %s', async (_name, extra, expected) => {
+  const { emptySession, preparationCandidates } = await import('../src/features/session/model');
+  const data = { ...emptySession(), context, assignments: [row('task-b', date('2026-11-10'))],
+    plans: [savedPlan(extra)] };
+  expect(preparationCandidates(data, now).map(slot => slot.period)).toEqual(expected);
 });

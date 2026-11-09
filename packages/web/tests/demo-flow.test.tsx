@@ -54,11 +54,14 @@ it('keeps autoplay stopped under reduced motion and offers manual steps', async 
   } finally { await act(async () => root.unmount()); }
 });
 
-it('leaves LMS hash history to the page and transitions only when the path changes', async () => {
+it.each([false, true])('leaves LMS hash history to the page and navigates even when the transition is skipped: %s', async skipped => {
   const { window, document } = parseHTML('<html><body><div id="root"></div></body></html>');
   window.location = { pathname: '/demo-lms' };
   window.matchMedia = () => ({ matches: false });
-  const transition = vi.fn((update: () => void) => { update(); return { finished: Promise.resolve() }; });
+  const transition = vi.fn((update: () => void) => {
+    update();
+    return { ready: skipped ? Promise.reject(new Error('synthetic-skipped-transition')) : Promise.resolve(), finished: Promise.resolve() };
+  });
   document.startViewTransition = transition;
   vi.stubGlobal('window', window); vi.stubGlobal('document', document); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   function Path() { return <p>{usePathname()}</p>; }
@@ -71,5 +74,6 @@ it('leaves LMS hash history to the page and transitions only when the path chang
     await act(async () => window.dispatchEvent(new window.Event('popstate')));
     expect(transition).toHaveBeenCalledOnce();
     expect(host.textContent).toBe('/student');
+    await new Promise(resolve => setTimeout(resolve, 0));
   } finally { await act(async () => root.unmount()); }
 });

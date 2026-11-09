@@ -1,5 +1,6 @@
 import { NextAction } from '../../shared/ui';
 import { performPlanAction, PlanActionError, type PlanActionResponse } from './api';
+import { planErrorCode, planErrorMessage } from './errors';
 import { useEffect, useRef, useState } from 'react';
 import { useOperationMessage } from '../../shared/ui/operation-messages';
 import type { User } from 'firebase/auth';
@@ -25,7 +26,7 @@ export function actionMessage(outcome: PlanActionResponse['outcome'], plan?: Pre
 }
 export const planActionErrorMessage = (error: unknown, fallback: string) =>
   error instanceof PlanActionError && error.plan ? currentPlanMessage(error.plan) :
-    error instanceof Error && error.message === 'plan-conflict' ? '予定が変わりました。学生の画面で確かめてください。' : fallback;
+    planErrorMessage(error, fallback);
 export function NextSubmission({ plan, assignments, courses }: Pick<StudentData, 'assignments' | 'courses'> & { plan?: PreparationPlan | undefined }) {
   if (plan?.status !== 'done') return null;
   const task = assignments.find(row => row.key.system === plan.assignment.system && row.key.sourceId === plan.assignment.sourceId);
@@ -80,7 +81,7 @@ function PlanConfirmation({ user, data, id, action, revision }: {
     } catch (error) {
       if (active.current) {
         if (error instanceof PlanActionError && error.plan) setResponsePlan(error.plan);
-        setState(error instanceof Error && error.message === 'plan-conflict' ? 'finished' : 'retry');
+        setState(error instanceof Error && planErrorCode(error.message) ? 'finished' : 'retry');
         setMessage(planActionErrorMessage(error, '準備の記録を確認できませんでした。接続と本人のアカウントを確かめてから、同じ操作をもう一度試してください。'));
       }
     } finally { inFlight.current = false; }
@@ -88,7 +89,7 @@ function PlanConfirmation({ user, data, id, action, revision }: {
   return <section className="notice plan-confirmation" aria-label="準備の予定の操作"><h2>準備の記録を確認</h2>
     {plan ? <>{!canConfirm && <><h3>{course ? `${course.name}：` : ''}{task?.latest.title ?? plan.title}</h3>
       <p>準備の日時：{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}（日本時間）</p></>}
-      <p role={message ? undefined : 'status'}>{state === 'idle' && plan.status !== 'active' ? currentPlanMessage(plan) : `今の状態：${plan.status === 'cancelled' ? '予定を外した' : planProgress(plan) || 'まだ'}`}</p>
+      <p role={message ? undefined : 'status'}>{state === 'idle' && (plan.status !== 'active' || stale) ? currentPlanMessage(plan) : `今の状態：${plan.status === 'cancelled' ? '予定を外した' : planProgress(plan) || 'まだ'}`}</p>
       {stale && state === 'idle' && <p>このリンクが作られた後に予定が変わっています。変更していません。時間割で確かめてください。</p>}</> :
       <p role="status">本人の準備の予定を見つけられませんでした。本人のアカウントと時間割を確かめてください。</p>}
     {(plan && (canConfirm || state === 'busy' || state === 'retry')) && <NextAction course={course?.name ?? '準備'} title={task?.latest.title ?? plan.title}

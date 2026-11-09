@@ -39,7 +39,7 @@ const detail = await readFile(new URL('assignment-detail-open.html', samples), '
 const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-session';
 
 for (const backgroundBlocked of [false, true]) for (const connected of [false, true]) it(`LMS open creates and moves deadline events (background blocked: ${backgroundBlocked}, calendar connected: ${connected})`, async () => {
-  const state = {};
+  const state = {}, local = {};
   const apiBodies = [], backgroundCalls = [], pageCalls = [];
   const calendarId = 'synthetic@group.calendar.google.com';
   const sdk = { auth: { authStateReady: async () => {}, currentUser: {
@@ -68,6 +68,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   });
   const backgroundFetch = lmsFetch(backgroundCalls), pageFetch = lmsFetch(pageCalls);
   const fetcher = vi.fn(async (url, init) => {
+    if (url.endsWith('/api/v1/collection-policy')) return reply(200, { backgroundCollection: 'enabled' });
     if (url.startsWith('https://lms.ynu.ac.jp/')) {
       if (backgroundBlocked) throw new Error('synthetic-background-block');
       return backgroundFetch(url, init);
@@ -122,7 +123,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   const workerContext = createContext({ ...common, sdk, fetch: fetcher, chrome: {
     identity: { getAuthToken },
     runtime: { id: 'synthetic-extension', onStartup: { addListener: vi.fn() }, onInstalled: { addListener: vi.fn() }, onMessage: { addListener: fn => { workerListener = fn; } } },
-    storage: { session: { set: async values => Object.assign(state, globalThis.structuredClone(values)), get: async () => globalThis.structuredClone(state) } },
+    storage: { local: { get: async () => globalThis.structuredClone(local), set: async values => Object.assign(local, values) }, session: { set: async values => Object.assign(state, globalThis.structuredClone(values)), get: async () => globalThis.structuredClone(state) } },
     tabs: { query: async () => [{ id: 7 }], get: async () => ({ id: 7, status: 'complete' }), sendMessage: async (tabId, message, target) => {
       expect(tabId).toBe(7); expect(target).toEqual({ frameId: 0, documentId: 'synthetic-document' });
       return call(contentListener, message, { id: 'synthetic-extension' });
@@ -178,7 +179,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   const originalIds = [...events.keys()];
   expect([...events.values()].every(event => event.start.dateTime === '2098-11-13T11:53:00+09:00')).toBe(true);
   extended = true;
-  elapsed += 10 * 60_000;
+  elapsed += 6 * 60 * 60_000;
   // Reopen the page, using the same worker and saved calendar, after the LMS changes.
   trigger = undefined;
   runInContext(content.outputFiles[0].text, contentContext);
@@ -196,7 +197,7 @@ for (const backgroundBlocked of [false, true]) for (const connected of [false, t
   expect(ledger.every(item => item.officialDeadline.deadline.dueAt === '2098-11-14T11:53:00+09:00')).toBe(true);
   expect([...items.values()].every(item => item.appliedRevision === item.desiredRevision && item.desiredRevision === 2)).toBe(true);
   ended = true;
-  elapsed += 10 * 60_000;
+  elapsed += 6 * 60 * 60_000;
   const priorDetailCount = calls.filter(c => c.url.includes('linkKyozaiTitle')).length;
   trigger = undefined;
   runInContext(content.outputFiles[0].text, contentContext);

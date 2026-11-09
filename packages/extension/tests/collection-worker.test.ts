@@ -18,6 +18,8 @@ const pageUrl = 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex;SID=synthetic-sessio
 const session: Record<string, unknown> = {};
 const send = vi.fn();
 const fetcher = vi.fn();
+const policyFetch = vi.fn();
+const local: Record<string, unknown> = {};
 const badge = vi.fn().mockResolvedValue(undefined);
 const title = vi.fn().mockResolvedValue(undefined);
 let run: typeof import('../src/collection-worker.js')['runCollection'];
@@ -35,7 +37,14 @@ beforeEach(async () => {
   send.mockResolvedValue({ ok: true, page: { html: 'page-html', url: 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex' } });
   fetcher.mockImplementation(async (url: string) => ({ ok: true, url, status: 200, text: async () => 'worker-html',
     json: async () => ({ status: 'applied', changed: true, changeCount: 1 }) }));
-  vi.stubGlobal('fetch', fetcher);
+  policyFetch.mockResolvedValue({ ok: true, json: async () => ({ backgroundCollection: 'enabled' }) });
+  vi.stubGlobal('fetch', (url: string, options: unknown) => url.endsWith('/api/v1/collection-policy') ? policyFetch(url, options) : fetcher(url, options));
+  for (const key of Object.keys(local)) delete local[key];
+  const realTimeout = globalThis.setTimeout;
+  vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn, ms) => {
+    if (ms === 1500) { queueMicrotask(fn as () => void); return 0 as unknown as ReturnType<typeof setTimeout>; }
+    return realTimeout(fn, ms);
+  });
   vi.stubGlobal('chrome', { action: { setBadgeText: badge, setTitle: title, setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined) }, runtime: { id: 'synthetic-extension' }, tabs: {
     query: async () => [{ id: 7 }],
     get: async () => ({ id: 7, status: 'complete' }),
@@ -44,7 +53,7 @@ beforeEach(async () => {
       if (message.restore) return { ok: true, page: { html: 'home', url: 'https://lms.ynu.ac.jp/lms/homeHoml/doIndex' } };
       return send(tab, message, target);
     },
-  }, storage: { session: {
+  }, storage: { local: { get: vi.fn(async () => local), set: vi.fn(async values => Object.assign(local, values)) }, session: {
     get: vi.fn(async () => session), set: vi.fn(async (values) => Object.assign(session, values)),
   } } });
   run = (await import('../src/collection-worker.js')).runCollection;
@@ -159,7 +168,7 @@ it.each([
   ['send-failed', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
   ['sign-in-required', '!', '課題を更新できませんでした。拡張機能の設定からGoogleにログインしてください'],
   ['not-logged-in', '!', '一部の課題を更新できませんでした。LMSを開き直してください'],
-])('shows running then %s on the badge, title, and popup data', async (outcome, expectedBadge, message) => {
+])('shows %s on the badge, title, and popup data', async (outcome, expectedBadge, message) => {
   if (outcome === 'api-not-configured') apiOrigin.mockReturnValue(null);
   else if (outcome === 'sign-in-required') identity.mockResolvedValue(null);
   else if (outcome === 'collection-unavailable') collect.mockRejectedValue(new Error('synthetic-private-error'));
@@ -168,8 +177,10 @@ it.each([
     collect.mockResolvedValue({ ...observation, failures: [{ courseId: null, kind: outcome === 'partial' ? 'http' : 'not-logged-in', detail: outcome === 'partial' ? 'http-error' : 'not-logged-in' }] });
   }
   await run(pageUrl, 7);
-  expect(badge.mock.calls[0]).toEqual([{ text: '…' }]);
-  expect(title.mock.calls[0]).toEqual([{ title: 'LMSの課題を更新しています' }]);
+  if (!['sign-in-required', 'api-not-configured'].includes(outcome)) {
+    expect(badge.mock.calls[0]).toEqual([{ text: '…' }]);
+    expect(title.mock.calls[0]).toEqual([{ title: 'LMSの課題を更新しています' }]);
+  }
   expect(badge).toHaveBeenLastCalledWith({ text: expectedBadge });
   expect(title).toHaveBeenLastCalledWith({ title: expect.stringMatching(new RegExp('^\\d{1,2}/\\d{1,2} \\d{2}:\\d{2} に' + message + '$')) });
   const { collectionDisplay } = await import('../src/collection-display.js');
@@ -188,18 +199,18 @@ it('preserves accepted observations and diagnostic counts when presentation APIs
   expect(sync).toHaveBeenCalledTimes(1);
 });
 
-it('waits ten minutes after a receipt without changing the icon, even after worker restart', async () => {
+it('waits six hours after a receipt without changing the icon, even after worker restart', async () => {
   vi.spyOn(Date, 'now').mockReturnValue(2_000_000);
   expect((await run(pageUrl, 7)).ok).toBe(true);
   const prior = structuredClone(session);
   vi.clearAllMocks(); vi.resetModules();
   run = (await import('../src/collection-worker.js')).runCollection;
-  vi.mocked(Date.now).mockReturnValue(2_599_999);
+  vi.mocked(Date.now).mockReturnValue(2_000_000 + 6 * 60 * 60_000 - 1);
   expect(await run(pageUrl, 7)).toEqual({ ok: false, code: 'cooldown' });
   expect(session).toEqual(prior);
   expect(badge).not.toHaveBeenCalled(); expect(title).not.toHaveBeenCalled();
-  expect(identity).not.toHaveBeenCalled(); expect(fetcher).not.toHaveBeenCalled();
-  vi.mocked(Date.now).mockReturnValue(2_600_000);
+  expect(identity).toHaveBeenCalledTimes(1); expect(fetcher).not.toHaveBeenCalled();
+  vi.mocked(Date.now).mockReturnValue(2_000_000 + 6 * 60 * 60_000);
   expect((await run(pageUrl, 7)).ok).toBe(true);
   expect(session['ynuFetchStats']).toMatchObject({ attempted: 2, backgroundSucceeded: 2 });
 });
@@ -291,7 +302,8 @@ it('starts the interval at receipt completion, including a partially successful 
   expect((await run(pageUrl, 7)).ok).toBe(true);
   expect(session['ynuFetchStatus']).toBe('partial');
   expect(session['ynuFetchCompletedAt']).toBe(1_900_000);
-  now.mockReturnValue(2_499_999);
+  expect(local['ynuFetchCompletedAt:synthetic-user']).toBe(1_900_000);
+  now.mockReturnValue(1_900_000 + 6 * 60 * 60_000 - 1);
   expect((await run(pageUrl, 7)).code).toBe('cooldown');
   expect(session['ynuFetchStats']).toMatchObject({ attempted: 1, failed: 1 });
 });
@@ -313,4 +325,45 @@ it('breaks the consecutive communication failure count on a parse failure', asyn
   });
   expect((await run(pageUrl, 7)).ok).toBe(true);
   expect(send).toHaveBeenCalledTimes(6);
+});
+
+it.each(['paused', 'unreachable', 'invalid', 'http-error', 'invalid-json'])(
+  'does not read either LMS route when collection policy is %s', async policy => {
+    if (policy === 'unreachable') policyFetch.mockRejectedValue(new Error('synthetic-offline'));
+    else if (policy === 'invalid-json') policyFetch.mockResolvedValue({ ok: true, json: async () => { throw new Error('invalid-json'); } });
+    else policyFetch.mockResolvedValue({ ok: policy !== 'http-error', json: async () => ({ backgroundCollection: policy }) });
+    expect(await run(pageUrl, 7)).toEqual({ ok: false, code: 'collection-unavailable' });
+    expect(collect).not.toHaveBeenCalled(); expect(fetcher).not.toHaveBeenCalled(); expect(send).not.toHaveBeenCalled();
+    expect(badge).toHaveBeenLastCalledWith({ text: '!' });
+    expect(session['ynuFetchFailedAt']).toBeUndefined();
+    expect(local).toEqual({});
+  });
+
+it('keeps the six-hour limit after a browser restart, separately for each uid', async () => {
+  const now = vi.spyOn(Date, 'now').mockReturnValue(10_000_000);
+  expect((await run(pageUrl, 7)).ok).toBe(true);
+  expect(local).toEqual({ 'ynuFetchCompletedAt:synthetic-user': 10_000_000 });
+  for (const key of Object.keys(session)) delete session[key];
+  session['ynuSessionId'] = 'synthetic-session';
+  vi.clearAllMocks(); vi.resetModules();
+  run = (await import('../src/collection-worker.js')).runCollection;
+  now.mockReturnValue(10_000_000 + 6 * 60 * 60_000 - 1);
+  expect(await run(pageUrl, 7)).toEqual({ ok: false, code: 'cooldown' });
+  expect(collect).not.toHaveBeenCalled(); expect(policyFetch).not.toHaveBeenCalled(); expect(badge).not.toHaveBeenCalled();
+  identity.mockResolvedValue({ uid: 'other-user', token: 'synthetic-id-token' });
+  expect((await run(pageUrl, 7)).ok).toBe(true);
+  identity.mockResolvedValue({ uid: 'synthetic-user', token: 'synthetic-id-token' });
+  expect((await run(pageUrl, 7)).code).toBe('cooldown');
+  now.mockReturnValue(10_000_000 + 6 * 60 * 60_000);
+  expect((await run(pageUrl, 7)).ok).toBe(true);
+  expect(Object.keys(local).sort()).toEqual(['ynuFetchCompletedAt:other-user', 'ynuFetchCompletedAt:synthetic-user']);
+  expect(JSON.stringify(local)).not.toMatch(/synthetic-session|synthetic-id-token|Cookie|SID=/i);
+});
+
+it('retries immediately when paused policy is enabled again', async () => {
+  policyFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ backgroundCollection: 'paused' }) });
+  expect((await run(pageUrl, 7)).code).toBe('collection-unavailable');
+  expect((await run(pageUrl, 7)).ok).toBe(true);
+  expect(collect).toHaveBeenCalledTimes(1);
+  expect(policyFetch).toHaveBeenCalledTimes(2);
 });

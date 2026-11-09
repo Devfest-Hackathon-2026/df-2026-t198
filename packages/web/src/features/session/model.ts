@@ -66,7 +66,7 @@ export function reviewDescription(row: LedgerAssignment) {
   return reviewReasonText(reason, row.latest.deadline);
 }
 
-// Period times are not configured yet. Use only whole future days before the due date.
+// Use whole future days before the due date, excluding all active preparation plans.
 export function preparationCandidates(data: SessionData, now: Date): PreparationCandidate[] {
   const candidates: PreparationCandidate[] = [];
   for (const row of buildSessionView(data, now).deadlines) {
@@ -74,7 +74,17 @@ export function preparationCandidates(data: SessionData, now: Date): Preparation
     if (deadline.kind !== 'date' && deadline.kind !== 'datetime') continue;
     // The timetable is in Japan time; compare a datetime deadline's date in that zone too.
     const dueDate = deadline.kind === 'date' ? deadline.date : dayInZone(new Date(deadline.dueAt), 'Asia/Tokyo');
-    candidates.push(...preparationSlots(row.key, dueDate, data.courses, now));
+    candidates.push(...preparationSlots(row.key, dueDate, data.courses, now, 2, data.plans));
   }
   return candidates;
+}
+
+/** The header and timetable describe the same currently selected assignment. */
+export function sessionPlanningView(data: SessionData, now: Date, selected = '') {
+  const view = buildSessionView(data, now);
+  const tasks = [...view.deadlines, ...view.review.filter(row => !view.deadlines.includes(row))];
+  const task = tasks.find(row => JSON.stringify(row.key) === selected) ?? tasks[0];
+  const candidates = preparationCandidates(data, now).filter(candidate =>
+    candidate.assignment.system === task?.key.system && candidate.assignment.sourceId === task.key.sourceId);
+  return { tasks, task, candidates };
 }

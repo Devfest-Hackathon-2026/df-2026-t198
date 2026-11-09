@@ -146,7 +146,7 @@ Issue #180：`siteFilter` に既知の授業以外の種別（`project`・`works
 - 保存先のキーは従来どおり `system` と `courseId`。別の情報源の文書を上書きしない。同一情報源では観測した授業を置き換える。KULASISが完全に成功した回に限り、見当たらない以前のKULASIS授業を `currentTerm: false` にする。授業サポートや対応照会に失敗した回は時間割全体を送らず、全体の失敗を記録して以前の時間割・対応を保持する（Issue #218）。200以外・通信失敗・認証画面・不明の遷移先を「リンクなし」の成功にしない。サポート画面を取得でき、対応リンクがない場合とは区別する。KULMSのURL・今学期かどうかの値には書き込まない。
 - 表示用の `linkedCourses` は今学期の明示の対応があるKULASIS授業とKULMS授業を1つにする。名前・URL・課題キーはKULMS、曜日・時限はKULASISを優先する。現在の時間割で確認できた対応は表示上の `currentTerm: true` とする。複数のKULASIS授業が同じサイトを指す場合はコマを重複なく合わせる。取れない対応は別々に出す。元データは変えない。
 - 学生・面談画面は同じ関数を使う。締切のカレンダーはKULMSの課題キーと授業名を引き続き使い、KULASISの観測では予定を追加・変更しない。京大の時限の実時刻は未確認なので補わない。
-- 取得の優先順位用に、完全に成功した観測の受領後に対応先siteIdだけを `chrome.storage.local.kulasisMapping` に保存する（Firebase uid・学期付き）。同じ本人・同じ学期の場合だけKULMSの取得へ渡す。対応が変わってもKULMSの取得後の待ち時間は解除せず、待機後の取得で新しい優先順位を使う（D43、Issue #267）。時間割の保存の正本はサーバーの授業文書で、このキャッシュは別の端末へ同期しない。拡張を入れ直した端末では、KULASISを先に開く。KULMS・KULASISとも取得を試みた後は、部分失敗・全体失敗・送信失敗を含め、本人・接続先ごとに6時間待つ。学生の操作による中断だけは即時再開できる。完了時刻は `chrome.storage.local` の `${system}FetchCompletedAt:${uid}` に保存し、ブラウザ再起動後も復元する。旧版のsession storageに同じ本人の完了時刻があればlocal storageへ移す。取得開始前に `GET /api/v1/collection-policy` を読み、`backgroundCollection: enabled` の場合だけ取得する。停止中・通信失敗・不正な応答の場合はLMSを取得しない（D43、Issue #267）。
+- 取得の優先順位用に、完全に成功した観測の受領後に対応先siteIdだけを `chrome.storage.local.kulasisMapping` に保存する（Firebase uid・学期付き）。同じ本人・同じ学期の場合だけKULMSの取得へ渡す。対応が変わってもKULMSの取得後の待ち時間は解除せず、待機後の取得で新しい優先順位を使う（D45、Issue #267）。時間割の保存の正本はサーバーの授業文書で、このキャッシュは別の端末へ同期しない。拡張を入れ直した端末では、KULASISを先に開く。KULMS・KULASISとも取得を試みた後は、部分失敗・全体失敗・送信失敗を含め、本人・接続先ごとに6時間待つ。学生の操作による中断だけは即時再開できる。完了時刻は `chrome.storage.local` の `${system}FetchCompletedAt:${uid}` に保存し、ブラウザ再起動後も復元する。旧版のsession storageに同じ本人の完了時刻があればlocal storageへ移す。取得開始前に `GET /api/v1/collection-policy` を読み、`backgroundCollection: enabled` の場合だけ取得する。停止中・通信失敗・不正な応答の場合はLMSを取得しない（D43、Issue #267）。
 - 参照URLは認証情報のない授業ページを組み立てる。採点・提出本文・添付・お知らせは送らない。KULMSのAPIから取った生のJSONやCookieをservice workerへ渡さない。
 
 ## 学生による共有の停止と再開（Issue #257）
@@ -192,13 +192,26 @@ Issue #180：`siteFilter` に既知の授業以外の種別（`project`・`works
 
 - `PUT /api/v1/students/{uid}/plans/{planId}`：`planId` はクライアントが操作ごとに作る小文字UUID v4。同じ内容の再試行では同じIDを送る。本文は `{ assignment: { system, sourceId }, date, period, startsAt, endsAt }` だけ。日付は実在する `YYYY-MM-DD`、時限は1〜24の整数、時刻は同じ日付の `YYYY-MM-DDTHH:mm:00+09:00` で開始より終了が後。この保存APIは時限から時刻を補わず、時刻は利用者が入力する。
 - Firebase ID tokenの本人か、`scopes` がリストで `all` を含み `revokedAt: null` の支援担当のみ保存できる。共有許可・体験用プロフィールの確認と保存を同じトランザクションで行う。体験用学生は本人にひも付く学生プロフィールを必要とし、課題の接続先は `demo-lms` だけ。体験用の操作を別の組・実物の学生へ流さない。
-- 新しい予定は、その学生の台帳にある提出済み・取消済み以外の課題を必要とする。開始は未来で、課題の締切より後でないこと、指定曜日・時限に授業が入っていないことをサーバーが検査する。日時の締切と開始が等しい場合は保存でき、日付だけならその `timeZone` の当日末までを含む。締切なし・読めない・未設定の場合は締切の検査を加えない。締切後は409の固定コード `plan-after-deadline` で断り、予定・同期対象を保存しない（Issue #129）。個人のカレンダーや他の準備予定の重なりは判定しない。時限と入力時刻の対応も検査しない。自動の後回しで使う時刻設定は「今日やることと準備の記録」の節を参照。
+- 新しい予定は、その学生の台帳にある提出済み・取消済み以外の課題を必要とする。開始は未来で、課題の締切より後でないこと、指定曜日・時限に授業が入っていないことをサーバーが検査する。日時の締切と開始が等しい場合は保存でき、日付だけならその `timeZone` の当日末までを含む。締切なし・読めない・未設定の場合は締切の検査を加えない。締切後は409の固定コード `plan-after-deadline` で断り、予定・同期対象を保存しない（Issue #129）。全課題の有効な準備予定を同じトランザクションで読み、入力した開始・終了時刻が重なる保存を409（`plan-overlap`）で断る（Issue #260）。終了と開始が同じ隣接予定は重なりとせず、同じ時限でも重ならない短時間の予定は保存できる。取消済み・完了済みの準備予定は重なりの対象外。個人のカレンダーや、時限と入力時刻の対応は検査しない。自動の後回しで使う時刻設定は「今日やることと準備の記録」の節を参照。
 - APIは入力に加え `planId`・課題の `title`・`decidedOn`（保存日の日本時間）・`timeZone: 'Asia/Tokyo'`・`confirmedBy`（認証済みUID）・`createdByRole: 'student' | 'supporter'`・`confirmedAt`（サーバー時刻）・`status: 'active'`・`revision: 1`・`calendarItemKey` を保存する。登録者や同期先を本文で指定することはできない。
 - 同じ登録者・ID・内容の再送は保存済みの予定を返し、版や時刻を進めない。同じIDで内容や登録者が違う場合、または取消済みの場合は409。取消済みの予定を再度入れるには新しいIDを使う。予定の日時変更は、外して別の予定として入れる。
 - `DELETE` は同じURLで本文なし。学生はどの予定も、共有中の支援担当は自分が入れた予定だけを外せる。`status: 'cancelled'` にし `revision` を1つ増やす。記録を消さず遅れたPUTでの復活を防ぐ。同じDELETEの再送では版を進めない。
 - 予定と `calendarItems/{calendarItemKey}` を同時に保存する。キーは `['preparation', planId]` のJSONのSHA-256、`kind: 'preparation'`、`sourceKey` は課題キー。開始・終了・題名・登録者の区分を保存時に固定し、LMSの締切変更で動かさない。取消は `desired: { state: 'deleted' }` とし、既存の版・世代・予定IDによる結果報告を使う。
 - 保存後、サーバーのプロフィールに従って既存の体験用同期を呼ぶ。実物の学生には模擬同期せず、#40のAPIを通じて拡張機能が処理する。体験用の書き込み失敗時も予定と同期待ちは残り、同じ操作の再試行か次の「LMSを開く」で再試行する。画面表示だけを同期成功としない。
 - 成功は200で保存した `PreparationPlan`。未認証401、不正な入力400、許可なし403、競合・対象課題なし・授業のあるコマ・過去の時刻409、4 KiB超413、PUTのJSON以外415、保存または模擬同期失敗500。応答は `Cache-Control: no-store`、エラーは固定コードのみで入力や例外を返さない。
+
+保存時の409は次の固定コードで区別する（Issue #260）。応答は `{ error: コード }` だけとし、重なった予定の課題名やIDなどは追加しない。複数の条件に当たる場合は、同じIDの食い違いを先に判定し、新規作成は締切後・課題の状態・過去・授業・準備の重なりの順に判定する。
+
+| コード | 理由 |
+|---|---|
+| `plan-class-conflict` | 指定した曜日・時限に授業がある |
+| `plan-overlap` | 別の有効な準備予定と実時刻が重なる |
+| `plan-in-past` | 開始が現在以前 |
+| `plan-assignment-unavailable` | 課題が提出済み・取消済み、または台帳にない |
+| `plan-after-deadline` | 開始が締切より後（既存どおり） |
+| `plan-conflict` | 同じIDの保存済み予定と内容・登録者・状態が食い違う（既存どおり） |
+
+メールの後回しと見本作成でも固定コードを維持する。後回しの対象課題を利用できない場合は `plan-assignment-unavailable`。予定の版や状態が変わった場合は既存の `plan-conflict` と現在の `plan` を返し、画面は現在の記録を優先して案内する。保存と画面の文言は [ui-words.md](ui-words.md#準備の予定を断る理由issue-260) を参照。
 
 締切が前倒しされ既存の準備の開始が締切より後になっても消さず、学生・面談画面の一覧と予定の詳細・マスに「締切より後の予定です」を表示する。面談の時間割は選択課題の締切を日の列に時刻付きで示し、締切のある週と土日の列にも移れる（日付のみなら時刻を補わない。Issue #129）。
 
@@ -324,3 +337,12 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - GETは `{ settings: NotificationSettings, status: NotificationStatus | null, availability }`。欠損時は保存せず、停止・owner none・移行前・version 1・updatedAt epochの既定値を返す。availabilityは `preparing/ready/authorization-required/migration-pending/recipient-unavailable`。送信元の準備、本人宛先、移行済みの順で判定する。宛先・送信元の秘密は応答に入れない。
 - PUTは1 KiB以下のJSON `{ enabled: boolean, version: 正の整数 }` のみ。UID・宛先・deliveryOwner・migrationStateは指定不可。有効化はavailability readyだけ。停止は送信元・宛先が利用できなくても可能。設定と体験プロフィールを同じtransactionで確認し、変更時にversionを1増やす。同じ値の再送は版と日時を変えない。古い版からの値変更は409。設定保存で送信状態や受理日時を作らない。
 - 成功200、未認証401、体験利用者403、不正入力400、競合・未準備409、サイズ超過413、JSON以外415、依存未接続503、内部失敗500。応答はno-store、エラーは固定コードのみ。画面は通信失敗を保存成功とせず、状態の再読取を案内する。
+
+
+## 裏の取得の停止設定（Issue #267）
+
+- `GET /api/v1/collection-policy` は認証不要の読み取り専用API。200の応答は `{ "backgroundCollection": "enabled" | "paused" }` の1項目だけで、利用者の情報を含まない。`Cache-Control: no-store`。GET以外は404で、要求から設定を変更できない。
+- Cloud Runの環境変数 `BACKGROUND_COLLECTION=paused` のときpaused、それ以外（未設定を含む）はenabled。操作は [deploy.md](deploy.md#ynuの裏の取得を止めるissue-267) を参照。
+- 拡張はYNUの取得を始める前に、Cookie・認証ヘッダーなしで毎回読み、明示のenabledだけを認める。paused・HTTPエラー・通信失敗（15秒の期限を含む）・JSONの形の不一致は取得しない。ページ側への切替も行わない。拡張の既存の `collection-unavailable` 表示で知らせる。
+- 6時間の成功待機は `chrome.storage.local` の `ynuFetchCompletedAt:<uid>` に数値の完了時刻だけを保存する。別のuidの記録は使わず、元のuidに戻ったときも期限を守る。SID・Cookie・トークンはこの記録に含めない。SIDと中断時のチェックポイントは従来どおり `storage.session` に置く。
+- 適用範囲は新しい拡張でこれから始めるYNUの取得。実行中の取得と旧版の拡張は止められない。KULMSの取得と体験用LMSにはつながない（D44）。

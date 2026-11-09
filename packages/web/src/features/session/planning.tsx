@@ -5,12 +5,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { PreparationCandidate } from '../../../../core/src/types';
 import { PlanCell, PlanForm, PlanList, PlanSummary } from '../plans/components';
 import { type PlanActions } from '../plans/api';
-import { buildSessionView, preparationCandidates, reviewDescription, type SessionData } from './model';
+import { buildSessionView, sessionPlanningView, reviewDescription, type SessionData } from './model';
 import { dayInZone, formatDeadline } from '../../shared/assignments/deadline-format';
 import { useOperationMessage } from '../../shared/ui/operation-messages';
 import { deadlineEntries, entryBelongsTo, entryTitle } from '../../shared/assignments/deadline-entries';
 
-export function SessionPlanning({ data, now, actions, own = false, viewerUid }: {
+export function SessionPlanning({ data, now, actions, own = false, viewerUid, selectedAssignment, onSelectAssignment }: {
+  selectedAssignment?: string; onSelectAssignment?: (key: string) => void;
   data: SessionData; now: Date; actions?: PlanActions | undefined; own?: boolean; viewerUid?: string | undefined;
 }) {
   const courseColor = useCourseColors();
@@ -28,14 +29,10 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
   }, [selectedPlanId]);
   const view = buildSessionView(data, now);
   const [selected, setSelected] = useState('');
-  const tasks = [...view.deadlines, ...view.review.filter(row => !view.deadlines.includes(row))];
-  const task = tasks.find(row => JSON.stringify(row.key) === selected) ?? tasks[0];
+  const selectAssignment = (key: string) => { setSelected(key); onSelectAssignment?.(key); };
+  const { tasks, task, candidates } = sessionPlanningView(data, now, selectedAssignment ?? selected);
   const deadline = task?.officialDeadline?.deadline;
   const deadlineDate = deadline?.kind === 'datetime' ? dayInZone(new Date(deadline.dueAt), 'Asia/Tokyo') : deadline?.kind === 'date' ? deadline.date : '';
-  const candidates = preparationCandidates(data, now).filter(candidate =>
-    candidate.assignment.system === task?.key.system && candidate.assignment.sourceId === task.key.sourceId &&
-    !data.plans.some(plan => plan.status === 'active' && plan.date === candidate.date && plan.period === candidate.period &&
-      plan.assignment.system === candidate.assignment.system && plan.assignment.sourceId === candidate.assignment.sourceId));
   const courses = data.courses.filter(course => course.currentTerm !== false);
   const entries = deadlineEntries(data.assignments, data.manualAssignments, now.getTime());
   const periods = Math.max(5, ...data.plans.filter(plan => plan.status === 'active').map(plan => plan.period), ...courses.flatMap(course => course.slots.map(slot => slot.period)));
@@ -59,7 +56,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
   });
   return <div className="session-planning td-stage" style={{ animationDelay: '200ms' }}>
     <label className="session-topic">相談する課題
-      <select value={task ? JSON.stringify(task.key) : ''} onChange={event => { setMessage(''); setSelected(event.target.value); setCandidate(null); }}>
+      <select value={task ? JSON.stringify(task.key) : ''} onChange={event => { setMessage(''); selectAssignment(event.target.value); setCandidate(null); }}>
         {!tasks.length && <option value="">次回までの課題がありません</option>}
         {tasks.map(row => <option key={JSON.stringify(row.key)} value={JSON.stringify(row.key)}>{row.latest.title}</option>)}
       </select>
@@ -67,7 +64,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid }: 
     {!!view.review.length && <section className="session-decisions" aria-labelledby="session-decisions">
       <h2 id="session-decisions">今日決めること</h2>
       <ul>{view.review.map(row => <li key={JSON.stringify(row.key)}><button
-        onClick={() => { setSelected(JSON.stringify(row.key)); setCandidate(null); }}>{row.latest.title}</button>{' '}
+        onClick={() => { selectAssignment(JSON.stringify(row.key)); setCandidate(null); }}>{row.latest.title}</button>{' '}
         <span className="review-tag">要確認</span> {reviewDescription(row)}</li>)}</ul>
     </section>}
     {deadlineDate && deadline && <p>締切 {formatDeadline(deadline)}{' '}

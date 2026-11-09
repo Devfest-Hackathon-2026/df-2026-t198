@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ObservationDependencies } from '../http.js';
 import { validPlanId } from '../plans/input.js';
 import { SessionForbidden } from '../sessions/store.js';
-import { PlanAfterDeadline, PlanConflict } from '../plans/store.js';
+import { PlanConflict } from '../plans/store.js';
 import { DigestUnavailable, PlanActionConflict } from './store.js';
 export async function receiveDigestRequest(request: IncomingMessage, response: ServerResponse, deps?: ObservationDependencies) {
   const token = request.headers.authorization;
@@ -43,8 +43,7 @@ export async function receiveDigestRequest(request: IncomingMessage, response: S
     if (error instanceof DigestUnavailable) json(response, 503, { error: 'unavailable' });
     else if (error instanceof SessionForbidden) json(response, 403, { error: 'forbidden' });
     else if (error instanceof PlanActionConflict) json(response, 409, { error: 'plan-conflict', plan: error.plan });
-    else if (error instanceof PlanAfterDeadline) json(response, 409, { error: 'plan-after-deadline' });
-    else if (error instanceof PlanConflict) json(response, 409, { error: 'plan-conflict' });
+    else if (error instanceof PlanConflict) json(response, 409, { error: error.code });
     else json(response, 500, { error: 'internal-error' });
   }
 }
