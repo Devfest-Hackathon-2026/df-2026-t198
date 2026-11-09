@@ -35,7 +35,7 @@ function Screenshot({ name, alt, width, height, caption }: { name: string; alt: 
 function DemoEntries() {
   return <div className="trial-entry">
     <div className="trial-launch">
-      <h3>共用の体験版</h3>
+      <h3>体験版</h3>
       <PublicDemoEntry showDescription={false} />
       <a className="pill primary shared-fallback" href="/demo-lms">体験用LMSを開く <span aria-hidden="true">↗</span></a>
     </div>

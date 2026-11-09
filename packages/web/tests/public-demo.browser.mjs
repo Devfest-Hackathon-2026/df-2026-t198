@@ -30,7 +30,7 @@ const deadline = async () => (await assignments()).docs.find(doc => doc.data().l
 const confirmed = () => student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
 try {
   await student.goto(`${base}/`);
-  const entry = student.getByRole('region', { name: '共用の体験', exact: true });
+  const entry = student.getByRole('region', { name: '体験版に入る', exact: true });
   await entry.getByRole('button', { name: '学生として試す', exact: true }).waitFor();
   assert.match(await entry.innerText(), /別のブラウザか別の端末/);
   const rejectLogin = route => route.fulfill({ status: 400, contentType: 'application/json',
@@ -38,7 +38,7 @@ try {
   await student.route('**/accounts:signInWithPassword?*', rejectLogin);
   for (const role of ['学生', '支援担当']) {
     await entry.getByRole('button', { name: `${role}として試す`, exact: true }).click();
-    await entry.getByRole('alert').filter({ hasText: '共用の体験に入れませんでした。少し待ってからもう一度押すか、説明資料のアカウントで入ってください。' }).waitFor();
+    await entry.getByRole('alert').filter({ hasText: '体験版に入れませんでした。少し待ってからもう一度押すか、説明資料のアカウントで入ってください。' }).waitFor();
     assert.doesNotMatch(await entry.innerText(), /EMAIL_NOT_FOUND|FirebaseError|auth\//);
   }
   await student.unroute('**/accounts:signInWithPassword?*', rejectLogin);
@@ -49,7 +49,7 @@ try {
   await restoredEntry.waitFor(); assert.equal(await restoredEntry.isEnabled(), true);
   await restoredEntry.click(); await student.waitForURL(`${base}/demo-lms`);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
-  assert.equal(await student.getByRole('region', { name: '共用の体験', exact: true }).count(), 0);
+  assert.equal(await student.getByRole('region', { name: '体験版に入る', exact: true }).count(), 0);
   await supporter.goto(`${base}/`);
   await supporter.getByRole('button', { name: '支援担当として試す', exact: true }).click();
   await supporter.waitForURL(`${base}/session`);
@@ -75,7 +75,7 @@ try {
   await student.getByRole('button', { name: 'お知らせを出す', exact: true }).first().click();
   await student.getByRole('status').filter({ hasText: 'お知らせを出しました' }).waitFor();
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
-  await student.getByRole('status').filter({ hasText: '共用の体験で、今日使えるお知らせの読み取りの回数を使い切りました' }).waitFor();
+  await student.getByRole('status').filter({ hasText: '体験版で今日使えるお知らせの読み取りの回数を使い切りました' }).waitFor();
   student.once('dialog', dialog => dialog.accept());
   await student.getByRole('button', { name: '体験を最初からやり直す', exact: true }).click();
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
