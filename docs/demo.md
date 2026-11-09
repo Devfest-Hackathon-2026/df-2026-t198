@@ -96,3 +96,27 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm test:demo-announcements:emu
 ```
 
 Auth・Firestoreエミュレーター、架空のアカウント、試験専用の偽Geminiだけを使う。先生役の「お知らせを出す」→「LMSを開く」で、学生・面談画面に要確認と日付の違いが出る。課題の欄の締切は変えない。再送・やり直し・再投稿も試験する。写真と結果は `/tmp/kadai-i84-evidence/`。公開先での有効化・実物のGeminiは含まない。
+
+
+## 既存4組の体験を新しい初期データへ戻す（Issue #247）
+
+統合役がコードの確認・取り込みと再デプロイを終え、本番のリセットを実行する合意があるときだけ行う。作業者は手順とスクリプトを用意するだけで、本番では実行しない。審査用3組と共用1組の体験の途中経過が消えるため、同時利用を避ける。
+
+既存の管理者用Application Default Credentialsで実行する。認証情報の表示・再作成や権限の追加はしない。まずサーバーをビルドし、対象数を確認する。
+
+```sh
+pnpm --filter server... build
+node packages/server/scripts/reset-demo-live.mjs --project project-00439085-4e2d-44c3-9a8 --dry-run
+```
+
+出力は `4` だけ。スクリプトはFirestoreの `demoAccounts` の印から `trial-1`・`trial-2`・`trial-3`・`public-1` の学生と支援担当の対応を確認する。共用は両方が `public: true`、審査用は共用の印なしであることも確認する。組が欠ける・対応が違う場合は、書き込む前に止まる。認証情報ファイルは読まない。エミュレーターの設定や異なるプロジェクトの指定があっても止まる。
+
+実行の合意がある統合役だけが、次を実行する。
+
+```sh
+node packages/server/scripts/reset-demo-live.mjs --project project-00439085-4e2d-44c3-9a8 --reset-demo-pairs
+```
+
+画面の「体験を最初からやり直す」と同じ `createDemoStore().reset(uid, false)` を4回呼ぶ。消える状態・残す共有許可は [体験用データのリセット契約](data-shapes.md#体験用データissue-19) と同じ。アカウント・パスワードや共有許可は変更しない。実物カレンダーへの接続がある場合は既存の処理が拒む。完了ごとに件数だけを表示し、メール・パスワード・SDKの例外内容は出力しない。
+
+4組全体では1つのトランザクションではない。途中で失敗したら後の組へ進まず停止し、すでに完了した件数が残る。状態を確認してから再試行する。最後に学生と支援担当でログインし、LMSを開いて新しい名前の台帳・体験用カレンダーを作り、同じ課題を両画面で確認する。リセット自体はLMSの観測や予定を先に作らない。
