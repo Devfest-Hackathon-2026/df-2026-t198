@@ -40,3 +40,8 @@
 .preparation-list .preparation-buttons { grid-column: 1 / -1; }
 .plan-confirmation .td-next { max-width: none; margin-block: var(--space-4); }
 @media (max-width: 850px) { .preparation-form .td-field { flex-basis: 100%; } }
+
+/* Three weights: finish is the main action, postpone is ordinary, remove reads as a text link. */
+.preparation-buttons { align-items: center; }
+.preparation-buttons .preparation-remove { margin-inline-start: auto; min-height: var(--target); padding: 0 var(--space-2); border: 0; background: transparent; color: var(--ink-muted); font-weight: 400; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+.preparation-buttons .preparation-remove:hover { color: var(--ink); }

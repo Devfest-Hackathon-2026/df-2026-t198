@@ -18,6 +18,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid, se
   data = { ...data, courses: linkedCourses(data.courses) };
   const [candidate, setCandidate] = useState<PreparationCandidate | null>(null);
   const [message, setMessage] = useOperationMessage();
+  const [saved, setSaved] = useState<PreparationCandidate | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const selectedPlan = data.plans.find(plan => plan.status === 'active' && plan.planId === selectedPlanId);
   const panel = useRef<HTMLElement>(null);
@@ -33,6 +34,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid, se
   const { tasks, task, candidates } = sessionPlanningView(data, now, selectedAssignment ?? selected);
   const deadline = task?.officialDeadline?.deadline;
   const deadlineDate = deadline?.kind === 'datetime' ? dayInZone(new Date(deadline.dueAt), 'Asia/Tokyo') : deadline?.kind === 'date' ? deadline.date : '';
+  const savedMessage = '準備の予定を入れました。';
   const courses = data.courses.filter(course => course.currentTerm !== false);
   const entries = deadlineEntries(data.assignments, data.manualAssignments, now.getTime());
   const periods = Math.max(5, ...data.plans.filter(plan => plan.status === 'active').map(plan => plan.period), ...courses.flatMap(course => course.slots.map(slot => slot.period)));
@@ -54,6 +56,8 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid, se
   const dates = Array.from({ length: weekendDeadline ? 7 : 5 }, (_, i) => {
     const day = new Date(monday); day.setUTCDate(day.getUTCDate() + i); return day.toISOString().slice(0, 10);
   });
+  // The saved notice sits in the cell that was just filled; other messages stay below the table.
+  const nearCell = message === savedMessage && saved !== null && dates.includes(saved.date) && saved.period <= periods;
   return <div className="session-planning td-stage" style={{ animationDelay: '200ms' }}>
     <label className="session-topic">相談する課題
       <select value={task ? JSON.stringify(task.key) : ''} onChange={event => { setMessage(''); selectAssignment(event.target.value); setCandidate(null); }}>
@@ -91,6 +95,7 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid, se
           {data.plans.filter(plan => plan.status === 'active' && plan.date === date && plan.period === i + 1).map(plan =>
             <PlanCell key={plan.planId} plan={plan} assignments={data.assignments} selected={plan.planId === selectedPlanId}
               onSelect={() => setSelectedPlanId(plan.planId)} />)}
+          {nearCell && saved.date === date && saved.period === i + 1 && <p role="status" className="session-saved">{message}</p>}
         </td>)}
       </tr>)}</tbody>
     </table></ScrollFrame>
@@ -105,8 +110,8 @@ export function SessionPlanning({ data, now, actions, own = false, viewerUid, se
     </aside>}
     {task && !candidates.length && <p>この課題の候補にできるコマがありません。</p>}
     {candidate && actions && <PlanForm key={JSON.stringify(candidate)} assignments={data.assignments} candidate={candidate}
-      actions={actions} onSaved={() => { setCandidate(null); setMessage('準備の予定を入れました。'); }} />}
-    {message && <p role="status">{message}</p>}
+      actions={actions} onSaved={() => { setSaved(candidate); setCandidate(null); setMessage(savedMessage); }} />}
+    {message && !nearCell && <p role="status">{message}</p>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own={own} viewerUid={viewerUid} />
   </div>;
 }

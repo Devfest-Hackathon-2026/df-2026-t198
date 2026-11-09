@@ -14,7 +14,15 @@ describe('学生が締切を確かめる画面', () => {
     const html = renderToStaticMarkup(<StudentView data={data} />);
     expect(html).not.toContain('架空の線形代数');
     expect(html).not.toContain('終了したレポート');
-    expect(html).not.toContain('今週の締切');
+    expect(html).toContain('今週の締切はありません');
+  });
+  it('時間割のマスの締切は日付だけにし、読み上げには時刻を残す', () => {
+    const data = studentFixture();
+    data.assignments = [assignment('レポートA', { kind: 'datetime', dueAt: '2026-11-12T08:30:00Z', dueText: '', timeZone: 'Asia/Tokyo' })];
+    const html = renderToStaticMarkup(<StudentView data={data} now={Date.parse('2026-11-10T03:00:00Z')} />);
+    const cell = html.match(/<button class="course-cell[^>]*>.*?<\/button>/)![0];
+    expect(cell.match(/class="course-deadline">(.*?)<\/span>/)![1]!.replace(/<[^>]+>/g, '')).toBe('11/12 · 1件');
+    expect(cell).toContain('aria-description="11/12 17:30');
   });
   it('前の学期でも残っている締切は一覧に出し、時間割には出さない', () => {
     const data = studentFixture();

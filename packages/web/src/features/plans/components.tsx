@@ -111,9 +111,9 @@ export function PlanList({ plans, actions, viewerUid, own, assignments }: { plan
       <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
       <span>{plan.status === 'done' ? <StatusChip status="done">{planProgress(plan)}</StatusChip> : planProgress(plan)}</span>
       <PlanDeadlineWarning plan={plan} assignments={assignments} />
-      <div className="preparation-buttons">{own && actions?.act && plan.status === 'active' && <><Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'done'} busyLabel="記録中…" onClick={() => { void act(plan, 'done'); }}>終わった</Button>
+      <div className="preparation-buttons">{own && actions?.act && plan.status === 'active' && <><Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'done'} busyLabel="記録中…" variant="primary" onClick={() => { void act(plan, 'done'); }}>終わった</Button>
         {Date.parse(plan.startsAt) > Date.now() && <Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'later'} busyLabel="記録中…" onClick={() => { void act(plan, 'later'); }}>後回し</Button>}</>}
-      {actions && (own || plan.confirmedBy === viewerUid) && <Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'remove'} busyLabel="外しています…"
+      {actions && (own || plan.confirmedBy === viewerUid) && <Button variant="quiet" className="preparation-remove" disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'remove'} busyLabel="外しています…"
         aria-label={`${plan.title} ${plan.date} ${plan.period}限の準備を外す`} onClick={() => { void remove(plan); }}>外す</Button>}</div>
     </li>)}</ul></div>{message && <p role="status">{message}</p>}
   </section>;

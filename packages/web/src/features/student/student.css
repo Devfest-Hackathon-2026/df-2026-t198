@@ -106,3 +106,10 @@
 .student-workspace > .manual-assignments { margin: var(--space-6) 0 var(--space-3); }
 .app main > .notification-settings, .app main > .student-sharing { margin-bottom: var(--space-3); }
 @media (prefers-reduced-motion: reduce) { .student-workspace .td-taskrow, .student-workspace .course-cell { transition: none; } }
+
+/* Names break evenly instead of leaving one character on a line; the changed chip matches the session screen. */
+.student-workspace .course-cell strong, .student-workspace .td-taskrow-course, .student-workspace .course-panel h2 { text-wrap: balance; line-break: strict; }
+.student-workspace .td-chip-changed { color: var(--change-text); background: var(--danger-soft); border-radius: 100px; padding-inline: var(--space-3); font-size: 12px; }
+.student-workspace .td-taskrow-side { max-width: 12rem; flex-wrap: wrap; justify-content: flex-end; }
+.student-workspace .assignment > .td-chip-changed { margin-bottom: var(--space-1); }
+.student-workspace .empty-week { margin: 0; padding: var(--space-4); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); color: var(--ink-muted); text-align: center; }
