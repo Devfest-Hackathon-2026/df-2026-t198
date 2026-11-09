@@ -49,6 +49,7 @@
 .student-workspace .preparation-add { margin: 0 0 var(--space-4); }
 @media (max-width: 480px) {
   .student-workspace .student-deadlines .td-taskrow { grid-template-columns: 6.75rem minmax(0, 1fr); gap: var(--space-1) var(--space-2); }
+  .student-deadlines .td-taskrow-side .td-chip-changed { padding-inline: var(--space-1); }
   .student-deadlines .td-taskrow-course, .student-deadlines .td-taskrow-title { grid-column: 2; }
   .student-deadlines .td-taskrow-side { grid-column: 1; grid-row: 1 / span 2; justify-content: flex-start; font-weight: 700; }
 }
@@ -106,3 +107,11 @@
 .student-workspace > .manual-assignments { margin: var(--space-6) 0 var(--space-3); }
 .app main > .notification-settings, .app main > .student-sharing { margin-bottom: var(--space-3); }
 @media (prefers-reduced-motion: reduce) { .student-workspace .td-taskrow, .student-workspace .course-cell { transition: none; } }
+
+/* Names break evenly instead of leaving one character on a line; the changed chip matches the session screen. */
+.student-workspace .course-cell strong, .student-workspace .td-taskrow-course, .student-workspace .course-panel h2 { text-wrap: balance; line-break: strict; }
+/* Darken each channel by one for this chip only; keep literal colours in tokens.css. */
+.student-workspace .td-chip-changed { color: color(from var(--change-text) srgb calc(r - 1 / 255) calc(g - 1 / 255) calc(b - 1 / 255)); background: var(--danger-soft); border-radius: 100px; padding-inline: var(--space-3); font-size: 12px; }
+.student-workspace .td-taskrow-side { max-width: 12rem; flex-wrap: wrap; justify-content: flex-end; }
+.student-workspace .assignment > .td-chip-changed { margin-bottom: var(--space-1); }
+.student-workspace .empty-week { margin: 0; padding: var(--space-4); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); color: var(--ink-muted); text-align: center; }

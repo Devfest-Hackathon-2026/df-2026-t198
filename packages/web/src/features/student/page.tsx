@@ -1,4 +1,4 @@
-import { Button, TaskRow, Tabs, FetchState, Skeleton } from '../../shared/ui';
+import { Button, TaskRow, Tabs, FetchState, Skeleton, StatusChip } from '../../shared/ui';
 import { ScrollFrame } from '../../shared/ui/scroll-frame';
 import './student.css';
 import { linkedCourses } from '../../../../core/src/course-links';
@@ -55,9 +55,10 @@ function Review({ item }: { item: LedgerAssignment }) {
       : reviewReasonText(reason)}</p>)}{item.presenceState === 'cancellation-candidate' &&
       <p className="review"><span className="badge">要確認</span> LMSの一覧で見つかりませんでした。LMSで確かめてください。</p>}</>;
 }
-function AssignmentRow({ item, courseName }: { item: LedgerAssignment; courseName: string }) {
+function AssignmentRow({ item, courseName, changed = false }: { item: LedgerAssignment; courseName: string; changed?: boolean }) {
   return <li className="assignment">
     <h3>{item.latest.title}</h3>
+    {changed && <StatusChip status="changed" />}
     <p><ChangedDeadline value={deadlineText(displayDeadlineOf(item))} /> {item.submission === 'submitted' && <span className="badge done">出せました</span>}
       {item.presenceState === 'cancelled' && <span className="badge">取り消されました</span>}</p>
     {item.presenceState === 'ended' && <p className="muted">この課題は終了しました。</p>}
@@ -120,6 +121,7 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
   const courseEntries = (owner: StudentCourse) => entries.filter(item => entryBelongsTo(item, owner));
   const changed = useDeadlineChanges(new Map(courses.map(c => [courseKey(c),
     deadlineText(courseEntries(c)[0] ? entryDisplayDeadline(courseEntries(c)[0]!) : undefined)])));
+  const changedEntries = useDeadlineChanges(new Map(entries.map(item => [entryId(item), deadlineText(entryDisplayDeadline(item))])));
   const monday = new Date(new Date(now).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }) + 'T00:00:00Z');
   monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
   const weekStart = monday.toISOString().slice(0, 10);
@@ -133,13 +135,13 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
   };
   const taskRows = (items: typeof upcoming) => <ul className="td-tasklist">{items.map(item => {
       const owner = data.courses.find(c => entryBelongsTo(item, c));
-      return <li key={entryId(item)}><TaskRow course={owner?.name ?? '手で入れた課題'} courseIdentity={owner} title={entryTitle(item)}
+      return <li key={entryId(item)}><TaskRow course={owner?.name ?? '手で入れた課題'} courseIdentity={owner} title={entryTitle(item)} changed={changedEntries.has(entryId(item))}
         deadline={<ChangedDeadline value={deadlineText(entryDisplayDeadline(item))} />}
         onSelect={owner ? () => select(owner) : undefined} />
         {item.kind === 'manual' && <small className="manual-author">{manualAuthor(item.row)}</small>}</li>;
     })}</ul>;
-  const upcomingList = !!upcoming.length && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">今週の締切</h2>
-    {taskRows(upcoming.filter(inWeek))}
+  const upcomingList = (!!data.assignments.length || hasManual) && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">今週の締切</h2>
+    {upcoming.some(inWeek) ? taskRows(upcoming.filter(inWeek)) : <p className="empty-week">今週の締切はありません</p>}
     {!!upcoming.filter(item => !inWeek(item)).length && <details className="other-deadlines"><summary>その他の締切</summary>{taskRows(upcoming.filter(item => !inWeek(item)))}</details>}
     </section>;
   return <OperationMessages>
@@ -172,7 +174,8 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
             const items = courseEntries(c);
             const next = items[0];
             const deadline = next ? entryDisplayDeadline(next) : undefined;
-            const summary = deadline?.kind === 'datetime' ? deadlineText(deadline) : deadline?.kind === 'date'
+            // The cell shows the day only; the time stays in the description and the course panel.
+            const summary = deadline?.kind === 'datetime' ? new Intl.DateTimeFormat('ja-JP', { timeZone: deadline.timeZone, month: 'numeric', day: 'numeric' }).format(new Date(deadline.dueAt)) : deadline?.kind === 'date'
               ? `${Number(deadline.date.slice(5, 7))}/${Number(deadline.date.slice(8))}` : deadlineText(deadline);
             return <button className={`course-cell${changed.has(courseKey(c)) ? ' changed' : ''}`} key={courseKey(c)} onClick={() => select(c)}
               data-course-color={courseColor(c)} title={c.name} aria-label={c.name}
@@ -193,7 +196,7 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
         {!!course.slots.length && <p>{course.slots.map(slot => `${'月火水木金土日'[slot.weekday - 1]}曜${slot.period}限`).join('・')}</p>}
         {course.url && <a href={course.url} target="_blank" rel="noreferrer">LMSで授業を開く</a>}
         <ul>{courseEntries(course).map(entry => entry.kind === 'lms'
-          ? <AssignmentRow key={entryId(entry)} item={entry.row} courseName={course.name} />
+          ? <AssignmentRow key={entryId(entry)} item={entry.row} courseName={course.name} changed={changedEntries.has(entryId(entry))} />
           : <ManualAssignmentRow key={entryId(entry)} row={entry.row} actions={manualActions} own />)}</ul>
         {manualActions && <details><summary>この授業の課題を手で入れる</summary>
           <ManualAssignmentForm key={courseKey(course)} courses={data.courses} course={course} actions={manualActions} /></details>}

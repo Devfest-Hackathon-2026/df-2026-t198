@@ -265,3 +265,9 @@
 }
 @media (max-width: 480px) { .session-meta > section, .session-meta .session-meta-last { padding: var(--space-2) var(--space-3); } }
 @media (prefers-reduced-motion: reduce) { .session-steps a, .session-primary .session-next, .session-students nav a { transition: none; } }
+
+/* Saved preparation is filled with the marker yellow so it stands apart from dashed candidates. */
+.session-planning .preparation-cell.preparation-cell { min-height: 0; margin: 0; padding: var(--space-2); border: 1.5px solid var(--marker); border-radius: var(--radius-sm); background: var(--marker); color: var(--ink-on-marker); }
+.session-planning .preparation-cell small, .session-planning .preparation-cell .review-tag { color: var(--ink-on-marker); border-color: currentColor; }
+.session-planning .preparation-cell[aria-pressed='true'] { border-color: var(--ink); }
+.session-planning .session-saved { margin: var(--space-1) 0 0; padding: 2px var(--space-2); border-radius: var(--radius-sm); background: var(--ink); color: var(--on-ink); font-size: 12px; font-weight: 700; line-height: 1.5; }
