@@ -56,7 +56,7 @@ async function assertPlanLayout(page) {
 }
 async function assertCompactCell(page, fromSupporter) {
   const cell = page.locator('.preparation-cell');
-  assert.equal((await cell.innerText()).trim(), `準備 書き方を書くレポート${fromSupporter ? '\n支援担当が入れた' : ''}`);
+  assert.equal((await cell.innerText()).trim(), `準備 第3回レポート（要約と引用）${fromSupporter ? '\n支援担当が入れた' : ''}`);
   assert.equal(await cell.evaluate(element => Array.from(element.children).every(child =>
     child.getBoundingClientRect().height <= parseFloat(globalThis.getComputedStyle(child).lineHeight) + 1)), true);
 }
@@ -101,7 +101,7 @@ try {
   await assertPlanLayout(student); await assertPlanLayout(supporter);
   pass('compact supporter cell opens date and time with Enter; plan lists keep one row per plan');
   const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
-  const preparationEvent = calendar.locator('.calendar-event').filter({ hasText: '準備' }).getByText('書き方を書くレポート', { exact: true });
+  const preparationEvent = calendar.locator('.calendar-event').filter({ hasText: '準備' }).getByText('第3回レポート（要約と引用）', { exact: true });
   await calendar.getByText('体験用の予定です。Googleカレンダーには入りません。', { exact: true }).waitFor();
   await preparationEvent.waitFor();
   const item = (await ref.collection('calendarItems').doc(plan.calendarItemKey).get()).data();

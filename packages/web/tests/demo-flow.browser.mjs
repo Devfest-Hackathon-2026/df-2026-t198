@@ -33,7 +33,7 @@ try {
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
   await page.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await page.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
-  await pane('supporter').getByText('書き方を書くレポート', { exact: true }).waitFor();
+  await pane('supporter').getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
   const oldDue = (await source.get()).data().courses[0].assignments[0].dueAt;
   await pane('lms').locator('.demo-course a').first().click();
   await pane('lms').locator('.demo-task a').first().click();
@@ -48,7 +48,7 @@ try {
   const held = new Promise(resolve => { release = resolve; });
   const reading = page.waitForRequest('**/api/v1/observations');
   await page.route('**/api/v1/observations', async route => { await held; await route.continue(); }, { times: 1 });
-  await page.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
+  await page.getByRole('button', { name: '「第3回レポート（要約と引用）」の締切を1日延ばす', exact: true }).click();
   await page.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   const newDue = (await source.get()).data().courses[0].assignments[0].dueAt;
   assert.equal(Date.parse(newDue) - Date.parse(oldDue), 86400000);

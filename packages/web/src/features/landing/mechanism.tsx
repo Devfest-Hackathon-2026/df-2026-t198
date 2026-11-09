@@ -18,7 +18,7 @@ function Schedule({ calendar, moved, emphasize }: { calendar?: boolean; moved: b
     <h3>{calendar ? 'カレンダー' : '時間割と締切'}</h3>
     <div className="flow-days"><span>11/12（木）</span><span>11/13（金）</span></div>
     <div className="flow-track">
-      <div className="flow-event"><span>書き方を書くレポート</span><Deadline changed={moved} emphasize={emphasize} /></div>
+      <div className="flow-event"><span>第3回レポート（要約と引用）</span><Deadline changed={moved} emphasize={emphasize} /></div>
     </div>
   </div>;
 }
@@ -50,14 +50,14 @@ export function Mechanism() {
       <div className={`flow-teacher${stage >= 1 ? ' is-issued' : ''}${pulse(stage === 1)}`}>
         <span className="flow-label">01 先生</span>
         <h3>お知らせ</h3>
-        <p className="flow-notice">{stage >= 1 ? 'レポートの締切を11/13に延ばします。' : '書き方を書くレポート'}</p>
+        <p className="flow-notice">{stage >= 1 ? 'レポートの締切を11/13に延ばします。' : '第3回レポート（要約と引用）'}</p>
       </div>
       <span className="flow-arrow" aria-hidden="true">→</span>
       <div className="flow-lms lms-skin">
         <div className="flow-lms-header"><strong>授業支援システム</strong><span>文章表現</span></div>
         <div className="flow-lms-body"><span className="flow-label">02 LMS</span>
           <p className={`flow-lms-notice${pulse(stage === 2)}`}>{stage >= 2 ? 'お知らせ 1件：レポートの締切変更' : 'お知らせ 0件'}</p>
-          <p>書き方を書くレポート</p><Deadline changed={stage >= 2} emphasize={stage === 2} />
+          <p>第3回レポート（要約と引用）</p><Deadline changed={stage >= 2} emphasize={stage === 2} />
           <span className={`flow-open${stage >= 3 ? ' is-open' : ''}${pulse(stage === 3)}`}>{stage >= 3 ? '学生がLMSを開きました' : 'LMSを開く前'}</span>
         </div>
       </div>
@@ -68,7 +68,7 @@ export function Mechanism() {
       <Schedule moved={stage >= 5} emphasize={stage >= 5 && !reduced} /><Schedule calendar moved={stage >= 5} emphasize={stage >= 5 && !reduced} />
       <div className={`flow-supporter app${stage >= 6 ? ' is-updated' : ''}${pulse(stage === 6 && !reduced)}`}>
         <h3>支援担当</h3><p>前回の面談からの変化</p>
-        <strong>書き方を書くレポート</strong>
+        <strong>第3回レポート（要約と引用）</strong>
         {stage >= 6 ? <Deadline changed emphasize={!reduced} /> : <span>変化なし</span>}
       </div>
     </div>

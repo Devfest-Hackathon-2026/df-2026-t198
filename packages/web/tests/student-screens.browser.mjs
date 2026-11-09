@@ -79,7 +79,7 @@ try {
     const table = page.getByRole('table', { name: '次の面談までの課題', exact: true });
     await table.waitFor();
     assert.equal(await page.locator('.td-detail').count(), 0);
-    await table.getByRole('button', { name: '書き方を書くレポート', exact: true }).click();
+    await table.getByRole('button', { name: '第3回レポート（要約と引用）', exact: true }).click();
     await page.locator('.td-detail').waitFor();
     await page.locator('.td-detail').getByRole('link', { name: /LMSで見る/ }).waitFor();
     await fits(page);

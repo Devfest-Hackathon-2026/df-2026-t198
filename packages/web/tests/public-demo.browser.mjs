@@ -59,9 +59,9 @@ try {
   const deadlines = supporter.getByRole('region', { name: '次の面談までの締切' });
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await confirmed();
-  await deadlines.getByText('書き方を書くレポート', { exact: true }).waitFor();
+  await deadlines.getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
   const before = await deadline();
-  await student.getByRole('button', { name: '「書き方を書くレポート」の締切を1日延ばす', exact: true }).click();
+  await student.getByRole('button', { name: '「第3回レポート（要約と引用）」の締切を1日延ばす', exact: true }).click();
   await student.getByRole('status').filter({ hasText: 'LMSの締切を1日延ばしました' }).waitFor();
   assert.equal(await deadline(), before);
   await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
