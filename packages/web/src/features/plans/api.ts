@@ -1,6 +1,7 @@
 import { serverFetch } from '../../shared/network';
 import type { User } from 'firebase/auth';
 import type { PreparationPlan, PreparationPlanInput } from '../../../../core/src/types';
+import { planErrorCode } from './errors';
 
 export interface PlanActionResponse {
   outcome: 'done' | 'moved' | 'no-slot' | 'unchanged';
@@ -14,8 +15,8 @@ export async function performPlanAction(user: User, id: string, action: 'done' |
   const response = await serverFetch(`/api/v1/plans/${encodeURIComponent(id)}/${action}?rev=${revision}`, { method: 'POST', cache: 'no-store',
     headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
   if (!response.ok) {
-    const value = await response.json().catch(() => ({})) as { plan?: PreparationPlan };
-    throw new PlanActionError(response.status === 409 ? 'plan-conflict' : 'plan-action-failed', response.status === 409 ? value.plan : undefined);
+    const value = await response.json().catch(() => ({})) as { error?: string; plan?: PreparationPlan };
+    throw new PlanActionError(response.status === 409 ? planErrorCode(value.error) ?? 'plan-conflict' : 'plan-action-failed', response.status === 409 ? value.plan : undefined);
   }
   return await response.json() as PlanActionResponse;
 }
@@ -33,7 +34,7 @@ export function planActions(user: User, student: string): PlanActions {
     });
     if (!response.ok) {
       const value = await response.json().catch(() => ({})) as { error?: string };
-      throw new Error(value.error === 'plan-after-deadline' ? value.error : response.status === 409 ? 'plan-conflict' : 'request-failed');
+      throw new Error(response.status === 409 ? planErrorCode(value.error) ?? 'plan-conflict' : 'request-failed');
     }
   };
   return { add: request, remove: id => request(id), act: (id, action, revision) => performPlanAction(user, id, action, revision) };
