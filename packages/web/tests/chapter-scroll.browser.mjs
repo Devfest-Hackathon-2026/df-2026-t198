@@ -67,7 +67,7 @@ try {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 
   // A modal wheel must not leave an intent behind for subsequent scripted focus scrolling.
-  const trigger = page.getByRole('button', { name: '体験用LMSの授業一覧を拡大する', exact: true });
+  const trigger = page.getByRole('button', { name: '学生の時間割を拡大する', exact: true });
   await trigger.click();
   await page.getByRole('dialog').waitFor();
   await page.mouse.wheel(0, 150); await page.keyboard.press('Escape');

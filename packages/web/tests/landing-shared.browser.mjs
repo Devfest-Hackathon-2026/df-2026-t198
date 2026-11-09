@@ -17,6 +17,10 @@ try {
     const entry = page.locator('#try .trial-launch');
     const button = entry.getByRole('button', { name: '学生として試す', exact: true });
     await button.waitFor();
+    await page.evaluate(() => globalThis.document.fonts.ready);
+    await page.locator('#try').evaluate(el => globalThis.scrollTo({ top: el.offsetTop, behavior: 'instant' }));
+    await page.waitForFunction(() => globalThis.document.querySelector('.chapter-nav [aria-current]')?.getAttribute('href') === '#try');
+    assert(await button.evaluate(el => { const rect = el.getBoundingClientRect(); return rect.top >= 0 && rect.bottom <= globalThis.innerHeight; }), 'primary entry is in the captured viewport');
     assert.equal(await entry.locator('button:visible, a:visible').count(), 1);
     assert.equal(await entry.getByRole('button', { name: '支援担当として試す', exact: true }).count(), 0);
     assert.equal(await entry.locator('.shared-fallback').isVisible(), false);

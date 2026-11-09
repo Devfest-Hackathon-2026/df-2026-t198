@@ -38,7 +38,8 @@
     "packages/web/tests/landing-flow.browser.mjs",
     "packages/web/tests/landing-shared.browser.mjs",
     "packages/web/tests/helpers/local-processes.mjs",
-    "scripts/run-emulators.mjs"
+    "scripts/run-emulators.mjs",
+    "packages/web/tests/chapter-scroll.browser.mjs"
   ],
   "intent_paths": [
     "docs/records/2026-11-09-issue-240/implementation-plan.md",

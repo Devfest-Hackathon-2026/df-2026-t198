@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { log } from 'node:console';
 
 const directory = process.env.ARTIFACT_EVIDENCE_DIR;
@@ -20,4 +20,4 @@ const logfile = `${id}.log`;
 await writeFile(`${directory}/${logfile}`, result.stdout + result.stderr);
 if (result.status !== 0) throw new Error(`landing-${id}-failed; see ${logfile}`);
 log(JSON.stringify({ observations: [{ requirement_id: id, status: 'pass',
-  observed: JSON.parse(await readFile(`${directory}/${check.file}`, 'utf8')), evidence_files: [check.file, logfile] }] }));
+  observed: JSON.parse(await readFile(`${directory}/${check.file}`, 'utf8')), evidence_files: (await readdir(directory)).filter(file => /\.(?:png|json|log)$/.test(file)) }] }));
