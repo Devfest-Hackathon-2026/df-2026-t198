@@ -135,8 +135,12 @@
 .session-students h2 { margin-top: 0; }
 .session-students nav { display: grid; gap: 12px; margin-top: 20px; }
 .session-students nav a { display: flex; gap: 14px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-inner); text-decoration: none; color: var(--ink); }
-.rd-student-description { display: grid; gap: 4px; min-width: 0; }
-.rd-student-facts { display: grid; gap: 2px; color: var(--muted); font-size: 13px; }
+.rd-student-description { display: grid; gap: 8px; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.rd-student-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; color: var(--muted); font-size: 13px; }
+.rd-student-facts > :first-child, .rd-student-facts > :nth-child(n+5) { grid-column: 1 / -1; }
+.session-student-sort { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.session-student-sort select { max-width: 100%; min-height: 44px; padding: 8px 12px; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: var(--r-inner); }
+.session-list-note { color: var(--muted); font-size: 13px; }
 .rd-open { margin-left: auto; color: var(--blue); font-weight: 700; text-decoration: underline; white-space: nowrap; }
 .session-login { max-width: 420px; margin: 32px auto; padding: 20px 22px; border: 0; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow); display: grid; gap: 16px; }
 .session-login label { display: grid; gap: 6px; }
@@ -147,6 +151,8 @@
   .session-steps a { padding: 12px; }
 }
 @media (max-width: 480px) {
+  .rd-student-facts { grid-template-columns: minmax(0, 1fr); }
+  .session-students nav a .rd-student-description { flex-basis: calc(100% - 64px); }
   .session-steps a strong { font-size: 16px; }
   .session-steps a span { font-size: 12px; }
   .session-check section, .session-planning { padding: 16px; }

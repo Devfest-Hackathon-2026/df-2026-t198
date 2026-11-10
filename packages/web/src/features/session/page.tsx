@@ -8,7 +8,7 @@ import { entryBelongsTo, entryDeadline, entryDisplayDeadline, entryId, entryTitl
 import { planProgress } from '../plans/progress';
 import { LmsSourceLink } from '../../shared/assignments/lms-link';
 import { fetchStatus } from '../../shared/assignments/fetch-status';
-import { useEffect, useId, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { AssignmentChange, LedgerAssignment, SessionContext } from '../../../../core/src/types';
 import { getSessionServices, type SessionServices } from './firebase';
@@ -19,6 +19,7 @@ import { SessionLink, sessionRoute } from './route';
 import { comparePreparationPlans, PlanList } from '../plans/components';
 import { planActions, type PlanActions } from '../plans/api';
 import { SessionPlanning } from './planning';
+import { StudentList } from './student-list';
 import './session.css';
 import { ChangedDeadline } from '../../shared/assignments/deadline-change';
 import { missingDeadlineText } from '../../shared/assignments/review-reason';
@@ -74,7 +75,7 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
       try {
         const rows = await services.students(user);
         if (!active) return;
-        setStudents(rows); setError('');
+        setStudents(previous => JSON.stringify(previous) === JSON.stringify(rows) ? previous : rows); setError('');
       } catch {
         if (!active) return;
         setStudents(null);
@@ -92,31 +93,11 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
   return <section className="session-students">
     <h2>{students?.length === 0 ? '自分の面談' : '担当する学生'}</h2>
     {students?.length !== 0 && <p>共有を許可した学生の授業と課題を出しています。</p>}
-    <nav aria-label="担当する学生">
-      {students?.map(student => <StudentChoice key={student.uid} student={student} user={user} services={services} />)}
-    </nav>
+    {students && students.length > 0 && <StudentList students={students} viewer={user.uid} source={services.source} />}
+    {students === null && !error && <Skeleton label="担当する学生を確認しています…" />}
     {students?.length === 0 && <SessionLink href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談を見る</SessionLink>}
     {error && <p role="alert">{error}</p>}
   </section>;
-}
-function StudentChoice({ student, user, services }: {
-  student: { uid: string; displayName?: string }; user: User; services: SessionServices;
-}) {
-  const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
-  useEffect(() => watchSession(services.source, student.uid, user.uid, setState), [services, student.uid, user.uid]);
-  const context = state.data.context;
-  const descriptionId = useId();
-  return <SessionLink href={`/session/${encodeURIComponent(student.uid)}`} aria-label={student.displayName ?? `学生 ${student.uid}`}
-    aria-describedby={state.status === 'ready' ? descriptionId : undefined}>
-    <span className="rd-avatar" aria-hidden="true">{(student.displayName ?? '学生').slice(0, 1)}</span>
-    <span className="rd-student-description"><strong>{student.displayName ?? '学生'}</strong>
-      {!student.displayName && <span className="session-student-id">{student.uid}</span>}
-      {state.status === 'ready' && <span className="rd-student-facts" id={descriptionId}>
-        <span>次の面談：{context.nextSessionAt ? formatMoment(context.nextSessionAt) : '日時未設定'}</span>
-        <span>前回の面談からの変化 {buildSessionView(state.data, new Date()).changes.length}件</span>
-      </span>}
-    </span><span className="rd-open" aria-hidden="true">開く</span>
-  </SessionLink>;
 }
 function StudentSession({ uid, user, services, planning, displayName }: { uid: string; user: User; services: SessionServices; planning: boolean; displayName?: string | undefined }) {
   const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
