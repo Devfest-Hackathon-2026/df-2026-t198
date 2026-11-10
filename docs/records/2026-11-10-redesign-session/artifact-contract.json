@@ -1,0 +1,87 @@
+{
+  "schema_version": 2,
+  "root": "../../..",
+  "recipient": "面談で準備の時間を決める支援担当と学生",
+  "purpose": "変更した締切を確認し、候補から準備する時間を決め、保存した予定を確認できる。",
+  "conditions": [
+    "1280×800と390×844",
+    "架空データだけ",
+    "共有の土台を変更しない",
+    "①は相談リンク、②は候補の入れるだけを塗る"
+  ],
+  "assumptions": [
+    "ローカルAuth/Firestoreエミュレーター",
+    "実LMS・公開先は対象外"
+  ],
+  "request": {
+    "reference": "docs/records/2026-11-10-redesign-session/plan-simplicity.txt",
+    "source_refs": [
+      "docs/records/2026-11-10-redesign-session/plan-simplicity.txt",
+      "docs/ui-words.md"
+    ]
+  },
+  "plan_alignment": {
+    "status": "checked",
+    "reason": "RE2と08:10の追記に従い、見本の配置と操作の強弱を確認する。"
+  },
+  "artifact_paths": [
+    "packages/web/src/features/session",
+    "packages/web/src/features/plans/components.tsx"
+  ],
+  "verification_paths": [
+    "packages/web/tests/verify-session.mjs",
+    "packages/web/tests/run-session-browser.mjs",
+    "packages/web/tests/session-redesign.browser.mjs",
+    "packages/web/tests/session.browser.mjs",
+    "packages/web/tests/helpers/local-processes.mjs",
+    "scripts/run-emulators.mjs",
+    "packages/server/scripts/seed-session.mjs"
+  ],
+  "intent_paths": [
+    "docs/records/2026-11-10-redesign-session/plan-simplicity.txt",
+    "docs/ui-words.md"
+  ],
+  "requirements": [
+    {
+      "id": "browser-operations",
+      "operation": "学生選択・課題詳細・画面切替・日時編集・即時更新・共有取消・ログアウト。",
+      "expected_result": "26操作の結果を確認し、権限を失うと表示を消す。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "session-layout",
+      "operation": "学生本人と支援担当で確認・相談を両サイズで開く。",
+      "expected_result": "名前と取得時点、3つの事実、①②の切替、日付の行、今日の列と凡例があり、保存後の札がマスに収まり、外す操作が文字リンクとして使える。",
+      "verification": "command",
+      "evidence_required": true
+    },
+    {
+      "id": "reading",
+      "operation": "1280/390の画面と見本を比較し、操作と文言を読む。",
+      "expected_result": "次の操作が分かり、赤は変更、黄は準備、緑は終了に使われ、表を画面内で横スクロールできる。",
+      "verification": "semantic",
+      "review_evidence": [
+        "見本のsession.png",
+        "確認・相談・保存後・選択・ログインの写し",
+        "面談の実装"
+      ],
+      "evidence_required": true
+    }
+  ],
+  "commands": [
+    {
+      "id": "session",
+      "argv": [
+        "node",
+        "packages/web/tests/verify-session.mjs"
+      ],
+      "covers": [
+        "browser-operations",
+        "session-layout"
+      ],
+      "timeout_seconds": 60,
+      "cwd": "."
+    }
+  ]
+}

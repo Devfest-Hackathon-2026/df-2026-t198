@@ -269,7 +269,8 @@ it('prioritizes deadlines and keeps counted navigation and three context cards i
   expect(links[0]?.textContent).toContain('締切1件・変化1件');
   expect(links[1]?.textContent).toMatch(/準備の候補 \d+コマ/);
   expect([...host.querySelectorAll('.session-meta > section h2')].map(node => node.textContent))
-    .toEqual(['前回の面談', '次の面談', '情報の取得時点']);
+    .toEqual(['前回の面談', '次の面談', '準備の予定']);
+  expect(host.querySelector('.session-heading [aria-label="情報の取得時点"]')).not.toBeNull();
   expect(host.querySelector('.session-meta-next .session-editor')).not.toBeNull();
   expect(host.querySelector('.session-check > :first-child #session-deadlines')).not.toBeNull();
   expect(host.querySelector('.session-supplement #session-changes')).not.toBeNull();

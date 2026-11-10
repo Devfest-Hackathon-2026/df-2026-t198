@@ -7,7 +7,7 @@ import { entryBelongsTo, entryDeadline, entryDisplayDeadline, entryId, entryTitl
 import { planProgress } from '../plans/progress';
 import { LmsSourceLink } from '../../shared/assignments/lms-link';
 import { fetchStatus } from '../../shared/assignments/fetch-status';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useId, useState, type FormEvent } from 'react';
 import type { User } from 'firebase/auth';
 import type { AssignmentChange, LedgerAssignment, SessionContext } from '../../../../core/src/types';
 import { getSessionServices, type SessionServices } from './firebase';
@@ -85,7 +85,6 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
     return () => { active = false; window.clearInterval(interval); };
   }, [user, services]);
   if (selected) return <div className="session-content">
-    {selected !== user.uid && <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>}
     <StudentSession key={selected} uid={selected} user={user} services={services} planning={planning}
       displayName={students === null ? '学生' : students.find(student => student.uid === selected)?.displayName} />
   </div>;
@@ -93,12 +92,30 @@ function SessionWorkspace({ user, services, path }: { user: User; services: Sess
     <h2>{students?.length === 0 ? '自分の面談' : '担当する学生'}</h2>
     {students?.length !== 0 && <p>共有を許可した学生の授業と課題を出しています。</p>}
     <nav aria-label="担当する学生">
-      {students?.map(student => <SessionLink key={student.uid} href={`/session/${encodeURIComponent(student.uid)}`}>
-        <strong>{student.displayName ?? '学生'}</strong>{!student.displayName && <>{' '}<span className="session-student-id">{student.uid}</span></>}</SessionLink>)}
+      {students?.map(student => <StudentChoice key={student.uid} student={student} user={user} services={services} />)}
     </nav>
     {students?.length === 0 && <SessionLink href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談を見る</SessionLink>}
     {error && <p role="alert">{error}</p>}
   </section>;
+}
+function StudentChoice({ student, user, services }: {
+  student: { uid: string; displayName?: string }; user: User; services: SessionServices;
+}) {
+  const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
+  useEffect(() => watchSession(services.source, student.uid, user.uid, setState), [services, student.uid, user.uid]);
+  const context = state.data.context;
+  const descriptionId = useId();
+  return <SessionLink href={`/session/${encodeURIComponent(student.uid)}`} aria-label={student.displayName ?? `学生 ${student.uid}`}
+    aria-describedby={state.status === 'ready' ? descriptionId : undefined}>
+    <span className="rd-avatar" aria-hidden="true">{(student.displayName ?? '学生').slice(0, 1)}</span>
+    <span className="rd-student-description"><strong>{student.displayName ?? '学生'}</strong>
+      {!student.displayName && <span className="session-student-id">{student.uid}</span>}
+      {state.status === 'ready' && <span className="rd-student-facts" id={descriptionId}>
+        <span>次の面談：{context.nextSessionAt ? formatMoment(context.nextSessionAt) : '日時未設定'}</span>
+        <span>前回の面談からの変化 {buildSessionView(state.data, new Date()).changes.length}件</span>
+      </span>}
+    </span><span className="rd-open" aria-hidden="true">開く</span>
+  </SessionLink>;
 }
 function StudentSession({ uid, user, services, planning, displayName }: { uid: string; user: User; services: SessionServices; planning: boolean; displayName?: string | undefined }) {
   const [state, setState] = useState<SessionState>({ status: 'loading', data: emptySession() });
@@ -111,9 +128,18 @@ function StudentSession({ uid, user, services, planning, displayName }: { uid: s
     const interval = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(interval);
   }, []);
-  if (state.status === 'loading') return <Skeleton label="面談画面を開いています…" lines={6} />;
-  if (state.status === 'denied') return <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>;
-  if (state.status === 'error') return <p role="alert">面談の内容を確認できなくなったため、表示を消しました。{uid === user.uid ? '接続を確かめて、画面を開き直してください。' : '学生を選び直してください。'}</p>;
+  if (state.status === 'loading') return <>
+    {uid !== user.uid && <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>}
+    <Skeleton label="面談画面を開いています…" lines={6} />
+  </>;
+  if (state.status === 'denied') return <>
+    {uid !== user.uid && <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>}
+    <p role="alert">この学生の共有が終わったか、許可されていません。表示していた内容を消しました。</p>
+  </>;
+  if (state.status === 'error') return <>
+    {uid !== user.uid && <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>}
+    <p role="alert">面談の内容を確認できなくなったため、表示を消しました。{uid === user.uid ? '接続を確かめて、画面を開き直してください。' : '学生を選び直してください。'}</p>
+  </>;
   return <SessionDetails key={uid} data={state.data} now={now} own={uid === user.uid} uid={uid} planning={planning}
     displayName={displayName} actions={planActions(user, uid)} manualActions={manualAssignmentActions(user, uid)} viewerUid={user.uid} save={context => services.saveContext(user, uid, context)} />;
 }
@@ -138,9 +164,28 @@ function SessionContent({ data, now, own, save, uid, planning, actions, manualAc
   const base = `/session/${encodeURIComponent(uid)}`;
   return <OperationMessages>
     <header className="session-heading td-stage">
+      <span className="rd-avatar" aria-hidden="true">{(own ? '自' : displayName ?? '学生').slice(0, 1)}</span>
       <div><h1>{own ? '自分の面談' : displayName ?? '学生'}</h1>
         {!own && !displayName && <p className="session-student-id">{uid}</p>}</div>
+      <div className="session-meta-fetch" aria-label="情報の取得時点"><div className="session-updates">
+        {!data.fetchStates.length && <p>取得記録なし</p>}
+        {data.fetchStates.map(state => {
+          const { stale, failed } = fetchStatus(state, now.getTime());
+          const label = { 'ynu-lms': 'YNU LMS', kulms: 'KULMS', kulasis: 'KULASIS', 'demo-lms': '体験用LMS' }[state.system];
+          if (stale || failed) return <FetchState state="error" title={label} key={state.system} detail={<p className="notice">
+            {label}：{stale ? `${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。学生がLMSを開くと新しくなります。` :
+              '課題をすべて確認できていません。LMSを一緒に開いて確かめてください。'}</p>} />;
+          return <p className={state.lastSucceededAt ? "rd-fetch-ok" : undefined} key={state.system}><strong>{state.system === 'ynu-lms' ? 'YNU' : label}</strong>
+            <span>{state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}</span></p>;
+        })}
+      </div></div>
+      {!own && <SessionLink className="session-back" href="/session">学生を選び直す</SessionLink>}
     </header>
+    <p className="rd-key" aria-label="色の意味">
+      <span><i aria-hidden="true" />いま見るもの・今日</span><span><i className="rd-yellow" aria-hidden="true" />準備の予定</span>
+      <span><i className="rd-red" aria-hidden="true" />締切が変わった</span><span><i className="rd-green" aria-hidden="true" />終わった</span>
+      <span><i className="rd-blue" aria-hidden="true" />選べる・押せる</span>
+    </p>
     <nav className="session-steps td-stage" style={{ animationDelay: '100ms' }} aria-label="面談の画面">
       <SessionLink href={base} aria-label="① 確かめる" aria-describedby="session-check-count" aria-current={!planning ? 'page' : undefined}>
         <strong>① 確かめる</strong><span id="session-check-count">締切{deadlines.length}件・変化{view.changes.length}件</span>
@@ -157,18 +202,9 @@ function SessionContent({ data, now, own, save, uid, planning, actions, manualAc
         <p>{data.context.nextSessionAt ? <time dateTime={data.context.nextSessionAt}>{formatMoment(data.context.nextSessionAt)}</time> : '日時未設定'}</p>
         <ContextEditor key={`${data.context.lastSessionAt}/${data.context.nextSessionAt}`} context={data.context} save={save} />
       </section>
-      <section className="session-meta-fetch"><h2>情報の取得時点</h2><div className="session-updates">
-        {!data.fetchStates.length && <p>取得記録なし</p>}
-        {data.fetchStates.map(state => {
-          const { stale, failed } = fetchStatus(state, now.getTime());
-          const label = { 'ynu-lms': 'YNU LMS', kulms: 'KULMS', kulasis: 'KULASIS', 'demo-lms': '体験用LMS' }[state.system];
-          if (stale || failed) return <FetchState state="error" title={label} key={state.system} detail={<p className="notice">
-            {label}：{stale ? `${new Date(state.lastSucceededAt!).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric' })}から更新がありません。学生がLMSを開くと新しくなります。` :
-              '課題をすべて確認できていません。LMSを一緒に開いて確かめてください。'}</p>} />;
-          return <p key={state.system}><strong>{state.system === 'ynu-lms' ? 'YNU' : label}</strong>
-            <span>{state.lastSucceededAt ? `${formatMoment(state.lastSucceededAt)} 時点の情報` : 'まだ更新できていません'}</span></p>;
-        })}
-      </div></section>
+      <section className="rd-session-plan-fact"><h2>準備の予定</h2>
+        <p>入れた {data.plans.filter(plan => plan.status !== 'cancelled').length}件・終わった {data.plans.filter(plan => plan.status === 'done').length}件</p>
+      </section>
     </div>
     {planning ? <SessionPlanning data={data} now={now} actions={actions} own={own} viewerUid={viewerUid}
       selectedAssignment={selectedAssignment} onSelectAssignment={setSelectedAssignment} /> : <>
@@ -178,13 +214,13 @@ function SessionContent({ data, now, own, save, uid, planning, actions, manualAc
           {!deadlines.length && <p className="session-empty">{data.context.nextSessionAt ? '該当する締切なし' : '次の面談日時が未設定です。'}</p>}
           {!!deadlines.length && <SessionTaskTable entries={deadlines} data={data} now={now}
             manualActions={manualActions} own={own} viewerUid={viewerUid} />}
+        <SessionLink className="session-next" href={`${base}/plan`}>準備する時間を相談する →</SessionLink>
         </section>
         {!!view.review.filter(row => !view.deadlines.includes(row)).length && <ul className="panel session-rows session-other-review"
           aria-label="締切を確かめる課題">
           {view.review.filter(row => !view.deadlines.includes(row)).map(row =>
             <SessionAssignment key={JSON.stringify(row.key)} row={row} data={data} />)}
         </ul>}
-        <SessionLink className="session-next" href={`${base}/plan`}>準備する時間を相談する →</SessionLink>
         </div>
         <aside className="session-supplement">
         {!!promises.length && <section aria-labelledby="session-promises"><h2 id="session-promises">前回の約束</h2>
@@ -192,7 +228,7 @@ function SessionContent({ data, now, own, save, uid, planning, actions, manualAc
             <li key={plan.planId}>{data.assignments.find(row => sameAssignment(row, plan.assignment))?.latest.title ?? '課題'}：
               <time dateTime={plan.startsAt}>{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time> {plan.period}限に準備 {planProgress(plan)}</li>)}</ul>
         </section>}
-        <section aria-labelledby="session-changes"><h2 id="session-changes">前回の面談からの変化</h2>
+        <section aria-labelledby="session-changes"><h2 id="session-changes">前回の面談からの変化 <span className="session-count" aria-hidden="true">{view.changes.length}</span></h2>
           {!view.changes.length && <p className="session-empty">{data.context.lastSessionAt ? '変化なし' : '前回の面談日時未設定'}</p>}
           {!data.context.lastSessionAt && <a href="#session-dates-editor">前回の面談日時を入れる</a>}
           {!!view.changes.length && <ul className="panel session-rows session-brief">{view.changes.slice(0, 5).map(change => <li key={change.changeId}>
@@ -221,7 +257,7 @@ function SessionTaskTable({ entries, data, now, manualActions, own, viewerUid }:
     now={now.toISOString()} rows={entries.map(item => ({ id: entryId(item), title: entryTitle(item),
       course: data.courses.find(course => entryBelongsTo(item, course))?.name ?? '授業の指定なし',
       courseIdentity: data.courses.find(course => entryBelongsTo(item, course)),
-      deadline: <ChangedDeadline value={entryDisplayDeadline(item) ? formatDeadline(entryDisplayDeadline(item)!) : '締切を確認できていません'} />,
+      deadline: <SessionDeadline entry={item} changes={changes} />,
       remaining: remainingDays(item, now),
       ...(item.kind === 'lms' && changes.some(change => change.kind === 'deadline-changed' && sameAssignment(item.row, change.assignmentKey))
         ? { status: 'changed' as const } : {}),
@@ -231,6 +267,19 @@ function SessionTaskTable({ entries, data, now, manualActions, own, viewerUid }:
       facts={[["課題", <ul key={selected}>{entry.kind === 'lms' ? <SessionAssignment key={selected} row={entry.row} data={data} open /> :
         <ManualAssignmentRow row={entry.row} actions={manualActions} own={own} viewerUid={viewerUid} />}</ul>]]} />}
   </div>;
+}
+function SessionDeadline({ entry, changes }: { entry: DeadlineEntry; changes: AssignmentChange[] }) {
+  const deadline = entryDisplayDeadline(entry);
+  const date = deadline?.kind === 'datetime' ? dayInZone(new Date(deadline.dueAt), deadline.timeZone) : deadline?.kind === 'date' ? deadline.date : '';
+  const change = entry.kind === 'lms' ? changes.filter(change => change.kind === 'deadline-changed' && sameAssignment(entry.row, change.assignmentKey))
+    .sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt))[0] : undefined;
+  const previous = change?.before && typeof change.before !== 'string' ? formatDeadline(change.before) : undefined;
+  return <>
+    {date && <span className="rd-deadline-day" aria-hidden="true"><b>{Number(date.slice(8))}</b>
+      <span>{'日月火水木金土'[new Date(`${date}T00:00:00Z`).getUTCDay()]}</span></span>}
+    {previous && <s className="rd-previous-deadline" aria-label="変更前">{previous}</s>}
+    <ChangedDeadline value={deadline ? formatDeadline(deadline) : '締切を確認できていません'} />
+  </>;
 }
 function remainingDays(entry: DeadlineEntry, now: Date) {
   const deadline = entryDeadline(entry);
