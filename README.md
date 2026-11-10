@@ -7,7 +7,7 @@ ToDokuは、大学の授業支援システム（LMS）から課題と締切を�
 
 [紹介ページ](https://todoku.me/) · [体験用LMS](https://todoku.me/demo-lms)
 
-同じ内容で開ける別の入口として、[Firebase HostingのURL](https://project-00439085-4e2d-44c3-9a8.web.app/)も使えます。
+体験は上の体験用LMSから、拡張不要で試せます。実際のLMSとChrome拡張を使う場合は、[Releaseの拡張ZIP](https://github.com/Devfest-Hackathon-2026/df-2026-t198/releases/tag/v1.0.0-submission)を取得し、[web.appの学生画面](https://project-00439085-4e2d-44c3-9a8.web.app/student)を使います。拡張の接続先は現在 web.app のURLです。
 
 ## ブラウザで試す
 
@@ -16,13 +16,13 @@ ToDokuは、大学の授業支援システム（LMS）から課題と締切を�
 1. 「体験を最初からやり直す」で初期化し、「LMSを開く」を押します。
 2. 「締切を1日延ばす」を押します。まずLMSだけが変わり、自動の読み取り後に学生・支援担当の枠も変わります。
 3. 「朝のメールを見る」で見本を開きます。「終わった」「後回し」は確認欄でもう一度押すと、準備の予定に反映します。
-4. 「学生の画面を開く」「面談を開く」で詳しい画面を見られます。支援担当本人として同時に試す場合は、別のブラウザで同じ組の支援担当として入ります。
+4. 学生・支援担当の枠にある「大きく開く ↗」で詳しい画面を見られます。支援担当本人として同時に試す場合は、別のブラウザで同じ組の支援担当として入ります。
 
 体験では実際のGoogleカレンダーへの書き込みやメール送信は行いません。「終わった」は準備の記録で、LMSへの提出は別です。共用の体験はほかの人と同じデータを使います。詳しい操作と終了時の手順は [体験ガイド](docs/demo.md#手で試す) にあります。
 
 ## 実際のLMSで使う場合
 
-初回はChrome拡張の導入とGoogle連携が必要です。拡張は `pnpm --filter extension build` の後、Chromeの `chrome://extensions` でデベロッパーモードを有効にし、`packages/extension/dist` を読み込みます。OAuthとFirebaseの設定は別途必要です。拡張と学生画面は同じGoogleアカウントでログインし、LMSには本人が通常どおりログインします。拡張は取得後の待機中には取り直さず、次の取得で変更を反映します。サーバーはLMSのID・パスワード・セッションIDを預からず、LMSへの提出も行いません。
+初回はChrome拡張の導入とGoogle連携が必要です。[Release](https://github.com/Devfest-Hackathon-2026/df-2026-t198/releases/tag/v1.0.0-submission)の拡張ZIPを展開し、Chromeの `chrome://extensions` でデベロッパーモードを有効にして、展開した拡張のフォルダを読み込みます。自分でビルドする場合は、[Google接続の設定手順](spikes/auth-probe.md)に沿ってOAuthとFirebaseを設定し、`pnpm --filter extension build` の後に `packages/extension/dist` を読み込みます。拡張と学生画面は同じGoogleアカウントでログインし、LMSには本人が通常どおりログインします。拡張は取得後の待機中には取り直さず、次の取得で変更を反映します。サーバーはLMSのID・パスワード・セッションIDを預からず、LMSへの提出も行いません。
 
 拡張を導入した後は、[学生画面](https://project-00439085-4e2d-44c3-9a8.web.app/student)を使ってください。学生画面と拡張の連携は現在 web.app のURLだけで動くためです。
 
