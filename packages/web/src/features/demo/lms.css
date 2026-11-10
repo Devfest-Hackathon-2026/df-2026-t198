@@ -41,3 +41,17 @@
   .rd-lms-columns > span, .demo-pages.lms-skin .demo-course > *, .demo-pages.lms-skin .demo-course > h2 { padding: 6px 4px; font-size: 12px; }
   .demo-pages.lms-skin [data-demo-page='detail'] dl { grid-template-columns: 80px minmax(0, 1fr); }
 }
+
+/* Parallel panes are narrow even on a desktop viewport. Keep reader nodes intact. */
+@media (min-width: 761px) {
+  .demo-screen-flow[data-parallel='true'] .demo-pages.lms-skin .demo-lms-layout { grid-template-columns: minmax(0, 1fr); }
+  .demo-screen-flow[data-parallel='true'] .demo-pages.lms-skin .demo-course-nav { border-right: 0; border-bottom: 1px solid var(--line-strong); display: flex; flex-wrap: wrap; gap: 4px; }
+  .demo-screen-flow[data-parallel='true'] .rd-lms-nav-title { flex-basis: 100%; }
+  .demo-screen-flow[data-parallel='true'] .demo-pages.lms-skin .demo-lms-content { padding: 12px 10px 24px; }
+  .demo-screen-flow[data-parallel='true'] .rd-lms-columns > span,
+  .demo-screen-flow[data-parallel='true'] .demo-pages.lms-skin .demo-course > *,
+  .demo-screen-flow[data-parallel='true'] .demo-pages.lms-skin .demo-course > h2 { padding: 6px 4px; font-size: 12px; }
+  .demo-screen-flow[data-parallel='true'] .demo-pages.lms-skin [data-demo-page='detail'] dl { grid-template-columns: 80px minmax(0, 1fr); }
+  .demo-screen-flow[data-parallel='true'] .demo-pages.lms-skin .demo-campus { flex-wrap: wrap; }
+  .demo-screen-flow[data-parallel='true'] .demo-campus .rd-lms-user { flex-basis: 100%; margin-left: 42px; }
+}

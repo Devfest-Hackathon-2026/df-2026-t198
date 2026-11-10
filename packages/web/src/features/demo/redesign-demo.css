@@ -39,7 +39,7 @@
 .rd-demo-stage .demo-pane-heading { display: none; }
 .rd-demo-stage .demo-pane-body { height: clamp(480px, 62vh, 720px); scrollbar-gutter: auto; }
 .rd-demo-stage .demo-screen-flow[data-parallel='true'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.rd-demo-stage .demo-screen-flow[data-parallel='true'] > nav, .rd-demo-stage .demo-screen-flow[data-parallel='true'] > .rd-demo-caption { grid-column: 1 / -1; }
+.rd-demo-stage .demo-screen-flow[data-parallel='true'] > nav, .rd-demo-stage .demo-screen-flow[data-parallel='true'] > .rd-demo-caption, .rd-demo-stage .demo-screen-flow[data-parallel='true'] > .rd-demo-window-actions { grid-column: 1 / -1; }
 .rd-demo-stage .demo-screen-flow[data-parallel='true'] .demo-pane-heading { display: flex; }
 .rd-demo-stage .demo-screen-flow[data-parallel='true'] .demo-pane { border-inline-end: 1px solid var(--line); }
 .app .demo-shell .demo-teacher-action .td-btn-quiet { text-decoration: underline; text-underline-offset: 4px; padding-inline: 2px; }
