@@ -116,6 +116,7 @@ try {
   await timetable.locator('.timetable').getByRole('button', { name: /文章表現/ }).click();
   await timetable.getByRole('heading', { name: '第3回レポート（要約と引用）', exact: true }).waitFor();
   const oldDeadline = (await ledger()).docs.find(doc => doc.data().latest.sourceId === 'DEMO101_TASK1').data().officialDeadline.deadline.dueAt;
+  await timetable.locator('.student-calendar > summary').click();
   const calendar = timetable.getByRole('region', { name: '締切のカレンダー', exact: true });
   await calendar.getByText(/第3回レポート（要約と引用）/).waitFor();
   await timetable.emulateMedia({ reducedMotion: 'reduce' });
@@ -177,7 +178,11 @@ try {
   // The reviewed redesign mock defines changed red as #c33925; keep the exact-color and timing checks.
   for (const target of highlighted) {
     await target.locator('xpath=self::*[contains(@class,"changed")]').waitFor({ timeout: Math.max(1, 2000 - (Date.now() - openedAt)) });
-    assert.equal(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(195, 57, 37)');
+    const indicator = await target.evaluate(node => {
+      const style = globalThis.getComputedStyle(node);
+      return node.classList.contains('course-cell') ? style.boxShadow : style.color;
+    });
+    assert.match(indicator, /rgb\(195, 57, 37\)/);
   }
   const oldDate = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(oldDeadline));
   const previousDeadline = timetable.locator('.course-panel .previous-deadline');
@@ -235,7 +240,11 @@ try {
   // The reviewed redesign mock defines changed red as #c33925; keep the exact-color and timing checks.
   for (const target of highlighted) {
     assert.doesNotMatch(await target.getAttribute('class'), /changed/);
-    assert.notEqual(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(195, 57, 37)');
+    const indicator = await target.evaluate(node => {
+      const style = globalThis.getComputedStyle(node);
+      return node.classList.contains('course-cell') ? style.boxShadow : style.color;
+    });
+    assert.doesNotMatch(indicator, /rgb\(195, 57, 37\)/);
   }
   assert.equal(await previousDeadline.count(), 0);
   const fetchState = db.doc('students/trial-student/fetchStates/demo-lms');

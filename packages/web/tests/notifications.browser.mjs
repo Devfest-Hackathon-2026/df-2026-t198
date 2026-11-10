@@ -49,6 +49,7 @@ try {
   await mkdir(evidence, { recursive: true });
   const phase = process.argv.includes('--before') ? 'before' : 'after';
   if (phase === 'after') {
+    await page.locator('.rd-settings > summary').click();
     await page.getByText('メール通知の設定', { exact: true }).click();
     const panel = page.getByRole('region', { name: 'メール通知の設定' });
     await panel.getByText('メール通知：停止中', { exact: true }).waitFor();
@@ -74,6 +75,7 @@ try {
     await page.setViewportSize({ width: 1280, height: 960 });
     await page.unroute('**/api/v1/notification-settings');
     await page.reload();
+    await page.locator('.rd-settings > summary').click();
     await page.getByText('メール通知の設定', { exact: true }).click();
     await panel.getByText('メール通知：有効', { exact: true }).waitFor();
     await panel.getByText('まだ送信の記録はありません。', { exact: true }).waitFor();
@@ -106,6 +108,7 @@ try {
     await second.getByRole('button', { name: 'Googleでログイン' }).waitFor();
     assert.equal(await second.getByText('メール通知の設定', { exact: true }).count(), 0);
     await login(second, outsider);
+    await second.locator('.rd-settings > summary').click();
     await second.getByText('メール通知の設定', { exact: true }).click();
     assert.equal(await second.getByRole('button', { name: '通知を有効にする' }).isEnabled(), true);
     const accessCheck = async () => second.evaluate(async owner => {
@@ -126,10 +129,12 @@ try {
     await second.getByText('このアカウントでは、実際のメール通知を設定できません。').waitFor();
     assert.deepEqual(await accessCheck(), { api: 400, denied: true });
     await login(page, outsider);
+    await page.locator('.rd-settings > summary').click();
     await page.getByText('メール通知の設定', { exact: true }).click();
     await page.getByText('このアカウントでは、実際のメール通知を設定できません。').waitFor();
     assert.equal(await page.getByText('最後に送信サービスが受け付けた日時：', { exact: false }).count(), 0);
     await login(page, uid);
+    await page.locator('.rd-settings > summary').click();
     await page.getByText('メール通知の設定', { exact: true }).click();
     await page.getByText('送信の結果が分かりません。', { exact: false }).waitFor();
     await secondContext.close();

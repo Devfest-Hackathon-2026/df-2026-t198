@@ -11,7 +11,7 @@ let data: ReturnType<typeof studentFixture>;
 const now = Date.parse('2026-11-10T03:00:00Z');
 const render = async () => { await act(async () => root.render(<StudentView data={structuredClone(data)} now={now} />)); };
 const tick = async (ms: number) => { await act(async () => vi.advanceTimersByTime(ms)); };
-const chips = () => host.querySelectorAll('.td-chip-changed');
+const chips = () => host.querySelectorAll('.upcoming .td-chip-changed, .course-panel .td-chip-changed');
 const change = async (date: string) => {
   const row = data.assignments[0]!;
   row.latest.deadline = dated(date); row.officialDeadline!.deadline = dated(date);
@@ -37,10 +37,13 @@ it('同じIDの締切変更を一覧と開いた授業詳細に出し、無関�
   await change('2026-11-12');
   expect(host.querySelector('.student-deadlines .td-chip-changed')?.textContent).toContain('締切が変わった');
   expect(host.querySelector('.course-panel .td-chip-changed')?.textContent).toContain('締切が変わった');
+  expect(host.querySelector('.rd-next .td-chip-changed')?.textContent).toContain('締切が変わった');
+  expect(host.querySelector('.rd-next s')?.textContent).toBe('11/11（日付のみ）');
   await tick(4000);
   data.online = false; await render();
   await tick(3999); expect(chips()).toHaveLength(2);
   await tick(1); expect(chips()).toHaveLength(0);
+  expect(host.querySelector('.rd-next .td-chip-changed')).toBeNull();
 });
 it('再変更から8秒を数え直す', async () => {
   await change('2026-11-12'); await tick(4000);
@@ -48,6 +51,7 @@ it('再変更から8秒を数え直す', async () => {
   expect(chips()).toHaveLength(2);
   await tick(3999); expect(chips()).toHaveLength(2);
   await tick(1); expect(chips()).toHaveLength(0);
+  expect(host.querySelector('.rd-next .td-chip-changed')).toBeNull();
 });
 it('課題の削除で解除し、同じIDを再追加しても札を戻さない', async () => {
   await change('2026-11-12'); expect(chips()).toHaveLength(2);
@@ -63,4 +67,13 @@ it('初回表示・新規追加・題名だけの変更では札を出さない'
   expect(chips()).toHaveLength(0);
   data.assignments[0]!.latest.title = '架空の改題'; await render();
   expect(host.textContent).toContain('架空の改題'); expect(chips()).toHaveLength(0);
+});
+it('締切変更で先頭の課題が入れ替わっても、その課題自身の変更前の日付を出す', async () => {
+  const other = assignment('架空の別の課題', dated('2026-11-14'));
+  data.assignments.push(other); await render();
+  other.latest.deadline = dated('2026-11-10'); other.officialDeadline!.deadline = dated('2026-11-10');
+  await render();
+  expect(host.querySelector('.rd-next')?.textContent).toContain('架空の別の課題');
+  expect(host.querySelector('.rd-next .td-chip-changed')?.textContent).toContain('締切が変わった');
+  expect(host.querySelector('.rd-next s')?.textContent).toBe('11/14（日付のみ）');
 });

@@ -85,10 +85,29 @@ export function comparePreparationPlans(a: PreparationPlan, b: PreparationPlan) 
   return a.date.localeCompare(b.date) || Date.parse(a.startsAt) - Date.parse(b.startsAt) || a.planId.localeCompare(b.planId);
 }
 export function PlanList({ plans, actions, viewerUid, own, assignments }: { plans: PreparationPlan[]; actions?: PlanActions | undefined; viewerUid?: string | undefined; own: boolean; assignments?: LedgerAssignment[] | undefined }) {
-  const [busy, setBusy] = useState<{ id: string; action: 'done' | 'later' | 'remove' } | null>(null);
   const [message, setMessage] = useOperationMessage();
   const visible = plans.filter(plan => plan.status !== 'cancelled').sort(comparePreparationPlans);
   if (!visible.length) return message ? <p role="status">{message}</p> : null;
+  return <section className="preparation-list" aria-label="入れた準備の予定"><h2>入れた準備の予定</h2>
+    <div className="preparation-list-scroll" tabIndex={0} role="region" aria-label="準備の予定の一覧">
+    <ul>{visible.map(plan => <li key={plan.planId} data-plan-status={plan.status}>
+      <time dateTime={plan.startsAt}>{Number(plan.date.slice(5, 7))}/{Number(plan.date.slice(8))} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time>
+      <span>{plan.period}限</span><strong>{plan.title}</strong>
+      <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
+      <span>{plan.status === 'done' ? <StatusChip status="done">{planProgress(plan)}</StatusChip> : planProgress(plan)}</span>
+      <PlanDeadlineWarning plan={plan} assignments={assignments} />
+      <PlanControls plan={plan} actions={actions} own={own} viewerUid={viewerUid} report={setMessage} />
+    </li>)}</ul></div>{message && <p role="status">{message}</p>}
+  </section>;
+}
+
+export function PlanControls({ plan, actions, own = true, viewerUid, primary = false, now = Date.now(), report }: {
+  plan: PreparationPlan; actions?: PlanActions | undefined; own?: boolean; viewerUid?: string | undefined; primary?: boolean; now?: number; report?: (message: string) => void;
+}) {
+  const [busy, setBusy] = useState<{ id: string; action: 'done' | 'later' | 'remove' } | null>(null);
+  const [localMessage, publish] = useOperationMessage();
+  const message = report ? '' : localMessage;
+  const setMessage = report ?? publish;
   async function act(plan: PreparationPlan, action: 'done' | 'later') {
     if (!actions?.act || busy) return;
     setBusy({ id: plan.planId, action }); setMessage('');
@@ -103,18 +122,9 @@ export function PlanList({ plans, actions, viewerUid, own, assignments }: { plan
     catch { setMessage('準備の予定を外せたか確認できませんでした。接続と共有の許可を確かめて、もう一度お試しください。'); }
     finally { setBusy(null); }
   }
-  return <section className="preparation-list" aria-label="入れた準備の予定"><h2>入れた準備の予定</h2>
-    <div className="preparation-list-scroll" tabIndex={0} role="region" aria-label="準備の予定の一覧">
-    <ul>{visible.map(plan => <li key={plan.planId} data-plan-status={plan.status}>
-      <time dateTime={plan.startsAt}>{Number(plan.date.slice(5, 7))}/{Number(plan.date.slice(8))} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time>
-      <span>{plan.period}限</span><strong>{plan.title}</strong>
-      <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
-      <span>{plan.status === 'done' ? <StatusChip status="done">{planProgress(plan)}</StatusChip> : planProgress(plan)}</span>
-      <PlanDeadlineWarning plan={plan} assignments={assignments} />
-      <div className="preparation-buttons">{own && actions?.act && plan.status === 'active' && <><Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'done'} busyLabel="記録中…" variant="primary" onClick={() => { void act(plan, 'done'); }}>終わった</Button>
-        {Date.parse(plan.startsAt) > Date.now() && <Button disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'later'} busyLabel="記録中…" onClick={() => { void act(plan, 'later'); }}>後回し</Button>}</>}
-      {actions && (own || plan.confirmedBy === viewerUid) && <Button variant="quiet" className="preparation-remove" disabled={busy !== null} busy={busy?.id === plan.planId && busy.action === 'remove'} busyLabel="外しています…"
-        aria-label={`${plan.title} ${plan.date} ${plan.period}限の準備を外す`} onClick={() => { void remove(plan); }}>外す</Button>}</div>
-    </li>)}</ul></div>{message && <p role="status">{message}</p>}
-  </section>;
+  return <><div className={`preparation-buttons${primary ? ' rd-next-action-buttons' : ''}`}>{own && actions?.act && plan.status === 'active' && <><Button disabled={busy !== null} busy={busy?.action === 'done'} busyLabel="記録中…" variant={primary ? 'primary' : 'quiet'} onClick={() => { void act(plan, 'done'); }}>終わった</Button>
+    {(primary || Date.parse(plan.startsAt) > now) && <Button variant="quiet" disabled={busy !== null} busy={busy?.action === 'later'} busyLabel="記録中…" onClick={() => { void act(plan, 'later'); }}>{primary ? '後回しにする' : '後回し'}</Button>}</>}
+    {!primary && actions && (own || plan.confirmedBy === viewerUid) && <Button variant="quiet" className="preparation-remove" disabled={busy !== null} busy={busy?.action === 'remove'} busyLabel="外しています…"
+      aria-label={`${plan.title} ${plan.date} ${plan.period}限の準備を外す`} onClick={() => { void remove(plan); }}>外す</Button>}</div>
+    {message && <p role="status">{message}</p>}</>;
 }

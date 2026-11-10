@@ -129,7 +129,7 @@ try {
   await previous.waitFor();
   assert.match(await changed.innerText(), /11\/14 17:00/);
   assert.match(await previous.innerText(), /11\/13 17:00/);
-  assert.equal(await changed.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(196, 58, 38)');
+  assert.equal(await changed.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(195, 57, 37)');
   assert.match(await previous.evaluate(node => globalThis.getComputedStyle(node).textDecorationLine), /line-through/);
   const course = student.locator('.course-cell').filter({ hasText: courses[0] });
   await course.locator('.deadline').filter({ hasText: '11/14 17:00' }).waitFor();

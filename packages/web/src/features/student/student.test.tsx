@@ -31,7 +31,8 @@ describe('学生が締切を確かめる画面', () => {
     expect(html).toContain('今週の締切');
     expect(html).toContain('レポートA');
     expect(html).toContain('レポートB');
-    expect(html.match(/架空の線形代数/g)).toHaveLength(2); // 締切の一覧だけ
+    expect(html.match(/架空の線形代数/g)).toHaveLength(3); // 次の行動と締切一覧
+    expect(html).not.toContain('aria-label="架空の線形代数"');
     expect(html).not.toContain('提出した課題');
     expect(html).not.toContain('取り消した課題');
   });

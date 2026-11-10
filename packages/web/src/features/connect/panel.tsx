@@ -33,7 +33,7 @@ function resultText(reply: ExtensionReply | null): { tone: 'status' | 'alert'; t
   return { tone: 'alert', text: failureText[reply.code] ?? 'Google カレンダーにつなげませんでした。しばらくしてから、もう一度お試しください。' };
 }
 
-function CalendarSetting({ uid, link, ask }: { uid: string; link: CalendarLink | null; ask: AskExtension }) {
+export function CalendarSetting({ uid, link, ask }: { uid: string; link: CalendarLink | null; ask: AskExtension }) {
   const [extension, setExtension] = useState<Extension>(undefined);
   const [busy, setBusy] = useState<'connect' | 'sync' | null>(null);
   const [result, setResult] = useState<ReturnType<typeof resultText> | null>(null);
@@ -82,7 +82,7 @@ function CalendarSetting({ uid, link, ask }: { uid: string; link: CalendarLink |
   </div>;
 }
 
-function MailSetting({ mail: { view, busy, error, saved, request } }: { mail: NotificationController }) {
+export function MailSetting({ mail: { view, busy, error, saved, request } }: { mail: NotificationController }) {
   const ready = view?.availability === 'ready';
   const enabled = view?.settings.enabled === true;
   // "Enabled" alone does not mean mail goes out: the sender can be unavailable, or the last send can have failed.

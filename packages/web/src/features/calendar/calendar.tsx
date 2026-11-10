@@ -70,7 +70,7 @@ export function DemoCalendarView({ integration, pending, now = Date.now(), submi
           const prefix = separator < 0 ? null : event.summary.slice(0, separator);
           const course = prefix === '準備' || courses.some(c => c.name === prefix || `【要確認】${c.name}` === prefix) ? prefix : null;
           const title = course ? event.summary.slice(separator + 1) : event.summary;
-          return <li key={id} data-course-color={courseColor(courseByItem.get(itemKey))} className={`calendar-event${changed.has(id) ? ' changed' : ''}${submitted.has(itemKey) ? ' submitted' : ''}`}>
+          return <li key={id} data-course-color={courseColor(courseByItem.get(itemKey))} className={`calendar-event${changed.has(id) ? ' changed' : ''}${submitted.has(itemKey) ? ' submitted' : ''}${prefix === '準備' ? ' rd-preparation-event' : ''}`}>
             <time><ChangedDeadline value={labels.current.get(id)!.current} previous={labels.current.get(id)?.previous} highlight={changed.has(id)} /></time> <strong>{title}</strong>{course && <span className="muted">{course}</span>}
             {submitted.has(itemKey) && <span className="badge done">出せました</span>}
           </li>;

@@ -1,0 +1,51 @@
+{
+  "unit": {
+    "core": {
+      "passed": 274
+    },
+    "extension": {
+      "passed": 555
+    },
+    "server": {
+      "passed": 344,
+      "skipped": 147
+    },
+    "web": {
+      "passed": 287,
+      "skipped": 7
+    }
+  },
+  "utcWeb": {
+    "passed": 287,
+    "skipped": 7
+  },
+  "judgeQA": {
+    "passed": 28,
+    "failed": 0
+  },
+  "m6": {
+    "passed": 8,
+    "total": 8
+  },
+  "screens": {
+    "passed": 6,
+    "browserErrors": 0
+  },
+  "nextActionWidths": [
+    1280,
+    390
+  ],
+  "manualOperations": 9,
+  "connectionScenarios": 11,
+  "preparationRowLegacyCheck": {
+    "status": "failed",
+    "reason": "The additional plans.browser.mjs expects a single line inside preparation cells; the requested design wraps and clamps to two lines. The original assertion was retained."
+  },
+  "sourceVerification": {
+    "runId": "7861f4ae5b244746b195f740fcd577be",
+    "snapshotSha256": "8d9aff79329f3a2a8d3c4a2c40266b71ef31c89edf6e4a329a83afc94e3f7940",
+    "receiptSha256": "d8a2a4047a50db346f587d89ffa3289a553cddbd4b1db7b883fd6f2cfdc5c182"
+  },
+  "scope": "Local Auth/Firestore emulators and fictional data; production integrations were not exercised.",
+  "requiredChecks": "pass"
+}

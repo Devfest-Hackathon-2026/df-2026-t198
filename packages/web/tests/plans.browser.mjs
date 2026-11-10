@@ -102,6 +102,7 @@ try {
   await supporterDetails.getByRole('button', { name: '閉じる', exact: true }).click();
   await assertPlanLayout(student); await assertPlanLayout(supporter);
   pass('compact supporter cell opens date and time with Enter; plan lists keep one row per plan');
+  await student.locator('.student-calendar > summary').click();
   const calendar = student.getByRole('region', { name: '締切のカレンダー', exact: true });
   const preparationEvent = calendar.locator('.calendar-event').filter({ hasText: '準備' }).getByText('第3回レポート（要約と引用）', { exact: true });
   await calendar.getByText('体験用の予定です。Googleカレンダーには入りません。', { exact: true }).waitFor();
