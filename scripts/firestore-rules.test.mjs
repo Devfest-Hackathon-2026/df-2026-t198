@@ -172,6 +172,29 @@ test('missing or malformed grants never grant shared access', async () => {
   }
 });
 
+test('one supporter can read two granted students; revoking one never grants access to a third', async () => {
+  const uid = 'list-supporter';
+  const db = env.authenticatedContext(uid).firestore();
+  await env.withSecurityRulesDisabled(async context => {
+    for (const studentId of ['student-a', 'student-b']) {
+      await setDoc(doc(context.firestore(), `students/${studentId}/supporters/${uid}`), grant);
+    }
+  });
+  for (const studentId of ['student-a', 'student-b']) {
+    for (const path of sharedPaths) await assertSucceeds(getDocFromServer(doc(db, `students/${studentId}/${path}`)));
+  }
+  await env.withSecurityRulesDisabled(context => updateDoc(doc(context.firestore(), `students/student-a/supporters/${uid}`),
+    { revokedAt: '2026-11-10T00:00:00Z' }));
+  for (const name of sharedCollections) {
+    await assertFails(getDocsFromServer(collection(db, `students/student-a/${name}`)));
+    await assertSucceeds(getDocsFromServer(collection(db, `students/student-b/${name}`)));
+    await assertFails(getDocsFromServer(collection(db, `students/student-c/${name}`)));
+  }
+  await assertFails(getDocFromServer(doc(db, 'students/student-a/sessionContext/current')));
+  await assertFails(getDocFromServer(doc(db, 'students/student-c/sessionContext/current')));
+  await assertFails(getDocsFromServer(collectionGroup(db, 'supporters')));
+});
+
 test('revoking or deleting a grant blocks the same client on its next server read', async () => {
   const uid = 'temporary-supporter';
   const db = env.authenticatedContext(uid).firestore();

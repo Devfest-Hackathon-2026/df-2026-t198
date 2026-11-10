@@ -1,0 +1,25 @@
+{
+  "measurements": [
+    {
+      "width": 1280,
+      "rows": 2,
+      "overflow": false,
+      "deadlineOrder": true,
+      "changeOrder": true,
+      "opensSession": true,
+      "revocation": true,
+      "logout": true
+    },
+    {
+      "width": 390,
+      "rows": 2,
+      "overflow": false,
+      "deadlineOrder": true,
+      "changeOrder": true,
+      "opensSession": true,
+      "revocation": true,
+      "logout": true
+    }
+  ],
+  "errors": []
+}

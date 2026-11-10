@@ -232,6 +232,141 @@ it('does not treat a pending or failed student list as an empty list', async () 
   expect(host.textContent).not.toContain('自分の面談を見る');
 });
 
+it('removes a revoked student from the list, including their name, without removing other students', async () => {
+  holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }, { uid: 'student-b', displayName: '架空の学生B' }];
+  await open();
+  expect(host.textContent).toContain('架空の学生A');
+  await act(async () => { grants.get('student-a')!(false); });
+  expect(host.textContent).not.toContain('架空の学生A');
+  expect(host.querySelector('a[href="/session/student-a"]')).toBeNull();
+  expect(host.textContent).toContain('架空の学生B');
+});
+
+it.each(['denied', 'error'] as const)('restores a sharing row after %s when the roster is unchanged', async status => {
+  vi.useFakeTimers();
+  let allowed = true;
+  let failWatch = () => {};
+  const watch = holder.services!.source.watch;
+  holder.services!.source.watch = (student, name, next, fail) => {
+    if (student === 'student-a' && name === 'assignments') failWatch = fail;
+    return watch(student, name, next, fail);
+  };
+  holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }, { uid: 'student-b', displayName: '架空の学生B' }];
+  holder.services!.source.grant = (student, _viewer, next) => {
+    grants.set(student, next); next(student !== 'student-a' || allowed); return () => {};
+  };
+  try {
+    await open();
+    const previousGrant = grants.get('student-a')!;
+    allowed = false;
+    await act(async () => { if (status === 'error') failWatch(); previousGrant(false); });
+    expect(host.textContent).not.toContain('架空の学生A');
+    expect(host.textContent).toContain('架空の学生B');
+    allowed = true;
+    await act(async () => previousGrant(true));
+    expect(host.textContent).not.toContain('架空の学生A');
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+    expect(host.textContent).toContain('架空の学生A');
+    expect(host.querySelector('a[href="/session/student-a"]')).not.toBeNull();
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+    expect(host.textContent).toContain('架空の学生B');
+  } finally { vi.useRealTimers(); }
+});
+
+it('cancels sharing permission retries when the supporter logs out', async () => {
+  vi.useFakeTimers();
+  const grant = vi.fn(holder.services!.source.grant);
+  holder.services!.source.grant = grant;
+  try {
+    await open();
+    await act(async () => grants.get('student-a')!(false));
+    await click('ログアウト');
+    const checks = grant.mock.calls.length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(grant).toHaveBeenCalledTimes(checks);
+    expect(host.textContent).toContain('面談にログイン');
+    expect(host.textContent).not.toContain('student-a');
+  } finally { vi.useRealTimers(); }
+});
+
+it('does not expose a name while the current sharing permission is unconfirmed', async () => {
+  holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }];
+  holder.services!.source.grant = (_student, _viewer, next) => { grants.set('student-a', next); return () => {}; };
+  await open();
+  expect(host.textContent).not.toContain('架空の学生A');
+  expect(host.querySelector('a[href="/session/student-a"]')).toBeNull();
+  await act(async () => { grants.get('student-a')!(true); });
+  expect(host.textContent).toContain('架空の学生A');
+});
+
+it('sorts by nearest deadline by default and lets the supporter put the most changes first', async () => {
+  data['student-a']!.assignments[0]!.officialDeadline!.deadline = { kind: 'date', date: '2099-12-31', timeZone: 'Asia/Tokyo', dueText: '架空の日付' };
+  data['student-b']!.changes = [];
+  await open();
+  const ids = () => [...host.querySelectorAll('.session-students nav a')].map(a => a.getAttribute('href'));
+  expect(ids()).toEqual(['/session/student-b', '/session/student-a']);
+  const select = host.querySelector('select')!;
+  await act(async () => {
+    select.querySelector('option[value="changes"]')!.setAttribute('selected', '');
+    select.querySelector('option[value="deadline"]')!.removeAttribute('selected');
+    select.dispatchEvent(new window.Event('change', { bubbles: true }));
+  });
+  expect(ids()).toEqual(['/session/student-a', '/session/student-b']);
+  expect(host.textContent).toContain('いちばん近い締切');
+  expect(host.textContent).toContain('今週の締切');
+  expect(host.textContent).toContain('準備の予定：なし');
+  expect(host.textContent).toContain('最後に取得できた時刻：取得記録なし');
+});
+
+it('keeps no-deadline students after dated students and updates order on a live change', async () => {
+  let update!: (value: SessionData['assignments']) => void;
+  const watch = holder.services!.source.watch;
+  holder.services!.source.watch = (student, name, next, fail) => {
+    if (student === 'student-a' && name === 'assignments') update = next as typeof update;
+    return watch(student, name, next, fail);
+  };
+  data['student-a']!.assignments = [];
+  data['student-b']!.context.lastSessionAt = null;
+  await open();
+  expect(host.querySelector('.session-students nav a')?.getAttribute('href')).toBe('/session/student-b');
+  expect(host.textContent).toContain('前回の面談日時未設定');
+  const row = structuredClone(data['student-b']!.assignments[0]!);
+  row.officialDeadline!.deadline = { kind: 'date', date: new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }), timeZone: 'Asia/Tokyo', dueText: '架空の日付' };
+  await act(async () => update([row]));
+  expect(host.querySelector('.session-students nav a')?.getAttribute('href')).toBe('/session/student-a');
+});
+
+it('clears a failed row and ignores its queued data while preserving the other student', async () => {
+  let failStudent!: () => void;
+  let late!: (value: SessionData['changes']) => void;
+  const watch = holder.services!.source.watch;
+  holder.services!.source.watch = (student, name, next, fail) => {
+    if (student === 'student-a' && name === 'changes') { failStudent = fail; late = next as typeof late; }
+    return watch(student, name, next, fail);
+  };
+  await open();
+  await act(async () => failStudent());
+  await act(async () => late(data['student-a']!.changes));
+  expect(host.querySelector('a[href="/session/student-a"]')).toBeNull();
+  expect(host.querySelector('a[href="/session/student-b"]')).not.toBeNull();
+  expect(host.textContent).toContain('確認できなくなった学生の表示を消しました');
+});
+
+it('drops all rows when the list refresh fails and clears subscriptions on logout', async () => {
+  vi.useFakeTimers();
+  const stop = vi.fn(); const watch = holder.services!.source.watch;
+  holder.services!.source.watch = (...args) => { watch(...args); return stop; };
+  try {
+    await open();
+    holder.services!.students = async () => { throw new Error('fictional-offline'); };
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+    expect(host.querySelector('.session-students nav a')).toBeNull();
+    expect(stop).toHaveBeenCalledTimes(14);
+    await click('ログアウト');
+    expect(host.textContent).not.toContain('student-a');
+  } finally { vi.useRealTimers(); }
+});
+
 it.each([
   ['2026-11-06T15:29:59.999Z', false],
   ['2026-11-06T15:30:00Z', true],
