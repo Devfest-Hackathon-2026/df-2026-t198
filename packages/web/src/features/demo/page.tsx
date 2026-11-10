@@ -239,7 +239,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
     disabled={blocked || pending.current !== null} busy={blocked && operation === `extend:${task.sourceId}`} busyLabel="変更中…"
     onClick={() => { void extend(task); }}>「{task.title}」の締切を1日延ばす</Button>;
   const openButton = <Button variant={stage === 0 || stage === 2 ? 'primary' : 'quiet'} disabled={blocked}
-    busy={blocked && operation === 'open'} busyLabel="確認中…" onClick={() => { void open(); }}>LMSを開く</Button>;
+    busy={blocked && operation === 'open'} busyLabel="確認中…" onClick={() => { void open(); }}>{stage === 2 ? 'LMSをもう一度開く' : 'LMSを開く'}</Button>;
   const result = message ? <p role="status">{message}</p> : error ? <p role="alert">{error}</p> : null;
   const currentCommand = <div className="demo-command" aria-label="今の操作">
       {stage === 0 || stage === 2 ? <>{openButton}{result}</> : <>
@@ -275,7 +275,7 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
     <div className="rd-demo-stage" hidden={showMail}><aside className="rd-demo-guide"><div className="demo-flow-header"><ol className="demo-steps" aria-label="体験の段階">
       {['LMSを開く', '先生が締切を延ばす', '学生と支援担当の画面', '朝のメール'].map((label, index) =>
         <li key={label} aria-current={index === stage ? 'step' : undefined} data-complete={index < stage}>
-          <span aria-hidden="true">{index < stage ? '✓' : index + 1}</span><div className="rd-demo-step-copy"><b>{label}</b><small>{['学生が大学のLMSを開くと、課題が集まります', 'LMSの締切だけが先に変わります', '次の読み取りで、2人の画面に同じ変更が出ます', '見本を開いて、「終わった」を記録します'][index]}</small>{index === stage && currentCommand}</div></li>)}
+          <span aria-hidden="true">{index < stage ? '✓' : index + 1}</span><div className="rd-demo-step-copy"><b>{label}</b><small>{['学生が大学のLMSを開くと、課題が集まります', 'LMSの締切だけが先に変わります', '次の読み取りで、2人の画面に同じ変更が出ます', '見本を開いて、「終わった」を記録します'][index]}</small>{index === 1 && <small>ほかの課題の延長やお知らせは、下の「先生役の操作・メールの見本」から</small>}{index === stage && currentCommand}</div></li>)}
     </ol></div>
     <div className="demo-screen-controls rd-demo-controls">
       <label><input type="checkbox" checked={screen.automatic && !screen.reduced} disabled={screen.reduced} onChange={screen.toggleAutomatic} />自動で切り替える</label>

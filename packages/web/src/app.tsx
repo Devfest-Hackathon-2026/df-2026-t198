@@ -38,11 +38,11 @@ function AppShell({ path }: { path: string }) {
     <div className="app app-shell">
       <header className="app-header">
         <div className="rd-bar-in"><AppHome />
-        <nav aria-label="画面">
+        {path !== '/demo-lms' && <nav aria-label="画面">
           <a href="/demo-lms" aria-current={path === '/demo-lms' ? 'page' : undefined}>体験用LMS</a>
           <a href="/student" aria-current={path === '/student' || path === '/student/plan' ? 'page' : undefined}>学生</a>
           {(session || access.visible) && <a href="/session" aria-current={session ? 'page' : undefined}>面談</a>}
-        </nav><div id="rd-account-actions" className="rd-account-actions" /></div>
+        </nav>}<div id="rd-account-actions" className="rd-account-actions" /></div>
       </header>
       <main>
         {path === '/student' || path === '/student/plan' ? <StudentPage showOwnSession={access.own} /> : path === '/demo-lms' ? <DemoPage /> : !session && <h1>{title}</h1>}

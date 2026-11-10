@@ -100,8 +100,6 @@
 .rd-demo-window-actions a { margin-left: auto; font-size: 12px; color: var(--blue); }
 @media (max-width: 860px) {
   .rd-demo-stage .demo-pane-body { height: 70vh; }
-  .rd-demo-stage .demo-pane-switch .rd-demo-role-label { display: none; }
-  .rd-demo-stage .demo-pane-switch button::after { content: attr(aria-label); font-size: 13px; font-weight: 700; }
   .rd-demo-stage .demo-pane-switch .rd-demo-dot { order: 1; }
   .demo-campus .rd-lms-user { display: none; }
 }
@@ -111,3 +109,23 @@
 .rd-demo-controls input[type='checkbox']::before { content: ''; display: grid; place-content: center; width: 18px; height: 18px; border: 1.5px solid var(--blue); border-radius: 3px; background: var(--card); }
 .rd-demo-controls input[type='checkbox']:checked::before { content: '✓'; background: var(--blue); color: var(--card); font-size: 14px; font-weight: 700; }
 .rd-demo-controls input[type='checkbox']:disabled { opacity: .6; }
+
+/* The university LMS is external to the two ToDoku screens. */
+.rd-demo-stage .demo-pane-switch { grid-template-columns: minmax(0, 1fr) auto minmax(0, 2fr); align-items: stretch; padding: 8px; gap: 8px; background: var(--card); }
+.rd-demo-external { display: flex; align-items: stretch; }
+.app .rd-demo-stage .rd-demo-external button { width: 100%; background: var(--card); border: 1px solid var(--line-strong); border-radius: 3px; }
+.app .rd-demo-stage .rd-demo-external button[aria-pressed='true'] { border-color: var(--navy); box-shadow: inset 0 -3px var(--navy); }
+.rd-demo-stage .rd-demo-external small { display: block; font-size: 12px; }
+.rd-demo-read-arrow { display: flex; align-items: center; border-left: 1px solid var(--line); padding-left: 8px; font-size: 12px; color: var(--muted); }
+.rd-demo-product { min-width: 0; padding: 6px; background: var(--today-soft); border-radius: 12px 12px 0 0; }
+.rd-demo-product > b { display: block; padding: 0 8px 4px; font-size: 12px; }
+.rd-demo-product > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rd-demo-stage .demo-screen-flow[data-parallel='true'] [data-demo-pane='lms'] { border-inline-end: 3px solid var(--line-strong); }
+@media (max-width: 1050px) { .rd-demo-read-arrow > span { display: none; } .rd-demo-stage .demo-pane-switch .rd-demo-role { display: none; } }
+@media (max-width: 860px) {
+  .rd-demo-stage .demo-pane-switch { gap: 4px; padding: 6px; }
+  .rd-demo-read-arrow { padding-left: 4px; }
+  .rd-demo-stage .rd-demo-role-label { display: grid; }
+  .rd-demo-stage .rd-demo-role-label b { font-size: 12px; line-height: 1.5; }
+  .rd-demo-product { padding: 4px 0; }
+}

@@ -1,0 +1,7 @@
+Purpose: judges distinguish the external university LMS from ToDoku and follow deadline updates without losing screen context.
+Base: origin/main 5ca9a54, isolated issue-289-292-demo-clarity.
+Files: web app header; demo triptych, page and redesign CSS; student page; web tests; ui-words; dated fictional screenshots/results.
+A hide demo header navigation before/after login. B separate external LMS, arrow, ToDoku pair without changing pressed-button semantics or pane DOM. C selected pane change scrolls switch row below fixed header. D weekly tasks unchanged, otherwise first three sorted future tasks, remainder in details; empty unchanged. E rename only step 3 button. F add requested step 2 note.
+Direct verification route: exact bounded user acceptance. Add requirement-derived browser checks A-F including 1280x800/1440x900 automatic switches and 390x844 screenshots; student render tests for weekly/future/empty and order/remainder.
+Run full typecheck/lint/test/build; judge QA 28; M6 8; demo-screen; mobile 68; triptych 9/27. Save fictional evidence. Review diff for prohibited paths/secrets. Commit and push only task branch to origin, create requested PR; no merge/deployment.
+Stop if API/data/dependency changes or forbidden LMS DOM changes are needed.

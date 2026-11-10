@@ -165,9 +165,15 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
         <span className="rd-row-time" aria-hidden="true">{entryDeadline(item)?.kind === 'datetime' ? new Intl.DateTimeFormat('ja-JP', { timeZone: entryDeadline(item)!.timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(deadlineValue(entryDeadline(item)))) : '日付のみ'}</span>
         {item.kind === 'manual' && <small className="manual-author">{manualAuthor(item.row)}</small>}</li>;
     })}</ul>;
-  const upcomingList = (!!data.assignments.length || hasManual) && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">今週の締切 <span className="rd-count" aria-hidden="true">{upcoming.filter(inWeek).length}</span></h2>
-    {upcoming.some(inWeek) ? taskRows(upcoming.filter(inWeek)) : <p className="empty-week">今週の締切はありません</p>}
-    {!!upcoming.filter(item => !inWeek(item)).length && <details className="other-deadlines"><summary>その他の締切</summary>{taskRows(upcoming.filter(item => !inWeek(item)))}</details>}
+  const thisWeek = upcoming.filter(inWeek);
+  const today = new Date(now).toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' });
+  const futureDeadlines = upcoming.filter(item => (deadlineDay(entryDeadline(item)) ?? '') >= today);
+  const showFuture = thisWeek.length === 0 && futureDeadlines.length > 0;
+  const visibleDeadlines = showFuture ? futureDeadlines.slice(0, 3) : thisWeek;
+  const otherDeadlines = upcoming.filter(item => !visibleDeadlines.includes(item));
+  const upcomingList = (!!data.assignments.length || hasManual) && <section className="upcoming" aria-labelledby="upcoming-title"><h2 id="upcoming-title">{showFuture ? 'これからの締切' : '今週の締切'} <span className="rd-count" aria-hidden="true">{visibleDeadlines.length}</span></h2>
+    {visibleDeadlines.length ? taskRows(visibleDeadlines) : <p className="empty-week">今週の締切はありません</p>}
+    {!!otherDeadlines.length && <details className="other-deadlines"><summary>その他の締切</summary>{taskRows(otherDeadlines)}</details>}
     </section>;
   const next = nextPreparation(entries[0], data.plans, now);
   const plannedAssignment = next.today && data.assignments.find(row => row.key.system === next.today!.assignment.system && row.key.sourceId === next.today!.assignment.sourceId);

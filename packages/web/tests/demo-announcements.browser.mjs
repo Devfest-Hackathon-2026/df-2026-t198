@@ -26,7 +26,7 @@ const source = student.collection('demo').doc('current');
 const tasks = () => student.collection('assignments').get();
 const task = async () => (await tasks()).docs.find(doc => doc.data().key.sourceId === 'DEMO101_TASK1').data();
 const calls = async () => JSON.parse(await readFile(`${evidence}/fake-model.json`, 'utf8')).calls;
-const open = page.getByRole('button', { name: 'LMSを開く', exact: true });
+const open = page.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true });
 const publish = page.locator('.demo-teacher-action').filter({ hasText: '第3回レポート（要約と引用）' })
   .getByRole('button', { name: 'お知らせを出す', exact: true });
 const status = text => page.getByRole('status').filter({ hasText: text }).waitFor();

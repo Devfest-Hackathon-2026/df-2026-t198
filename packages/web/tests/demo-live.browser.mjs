@@ -55,14 +55,14 @@ try {
     return session;
   }
   async function openLms(page) {
-    await page.getByRole('button', { name: 'LMSを開く', exact: true }).click();
+    await page.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true }).click();
     await page.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   }
   for (const pair of accounts.pairs) {
     phase = `${pair.pair}-login-and-initial-observation`;
     const student = await login(pair.student);
     phase = `${pair.pair}-student-workspace`;
-    await student.page.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
+    await student.page.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true }).waitFor();
     await student.page.getByRole('button', { name: '3つ並べて見る', exact: true }).click();
     phase = `${pair.pair}-student-observation`;
     await openLms(student.page);

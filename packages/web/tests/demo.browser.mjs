@@ -64,7 +64,7 @@ try {
     await openJudgeLogin(student);
     await student.getByLabel('メールアドレス').waitFor();
   }
-  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生']);
+  assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), []);
   assert.equal(await student.title(), 'ToDoku');
   assert.equal(await student.locator('.app-header .todoku-logo').innerText(), 'ToDoku');
   await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();
@@ -76,14 +76,14 @@ try {
   const nonDemoNotice = student.getByRole('alert').filter({ hasText:
     'このアカウントは体験用ではありません。ログアウトして、体験用のアカウントでログインしてください。' });
   await nonDemoNotice.waitFor();
-  assert.equal(await student.getByRole('button', { name: 'LMSを開く', exact: true }).count(), 0);
+  assert.equal(await student.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true }).count(), 0);
   await nonDemoNotice.locator('..').getByRole('button', { name: 'ログアウト', exact: true }).click();
   await openJudgeLogin(student);
   await student.getByLabel('メールアドレス').waitFor();
   await student.getByLabel('パスワード').waitFor();
   assert.equal(await nonDemoNotice.count(), 0);
   await login(student, 'student');
-  await student.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
+  await student.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true }).waitFor();
   await student.getByRole('button', { name: '3つ並べて見る', exact: true }).click();
   await login(supporter, 'supporter');
   await supporter.getByRole('link', { name: '面談を開く', exact: true }).click();
@@ -91,7 +91,7 @@ try {
   pass(0);
   const deadlines = supporter.getByRole('region', { name: '次の面談までの締切' });
   assert.equal((await ledger()).size, 0);
-  await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
+  await student.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true }).click();
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   await deadlines.getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
   assert.equal((await ledger()).size, 5);
@@ -170,7 +170,7 @@ try {
     await route.abort('failed');
   }, { times: 1 });
   const openedAt = Date.now();
-  await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
+  await student.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true }).click();
   await student.getByRole('alert').filter({ hasText: '操作が終わりませんでした' }).waitFor();
   // Observe all highlights immediately after the first applied response (before replay).
   const highlighted = [timetable.locator('.course-cell').filter({ hasText: '文章表現' }),
@@ -193,7 +193,7 @@ try {
   const afterApplied = (await changes()).size;
   assert.equal(afterApplied, beforeChanges + 1);
   const replay = student.waitForRequest('**/api/v1/observations');
-  await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
+  await student.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true }).click();
   assert.equal((await replay).postDataJSON().observationId, sentId);
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   assert.equal((await changes()).size, afterApplied);
@@ -227,7 +227,7 @@ try {
   assert.ok((await deadlines.innerText()).includes(expectedDate));
   pass(6);
   // A further open uses a new observation ID but must not duplicate the same event.
-  await student.getByRole('button', { name: 'LMSを開く', exact: true }).click();
+  await student.getByRole('button', { name: /^LMSを(?:もう一度)?開く$/, exact: true }).click();
   await student.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   assert.equal((await changes()).size, afterApplied);
   assert.deepEqual((await calendarTarget()).data(), savedTarget);
