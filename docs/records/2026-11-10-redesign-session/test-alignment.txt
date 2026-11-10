@@ -1,0 +1,8 @@
+RE2 test alignment
+- session-page.test.tsx: third fact now checks 準備の予定; acquisition metadata is additionally required inside the identity heading. The same three-card and metadata checks remain.
+- demo.browser.mjs: the brand link is found by .app-header .todoku-logo after redesign-base inserted .rd-bar-in; text still must be ToDoku.
+- demo.browser.mjs: exact changed-text RGB is 195/57/37, from the approved mock red #c33925 and redesign-base token. Previous expectation 196/58/38 used the former theme. Equality and inequality stay exact: no tolerance, skipped target, time allowance or step removal.
+- session-redesign.browser.mjs: added layout/style/operation checks. The existing eight role/size/screen views and existing assertions remain. Synthetic assignment document IDs use the server's existing documentKey helper so actual plan writes can validate them.
+Lightweight risk-cost-triage: for this delivery, the old RGB assertion fails every redesigned run (F10 in this bounded test condition), blocks the requested check (S3), and costs two local exact-value edits plus the same browser run (C2). Adopt the approved colour; changing shared tokens back or accepting multiple colours would conflict with the visual contract.
+Residual outside required acceptance: capture-landing-shots.mjs has the former RGB literal too; that separate capture script was not invoked or changed here. No effect on application code.
+- M6 also caught a real regression from forcing the deadline's changed class on permanently. The class again expires through the existing ChangedDeadline component. A separate rd-previous-deadline retains the prior date and the row's status remains red; the existing 10-second expiry assertion is unchanged.

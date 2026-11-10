@@ -1,0 +1,42 @@
+/* Fable's application shell and shared components. Brand and LMS keep their themes. */
+.app.app-shell { max-width: none; padding: 0; margin: 0; min-height: 100vh; background: var(--bg); font-size: 15px; line-height: 1.6; }
+.app.app-shell > .app-header { position: sticky; top: 0; z-index: 10; display: block; padding: 0; background: var(--card); border-bottom: 1px solid var(--line); }
+.app .rd-bar-in { max-width: 1200px; margin: auto; padding: 0 28px; height: 64px; display: flex; align-items: center; gap: 24px; }
+.app .app-header .todoku-logo { font: 700 22px var(--sans); letter-spacing: -.02em; }
+.app .app-header nav { margin-left: auto; gap: 2px; padding: 4px; border-radius: 999px; background: var(--bg); }
+.app .app-header nav a { padding: 7px 18px; min-height: 36px; border-radius: 999px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.app .app-header nav a[aria-current='page'] { color: var(--card); background: var(--navy); border: 0; box-shadow: none; }
+.app.app-shell > main { max-width: 1200px; margin: auto; padding: 28px 28px 56px; }
+.app.app-shell > .app-introduction { display: flex; max-width: 1144px; margin: 0 auto 24px; }
+.app h1 { font: 700 26px/1.3 var(--sans); }
+.app h2 { font-family: var(--sans); font-size: 17px; font-weight: 700; }
+.app .td-btn, .app .plain-button { min-height: 44px; padding: 0 18px; border: 1.5px solid var(--line-strong); border-radius: var(--r-inner); background: var(--card); color: var(--ink); font-size: 15px; font-weight: 700; justify-content: center; }
+.app .td-btn-primary { background: var(--navy); border-color: var(--navy); color: var(--card); }
+.app .td-btn-quiet { background: transparent; border-color: transparent; color: var(--blue); }
+.app .td-chip, .app .badge { border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+.app .td-chip-changed { background: var(--red-soft); color: var(--red); }
+.app .td-chip-done, .app .badge.done { background: var(--green-soft); color: var(--green); }
+.app .td-deadline-overdue { color: var(--muted); }
+.app .td-next, .app .td-detail, .app .rd-card { background: var(--card); border: 0; border-radius: var(--r-card); box-shadow: var(--shadow); padding: 20px 22px; min-width: 0; }
+.app .rd-count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--card); background: var(--navy); }
+.app .rd-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--muted); background: var(--card); }
+.app .rd-key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 20px; color: var(--muted); font-size: 12px; }
+.app .rd-key span { display: inline-flex; align-items: center; gap: 6px; }
+.app .rd-key i { width: 12px; height: 12px; border-radius: 3px; background: var(--navy); }
+.app .rd-key .rd-yellow { background: var(--yellow); }
+.app .rd-key .rd-red { background: var(--red); }
+.app .rd-key .rd-green { background: var(--green); }
+.app .rd-key .rd-blue { background: var(--blue); }
+/* Courses use only a band/dot; a course colour never fills a surface. */
+.app.app .course-cell[data-course-color], .app.app .td-taskrow[data-course-color],
+.app.app .calendar-event[data-course-color], .app.app .demo-observed-task[data-course-color],
+.app.app .session-course[data-course-color], .app.app .td-table tbody tr[data-course-color] > td:first-child { background: var(--card); }
+.app .td-field input, .app :where(select) { border-radius: var(--r-inner); }
+@media (max-width: 600px) {
+  .app .rd-bar-in { padding: 0 16px; gap: 10px; }
+  .app .app-header .todoku-logo { font-size: 18px; }
+  .app .app-header nav a { padding: 7px 10px; font-size: 12px; }
+  .app.app-shell > main { padding: 20px 16px 40px; }
+  .app.app-shell > .app-introduction { margin-inline: 16px; }
+  .app h1 { font-size: 24px; }
+}

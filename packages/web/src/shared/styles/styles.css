@@ -1,6 +1,7 @@
 @import './tokens.css';
 @import '../ui/components.css';
 @import '../ui/motion.css';
+@import './redesign.css';
 
 * { box-sizing: border-box; }
 body {

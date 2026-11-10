@@ -105,7 +105,7 @@ export function PlanList({ plans, actions, viewerUid, own, assignments }: { plan
   }
   return <section className="preparation-list" aria-label="入れた準備の予定"><h2>入れた準備の予定</h2>
     <div className="preparation-list-scroll" tabIndex={0} role="region" aria-label="準備の予定の一覧">
-    <ul>{visible.map(plan => <li key={plan.planId}>
+    <ul>{visible.map(plan => <li key={plan.planId} data-plan-status={plan.status}>
       <time dateTime={plan.startsAt}>{Number(plan.date.slice(5, 7))}/{Number(plan.date.slice(8))} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}</time>
       <span>{plan.period}限</span><strong>{plan.title}</strong>
       <span>{plan.createdByRole === 'supporter' ? '支援担当が入れました' : '学生が入れました'}</span>
