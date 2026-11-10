@@ -242,9 +242,15 @@ it('removes a revoked student from the list, including their name, without remov
   expect(host.textContent).toContain('架空の学生B');
 });
 
-it('restores a sharing row after fresh permission when revocation and restoration leave the roster unchanged', async () => {
+it.each(['denied', 'error'] as const)('restores a sharing row after %s when the roster is unchanged', async status => {
   vi.useFakeTimers();
   let allowed = true;
+  let failWatch = () => {};
+  const watch = holder.services!.source.watch;
+  holder.services!.source.watch = (student, name, next, fail) => {
+    if (student === 'student-a' && name === 'assignments') failWatch = fail;
+    return watch(student, name, next, fail);
+  };
   holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }, { uid: 'student-b', displayName: '架空の学生B' }];
   holder.services!.source.grant = (student, _viewer, next) => {
     grants.set(student, next); next(student !== 'student-a' || allowed); return () => {};
@@ -253,7 +259,7 @@ it('restores a sharing row after fresh permission when revocation and restoratio
     await open();
     const previousGrant = grants.get('student-a')!;
     allowed = false;
-    await act(async () => previousGrant(false));
+    await act(async () => { if (status === 'error') failWatch(); previousGrant(false); });
     expect(host.textContent).not.toContain('架空の学生A');
     expect(host.textContent).toContain('架空の学生B');
     allowed = true;
@@ -262,6 +268,7 @@ it('restores a sharing row after fresh permission when revocation and restoratio
     await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
     expect(host.textContent).toContain('架空の学生A');
     expect(host.querySelector('a[href="/session/student-a"]')).not.toBeNull();
+    expect(host.querySelector('[role="alert"]')).toBeNull();
     expect(host.textContent).toContain('架空の学生B');
   } finally { vi.useRealTimers(); }
 });

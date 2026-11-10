@@ -23,8 +23,8 @@ export function StudentList({ students, viewer, source }: {
         if (!active) return;
         setStates(previous => ({ ...previous, [uid]: state }));
         setNow(new Date());
-        // A denied watch stops permanently; recheck permission even if the roster has not changed.
-        if (state.status === 'denied') {
+        // Either terminal state stops its watch; recheck permission before restoring a row.
+        if (state.status === 'denied' || state.status === 'error') {
           const retry = window.setTimeout(() => { retries.delete(retry); watchStudent(uid); }, 30_000);
           retries.add(retry);
         }
