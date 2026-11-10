@@ -86,13 +86,13 @@ try {
   assert.equal(await supporter.locator('.session-student-id').count(), 0);
   await student.getByText('先生役の操作・メールの見本', { exact: true }).click();
   await prepareSample();
-  await preview.getByRole('link', { name: '🕒 後回し', exact: true }).waitFor();
+  await preview.getByRole('link', { name: '後回しにする', exact: true }).waitFor();
   for (const page of [studentScreen, supporter]) {
     await preparationList(page).getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
     assert.equal(await preparationList(page).getByText('まだ', { exact: true }).count(), 0);
   }
-  let doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
-  const laterUrl = await preview.getByRole('link', { name: '🕒 後回し', exact: true }).getAttribute('href');
+  let doneUrl = await preview.getByRole('link', { name: '終わった', exact: true }).getAttribute('href');
+  const laterUrl = await preview.getByRole('link', { name: '後回しにする', exact: true }).getAttribute('href');
   assert.ok(doneUrl.startsWith(base)); assert.ok(laterUrl.includes('/student/plan?id='));
   assert.equal(new URL(doneUrl).searchParams.get('rev'), '1'); assert.equal(new URL(laterUrl).searchParams.get('rev'), '1');
   planRef = ref.collection('plans').doc(new URL(doneUrl).searchParams.get('id'));
@@ -114,7 +114,7 @@ try {
   await fetchRef.delete();
   pass('student stale and failed notices explain the next action at 1280px and 390px');
 
-  await confirmPreview('🕒 後回し', '後回し', 'preview-later');
+  await confirmPreview('後回しにする', '後回し', 'preview-later');
   await preview.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
   assert.match(await preview.getByRole('status').innerText(), /体験用の予定を更新しました/);
   assert.doesNotMatch(await preview.getByRole('status').innerText(), /拡張機能/);
@@ -160,12 +160,12 @@ try {
   // README step 6: a fresh sample restores today's email while retaining the postponed plan.
   await prepareSample();
   await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
-  const replacementLink = preview.getByRole('link', { name: '✅ 終わった', exact: true });
+  const replacementLink = preview.getByRole('link', { name: '終わった', exact: true });
   await replacementLink.waitFor();
   const replacementRef = ref.collection('plans').doc(new URL(await replacementLink.getAttribute('href')).searchParams.get('id'));
   assert.notEqual(replacementRef.id, planRef.id);
   assert.deepEqual((await planRef.get()).data(), movedAgain);
-  await confirmPreview('✅ 終わった', '終わった');
+  await confirmPreview('終わった', '終わった');
   await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
   assert.equal((await replacementRef.get()).data().status, 'done');
   assert.deepEqual((await planRef.get()).data(), movedAgain);
@@ -188,10 +188,10 @@ try {
   await preparationList(supporter).waitFor({ state: 'detached' });
   await openLms();
   await prepareSample();
-  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
-  doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
+  await preview.getByRole('link', { name: '終わった', exact: true }).waitFor();
+  doneUrl = await preview.getByRole('link', { name: '終わった', exact: true }).getAttribute('href');
   planRef = ref.collection('plans').doc(new URL(doneUrl).searchParams.get('id'));
-  await confirmPreview('✅ 終わった', '終わった');
+  await confirmPreview('終わった', '終わった');
   await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
   for (const page of [studentScreen, supporter]) await preparationList(page).locator('.td-chip-done').filter({ hasText: '終わった（LMSへの提出は別）' }).waitFor();
   assert.equal((await planRef.get()).data().status, 'done');
@@ -236,8 +236,8 @@ try {
   pass('signed-out email link asks for login and resumes only after the owner authenticates');
   await prepareSample();
   await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
-  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
-  const renewedId = new URL(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href')).searchParams.get('id');
+  await preview.getByRole('link', { name: '終わった', exact: true }).waitFor();
+  const renewedId = new URL(await preview.getByRole('link', { name: '終わった', exact: true }).getAttribute('href')).searchParams.get('id');
   assert.notEqual(renewedId, planRef.id);
   assert.deepEqual((await planRef.get()).data(), finished);
   assert.equal((await ref.collection('plans').doc(renewedId).get()).data().status, 'active');
@@ -282,7 +282,7 @@ try {
   await screenshot(studentScreen, 'deadline-moved-before-plan'); await screenshot(supporter, 'session-deadline-marker');
   pass('B2: earlier deadline preserves and warns on the existing plan in both screens, marks the timetable and refuses postponement beyond it');
   // Exercise the real 409 response, rather than replacing the browser's fetch response.
-  await confirmPreview('✅ 終わった', '終わった');
+  await confirmPreview('終わった', '終わった');
   await preview.getByRole('status').filter({ hasText: '準備が終わりました' }).waitFor();
   await taskRef.update({ 'officialDeadline.deadline': { kind: 'datetime', dueAt: `${japanDate(0)}T08:00:00+09:00`, dueText: '架空の前倒し', timeZone: 'Asia/Tokyo' } });
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
@@ -296,8 +296,8 @@ try {
   await student.getByRole('status').filter({ hasText: '体験を最初の状態に戻しました' }).waitFor();
   await openLms();
   await prepareSample();
-  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
-  const sampleId = new URL(await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href')).searchParams.get('id');
+  await preview.getByRole('link', { name: '終わった', exact: true }).waitFor();
+  const sampleId = new URL(await preview.getByRole('link', { name: '終わった', exact: true }).getAttribute('href')).searchParams.get('id');
   const source = (await ref.collection('assignments').get()).docs[0].data();
   const submissionTask = { ...source, key: { system: 'ynu-lms', sourceId: 'fictional-141' },
     latest: { ...source.latest, courseId: 'fictional-141', sourceId: 'fictional-141', title: '架空の提出レポート',
@@ -312,7 +312,7 @@ try {
   await submissionSection.waitFor();
   assert.equal(await submissionSection.getByRole('link', { name: 'LMSを開く', exact: true }).getAttribute('href'), 'https://lms.example.invalid/lms/homeHoml/doIndex');
   assert.match(await submissionSection.innerText(), /道順：ホーム › 架空の提出演習 › 架空の提出レポート/);
-  assert.equal(await submissionSection.getByRole('link', { name: '✅ 終わった', exact: true }).count(), 0);
+  assert.equal(await submissionSection.getByRole('link', { name: '終わった', exact: true }).count(), 0);
   assert.equal((await preview.innerText()).match(/返信の入力は不要です/g).length, 1);
   assert.equal(await preview.locator('article h3').count() >= 2, true);
   for (const [width, height, size] of [[1280, 960, 'wide'], [390, 844, 'narrow']]) {
@@ -330,7 +330,7 @@ try {
   assert.equal(await sessionTask.getByRole('link', { name: 'LMSで見る ›', exact: true }).getAttribute('href'), 'https://lms.example.invalid/lms/homeHoml/doIndex');
   assert.match(await sessionTask.innerText(), /ホーム › 架空の提出演習 › 架空の提出レポート/);
   pass('Issue #141: morning preview headings, unchanged buttons, one final note and submission stage; both screens use the definition home and route');
-  const latestDoneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
+  const latestDoneUrl = await preview.getByRole('link', { name: '終わった', exact: true }).getAttribute('href');
   const samplePlan = (await ref.collection('plans').doc(sampleId).get()).data();
   const plannedTask = (await ref.collection('assignments').get()).docs.find(doc =>
     doc.data().key.system === samplePlan.assignment.system && doc.data().key.sourceId === samplePlan.assignment.sourceId);

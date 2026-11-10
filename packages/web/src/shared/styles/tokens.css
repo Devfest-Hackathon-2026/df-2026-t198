@@ -83,6 +83,8 @@
   --story-selected: #9F2E1F;
 }
 
+:root { --bg: #f2f4f9; }
+
 .app {
   /* Course categories: soft background / solid band. Keep status colors separate. */
   /* Blue, teal, green, ochre, pink, purple, sky, brown. L*≈94 preserves the fixed change text's AA contrast. */
@@ -104,7 +106,6 @@
   --course-7-band: #816342;
   /* Navy: focus/today; yellow: preparation; red: changed/error;
      green: finished/fetched; blue: selectable; grey: past/empty. */
-  --bg: #f2f4f9;
   --card: #ffffff;
   --navy: #16213a;
   --yellow: #ffe14d;

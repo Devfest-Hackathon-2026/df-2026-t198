@@ -15,6 +15,12 @@ const { start, finish, ready, checkPorts, stop } = localProcesses(env, 'demo');
 try {
   await checkPorts([8080, 5177]);
   await finish(start('node', ['packages/server/scripts/seed-demo.mjs']));
+  if (process.argv.includes('--mobile')) {
+    for (const role of ['STUDENT', 'SUPPORTER']) {
+      env[`VITE_PUBLIC_DEMO_${role}_EMAIL`] = `trial-${role.toLowerCase()}@example.invalid`;
+      env[`VITE_PUBLIC_DEMO_${role}_PASSWORD`] = env.KADAI_DEMO_PASSWORD;
+    }
+  }
   if (publicDemo) {
     const requireServer = createRequire(new URL('../../server/package.json', import.meta.url));
     const { initializeApp, deleteApp } = requireServer('firebase-admin/app');
@@ -49,6 +55,7 @@ try {
   const vite = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', '5177', '--strictPort'], true);
   await ready('http://127.0.0.1:5177', vite);
   if (publicDemo) await finish(start('node', ['packages/web/tests/public-demo.browser.mjs']));
+  else if (process.argv.includes('--mobile')) await finish(start('node', ['packages/web/tests/mobile-layout.browser.mjs']));
   else if (process.argv.includes('--redesign')) await finish(start('node', ['packages/web/tests/demo-layout.browser.mjs']));
   else {
     await finish(start('node', ['packages/web/tests/demo-screen.browser.mjs']));

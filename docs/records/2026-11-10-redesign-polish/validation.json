@@ -1,0 +1,102 @@
+{
+  "baseline": "066bd5d0bc4b0404d400dc30fe4fd501663840a8",
+  "requiredMergedPRs": [
+    285,
+    286,
+    287,
+    288
+  ],
+  "typecheck": "pass",
+  "lint": "pass",
+  "build": "pass",
+  "progressCheck": {
+    "status": "pass",
+    "all": "37/43",
+    "required": "33/39"
+  },
+  "pnpmTest": {
+    "status": "fail",
+    "reason": "Two unchanged assertions require the old timetable labels; root command stops at web tests."
+  },
+  "unitTests": {
+    "core": {
+      "passed": 274
+    },
+    "extension": {
+      "passed": 555
+    },
+    "server": {
+      "passed": 344,
+      "skipped": 147,
+      "command": "pnpm --filter server test"
+    },
+    "web": {
+      "passed": 286,
+      "failed": 2,
+      "skipped": 7
+    },
+    "webUTC": {
+      "passed": 286,
+      "failed": 2,
+      "skipped": 7
+    }
+  },
+  "judgeQA": {
+    "passed": 28,
+    "total": 28,
+    "record": "judge-qa.json"
+  },
+  "M6": {
+    "passed": 8,
+    "total": 8,
+    "record": "m6.json",
+    "environment": "Auth/Firestore emulators, mock calendar"
+  },
+  "publicDemoBrowser": {
+    "status": "pass",
+    "command": "pnpm test:public-demo:browser",
+    "environment": "local emulators"
+  },
+  "mobile": {
+    "screensPerViewport": 34,
+    "viewports": [
+      [
+        390,
+        844
+      ],
+      [
+        360,
+        740
+      ]
+    ],
+    "hasTouch": true,
+    "isMobile": true,
+    "before": {
+      "overflow": 0,
+      "smallTargets": 426,
+      "narrowText": 0,
+      "tinyText": 494
+    },
+    "after": {
+      "overflow": 0,
+      "smallTargets": 0,
+      "narrowText": 0,
+      "tinyText": 0
+    },
+    "screenshots": 34
+  },
+  "unchangedAssertions": [
+    {
+      "file": "packages/web/src/features/student/student.test.tsx",
+      "line": 24,
+      "expected": "11/12 · 1件",
+      "specifiedDisplay": "11/12 締切"
+    },
+    {
+      "file": "packages/web/src/features/student/student.test.tsx",
+      "line": 111,
+      "expected": "11/10 · 2件",
+      "specifiedDisplay": "11/10 締切 ほか1件"
+    }
+  ]
+}

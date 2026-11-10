@@ -21,7 +21,7 @@ describe('学生が締切を確かめる画面', () => {
     data.assignments = [assignment('レポートA', { kind: 'datetime', dueAt: '2026-11-12T08:30:00Z', dueText: '', timeZone: 'Asia/Tokyo' })];
     const html = renderToStaticMarkup(<StudentView data={data} now={Date.parse('2026-11-10T03:00:00Z')} />);
     const cell = html.match(/<button class="course-cell[^>]*>.*?<\/button>/)![0];
-    expect(cell.match(/class="course-deadline">(.*?)<\/span>/)![1]!.replace(/<[^>]+>/g, '')).toBe('11/12 · 1件');
+    expect(cell.match(/class="course-deadline">(.*?)<\/span>/)![1]!.replace(/<[^>]+>/g, '')).toBe('11/12 締切');
     expect(cell).toContain('aria-description="11/12 17:30');
   });
   it('前の学期でも残っている締切は一覧に出し、時間割には出さない', () => {
@@ -108,7 +108,7 @@ it('架空の長い英語付き授業名と同一コマの2授業を保持し、
     expect(html).toContain(`title="${course.name}" aria-label="${course.name}"`);
   }
   expect(html.match(/<div class="timetable-slot">(.*?)<\/div>/)![1]!.match(/<button/g)).toHaveLength(2);
-  expect(html).toContain('11/10 · 2件');
+  expect(html).toContain('11/10 締切 ほか1件');
   expect(html.match(/scope="row"/g)).toHaveLength(7);
   expect(html.match(/scope="col"/g)).toHaveLength(8);
 });

@@ -6,7 +6,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
   font: 14px/1.7 var(--sans);
   -webkit-font-smoothing: antialiased;
@@ -17,7 +17,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 4px;
 }
-.app, .brand, .lms-skin { background: var(--paper); color: var(--ink); }
+.brand, .lms-skin { background: var(--paper); color: var(--ink); }
+.app { background: var(--bg); color: var(--ink); }
 .app { font-family: var(--sans); }
 .app-shell { min-height: 100vh; max-width: 1280px; margin: 0 auto; padding: 0 56px; }
 .app-header {

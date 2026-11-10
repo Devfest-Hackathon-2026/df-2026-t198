@@ -1,3 +1,4 @@
+import { HeaderAction } from '../../shared/ui/header-action';
 import { Button, TaskTable, DetailPanel, FetchState, Skeleton } from '../../shared/ui';
 import { ContextEditor } from './context-editor';
 import { linkedCourses } from '../../../../core/src/course-links';
@@ -36,7 +37,7 @@ export function SessionPage({ path = '/session' }: { path?: string }) {
   if (!ready) return <Skeleton label="ログイン状態を確かめています…" />;
   return <>
     <div className="session-account">
-      {user && <Button className="logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void services.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}
+      {user && <HeaderAction><Button className="logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void services.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button></HeaderAction>}
     </div>
     {error && <p role="alert">{error}</p>}
     {user ? <SessionWorkspace key={user.uid} user={user} services={services} path={path} /> : <Login services={services} />}

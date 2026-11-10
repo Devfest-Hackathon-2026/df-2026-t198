@@ -1,3 +1,4 @@
+import { HeaderAction } from '../../shared/ui/header-action';
 import { LongWait, Skeleton } from '../../shared/ui/loading';
 import { Button } from '../../shared/ui/button';
 import { serverFetch } from '../../shared/network';
@@ -87,7 +88,7 @@ function DemoPageContent({ initialLinkFailed }: { initialLinkFailed: boolean }) 
     finally { setLoginBusy(false); }
   }
   return <div className="demo-shell"><header className="demo-header"><h1>ToDokuを試す</h1><span className="rd-pill">授業と課題はすべて架空です</span>
-    {user && <Button variant="quiet" className="demo-logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button>}</header>
+    {user && <HeaderAction><Button variant="quiet" className="demo-logout" busy={logoutBusy} busyLabel="ログアウト中…" onClick={() => { setLogoutBusy(true); void client.logout().catch(() => setError('ログアウトできませんでした。もう一度お試しください。')).finally(() => setLogoutBusy(false)); }}>ログアウト</Button></HeaderAction>}</header>
     <p>ここで扱う授業と課題は架空のものです。</p>
     {user === undefined ? <Skeleton label="ログインの状態を確かめています…" /> : user ? <>
       <DemoWorkspace key={user.uid} user={user} />
@@ -278,17 +279,10 @@ function DemoStudent({ user, data }: { user: User; data: DemoData }) {
     </ol></div>
     <div className="demo-screen-controls rd-demo-controls">
       <label><input type="checkbox" checked={screen.automatic && !screen.reduced} disabled={screen.reduced} onChange={screen.toggleAutomatic} />自動で切り替える</label>
-      <a href="/student" target="_blank" rel="noreferrer" aria-label="学生の画面を開く">学生の画面を大きく開く</a>
-      <a href="/session" target="_blank" rel="noreferrer" aria-label="面談を開く">面談の画面を大きく開く</a>
       <Button className="demo-parallel-toggle" variant="quiet" aria-pressed={screen.parallel} onClick={screen.toggleParallel}>{screen.parallel ? '1画面ずつ見る' : '3つ並べて見る'}</Button>
-      {(!screen.automatic || screen.reduced) && <div className="demo-manual-links">
-        <Button variant="quiet" onClick={() => screen.select('student')}>学生の画面を見る</Button>
-        <Button variant="quiet" onClick={() => screen.select('supporter')}>支援担当の画面を見る</Button>
-      </div>}
-      {stage !== 0 && stage !== 2 && openButton}
     </div></aside>
     <CourseColorProvider courses={observed.data.courses}>
-      <DemoTriptych screen={screen} waiting={sourceAhead} changed={stage >= 2 && !sourceAhead} lms={<div ref={pages}><DemoPages key={lmsVersion} data={data} /></div>}
+      <DemoTriptych lmsAction={stage !== 0 && stage !== 2 ? openButton : null} screen={screen} waiting={sourceAhead} changed={stage >= 2 && !sourceAhead} lms={<div ref={pages}><DemoPages key={lmsVersion} data={data} /></div>}
         student={<DemoObserved state={observed} role="student" />} supporter={<DemoObserved state={observed} role="supporter" />} />
     </CourseColorProvider>
     </div>

@@ -272,7 +272,7 @@ try {
   await student.locator('.demo-more > summary').click();
   const preview = student.getByRole('region', { name: '今日やることのメール', exact: true });
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
-  const done = preview.getByRole('link', { name: '✅ 終わった', exact: true });
+  const done = preview.getByRole('link', { name: '終わった', exact: true });
   await preview.getByRole('button', { name: /今日やること.*を開く/ }).click();
   await done.waitFor();
   const sampleId = new URL(await done.getAttribute('href')).searchParams.get('id');

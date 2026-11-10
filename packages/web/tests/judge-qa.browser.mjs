@@ -50,7 +50,7 @@ async function login(page, role) {
     const button = page.getByRole('button', { name: 'ログイン中…', exact: true });
     await button.waitFor(); assert.equal(await button.isDisabled(), true);
   });
-  await page.getByRole('link', { name: role === 'student' ? '学生の画面を開く' : '面談を開く', exact: true }).waitFor();
+  await (role === 'student' ? page.getByRole('navigation', { name: '体験の画面', exact: true }).getByRole('button', { name: '学生', exact: true }) : page.getByRole('link', { name: '面談を開く', exact: true })).waitFor();
 }
 const list = page => page.getByRole('region', { name: '入れた準備の予定', exact: true });
 try {
@@ -104,6 +104,8 @@ try {
       }), true);
     });
     if (width === 390) await student.getByRole('tab', { name: '準備', exact: true }).click();
+    const preparationFold = student.locator('.rd-preparation');
+    if (await preparationFold.count() && !(await preparationFold.evaluate(node => node.open))) await preparationFold.locator(':scope > summary').click();
     await login(supporter, 'supporter');
     await supporter.goto(`${base}/session/trial-student/plan`); await supporter.locator('.session-candidate button').first().waitFor();
     const candidate = supporter.locator('.session-candidate button').first();
@@ -191,6 +193,8 @@ try {
     const confirmation = student.getByRole('region', { name: '準備の予定の操作', exact: true });
     await confirmation.getByRole('status').filter({ hasText: invalidLinkText }).waitFor();
     assert.deepEqual(await confirmation.getByRole('status').allTextContents(), [invalidLinkText]);
+    const ownPreparationFold = student.locator('.rd-preparation');
+    if (await ownPreparationFold.count() && !(await ownPreparationFold.evaluate(node => node.open))) await ownPreparationFold.locator(':scope > summary').click();
     const planCount = await list(student).locator('li').count();
     await list(student).getByRole('button', { name: /準備を外す/ }).first().click();
     await student.getByRole('status').filter({ hasText: '準備の予定を外しました' }).waitFor();

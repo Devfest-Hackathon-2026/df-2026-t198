@@ -174,23 +174,23 @@ try {
   assert.equal(await deadlines.innerText(), updatedSession);
   const preview = student.getByRole('region').filter({ has: button(student, '今日の準備の見本を用意する') });
   await button(preview, '今日の準備の見本を用意する').click();
-  await preview.getByRole('link', { name: '🕒 後回し', exact: true }).waitFor();
+  await preview.getByRole('link', { name: '後回しにする', exact: true }).waitFor();
   await screenshot(preview, 'morning-mail.png');
-  const originalLaterUrl = await preview.getByRole('link', { name: '🕒 後回し', exact: true }).getAttribute('href');
+  const originalLaterUrl = await preview.getByRole('link', { name: '後回しにする', exact: true }).getAttribute('href');
   const originalId = new URL(originalLaterUrl, origin).searchParams.get('id');
-  await preview.getByRole('link', { name: '🕒 後回し', exact: true }).click();
+  await preview.getByRole('link', { name: '後回しにする', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: '次の空いたコマに動かしました' }).waitFor();
   for (const page of [timetable, supporter]) await plans(page).getByText('後回しにした', { exact: true }).waitFor();
   await screenshot(plans(timetable), 'preparation-later.png');
   await button(preview, '今日の準備の見本を用意する').click();
   await student.waitForFunction(previousId => [...globalThis.document.querySelectorAll('a')].some(link =>
-    link.textContent === '✅ 終わった' && new URL(link.href).searchParams.get('id') !== previousId), originalId);
-  const doneUrl = await preview.getByRole('link', { name: '✅ 終わった', exact: true }).getAttribute('href');
+    link.textContent === '終わった' && new URL(link.href).searchParams.get('id') !== previousId), originalId);
+  const doneUrl = await preview.getByRole('link', { name: '終わった', exact: true }).getAttribute('href');
   const newId = new URL(doneUrl, origin).searchParams.get('id');
   assert.ok(originalId && newId);
   assert.notEqual(newId, originalId);
   assert.equal(new URL(doneUrl, origin).searchParams.get('rev'), '1');
-  await preview.getByRole('link', { name: '✅ 終わった', exact: true }).click();
+  await preview.getByRole('link', { name: '終わった', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: 'LMSへの提出は別に行ってください' }).waitFor();
   for (const page of [timetable, supporter]) await plans(page).getByText('終わった（LMSへの提出は別）', { exact: true }).waitFor();
   for (const page of [timetable, supporter]) {

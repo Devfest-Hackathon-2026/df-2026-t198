@@ -50,14 +50,14 @@ try {
   await page.waitForTimeout(3000); await selected('lms');
   await page.getByLabel('自動で切り替える', { exact: true }).uncheck();
   await extend(); await confirmed(); await page.waitForTimeout(3500); await selected('lms');
-  await page.getByRole('button', { name: '学生の画面を見る', exact: true }).click(); await selected('student');
-  await page.getByRole('button', { name: '支援担当の画面を見る', exact: true }).click(); await selected('supporter');
+  await tab('学生').click(); await selected('student');
+  await tab('支援担当').click(); await selected('supporter');
   await page.getByLabel('自動で切り替える', { exact: true }).check();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await extend(); await confirmed(); await page.waitForTimeout(3500); await selected('lms');
   assert.equal(await page.getByLabel('自動で切り替える', { exact: true }).isDisabled(), true);
   assert.equal(await pane('lms').evaluate(node => globalThis.getComputedStyle(node).animationName), 'none');
-  await page.getByRole('button', { name: '学生の画面を見る', exact: true }).click(); await selected('student');
+  await tab('学生').click(); await selected('student');
   await page.getByRole('button', { name: '3つ並べて見る', exact: true }).click();
   assert.equal(await page.locator('.demo-pane:visible').count(), 3);
   await page.getByRole('button', { name: '1画面ずつ見る', exact: true }).click(); await selected('student');
