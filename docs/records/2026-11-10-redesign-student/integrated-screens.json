@@ -1,0 +1,12 @@
+{
+  "passed": 6,
+  "checks": [
+    "1280: inbox opens and closes without performing a plan action",
+    "1280: timetable and preparation are reachable in the specified desktop/mobile layout",
+    "1280: task table selects and closes the source detail panel",
+    "390: inbox opens and closes without performing a plan action",
+    "390: timetable and preparation are reachable in the specified desktop/mobile layout",
+    "390: task table selects and closes the source detail panel"
+  ],
+  "browserErrors": 0
+}
