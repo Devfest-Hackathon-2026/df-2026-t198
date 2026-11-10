@@ -155,7 +155,7 @@ Google Fonts のCSSから以下の書体を読み込む。フォントファイ�
 | 名前・出典 | 用途 | ライセンス |
 |---|---|---|
 | [Inter](https://github.com/google/fonts/tree/main/ofl/inter) | 動画・スライドの欧文と数字 | SIL Open Font License 1.1（[OFL](https://github.com/google/fonts/blob/main/ofl/inter/OFL.txt)、Copyright 2020 The Inter Project Authors） |
-| [qrcode 8.2（python-qrcode）](https://github.com/lincolnloop/python-qrcode/tree/v8.2) | スライドのQRを生成。公開紹介ページのURLだけを符号化する。生成ライブラリとQR画像を区別する | BSD-3-Clause。[LICENSE](https://github.com/lincolnloop/python-qrcode/blob/v8.2/LICENSE)末尾にpyqrnative由来部分のMIT表記もあるため、生成用フォルダにはLICENSE全体を保持する |
+| [qrcode 8.2（python-qrcode）](https://github.com/lincolnloop/python-qrcode/tree/v8.2) | スライドのQRを再生成（2026-11-10、統合役の確認）。符号化したのは `https://todoku.me` だけ。生成ライブラリとQR画像を区別する | BSD-3-Clause。[LICENSE](https://github.com/lincolnloop/python-qrcode/blob/v8.2/LICENSE)末尾にpyqrnative由来部分のMIT表記もあるため、生成用フォルダにはLICENSE全体を保持する |
 
 BIZ UDPGothicとInterは2026-11-10にGoogle FontsのOFLを確認した。書体ファイルの配布・埋め込みでは著作権表示とOFL全文を保持する。文字を描画した動画・画像と書体ファイルを区別する。BIZ UDPGothicの出典とOFLは上の既存行を参照する。
 
