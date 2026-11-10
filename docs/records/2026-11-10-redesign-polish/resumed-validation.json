@@ -1,0 +1,71 @@
+{
+  "checkedAt": "2026-11-10T01:11:10.508053+00:00",
+  "baseline": "066bd5d0bc4b0404d400dc30fe4fd501663840a8",
+  "branch": "redesign-polish",
+  "scope": "A verification of inherited uncommitted changes; B not rerun before the first PR",
+  "installFrozenLockfile": "pass",
+  "coreBuild": "pass",
+  "typecheck": "pass",
+  "lint": "pass",
+  "requiredCommandChain": {
+    "status": "fail",
+    "stoppedAt": "pnpm test"
+  },
+  "web": {
+    "passed": 286,
+    "failed": 2,
+    "skipped": 7
+  },
+  "webUTC": {
+    "passed": 286,
+    "failed": 2,
+    "skipped": 7
+  },
+  "server": {
+    "passed": 344,
+    "skipped": 147
+  },
+  "build": "pass",
+  "progressCheck": {
+    "status": "pass",
+    "all": "37/43",
+    "required": "33/39"
+  },
+  "judgeQA": {
+    "passed": 28,
+    "failed": 0,
+    "record": "resumed-judge-qa.json"
+  },
+  "M6": {
+    "passed": 8,
+    "total": 8,
+    "record": "resumed-m6.json"
+  },
+  "localDemoIsolation": {
+    "pairs": 3,
+    "isolatedBrowserContexts": 6,
+    "deniedCrossPairReads": 24,
+    "status": "pass"
+  },
+  "publicDemoBrowser": "pass (local emulators)",
+  "mobile": "Prior worker records exist; not rerun in this resumption because A must be published first",
+  "blocker": {
+    "instruction": "Only locator changes allowed; do not change test answers or criteria",
+    "file": "packages/web/src/features/student/student.test.tsx",
+    "conflicts": [
+      {
+        "line": 24,
+        "expected": "11/12 · 1件",
+        "requestedDisplay": "11/12 締切"
+      },
+      {
+        "line": 111,
+        "expected": "11/10 · 2件",
+        "requestedDisplay": "11/10 締切 ほか1件"
+      }
+    ],
+    "nextAction": "Obtain explicit permission to update only the two expected labels, rerun required checks, then commit/push/create PR for A before continuing B"
+  },
+  "commitPushPR": "not performed; awaiting resolution of test instruction conflict",
+  "deployment": "not performed"
+}

@@ -95,3 +95,19 @@
 #demo-morning-mail { max-width: 760px; margin-inline: auto; }
 .rd-demo-guide .demo-steps { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 860px) { .app .rd-demo-stage .demo-pane-switch button { padding-inline: 6px; gap: 4px; } }
+
+.rd-demo-window-actions { display: flex; justify-content: space-between; align-items: center; padding: 0 14px; background: var(--card); }
+.rd-demo-window-actions a { margin-left: auto; font-size: 12px; color: var(--blue); }
+@media (max-width: 860px) {
+  .rd-demo-stage .demo-pane-body { height: 70vh; }
+  .rd-demo-stage .demo-pane-switch .rd-demo-role-label { display: none; }
+  .rd-demo-stage .demo-pane-switch button::after { content: attr(aria-label); font-size: 13px; font-weight: 700; }
+  .rd-demo-stage .demo-pane-switch .rd-demo-dot { order: 1; }
+  .demo-campus .rd-lms-user { display: none; }
+}
+
+.app .rd-demo-window-actions .td-btn { padding-inline: 2px; border: 0; background: transparent; color: var(--blue); font-size: 13px; font-weight: 400; text-decoration: underline; }
+.app .rd-demo-controls input[type='checkbox'] { appearance: none; display: grid; place-content: center; flex: none; width: 44px; height: 44px; margin: 0; padding: 0; border: 0; background: transparent; }
+.rd-demo-controls input[type='checkbox']::before { content: ''; display: grid; place-content: center; width: 18px; height: 18px; border: 1.5px solid var(--blue); border-radius: 3px; background: var(--card); }
+.rd-demo-controls input[type='checkbox']:checked::before { content: '✓'; background: var(--blue); color: var(--card); font-size: 14px; font-weight: 700; }
+.rd-demo-controls input[type='checkbox']:disabled { opacity: .6; }

@@ -82,7 +82,7 @@ export function DigestPreview({ user, initiallyOpened = false }: { user: User; i
         <span>ToDoku</span><strong>{digest.subject}</strong><time>07:30</time>
       </button> : <article className="digest-open-mail"><Button variant="quiet" onClick={() => setOpened(false)}>受信箱に戻る</Button>
         <header><span className="rd-mail-avatar" aria-hidden="true">T</span><h3>{digest.subject}</h3><span>ToDoku · 今日 07:30（見本）</span></header>
-        <div aria-busy={busy} onClick={click} dangerouslySetInnerHTML={{ __html: digest.html }} /></article>}
+        <div aria-busy={busy} onClick={click} dangerouslySetInnerHTML={{ __html: digest.html.replaceAll('>✅ 終わった</a>', '>終わった</a>').replaceAll('>🕒 後回し</a>', '>後回しにする</a>') }} /></article>}
     </>}
     {!digest && !message && <Skeleton label="メールの見本を開いています…" />}
     {actionLink && <><Button variant="quiet" onClick={() => setActionLink(undefined)}>メールの見本に戻る</Button><PlanLinkAction user={user} data={data} link={actionLink} /></>}

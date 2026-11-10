@@ -43,7 +43,7 @@ try {
     '1LMSを開く', '2先生が締切を延ばす', '3学生と支援担当の画面', '4朝のメール',
   ]);
   assert.equal(await page.locator('.demo-command .td-btn-primary').count(), 1);
-  await page.getByRole('link', { name: '学生の画面を開く', exact: true }).waitFor();
+  await page.getByRole('navigation', { name: '体験の画面', exact: true }).getByRole('button', { name: '学生', exact: true }).waitFor();
   await page.locator('.demo-more > summary').click();
   assert.equal(await page.getByRole('navigation', { name: '体験の画面', exact: true }).getByRole('button', { name: 'LMS', exact: true }).getAttribute('aria-pressed'), 'true');
   const markers = await page.locator('.demo-list-end, .demo-availability').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().width));

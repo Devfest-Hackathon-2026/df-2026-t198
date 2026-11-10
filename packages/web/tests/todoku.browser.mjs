@@ -116,7 +116,7 @@ try {
   await demo.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   const preview = demo.getByRole('region', { name: '今日やることのメール', exact: true });
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
-  const done = preview.getByRole('link', { name: '✅ 終わった', exact: true });
+  const done = preview.getByRole('link', { name: '終わった', exact: true });
   await done.waitFor();
   await student.goto(`${base}/student`);
   await student.locator('.course-cell').filter({ hasText: '文章表現' }).click();

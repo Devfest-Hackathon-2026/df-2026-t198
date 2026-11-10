@@ -88,12 +88,12 @@ try {
       await preview.getByRole('button', { name: /今日やること.*を開く/ }).click(); mailClicks++;
     }
     await preview.locator('.digest-open-mail').waitFor();
-    await preview.getByRole('link', { name: '✅ 終わった', exact: true }).waitFor();
+    await preview.getByRole('link', { name: '終わった', exact: true }).waitFor();
     await shot(demo, `mail-${width}`);
     // Opening an action link still asks for confirmation, without a progress write.
     const writes = [];
     demo.on('request', request => { if (/\/plans\/[^/]+\/(done|later)/.test(request.url()) && request.method() === 'POST') writes.push('progress-write'); });
-    for (const [link, button] of [['✅ 終わった', '終わった'], ['🕒 後回し', '後回し']]) {
+    for (const [link, button] of [['終わった', '終わった'], ['後回しにする', '後回し']]) {
       await preview.getByRole('link', { name: link, exact: true }).click();
       await preview.getByRole('region', { name: '準備の予定の操作', exact: true }).getByRole('button', { name: button, exact: true }).waitFor();
       assert.deepEqual(writes, []);

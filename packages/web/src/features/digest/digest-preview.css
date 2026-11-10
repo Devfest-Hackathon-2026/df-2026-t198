@@ -29,3 +29,9 @@
 .digest-preview .td-btn-quiet { padding-inline: 2px; text-decoration: underline; text-underline-offset: 4px; }
 .digest-preview:has(.digest-open-mail, .plan-confirmation) .digest-inbox-heading { display: none; }
 .digest-preview a[href*='/student/plan'] { margin: 0 !important; }
+
+.digest-open-mail article a:not([href*='/student/plan']) { min-height: 44px; }
+
+@media (max-width: 480px) { .digest-open-mail [lang='ja'] > article:first-of-type a[href*='do=done'] { flex: 1 0 100%; min-height: 52px; } }
+
+.app .digest-preview .td-btn-quiet { min-height: 45px; }

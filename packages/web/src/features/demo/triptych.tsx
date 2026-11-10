@@ -9,8 +9,8 @@ import { useCourseColors } from '../../shared/course-color-context';
 
 const roles = { lms: 'LMS', student: '学生', supporter: '支援担当' } as const;
 type Pane = keyof typeof roles;
-export function DemoTriptych({ lms, student, supporter, waiting = false, changed = false, screen }: {
-  lms: ReactNode; student: ReactNode; supporter: ReactNode; waiting?: boolean; changed?: boolean; screen?: DemoScreen;
+export function DemoTriptych({ lms, student, supporter, waiting = false, changed = false, screen, lmsAction }: {
+  lmsAction?: ReactNode; lms: ReactNode; student: ReactNode; supporter: ReactNode; waiting?: boolean; changed?: boolean; screen?: DemoScreen;
 }) {
   const id = useId();
   const [localSelected, setSelected] = useState<Pane>('lms');
@@ -20,7 +20,8 @@ export function DemoTriptych({ lms, student, supporter, waiting = false, changed
       {(Object.keys(roles) as Pane[]).map(role => <Button key={role} variant="quiet" aria-pressed={selected === role}
         aria-label={roles[role]} aria-controls={`${id}-${role}`} onClick={() => screen ? screen.select(role) : setSelected(role)}>{screen ? <><span className="rd-demo-role" data-role={role} aria-hidden="true">{{ lms: '先', student: '学', supporter: '支' }[role]}</span><span className="rd-demo-role-label"><b>{{ lms: '体験用LMS', student: '学生の画面', supporter: '支援担当の画面' }[role]}</b><small>{role === 'lms' ? '大学の授業支援システム' : 'ToDoku'}</small></span>{role !== 'lms' && (waiting || changed) && <span className="rd-demo-dot" data-changed={changed && !waiting} title={waiting ? 'まだ前のまま' : '締切が変わった'} />}</> : roles[role]}</Button>)}
     </nav>
-    {screen && <p className="rd-demo-caption" role="status">{screen.caption}</p>}
+    {screen && <p className="rd-demo-caption" role="status">{screen.caption}{screen.reduced && '。動きを減らす設定のため、自動で切り替えません。タブで画面を選べます'}</p>}
+    {screen && (lmsAction || selected !== 'lms') && <div className="rd-demo-window-actions">{lmsAction}{selected !== 'lms' && <a href={selected === 'student' ? '/student' : '/session'} target="_blank" rel="noreferrer" aria-label={selected === 'student' ? '学生の画面を開く' : '面談を開く'}>大きく開く ↗</a>}</div>}
     {(Object.keys(roles) as Pane[]).map((role, index) => <section key={role} id={`${id}-${role}`} data-demo-pane={role}
       data-selected={selected === role} className={`demo-pane ${role === 'lms' ? 'lms-skin' : 'app'}`} aria-label={`${roles[role]}の画面`}>
       <header className="demo-pane-heading"><span aria-hidden="true">0{index + 1}</span><h2>{roles[role]}</h2>

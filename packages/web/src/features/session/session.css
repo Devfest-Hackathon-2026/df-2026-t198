@@ -90,10 +90,10 @@
 .session-task-workspace .td-table-select::after { content: ''; position: absolute; inset: 0; border-radius: var(--r-inner); }
 .session-task-workspace .rd-deadline-day { position: absolute; left: 12px; top: 12px; width: 54px; padding: 6px 0; border-radius: 8px; background: var(--bg); text-align: center; line-height: 1.2; }
 .session-task-workspace .rd-deadline-day b { display: block; font-size: 18px; }
-.session-task-workspace .rd-deadline-day span { font-size: 11px; }
+.session-task-workspace .rd-deadline-day span { font-size: 12px; }
 .session-task-workspace tr:has(.td-chip-changed) .rd-deadline-day { background: var(--red-soft); color: var(--red); }
 .session-task-workspace :is(.previous-deadline, .rd-previous-deadline) { display: block; color: var(--muted); font-size: 12px; }
-.session-task-workspace .td-chip { padding: 1px 8px; font-size: 11px; }
+.session-task-workspace .td-chip { padding: 1px 8px; font-size: 12px; }
 .session-topic { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 12px; font-weight: 700; }
 .session-topic select { max-width: 100%; min-width: 0; min-height: 44px; padding: 0 14px; background: var(--card); border: 1.5px solid var(--line-strong); border-radius: var(--r-inner); font: inherit; color: var(--ink); }
 .session-decisions { margin-bottom: 16px; font-size: 13px; }
@@ -104,15 +104,15 @@
 .session-timetable { width: 100%; min-width: 640px; table-layout: fixed; border-collapse: separate; border-spacing: 4px; }
 .session-timetable caption { text-align: left; font-size: 12px; color: var(--muted); }
 .session-timetable th { font-size: 12px; font-weight: 700; color: var(--muted); padding: 4px 0 6px; }
-.session-timetable th:first-child { width: 40px; color: var(--faint); font-size: 11px; }
+.session-timetable th:first-child { width: 40px; color: var(--faint); font-size: 12px; }
 .session-timetable th.rd-is-today { background: var(--navy); color: var(--card); border-radius: 8px; }
 .session-timetable td { height: 76px; border-radius: 8px; background: var(--bg); padding: 0; vertical-align: top; }
 .session-timetable td.rd-is-today { background: var(--today-soft); }
 .session-course { display: grid; gap: 2px; min-height: 76px; padding: 6px 8px; border-left: 5px solid var(--course-band, var(--line-strong)); border-radius: 8px; background: var(--card); box-shadow: var(--cell-shadow); font-size: 13px; line-height: 1.25; overflow-wrap: anywhere; }
-.session-course small { color: var(--muted); font-size: 11px; }
+.session-course small { color: var(--muted); font-size: 12px; }
 .session-candidate { display: grid; gap: 4px; min-height: 76px; padding: 6px 8px; border: 2px dashed var(--blue); border-radius: 8px; background: var(--blue-soft); color: var(--blue); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
 .session-page .session-candidate button { justify-self: start; min-height: 36px; padding: 0 14px; border: 1px solid var(--blue); border-radius: var(--r-inner); background: var(--blue); color: var(--card); font-size: 13px; font-weight: 700; }
-.session-deadline { display: block; margin-top: 4px; padding: 4px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 11px; }
+.session-deadline { display: block; margin-top: 4px; padding: 4px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 12px; }
 .session-planning .preparation-cell.preparation-cell { min-height: 76px; margin: 0; padding: 6px 8px; border: 0; border-left: 5px solid var(--yellow-band); border-radius: 8px; background: var(--yellow); color: var(--on-yellow); }
 .session-planning .preparation-cell small { color: var(--yellow-muted); white-space: normal; }
 .session-planning .session-saved { margin: 4px 0 0; padding: 4px 8px; border-radius: 6px; background: var(--navy); color: var(--card); font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }

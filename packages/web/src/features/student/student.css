@@ -21,7 +21,7 @@
 .student-workspace .td-taskrow-side .deadline { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .rd-row-day { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 64px; padding: 6px 0; border-radius: 8px; background: var(--bg); text-align: center; line-height: 1.15; pointer-events: none; }
 .rd-row-day b { display: block; font-size: 18px; }
-.rd-row-day span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.rd-row-day span { color: var(--muted); font-size: 12px; font-weight: 700; }
 .rd-row-time { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 700; color: var(--muted); pointer-events: none; }
 .student-workspace .rd-row-changed .td-taskrow { border-color: var(--red); background: var(--changed-surface); }
 .rd-row-changed .rd-row-day { background: var(--red-soft); color: var(--red); }
@@ -59,14 +59,14 @@
 .student-workspace .timetable-scroll { border: 0; background: transparent; }
 .student-workspace .timetable { min-width: 0; border: 0; border-collapse: separate; border-spacing: 4px; --period-height: 64px; }
 .student-workspace .timetable th { padding: 4px 0 6px; font: 700 12px var(--sans); background: transparent; color: var(--muted); }
-.student-workspace .timetable th:first-child { width: 34px; background: transparent; color: var(--faint); font-size: 11px; position: static; }
+.student-workspace .timetable th:first-child { width: 34px; background: transparent; color: var(--faint); font-size: 12px; position: static; }
 .student-workspace .timetable td { height: 64px; padding: 0; border: 0; border-radius: 8px; background: var(--bg); }
 .student-workspace .timetable [data-today] { background: var(--today-soft); }
 .student-workspace .timetable thead th[data-today] { background: var(--navy); color: var(--card); border-radius: 8px; }
 .timetable-slot { display: grid; grid-auto-rows: minmax(64px, 1fr); gap: 4px; min-height: var(--period-height); }
 .student-workspace .course-cell, .student-workspace .preparation-cell { display: flex; flex-direction: column; justify-content: center; gap: 2px; width: 100%; min-width: 0; min-height: 64px; height: 100%; margin: 0; padding: 6px 8px; border: 0; border-left: 5px solid var(--course-band); border-radius: 8px; box-shadow: var(--cell-shadow); text-align: left; line-height: 1.25; overflow-wrap: anywhere; }
 .student-workspace .course-cell strong, .student-workspace .preparation-cell strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-wrap: balance; margin: 0; font-size: 13px; white-space: normal; line-break: strict; }
-.student-workspace .course-deadline, .student-workspace .course-cell span { font-size: 11px; font-family: var(--sans); font-weight: 700; color: var(--muted); }
+.student-workspace .course-deadline, .student-workspace .course-cell span { font-size: 12px; font-family: var(--sans); font-weight: 700; color: var(--muted); }
 .student-workspace .course-deadline { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .student-workspace .course-deadline .previous-deadline { display: none; }
 .student-workspace .course-cell.changed { box-shadow: 0 0 0 2px var(--red); color: var(--ink); }
@@ -138,9 +138,9 @@
   .student-overview[data-tab='deadlines'] .student-timetable:has(.course-panel) > h2,
   .student-overview[data-tab='deadlines'] .student-timetable:has(.course-panel) .student-layout > div { display: none; }
   .student-workspace :is(.upcoming, .student-timetable, .student-preparation, .deadline-calendar) { padding: 18px 16px; }
-  .student-workspace .timetable th:first-child { width: 24px; }
+  .student-workspace .timetable th:first-child { width: 28px; }
   .student-workspace .course-cell, .student-workspace .preparation-cell { padding: 5px 3px; }
-  .student-workspace .course-cell strong, .student-workspace .preparation-cell strong { font-size: 11px; }
+  .student-workspace .course-cell strong, .student-workspace .preparation-cell strong { font-size: 12px; }
   .student-workspace .course-deadline, .student-workspace .course-cell span { font-size: 10px; }
   .student-workspace .td-taskrow { padding-left: 72px; padding-right: 56px; }
   .rd-row-day { width: 48px; }
@@ -158,3 +158,13 @@
   .student-workspace .rd-next-action-buttons { display: contents; }
   .student-workspace .rd-next-actions > .rd-next-prepare, .student-workspace .rd-next-action-buttons .td-btn-primary { flex: 1 0 100%; min-height: 52px; }
 }
+
+.student-workspace .rd-preparation { margin-top: 20px; }
+.student-workspace .rd-preparation .preparation-list { border: 0; padding: 0; background: transparent; box-shadow: none; }
+.student-workspace .rd-preparation .preparation-list > h2 { display: none; }
+.student-workspace .rd-preparation .preparation-add > summary { color: var(--blue); font-size: 14px; text-decoration: underline; }
+.student-workspace .rd-preparation .preparation-buttons .td-btn { padding-inline: 4px; background: transparent; border: 0; color: var(--blue); text-decoration: underline; }
+.student-workspace .rd-timetable-help { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+.student-workspace .timetable th[data-today] { white-space: nowrap; font-size: 12px; }
+
+.student-workspace .course-deadline > .deadline { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

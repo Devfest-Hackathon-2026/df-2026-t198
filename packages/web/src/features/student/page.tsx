@@ -1,3 +1,4 @@
+import { HeaderAction } from '../../shared/ui/header-action';
 import { deadlineDay, NextAction, nextPreparation } from './nearest';
 import { Button, TaskRow, Tabs, FetchState, Skeleton, StatusChip } from '../../shared/ui';
 import { ScrollFrame } from '../../shared/ui/scroll-frame';
@@ -37,6 +38,12 @@ const dateKey = (deadline: Deadline | undefined) => deadline?.kind === 'datetime
 export function pending(items: LedgerAssignment[]) {
   return items.filter(item => item.submission !== 'submitted' && item.presenceState !== 'cancelled' && item.presenceState !== 'ended')
     .sort((a, b) => dateKey(deadlineOf(a)) - dateKey(deadlineOf(b)) || a.latest.title.localeCompare(b.latest.title, 'ja'));
+}
+function nextDeadlineText(deadline: Deadline | undefined) {
+  if (deadline?.kind !== 'date' && deadline?.kind !== 'datetime') return deadlineText(deadline);
+  const day = new Date(deadline.kind === 'date' ? `${deadline.date}T12:00:00Z` : deadline.dueAt);
+  const date = new Intl.DateTimeFormat('ja-JP', { timeZone: deadline.kind === 'date' ? 'UTC' : deadline.timeZone, month: 'numeric', day: 'numeric', weekday: 'short' }).format(day).replace('(', '（').replace(')', '）');
+  return deadline.kind === 'date' ? date : date + new Intl.DateTimeFormat('ja-JP', { timeZone: deadline.timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(day);
 }
 export function deadlineText(deadline: Deadline | undefined) {
   const missing = missingDeadlineText(deadline);
@@ -81,6 +88,8 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const panel = useRef<HTMLElement>(null);
   const prepare = useRef<HTMLDetailsElement>(null);
+  const preparationFold = useRef<HTMLDetailsElement>(null);
+  useEffect(() => { if (tab === 'preparation' && preparationFold.current) preparationFold.current.open = true; }, [tab]);
   const [prepareFor, setPrepareFor] = useState<string | null>(null);
   const timetable = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -166,7 +175,7 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
   const demo = data.fetchStates.some(state => state.system === 'demo-lms');
   const beginPreparation = (item: LedgerAssignment) => {
     setPrepareFor(JSON.stringify(item.key)); setTab('preparation');
-    if (prepare.current) prepare.current.open = true;
+    if (prepare.current) { prepare.current.open = true; const outer = prepare.current.closest<HTMLDetailsElement>('.rd-preparation'); if (outer) outer.open = true; }
     requestAnimationFrame(() => {
       prepare.current?.scrollIntoView({ block: 'center', behavior: 'instant' });
       prepare.current?.querySelector<HTMLInputElement>('input[name="date"]')?.focus({ preventScroll: true });
@@ -197,14 +206,14 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
       items={[{ value: 'deadlines', label: '締切' }, { value: 'timetable', label: '時間割' }, { value: 'preparation', label: '準備' }]} /></div>
     <div className="student-overview td-stage" style={{ animationDelay: '100ms' }} data-tab={tab}>
     <div className="student-deadlines"><NextAction entry={nearest} course={nearest ? data.courses.find(c => entryBelongsTo(nearest, c)) : undefined}
-      text={nearest ? deadlineText(entryDisplayDeadline(nearest)) : ''} previous={nearest ? previousLabels.current.get(entryId(nearest)) : undefined}
+      text={nearest ? nextDeadlineText(entryDisplayDeadline(nearest)) : ''} previous={nearest ? previousLabels.current.get(entryId(nearest)) : undefined}
       now={now} changed={!!nearest && changedEntries.has(entryId(nearest))}
       today={next.today} future={next.future} hasPlans={next.hasPlans} actions={actions}
       onPrepare={actions && nearest?.kind === 'lms' ? () => beginPreparation(nearest.row) : undefined} />{upcomingList}</div>
     <section className="student-timetable" aria-label="時間割"><h2>時間割</h2>
     <div className={`student-layout${course || selectedPlan ? ' with-course' : ''}`}>
       <div><ScrollFrame scrollRef={timetable} className="timetable-scroll" label="授業と次の締切"><table className="timetable" style={{ '--periods': periods } as CSSProperties}><caption className="sr-only">授業と次の締切</caption>
-        <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d} data-weekday={d + 1} data-today={d + 1 === weekday || undefined}>{'月火水木金土日'[d]}</th>)}</tr></thead>
+        <thead><tr><th scope="col">時限</th>{Array.from({ length: days }, (_, d) => <th scope="col" key={d} data-weekday={d + 1} data-today={d + 1 === weekday || undefined}>{'月火水木金土日'[d]}{d + 1 === weekday && '・今日'}</th>)}</tr></thead>
         <tbody>{Array.from({ length: periods }, (_, p) => <tr key={p}><th scope="row">{p + 1}限</th>
           {Array.from({ length: days }, (_, d) => <td key={d} data-today={d + 1 === weekday || undefined}><div className="timetable-slot">{courses.filter(c =>
             c.slots.some(slot => slot.weekday === d + 1 && slot.period === p + 1)).map(c => {
@@ -218,7 +227,7 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
               data-course-color={courseColor(c)} title={c.name} aria-label={c.name}
               aria-description={next ? `${deadlineText(deadline)}・${entryTitle(next)}・${items.length}件` : undefined}
               aria-pressed={courseKey(c) === selected} aria-controls="course-assignments">
-              <strong>{c.name}</strong>{next && <><span className="course-deadline"><ChangedDeadline value={`${summary} · ${items.length}件`} /></span>
+              <strong>{c.name}</strong>{next && <><span className="course-deadline"><ChangedDeadline value={`${summary} 締切${items.length > 1 ? ` ほか${items.length - 1}件` : ''}`} /></span>
                 <span className="sr-only">{entryTitle(next)}{next.kind === 'manual' && <small>手で入れた課題</small>}</span>
                 {next.kind === 'lms' && (next.row.reviewReasons.length > 0 || next.row.presenceState === 'cancellation-candidate') && <span className="sr-only">要確認：{next.row.reviewReasons[0]?.kind === 'unreadable-deadline'
                   ? missingDeadlineText(next.row.latest.deadline) ?? '締切を確認できていません。' : next.row.reviewReasons[0] ? reviewReasonText(next.row.reviewReasons[0]) : 'LMSの一覧で見つかりませんでした。'}</span>}</>}
@@ -249,13 +258,14 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
       </aside>}
       {detailMessage && <p role="status">{detailMessage}</p>}
     </div>
+    <p className="rd-timetable-help">マスを押すと、課題や準備の中身が開きます</p>
     </section>
-    <section className="student-preparation" aria-label="準備"><h2>準備の予定 <span className="rd-count" aria-hidden="true">{plans.length}</span></h2>
+    </div>
+    <details ref={preparationFold} className="rd-preparation rd-fold" aria-label="準備"><summary>準備の予定 <span className="rd-count">{data.plans.filter(plan => plan.status !== 'cancelled').length}件</span></summary>
     {actions && <details ref={prepare} className="preparation-add"><summary>準備の予定を入れる</summary>
       <PlanForm key={prepareFor ?? 'all'} assignments={prepareFor ? [...data.assignments].sort((a, b) => Number(JSON.stringify(b.key) === prepareFor) - Number(JSON.stringify(a.key) === prepareFor)) : data.assignments} actions={actions} /></details>}
     <PlanList plans={data.plans} assignments={data.assignments} actions={actions} own />
-    </section>
-    </div>
+    </details>
     {calendar && <details className="student-calendar rd-fold"><summary>締切のカレンダー {demo && <span className="rd-pill">体験用カレンダー</span>}</summary>
       <DemoCalendar courses={data.courses} assignments={data.assignments} manual={data.manualAssignments} now={now} /></details>}
     {settings ?? <details className="rd-settings rd-fold"><summary>連携と設定</summary>{setup}
@@ -270,9 +280,10 @@ function StudentAccount({ user, data, now, showOwnSession }: { user: User; data:
     planLink={window.location.pathname === '/student/plan' && <PlanLinkAction user={user} data={data} />}
     actions={planActions(user, user.uid)} manualActions={manualAssignmentActions(user, user.uid)}
     settings={<StudentSettings user={user} mail={mail} data={data}>
+      {showOwnSession && <a href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談日時を見る・変える</a>}
       <ManualAssignments rows={data.manualAssignments} courses={linkedCourses(data.courses)} actions={manualAssignmentActions(user, user.uid)} own now={now} />
     </StudentSettings>} />
-    {showOwnSession && <a href={`/session/${encodeURIComponent(user.uid)}`}>自分の面談日時を見る・変える</a>}</>;
+    </>;
 }
 export function StudentPage({ showOwnSession = false }: { showOwnSession?: boolean }) {
   const [state, setState] = useState<StudentState>({ status: 'loading' });
@@ -287,7 +298,7 @@ export function StudentPage({ showOwnSession = false }: { showOwnSession?: boole
   return <>
     {state.status === 'signed-out' ? <><h1>時間割と課題</h1><DemoLogin returnTo={window.location.pathname === '/student/plan' ? window.location.pathname + window.location.search : undefined} />
       <Button className="plain-button" busy={authBusy} busyLabel="ログイン中…" onClick={() => accountAction(client.login)}>Googleでログイン</Button></> :
-      <><Button className="logout student-logout" busy={authBusy} busyLabel="ログアウト中…" onClick={() => accountAction(client.logout)}>ログアウト</Button>
+      <><HeaderAction><Button className="logout student-logout" busy={authBusy} busyLabel="ログアウト中…" onClick={() => accountAction(client.logout)}>ログアウト</Button></HeaderAction>
         {state.status === 'ready' ? (client.auth.currentUser
           ? <StudentAccount key={client.auth.currentUser.uid} user={client.auth.currentUser} data={state} now={now} showOwnSession={showOwnSession} />
           : <StudentView data={state} now={now} calendar />) : state.status === 'error' ? <FetchState state="error" title="課題を表示できませんでした" detail="接続を確かめて、画面を開き直してください。" /> : <Skeleton label="課題を読み込んでいます…" lines={6} />}</>}

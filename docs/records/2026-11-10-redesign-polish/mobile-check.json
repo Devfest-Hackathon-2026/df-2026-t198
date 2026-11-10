@@ -1,0 +1,3906 @@
+{
+  "before": {
+    "measuredAt": "2026-11-10T01:03:18.340Z",
+    "results": [
+      {
+        "screen": "entry",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 2,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-lms",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 41
+      },
+      {
+        "screen": "lms-courses",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 41
+      },
+      {
+        "screen": "lms-assignments",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 6
+      },
+      {
+        "screen": "lms-detail",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 7
+      },
+      {
+        "screen": "demo-auto-off",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 7
+      },
+      {
+        "screen": "demo-extended",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 7
+      },
+      {
+        "screen": "demo-read-auto-student",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-read-auto-supporter",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-student",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-supporter",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "mail",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "confirmation-before",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 3,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "confirmation-after",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 3,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-next",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": {
+          "width": 322,
+          "height": 52,
+          "availableWidth": 322
+        },
+        "demo": null,
+        "smallTargets": 9,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-add-from-next",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-timetable",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 8,
+        "narrowText": 0,
+        "tinyText": 12
+      },
+      {
+        "screen": "student-course-detail",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 11,
+        "narrowText": 0,
+        "tinyText": 12
+      },
+      {
+        "screen": "student-preparation",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-add-plan",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-calendar",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-settings",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-check",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 6,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-consult",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 326,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 7,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "session-plan-form",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 326,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 7,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "session-saved",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 326,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 8,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "student-plan-detail",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 11,
+        "narrowText": 0,
+        "tinyText": 13
+      },
+      {
+        "screen": "student-active-preparation",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 290,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 12,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-reduced-motion",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 844
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 41
+      },
+      {
+        "screen": "student-picker",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 3,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-check",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 6,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-consult",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 326,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 6,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "supporter-plan-form",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 326,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 6,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "supporter-saved",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 326,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 7,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "entry",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 2,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-lms",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 41
+      },
+      {
+        "screen": "lms-courses",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 41
+      },
+      {
+        "screen": "lms-assignments",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 6
+      },
+      {
+        "screen": "lms-detail",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 7
+      },
+      {
+        "screen": "demo-auto-off",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 7
+      },
+      {
+        "screen": "demo-extended",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 7
+      },
+      {
+        "screen": "demo-read-auto-student",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-read-auto-supporter",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-student",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-supporter",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "mail",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "confirmation-before",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 3,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "confirmation-after",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 3,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-next",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": {
+          "width": 292,
+          "height": 52,
+          "availableWidth": 292
+        },
+        "demo": null,
+        "smallTargets": 9,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-add-from-next",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-timetable",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 8,
+        "narrowText": 0,
+        "tinyText": 12
+      },
+      {
+        "screen": "student-course-detail",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 11,
+        "narrowText": 0,
+        "tinyText": 12
+      },
+      {
+        "screen": "student-preparation",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-add-plan",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-calendar",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-settings",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 10,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-check",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 6,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-consult",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 296,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 7,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "session-plan-form",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 296,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 7,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "session-saved",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 296,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 8,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "student-plan-detail",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 11,
+        "narrowText": 0,
+        "tinyText": 13
+      },
+      {
+        "screen": "student-active-preparation",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 260,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 12,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-reduced-motion",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 560,
+          "viewportHeight": 740
+        },
+        "smallTargets": 4,
+        "narrowText": 0,
+        "tinyText": 41
+      },
+      {
+        "screen": "student-picker",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 3,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-check",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 6,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-consult",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 296,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 6,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "supporter-plan-form",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 296,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 6,
+        "narrowText": 0,
+        "tinyText": 10
+      },
+      {
+        "screen": "supporter-saved",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(243, 240, 232)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 296,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 64,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 7,
+        "narrowText": 0,
+        "tinyText": 10
+      }
+    ],
+    "violations": {
+      "smallTargets": [
+        {
+          "tag": "A",
+          "class": "",
+          "text": "体験用LMS",
+          "width": 81.203125,
+          "height": 36
+        },
+        {
+          "tag": "A",
+          "class": "",
+          "text": "学生",
+          "width": 44,
+          "height": 36
+        },
+        {
+          "tag": "A",
+          "class": "",
+          "text": "面談",
+          "width": 44,
+          "height": 36
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "text": "",
+          "width": 13,
+          "height": 44
+        },
+        {
+          "tag": "A",
+          "class": "",
+          "text": "LMSを開く",
+          "width": 61.828125,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-tab",
+          "text": "締切",
+          "width": 32,
+          "height": 44
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-tab",
+          "text": "準備",
+          "width": 32,
+          "height": 44
+        },
+        {
+          "tag": "SUMMARY",
+          "class": "",
+          "text": "その他の締切",
+          "width": 105,
+          "height": 24
+        },
+        {
+          "tag": "BUTTON",
+          "class": "",
+          "text": "今日へ",
+          "width": 41.734375,
+          "height": 44
+        },
+        {
+          "tag": "SUMMARY",
+          "class": "",
+          "text": "11/20：線形代数：第5回 小テスト、11/21：社会調査法：第4回 調査計画書",
+          "width": 292,
+          "height": 38.375
+        },
+        {
+          "tag": "SUMMARY",
+          "class": "",
+          "text": "課題を手で入れる",
+          "width": 134.390625,
+          "height": 24
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-btn td-btn-secondary ",
+          "text": "入れる",
+          "width": 41.171875,
+          "height": 44
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-btn td-btn-quiet preparation-remove",
+          "text": "第3回レポート（要約と引用） 2026-11-10 2限の準備を外す",
+          "width": 27.3125,
+          "height": 44
+        },
+        {
+          "tag": "BUTTON",
+          "class": "",
+          "text": "閉じる",
+          "width": 40.1875,
+          "height": 44
+        },
+        {
+          "tag": "SUMMARY",
+          "class": "",
+          "text": "LMSの課題ページに書いてあったこと",
+          "width": 209.828125,
+          "height": 19.1875
+        },
+        {
+          "tag": "SUMMARY",
+          "class": "",
+          "text": "この授業の課題を手で入れる",
+          "width": 207.75,
+          "height": 24
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-table-select",
+          "text": "第3回レポート（要約と引用）",
+          "width": 183.640625,
+          "height": 21.75
+        },
+        {
+          "tag": "SUMMARY",
+          "class": "",
+          "text": "ほかの変化",
+          "width": 90.609375,
+          "height": 24
+        },
+        {
+          "tag": "BUTTON",
+          "class": "",
+          "text": "2026-11-11 2限に入れる",
+          "width": 60.75,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "class": "",
+          "text": "2026-11-11 4限に入れる",
+          "width": 60.75,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-btn td-btn-quiet preparation-remove",
+          "text": "第3回レポート（要約と引用） 2026-11-10 2限の準備を外す",
+          "width": 31.59375,
+          "height": 44
+        },
+        {
+          "tag": "BUTTON",
+          "class": "",
+          "text": "2026-11-11 5限に入れる",
+          "width": 60.75,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-btn td-btn-quiet preparation-remove",
+          "text": "第3回レポート（要約と引用） 2026-11-11 2限の準備を外す",
+          "width": 31.59375,
+          "height": 44
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-btn td-btn-quiet ",
+          "text": "後回し",
+          "width": 39.90625,
+          "height": 44
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-btn td-btn-quiet preparation-remove",
+          "text": "第3回レポート（要約と引用） 2026-11-11 2限の準備を外す",
+          "width": 27.3125,
+          "height": 44
+        },
+        {
+          "tag": "BUTTON",
+          "class": "",
+          "text": "2026-11-12 1限に入れる",
+          "width": 60.75,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "class": "td-btn td-btn-quiet preparation-remove",
+          "text": "第3回レポート（要約と引用） 2026-11-11 4限の準備を外す",
+          "width": 31.59375,
+          "height": 44
+        },
+        {
+          "tag": "SUMMARY",
+          "class": "",
+          "text": "11/20：線形代数：第5回 小テスト、11/21：社会調査法：第4回 調査計画書",
+          "width": 262,
+          "height": 38.375
+        }
+      ],
+      "narrowText": [],
+      "tinyText": [
+        {
+          "tag": "SPAN",
+          "class": "",
+          "text": "体験大学 授業支援システム"
+        },
+        {
+          "tag": "SPAN",
+          "class": "rd-lms-user",
+          "text": "ログイン中：体験 学生 さん"
+        },
+        {
+          "tag": "NAV",
+          "class": "demo-breadcrumb",
+          "text": "LMSの現在地"
+        },
+        {
+          "tag": "A",
+          "class": "",
+          "text": "授業一覧"
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "text": "文章表現"
+        },
+        {
+          "tag": "P",
+          "class": "demo-teacher",
+          "text": "森 先生"
+        },
+        {
+          "tag": "P",
+          "class": "",
+          "text": "月曜2限"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-day",
+          "text": "月"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-period",
+          "text": "2"
+        },
+        {
+          "tag": "A",
+          "class": "",
+          "text": "課題一覧へ"
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "text": "生物学実験"
+        },
+        {
+          "tag": "P",
+          "class": "demo-teacher",
+          "text": "草野 先生"
+        },
+        {
+          "tag": "P",
+          "class": "",
+          "text": "木曜4限"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-day",
+          "text": "木"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-period",
+          "text": "4"
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "text": "線形代数"
+        },
+        {
+          "tag": "P",
+          "class": "demo-teacher",
+          "text": "安藤 先生"
+        },
+        {
+          "tag": "P",
+          "class": "",
+          "text": "火曜1限"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-day",
+          "text": "火"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-period",
+          "text": "1"
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "text": "経済学入門"
+        },
+        {
+          "tag": "P",
+          "class": "demo-teacher",
+          "text": "大盛 先生"
+        },
+        {
+          "tag": "P",
+          "class": "",
+          "text": "水曜3限"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-day",
+          "text": "水"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-period",
+          "text": "3"
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "text": "社会調査法"
+        },
+        {
+          "tag": "P",
+          "class": "demo-teacher",
+          "text": "半田 先生"
+        },
+        {
+          "tag": "P",
+          "class": "",
+          "text": "水曜1限"
+        },
+        {
+          "tag": "H2",
+          "class": "",
+          "text": "統計学入門"
+        },
+        {
+          "tag": "P",
+          "class": "demo-teacher",
+          "text": "時田 先生"
+        },
+        {
+          "tag": "P",
+          "class": "",
+          "text": "金曜2限"
+        },
+        {
+          "tag": "SPAN",
+          "class": "demo-day",
+          "text": "金"
+        },
+        {
+          "tag": "FOOTER",
+          "class": "rd-lms-footer",
+          "text": "体験大学 学習ポータル（ToDoku の体験用に作った架空の画面です）"
+        },
+        {
+          "tag": "A",
+          "class": "",
+          "text": "文章表現"
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "text": "第3回レポート（要約と引用）"
+        },
+        {
+          "tag": "TH",
+          "class": "",
+          "text": "時限"
+        },
+        {
+          "tag": "TH",
+          "class": "",
+          "text": "1限"
+        },
+        {
+          "tag": "STRONG",
+          "class": "",
+          "text": "線形代数"
+        },
+        {
+          "tag": "STRONG",
+          "class": "",
+          "text": "社会調査法"
+        },
+        {
+          "tag": "TH",
+          "class": "",
+          "text": "2限"
+        },
+        {
+          "tag": "STRONG",
+          "class": "",
+          "text": "文章表現"
+        },
+        {
+          "tag": "STRONG",
+          "class": "",
+          "text": "統計学入門"
+        },
+        {
+          "tag": "TH",
+          "class": "",
+          "text": "3限"
+        },
+        {
+          "tag": "STRONG",
+          "class": "",
+          "text": "経済学入門"
+        },
+        {
+          "tag": "TH",
+          "class": "",
+          "text": "4限"
+        },
+        {
+          "tag": "STRONG",
+          "class": "",
+          "text": "生物学実験"
+        },
+        {
+          "tag": "TH",
+          "class": "",
+          "text": "5限"
+        },
+        {
+          "tag": "SPAN",
+          "class": "session-deadline",
+          "text": "締切 11/14 17:00"
+        },
+        {
+          "tag": "SMALL",
+          "class": "",
+          "text": "第5回 小テスト"
+        },
+        {
+          "tag": "SMALL",
+          "class": "",
+          "text": "第4回 調査計画書"
+        },
+        {
+          "tag": "SMALL",
+          "class": "",
+          "text": "第3回レポート（要約と引用）"
+        },
+        {
+          "tag": "STRONG",
+          "class": "",
+          "text": "準備 第3回レポート（要約と引用）"
+        }
+      ]
+    },
+    "browserErrors": []
+  },
+  "after": {
+    "measuredAt": "2026-11-10T01:03:50.555Z",
+    "results": [
+      {
+        "screen": "entry",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-lms",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "lms-courses",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "lms-assignments",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "lms-detail",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-auto-off",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-extended",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-read-auto-student",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-read-auto-supporter",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-student",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-supporter",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "mail",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "confirmation-before",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "confirmation-after",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-next",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": {
+          "width": 330,
+          "height": 52,
+          "availableWidth": 330
+        },
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-add-from-next",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-timetable",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-course-detail",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-preparation",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-add-plan",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-calendar",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-settings",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-check",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-consult",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 334,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-plan-form",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 334,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-saved",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 334,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-plan-detail",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-active-preparation",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 298,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-reduced-motion",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 590.796875,
+          "viewportHeight": 844
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-picker",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-check",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-consult",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 334,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-plan-form",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 334,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-saved",
+        "width": 390,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 334,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "entry",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 0
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-lms",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "lms-courses",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "lms-assignments",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "lms-detail",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-auto-off",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-extended",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-read-auto-student",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-read-auto-supporter",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-student",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-supporter",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "mail",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "confirmation-before",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "confirmation-after",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-next",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": {
+          "width": 300,
+          "height": 52,
+          "availableWidth": 300
+        },
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-add-from-next",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-timetable",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-course-detail",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-preparation",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-add-plan",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-calendar",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-settings",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-check",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-consult",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 304,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-plan-form",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 304,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "session-saved",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 304,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-plan-detail",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-active-preparation",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area calendar-scroll",
+            "width": 268,
+            "scrollWidth": 720,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "demo-reduced-motion",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": {
+          "guideAbove": true,
+          "paneHeight": 518,
+          "viewportHeight": 740
+        },
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "student-picker",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-check",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-consult",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 304,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-plan-form",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 304,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      },
+      {
+        "screen": "supporter-saved",
+        "width": 360,
+        "backgrounds": {
+          "body": "rgb(242, 244, 249)",
+          "app": "rgb(242, 244, 249)"
+        },
+        "scrollContainers": [
+          {
+            "class": "td-scroll-area session-timetable-scroll",
+            "width": 304,
+            "scrollWidth": 900,
+            "overflowX": "auto",
+            "insidePage": true
+          }
+        ],
+        "overflow": 0,
+        "header": {
+          "height": 56,
+          "overlap": false,
+          "logoutCount": 1
+        },
+        "nextAction": null,
+        "demo": null,
+        "smallTargets": 0,
+        "narrowText": 0,
+        "tinyText": 0
+      }
+    ],
+    "violations": {
+      "smallTargets": [],
+      "narrowText": [],
+      "tinyText": []
+    },
+    "browserErrors": []
+  }
+}
