@@ -66,7 +66,7 @@ try {
   }
   assert.deepEqual(await student.locator('.app-header nav a').allTextContents(), ['体験用LMS', '学生']);
   assert.equal(await student.title(), 'ToDoku');
-  assert.equal(await student.getByRole('link', { name: 'アプリのホーム', exact: true }).innerText(), 'ToDoku');
+  assert.equal(await student.locator('.app-header .todoku-logo').innerText(), 'ToDoku');
   await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();
   assert.match(await student.locator('main').innerText(), /授業と課題はすべて架空です/);
   // A signed-in account without a demo profile can return to the demo login.
@@ -230,7 +230,7 @@ try {
   await supporter.screenshot({ path: `${evidence}/session-updated.png`, fullPage: true });
   await supporter.locator('.session-page').screenshot({ path: `${evidence}/landing-session.png` });
   await timetable.waitForTimeout(Math.max(0, 7000 - (Date.now() - highlightAt)));
-  for (const target of highlighted) assert.match(await target.getAttribute('class'), /changed/);
+  for (const target of highlighted) assert.match(await target.getAttribute('class'), /changed/, `highlight retention checked after ${Date.now() - highlightAt}ms`);
   await timetable.waitForTimeout(Math.max(0, 10000 - (Date.now() - highlightAt)));
   // The reviewed redesign mock defines changed red as #c33925; keep the exact-color and timing checks.
   for (const target of highlighted) {

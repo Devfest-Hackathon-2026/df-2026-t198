@@ -1,0 +1,7 @@
+RE2 continuation: apply updated 08:10 mock and simplicity instruction.
+Supporters select a student, check changed deadlines and discuss preparation slots.
+Keep existing navigation, roles, labels and authorization. Use existing React and CSS; no dependency, API, server, extension, landing or shared-foundation changes.
+Files: session/page.tsx, planning.tsx, session.css; plans/components.tsx (status attribute only); session browser acceptance and docs/ui-words.md.
+Port identity/freshness, three facts, two cards, deadline date rows, timeline, today, timetable legend and saved-plan cards. All secondary controls read as text links. Keep PlanForm time confirmation and its duplicate-save protection.
+Direct verification for this bounded visual contract: existing unit and browser operations, plus requirement-derived style/viewport assertions. Preserve all existing acceptance assertions. Run prescribed full checks, UTC, session browser, QA, M6 and public demo when local emulator ports are available. Capture 1280/390 synthetic views and inspect against current mock.
+No new completion criteria claimed in PLAN.md. Stop if scope requires API/dependency/authority changes. Private origin PR only, no merge/deploy.
