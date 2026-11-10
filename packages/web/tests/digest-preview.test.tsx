@@ -6,7 +6,11 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { DigestPreview } from '../src/features/digest/preview';
 
 vi.mock('../src/shared/firebase', () => ({ firebase: { db: {} } }));
-vi.mock('firebase/firestore', () => ({ collection: vi.fn(), onSnapshot: () => () => {} }));
+const snapshots = vi.hoisted(() => ({ notify: false }));
+vi.mock('firebase/firestore', () => ({ collection: vi.fn(), onSnapshot: (_: unknown, next: (snapshot: { docs: [] }) => void) => {
+  if (snapshots.notify) next({ docs: [] });
+  return () => {};
+} }));
 const requireCore = createRequire(new URL('../../core/package.json', import.meta.url));
 const { parseHTML } = requireCore('linkedom');
 afterEach(() => vi.unstubAllGlobals());
@@ -29,4 +33,27 @@ it.each([
     expect(host.querySelector('[role="status"]')?.textContent).toBe(message);
     expect(host.textContent).not.toContain('先に「LMSを開く」');
   } finally { await act(async () => root.unmount()); }
+});
+
+it('shows the confirmation on its own and returns to the mail without recording an action', async () => {
+  const { window, document } = parseHTML('<html><body><div id="root"></div></body></html>');
+  window.location = { href: 'https://example.invalid/demo-lms' };
+  vi.stubGlobal('window', window); vi.stubGlobal('document', document);
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  const request = vi.fn<(url: unknown) => Promise<Response>>(async () => new Response(JSON.stringify({ subject: '架空のメール', empty: false,
+    html: '<div lang="ja"><article><a href="https://example.invalid/student/plan?id=12345678-1234-4234-8234-123456789abc&amp;do=done&amp;rev=1">終わった</a></article></div>' })));
+  vi.stubGlobal('fetch', request); snapshots.notify = true;
+  const host = document.getElementById('root')!; const root = createRoot(host);
+  try {
+    await act(async () => root.render(<DigestPreview user={{ uid: 'fictional', getIdToken: async () => 'synthetic' } as User} initiallyOpened />));
+    expect(host.querySelector('.digest-open-mail')).toBeTruthy();
+    await act(async () => host.querySelector('a')!.click());
+    expect(host.querySelector('.plan-confirmation')).toBeTruthy();
+    expect(host.querySelector('.digest-open-mail')).toBeNull();
+    const back = [...host.querySelectorAll('button')].find(button => button.textContent === 'メールの見本に戻る')!;
+    await act(async () => back.click());
+    expect(host.querySelector('.digest-open-mail')).toBeTruthy();
+    expect(host.querySelector('.plan-confirmation')).toBeNull();
+    expect(request.mock.calls.every(call => String(call[0]).endsWith('/digest/demo-preview'))).toBe(true);
+  } finally { snapshots.notify = false; await act(async () => root.unmount()); }
 });

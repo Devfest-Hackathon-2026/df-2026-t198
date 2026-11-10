@@ -1,3 +1,4 @@
+import '../digest/confirmation.css';
 import { NextAction } from '../../shared/ui';
 import { performPlanAction, PlanActionError, type PlanActionResponse } from './api';
 import { planErrorCode, planErrorMessage } from './errors';
@@ -34,8 +35,14 @@ export function NextSubmission({ plan, assignments, courses }: Pick<StudentData,
   const courseName = courses.find(course => course.system === task.key.system && course.courseId === task.latest.courseId)?.name ?? '授業';
   return <section className="next-submission" aria-label="次は提出"><h2>次は提出</h2><h3>{courseName}：{task.latest.title}</h3>
     <p className="submission-deadline">締切 {task.officialDeadline ? formatDeadline(task.officialDeadline.deadline) : 'LMSで確かめてください'}</p>
+    {task.officialDeadline?.deadline.kind === 'datetime' && <p className="rd-days-left">{daysUntil(task.officialDeadline.deadline.dueAt)}</p>}
     <LmsSourceLink item={task} courseName={courseName} label="LMSを開く" />
 </section>;
+}
+function daysUntil(dueAt: string) {
+  const day = (date: number) => Math.floor((date + 9 * 3600_000) / 86400_000);
+  const days = day(Date.parse(dueAt)) - day(Date.now());
+  return days > 0 ? `あと${days}日` : days === 0 ? '今日が締切' : '締切を過ぎています';
 }
 type PlanLinkData = Pick<StudentData, 'assignments' | 'courses' | 'plans'>;
 export function PlanLinkAction({ user, data, link }: { user: User; data: PlanLinkData; link?: string }) {
@@ -67,6 +74,7 @@ function PlanConfirmation({ user, data, id, action, revision }: {
   const task = data.assignments.find(row => row.key.system === plan?.assignment.system && row.key.sourceId === plan?.assignment.sourceId);
   const course = data.courses.find(row => row.system === task?.key.system && row.courseId === task?.latest.courseId);
   const stale = plan && plan.revision !== revision;
+  const recorded = state === 'finished' && (plan?.status === 'done' || plan?.laterResult === 'moved');
   const canConfirm = plan?.status === 'active' && !stale && state === 'idle';
   async function confirm() {
     if (inFlight.current || (!canConfirm && state !== 'retry')) return;
@@ -86,7 +94,9 @@ function PlanConfirmation({ user, data, id, action, revision }: {
       }
     } finally { inFlight.current = false; }
   }
-  return <section className="notice plan-confirmation" aria-label="準備の予定の操作"><h2>準備の記録を確認</h2>
+  return <section className="notice plan-confirmation" aria-label="準備の予定の操作">{recorded && <span className="rd-done-mark" aria-hidden="true">✓</span>}<h2>準備の記録を確認</h2>
+    {recorded && <p className="rd-confirm-title">{plan?.status === 'done' ? '準備が終わりました' : '準備の予定を後回しにしました'}</p>}
+    {canConfirm && <p className="rd-confirm-explanation">{action === 'done' ? 'この準備を「終わった」と記録します。LMSへの提出は別に行ってください。' : 'この準備を、締切より前の次の空いたコマに動かします。空いたコマがないときは変更しません。'}</p>}
     {plan ? <>{!canConfirm && <><h3>{course ? `${course.name}：` : ''}{task?.latest.title ?? plan.title}</h3>
       <p>準備の日時：{plan.date.replaceAll('-', '/')} {plan.startsAt.slice(11, 16)}〜{plan.endsAt.slice(11, 16)}（日本時間）</p></>}
       <p role={message ? undefined : 'status'}>{state === 'idle' && (plan.status !== 'active' || stale) ? currentPlanMessage(plan) : `今の状態：${plan.status === 'cancelled' ? '予定を外した' : planProgress(plan) || 'まだ'}`}</p>

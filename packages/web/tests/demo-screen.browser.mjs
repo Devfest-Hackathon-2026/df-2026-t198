@@ -76,4 +76,13 @@ try {
     'automatic off: no switch, manual guides work', 'reduced motion: no switch or animation, manual guides work',
     'parallel toggle works at 1280, hidden at 390, no horizontal overflow',
   ], browserErrors: errors }, null, 2));
+} catch (error) {
+  await page.screenshot({ path: `${evidence}/screen-failure.png`, fullPage: true });
+  await writeFile(`${evidence}/screen-failure.json`, JSON.stringify(await page.evaluate(() => ({
+    reduced: globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    checkbox: [...globalThis.document.querySelectorAll('input[type="checkbox"]')].map(input => ({ checked: input.checked, disabled: input.disabled })),
+    controls: globalThis.document.querySelector('.demo-screen-controls')?.textContent,
+    current: globalThis.document.querySelector('.demo-steps [aria-current]')?.textContent,
+  })), null, 2));
+  throw error;
 } finally { await browser.close(); }

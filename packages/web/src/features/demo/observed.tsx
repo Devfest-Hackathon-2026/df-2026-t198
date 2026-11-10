@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { Deadline } from '@kadai-hisho/core';
 import type { User } from 'firebase/auth';
 import { firebase } from '../../shared/firebase';
 import { formatDeadline, formatMoment } from '../../shared/assignments/deadline-format';
@@ -31,5 +32,13 @@ export function DemoObserved({ state, role }: { state: SessionState; role: 'stud
   return <><p className="demo-observed-label">課題と締切</p>{rows.map(row => <DemoTask key={row.key.sourceId}
       identity={{ system: row.key.system, courseId: row.latest.courseId }}
       course={data.courses.find(course => course.system === row.key.system && course.courseId === row.latest.courseId)?.name ?? '授業'}
-      title={row.latest.title} due={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確かめてください'} />)}</>;
+      stamp={deadlineStamp(row.officialDeadline?.deadline)} title={row.latest.title} due={row.officialDeadline ? formatDeadline(row.officialDeadline.deadline) : '締切を確かめてください'} />)}</>;
+}
+
+function deadlineStamp(deadline?: Deadline) {
+  if (deadline?.kind !== 'datetime' && deadline?.kind !== 'date') return undefined;
+  const at = deadline.kind === 'datetime' ? new Date(deadline.dueAt) : new Date(`${deadline.date}T12:00:00+09:00`);
+  const timeZone = deadline.kind === 'datetime' ? deadline.timeZone : 'Asia/Tokyo';
+  return { day: new Intl.DateTimeFormat('ja-JP', { timeZone, day: 'numeric' }).format(at).replace('日', ''),
+    weekday: new Intl.DateTimeFormat('ja-JP', { timeZone, weekday: 'short' }).format(at) };
 }
