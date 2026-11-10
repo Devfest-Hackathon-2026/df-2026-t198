@@ -18,11 +18,11 @@
 
 | 案 | 先生 | 学生 | 支援担当 | 素材一覧 |
 |---|---|---|---|---|
-| A | 深緑 | 学生アプリと同じ青 `#2456B0` | 黄土色 | [assets-a.png](assets/assets-a.png) |
+| A | 深緑 | 学生アプリと同じ青 `#2456B0` | 黄土色 | 画像はrepoに含めていない |
 | B | 墨色 | 濃紺 | 紫 | [assets-b.png](assets/assets-b.png) |
-| C | 緑 | 青緑 | 茶色 | [assets-c.png](assets/assets-c.png) |
+| C | 緑 | 青緑 | 茶色 | 画像はrepoに含めていない |
 
-[3案の比較](assets/palettes.png)、[画面の中身](assets/screens.png)、[ロゴ](assets/eyecatch.png)、[選択する操作欄](assets/page-controls.png)。場面は [研究室](assets/scene-office.png)、[夜の学生の部屋](assets/scene-bedroom.png)、[相談室](assets/scene-consultation.png)、[面談](assets/scene-meeting.png)、[翌朝](assets/scene-morning.png)。全12枚、各1280×720。開発版とビルド済みの画面で撮った12枚は、すべてSHA-256が一致した。
+3案の比較画像はrepoに含めていない。[画面の中身](assets/screens.png)、[ロゴ](assets/eyecatch.png)、[選択する操作欄](assets/page-controls.png)。場面は [研究室](assets/scene-office.png)、[夜の学生の部屋](assets/scene-bedroom.png)、[相談室](assets/scene-consultation.png)、[面談](assets/scene-meeting.png)、[翌朝](assets/scene-morning.png)。撮影時は全12枚、各1280×720。repoには上記の9枚を含めている。開発版とビルド済みの画面で撮った12枚は、すべてSHA-256が一致した。
 
 ## 検証
 
