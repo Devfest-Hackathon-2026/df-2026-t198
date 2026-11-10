@@ -10,7 +10,7 @@ import { readFile, mkdtemp, writeFile, stat } from 'node:fs/promises';
 // Live verification changes only the third demo pair. Local verification needs no account file.
 const local = process.argv[2] === '--verify-local-readme';
 assert.deepEqual(process.argv.slice(2), [local ? '--verify-local-readme' : '--verify-live-readme']);
-const origin = local ? process.env.KADAI_WEB_ORIGIN : 'https://project-00439085-4e2d-44c3-9a8.web.app';
+const origin = local ? process.env.KADAI_WEB_ORIGIN : 'https://todoku.me';
 const evidence = pathToFileURL(`${await mkdtemp(join(tmpdir(), 'kadai-i123-'))}/`);
 let pair;
 if (local) {
