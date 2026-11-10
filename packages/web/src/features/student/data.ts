@@ -18,14 +18,15 @@ export function watchAccount(auth: Auth, db: Firestore, next: (state: StudentSta
     stopStudent = () => { current = false; stops.forEach(stop => stop()); };
     const values: Partial<StudentData> = {};
     const cached = new Map<string, boolean>();
-    for (const name of ['courses', 'assignments', 'fetchStates', 'plans', 'manualAssignments'] as const) {
+    for (const name of ['courses', 'assignments', 'fetchStates', 'plans', 'manualAssignments', 'changes'] as const) {
       stops.push(onSnapshot(collection(db, 'students', user.uid, name), { includeMetadataChanges: true }, snapshot => {
         if (!current) return;
         Object.assign(values, { [name]: snapshot.docs.map(doc => doc.data()) });
         cached.set(name, snapshot.metadata.fromCache);
-        if (values.courses && values.assignments && values.fetchStates && values.plans && values.manualAssignments) {
+        if (values.courses && values.assignments && values.fetchStates && values.plans && values.manualAssignments && values.changes) {
           next({ status: 'ready', courses: values.courses, assignments: values.assignments,
-            fetchStates: values.fetchStates, plans: values.plans, manualAssignments: values.manualAssignments, online: [...cached.values()].every(value => !value) });
+            fetchStates: values.fetchStates, plans: values.plans, manualAssignments: values.manualAssignments, changes: values.changes,
+            online: [...cached.values()].every(value => !value) });
         }
       }, () => {
         if (!current) return;

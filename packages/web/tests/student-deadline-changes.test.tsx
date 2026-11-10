@@ -68,6 +68,21 @@ it('初回表示・新規追加・題名だけの変更では札を出さない'
   data.assignments[0]!.latest.title = '架空の改題'; await render();
   expect(host.textContent).toContain('架空の改題'); expect(chips()).toHaveLength(0);
 });
+it('保存済みの締切変更は8秒後と開き直しにも残り、対象外になると消える', async () => {
+  const row = data.assignments[0]!;
+  data.changes = [{ changeId: 'fictional-change', assignmentKey: row.key, kind: 'deadline-changed',
+    before: dated('2026-11-10'), after: dated('2026-11-11'), observationId: 'fictional-observation',
+    recordedAt: '2026-11-10T02:00:00Z' }];
+  await render();
+  expect(host.querySelector('.recent-deadline-changes')?.textContent).toContain('変更前');
+  await tick(9000);
+  data.online = false; await render();
+  expect(host.querySelector('.recent-deadline-changes')).not.toBeNull();
+  await act(async () => root.unmount()); root = createRoot(host); await render();
+  expect(host.querySelector('.recent-deadline-changes a')?.getAttribute('href')).toBe('https://example.invalid/task');
+  row.submission = 'submitted'; await render();
+  expect(host.querySelector('.recent-deadline-changes')).toBeNull();
+});
 it('締切変更で先頭の課題が入れ替わっても、その課題自身の変更前の日付を出す', async () => {
   const other = assignment('架空の別の課題', dated('2026-11-14'));
   data.assignments.push(other); await render();

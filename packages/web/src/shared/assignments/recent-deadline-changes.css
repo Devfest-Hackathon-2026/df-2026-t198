@@ -1,0 +1,7 @@
+.recent-deadline-changes { margin: 1rem 0; padding: 1rem; border: 2px solid var(--red); border-radius: 12px; background: var(--changed-surface); overflow-wrap: anywhere; }
+.recent-deadline-changes h2 { margin: 0 0 .5rem; }
+.recent-deadline-changes ul { list-style: none; padding: 0; margin: .5rem 0 0; }
+.recent-deadline-changes li + li { border-top: 1px solid var(--red); margin-top: .75rem; padding-top: .75rem; }
+.recent-deadline-changes li p { margin: .25rem 0; }
+.recent-deadline-changes a { display: inline-flex; align-items: center; min-height: 44px; }
+.recent-deadline-changes summary { min-height: 44px; padding: .75rem 0; cursor: pointer; }

@@ -17,6 +17,7 @@ import { PlanCell, PlanControls, PlanForm, PlanList, PlanSummary } from '../plan
 import { planActions, type PlanActions } from '../plans/api';
 import { DemoCalendar } from '../calendar/calendar';
 import { ChangedDeadline, useDeadlineChanges } from '../../shared/assignments/deadline-change';
+import { RecentDeadlineChanges } from '../../shared/assignments/recent-deadline-changes';
 import { DemoLogin } from '../../shared/auth/demo-login';
 import { OperationMessages, useOperationMessage } from '../../shared/ui/operation-messages';
 import { firebase } from '../../shared/firebase';
@@ -208,6 +209,7 @@ function StudentContent({ data, now = Date.now(), calendar = false, actions, man
           '課題をすべて確認できていません。LMSを開いて確かめてください。'}</p>} /> : null;
     })}
     {!data.assignments.length && !hasManual && <p className="empty">まだ課題がありません。LMSを開くと、ここに課題が並びます。</p>}
+    <RecentDeadlineChanges changes={data.changes} assignments={data.assignments} courses={data.courses} now={now} />
     <div className="student-mobile-tabs"><Tabs label="学生の画面" value={tab} onChange={setTab}
       items={[{ value: 'deadlines', label: '締切' }, { value: 'timetable', label: '時間割' }, { value: 'preparation', label: '準備' }]} /></div>
     <div className="student-overview td-stage" style={{ animationDelay: '100ms' }} data-tab={tab}>

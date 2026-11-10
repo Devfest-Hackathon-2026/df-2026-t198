@@ -31,27 +31,31 @@ describe('本人の台帳の購読', () => {
     const stop = watchAccount({} as Auth, {} as Firestore, state => states.push(state));
     mock.account({ uid: 'student-a' } as User);
     expect(mock.listeners.map(l => l.path)).toEqual([
-      'students/student-a/courses', 'students/student-a/assignments', 'students/student-a/fetchStates', 'students/student-a/plans', 'students/student-a/manualAssignments',
+      'students/student-a/courses', 'students/student-a/assignments', 'students/student-a/fetchStates', 'students/student-a/plans', 'students/student-a/manualAssignments', 'students/student-a/changes',
     ]);
-    const [courses, assignments, fetches, plans, manual] = mock.listeners;
+    const [courses, assignments, fetches, plans, manual, changes] = mock.listeners;
     courses!.next(snapshot([{ name: '架空の授業' }]));
     assignments!.next(snapshot([]));
     expect(states.at(-1)?.status).toBe('loading');
     plans!.next(snapshot([]));
     manual!.next(snapshot([]));
     fetches!.next(snapshot([], true));
+    expect(states.at(-1)?.status).toBe('loading');
+    changes!.next(snapshot([{ changeId: 'fictional-change' }]));
+    expect(states.at(-1)).toMatchObject({ changes: [{ changeId: 'fictional-change' }] });
     expect(states.at(-1)).toMatchObject({ status: 'ready', online: false, courses: [{ name: '架空の授業' }] });
     fetches!.next(snapshot([]));
     expect(states.at(-1)).toMatchObject({ status: 'ready', online: true });
     mock.account({ uid: 'student-b' } as User);
     expect(states.at(-1)).toEqual({ status: 'loading' });
-    expect(mock.listeners.slice(0, 5).every(l => l.stop.mock.calls.length === 1)).toBe(true);
+    expect(mock.listeners.slice(0, 6).every(l => l.stop.mock.calls.length === 1)).toBe(true);
     const count = states.length;
     courses!.next(snapshot([{ name: '前の学生の授業' }]));
+    changes!.next(snapshot([{ changeId: 'previous-account' }]));
     expect(states).toHaveLength(count);
-    mock.listeners[5]!.error();
+    mock.listeners[11]!.error();
     expect(states.at(-1)).toEqual({ status: 'error' });
-    expect(mock.listeners.slice(5).every(l => l.stop.mock.calls.length === 1)).toBe(true);
+    expect(mock.listeners.slice(6).every(l => l.stop.mock.calls.length === 1)).toBe(true);
     mock.account(null);
     expect(states.at(-1)).toEqual({ status: 'signed-out' });
     stop();

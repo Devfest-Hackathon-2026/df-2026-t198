@@ -22,6 +22,7 @@ import { SessionPlanning } from './planning';
 import { StudentList } from './student-list';
 import './session.css';
 import { ChangedDeadline } from '../../shared/assignments/deadline-change';
+import { RecentDeadlineChanges } from '../../shared/assignments/recent-deadline-changes';
 import { missingDeadlineText } from '../../shared/assignments/review-reason';
 import { DemoLogin } from '../../shared/auth/demo-login';
 import { OperationMessages } from '../../shared/ui/operation-messages';
@@ -190,6 +191,7 @@ function SessionContent({ data, now, own, save, uid, planning, actions, manualAc
     </div>
     {planning ? <SessionPlanning data={data} now={now} actions={actions} own={own} viewerUid={viewerUid}
       selectedAssignment={selectedAssignment} onSelectAssignment={setSelectedAssignment} /> : <>
+      <RecentDeadlineChanges changes={data.changes} assignments={data.assignments} courses={data.courses} now={now.getTime()} />
       <div className="session-check td-stage" style={{ animationDelay: '200ms' }}>
         <div className="session-primary"><section aria-labelledby="session-deadlines"><h2 id="session-deadlines">次の面談までの締切 <span className="session-count" aria-hidden="true">{deadlines.length}件</span></h2>
           {!data.context.nextSessionAt && <a href="#session-dates-editor">次の面談日時を決める</a>}
