@@ -1,0 +1,28 @@
+{
+  "status": "pass",
+  "artifact_run_id": "218ad960075b40b88c88542bbec0d95f",
+  "snapshot_sha256": "a38744d213171ff4bc67c4842d7be7b3992c84ced9f8993841021eecbe1ce5ff",
+  "receipt_sha256": "5176e0320bee43e92e865d728cb65eed8d59209b4c3c5b9a128a51fad27ac955",
+  "review": "Codex self-inspection; independent integration review pending",
+  "checks": {
+    "typecheck": "pass",
+    "lint": "pass",
+    "unit_passed": 1452,
+    "unit_skipped": 154,
+    "build": "pass",
+    "progress": "37/43; required 33/39",
+    "utc_web_passed": 279,
+    "utc_web_skipped": 7,
+    "m6_passed": 8,
+    "m6_total": 8,
+    "judge_qa_passed": 28,
+    "judge_qa_total": 28,
+    "public_demo": "pass",
+    "digest_operations": 18,
+    "layout_checks": 6
+  },
+  "viewport_widths": [
+    1280,
+    390
+  ]
+}

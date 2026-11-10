@@ -1,0 +1,43 @@
+/* Preserve the reader's course/task/detail nodes; grid supplies the ruled tables. */
+.demo-pages.lms-skin { font: 13px/1.6 "Hiragino Kaku Gothic ProN", "Meiryo", "MS PGothic", sans-serif; background: var(--sheet); color: var(--ink); min-height: 100%; font-feature-settings: normal; }
+.demo-pages.lms-skin .demo-campus { background: var(--navy, var(--accent)); color: var(--on-ink); display: flex; align-items: center; gap: 12px; padding: 8px 14px; font-size: 16px; line-height: 1.2; }
+.demo-campus > div > span { display: block; font-size: 10px; font-weight: 400; margin-top: 2px; }
+.demo-campus .rd-lms-crest { display: grid; place-items: center; width: 30px; height: 30px; border: 2px solid currentColor; border-radius: 50%; font-size: 13px; margin: 0; flex: none; }
+.demo-campus .rd-lms-user { margin-left: auto; font-size: 12px; font-weight: 400; }
+.rd-lms-year { display: flex; flex-wrap: wrap; background: linear-gradient(var(--sheet), var(--accent-soft)); border-bottom: 1px solid var(--line-strong); font-size: 12px; }
+.rd-lms-year > span { padding: 6px 14px; border-right: 1px solid var(--line-strong); }
+.rd-lms-year > span:first-child { background: var(--sheet); font-weight: 700; }
+.rd-lms-year > span:last-child { margin-left: auto; background: var(--marker-soft); color: var(--ink-on-marker); border: 0; }
+.demo-pages.lms-skin .demo-lms-layout { grid-template-columns: 190px minmax(0, 1fr); min-height: 460px; }
+.demo-pages.lms-skin .demo-course-nav { padding: 10px; border-color: var(--line-strong); }
+.rd-lms-nav-title { font-size: 12px; font-weight: 700; background: var(--navy, var(--accent)); color: var(--on-ink); padding: 4px 8px; margin-bottom: 6px; }
+.demo-pages.lms-skin .demo-course-nav a { position: relative; padding: 5px 8px 5px 18px; border-bottom: 1px dotted var(--line-strong); text-decoration: none; }
+.demo-pages.lms-skin .demo-course-nav a::before { content: "▸"; position: absolute; left: 6px; color: var(--ink-muted); }
+.demo-pages.lms-skin .demo-course-nav a[aria-current] { background: var(--sheet); color: var(--ink); box-shadow: inset 3px 0 0 var(--navy, var(--accent)); }
+.demo-pages.lms-skin .demo-lms-content { padding: 12px 16px 24px; }
+.demo-pages.lms-skin .demo-breadcrumb { font-size: 11px; margin-bottom: 10px; }
+.demo-pages.lms-skin [data-demo-page] > h1, .demo-pages.lms-skin [data-demo-page] > h2, .demo-pages.lms-skin .demo-announcements > h2 { font-size: 15px; margin: 0 0 10px; padding: 6px 10px; border-left: 5px solid var(--navy, var(--accent)); background: var(--accent-soft); }
+.rd-lms-columns, .demo-pages.lms-skin .demo-course { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr); padding: 0; border: 0; border-left: 1px solid var(--line-strong); }
+.rd-lms-columns > span, .demo-pages.lms-skin .demo-course > * { padding: 6px 10px; margin: 0; border-right: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); font-size: 12px; overflow-wrap: anywhere; }
+.rd-lms-columns, .rd-lms-task-columns { background: var(--accent-soft); font-weight: 700; border-top: 1px solid var(--line-strong); }
+.demo-pages.lms-skin .demo-course > h2 { font-size: 13px; margin: 0; padding: 6px 10px; font-weight: 400; }
+.demo-pages.lms-skin .demo-course:nth-child(even) { background: var(--paper); }
+.demo-pages.lms-skin [data-demo-page='materials'] > ul { list-style: none; margin: 0; padding: 0; }
+.rd-lms-task-columns, .demo-pages.lms-skin .demo-task { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); border-left: 1px solid var(--line-strong); padding: 0; }
+.rd-lms-task-columns > span, .demo-pages.lms-skin .demo-task > a, .demo-pages.lms-skin .demo-task > .demo-status { margin: 0; padding: 6px 10px; border-right: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); }
+.demo-pages.lms-skin [data-demo-page='detail'] dl { display: grid; grid-template-columns: 130px minmax(0, 1fr); border-top: 1px solid var(--line-strong); border-left: 1px solid var(--line-strong); margin: 0; }
+.demo-pages.lms-skin [data-demo-page='detail'] dt, .demo-pages.lms-skin [data-demo-page='detail'] dd { padding: 6px 10px; margin: 0; border-right: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); }
+.demo-pages.lms-skin [data-demo-page='detail'] dt { background: var(--accent-soft); color: var(--ink); font-weight: 700; }
+.demo-pages.lms-skin [data-demo-page='detail'] .demo-status { margin: 0; }
+.demo-pages.lms-skin .rd-lms-notice { border: 1px solid var(--yellow-band, var(--line-strong)); background: var(--marker-soft); padding: 8px 10px; margin: 0 0 12px; font-size: 12px; }
+.rd-lms-old-due { text-decoration: line-through; color: var(--ink-muted); display: block; }
+.rd-lms-footer { border-top: 1px solid var(--line-strong); padding: 8px 14px; font-size: 11px; color: var(--ink-muted); text-align: center; background: var(--paper); }
+@media (max-width: 860px) {
+  .demo-pages.lms-skin .demo-lms-layout { grid-template-columns: minmax(0, 1fr); }
+  .demo-pages.lms-skin .demo-course-nav { border-right: 0; border-bottom: 1px solid var(--line-strong); display: flex; flex-wrap: wrap; gap: 4px; }
+  .rd-lms-nav-title { flex-basis: 100%; }
+  .demo-campus .rd-lms-user { font-size: 10px; max-width: 100px; }
+  .demo-pages.lms-skin .demo-lms-content { padding: 12px 10px 24px; }
+  .rd-lms-columns > span, .demo-pages.lms-skin .demo-course > *, .demo-pages.lms-skin .demo-course > h2 { padding: 6px 4px; font-size: 11px; }
+  .demo-pages.lms-skin [data-demo-page='detail'] dl { grid-template-columns: 80px minmax(0, 1fr); }
+}

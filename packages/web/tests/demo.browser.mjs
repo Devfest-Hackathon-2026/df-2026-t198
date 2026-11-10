@@ -68,7 +68,7 @@ try {
   assert.equal(await student.title(), 'ToDoku');
   assert.equal(await student.locator('.app-header .todoku-logo').innerText(), 'ToDoku');
   await student.getByRole('heading', { name: 'ToDokuを試す', exact: true }).waitFor();
-  assert.match(await student.locator('main').innerText(), /ここで扱う授業と課題は架空のものです/);
+  assert.match(await student.locator('main').innerText(), /授業と課題はすべて架空です/);
   // A signed-in account without a demo profile can return to the demo login.
   await getAuth(app).createUser({ uid: 'non-demo-student', email: 'trial-ordinary@example.invalid',
     password: process.env.KADAI_DEMO_PASSWORD });
@@ -174,6 +174,7 @@ try {
   // Observe all highlights immediately after the first applied response (before replay).
   const highlighted = [timetable.locator('.course-cell').filter({ hasText: '文章表現' }),
     eventCard, timetable.locator('.course-panel .assignment').filter({ hasText: '第3回レポート（要約と引用）' }).locator('.deadline'), deadlines.locator('.deadline')];
+  // The reviewed redesign mock defines changed red as #c33925; keep the exact-color and timing checks.
   for (const target of highlighted) {
     await target.locator('xpath=self::*[contains(@class,"changed")]').waitFor({ timeout: Math.max(1, 2000 - (Date.now() - openedAt)) });
     assert.equal(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(195, 57, 37)');
@@ -231,6 +232,7 @@ try {
   await timetable.waitForTimeout(Math.max(0, 7000 - (Date.now() - highlightAt)));
   for (const target of highlighted) assert.match(await target.getAttribute('class'), /changed/, `highlight retention checked after ${Date.now() - highlightAt}ms`);
   await timetable.waitForTimeout(Math.max(0, 10000 - (Date.now() - highlightAt)));
+  // The reviewed redesign mock defines changed red as #c33925; keep the exact-color and timing checks.
   for (const target of highlighted) {
     assert.doesNotMatch(await target.getAttribute('class'), /changed/);
     assert.notEqual(await target.evaluate(node => globalThis.getComputedStyle(node).color), 'rgb(195, 57, 37)');

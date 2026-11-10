@@ -50,6 +50,8 @@ async function screenshot(page, name) {
 }
 const confirmation = page => page.getByRole('region', { name: '準備の予定の操作', exact: true });
 async function prepareSample() {
+  const back = preview.getByRole('button', { name: 'メールの見本に戻る', exact: true });
+  if (await back.isVisible()) await back.click();
   await preview.getByRole('button', { name: '今日の準備の見本を用意する', exact: true }).click();
   await preview.getByRole('status').filter({ hasText: '見本の準備：' }).waitFor();
   if (await preview.locator('.digest-envelope').count()) await preview.locator('.digest-envelope').click();

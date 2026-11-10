@@ -9,26 +9,18 @@ import { useCourseColors } from '../../shared/course-color-context';
 
 const roles = { lms: 'LMS', student: '学生', supporter: '支援担当' } as const;
 type Pane = keyof typeof roles;
-export function DemoTriptych({ lms, student, supporter, waiting = false, screen }: {
-  lms: ReactNode; student: ReactNode; supporter: ReactNode; waiting?: boolean; screen?: DemoScreen;
+export function DemoTriptych({ lms, student, supporter, waiting = false, changed = false, screen }: {
+  lms: ReactNode; student: ReactNode; supporter: ReactNode; waiting?: boolean; changed?: boolean; screen?: DemoScreen;
 }) {
   const id = useId();
   const [localSelected, setSelected] = useState<Pane>('lms');
   const selected = screen?.selected ?? localSelected;
   return <div className={`demo-triptych ${screen ? 'demo-screen-flow' : ''}`} data-parallel={screen?.parallel ?? undefined}>
-    {screen && <div className="demo-screen-controls">
-      <label><input type="checkbox" checked={screen.automatic && !screen.reduced} disabled={screen.reduced} onChange={screen.toggleAutomatic} />自動で切り替える</label>
-      <Button className="demo-parallel-toggle" variant="quiet" aria-pressed={screen.parallel} onClick={screen.toggleParallel}>{screen.parallel ? '1画面ずつ見る' : '3つ並べて見る'}</Button>
-      <p role="status">{screen.caption}</p>
-      {(!screen.automatic || screen.reduced) && <div className="demo-manual-links">
-        <Button variant="quiet" onClick={() => screen.select('student')}>学生の画面を見る</Button>
-        <Button variant="quiet" onClick={() => screen.select('supporter')}>支援担当の画面を見る</Button>
-      </div>}
-    </div>}
     <nav className="demo-pane-switch" aria-label="体験の画面">
       {(Object.keys(roles) as Pane[]).map(role => <Button key={role} variant="quiet" aria-pressed={selected === role}
-        aria-controls={`${id}-${role}`} onClick={() => screen ? screen.select(role) : setSelected(role)}>{roles[role]}</Button>)}
+        aria-label={roles[role]} aria-controls={`${id}-${role}`} onClick={() => screen ? screen.select(role) : setSelected(role)}>{screen ? <><span className="rd-demo-role" data-role={role} aria-hidden="true">{{ lms: '先', student: '学', supporter: '支' }[role]}</span><span className="rd-demo-role-label"><b>{{ lms: '体験用LMS', student: '学生の画面', supporter: '支援担当の画面' }[role]}</b><small>{role === 'lms' ? '大学の授業支援システム' : 'ToDoku'}</small></span>{role !== 'lms' && (waiting || changed) && <span className="rd-demo-dot" data-changed={changed && !waiting} title={waiting ? 'まだ前のまま' : '締切が変わった'} />}</> : roles[role]}</Button>)}
     </nav>
+    {screen && <p className="rd-demo-caption" role="status">{screen.caption}</p>}
     {(Object.keys(roles) as Pane[]).map((role, index) => <section key={role} id={`${id}-${role}`} data-demo-pane={role}
       data-selected={selected === role} className={`demo-pane ${role === 'lms' ? 'lms-skin' : 'app'}`} aria-label={`${roles[role]}の画面`}>
       <header className="demo-pane-heading"><span aria-hidden="true">0{index + 1}</span><h2>{roles[role]}</h2>
@@ -38,9 +30,9 @@ export function DemoTriptych({ lms, student, supporter, waiting = false, screen 
   </div>;
 }
 
-export function DemoTask({ course, identity, title, due }: { course: string; identity?: CourseIdentity; title: string; due: string }) {
+export function DemoTask({ course, identity, title, due, stamp }: { course: string; identity?: CourseIdentity; title: string; due: string; stamp?: { day: string; weekday: string } | undefined }) {
   const courseColor = useCourseColors();
-  return <article className="demo-observed-task" data-course-color={courseColor(identity)}><p className="eyebrow course-label">{course}</p><h3>{title}</h3>
+  return <article className="demo-observed-task" data-course-color={courseColor(identity)}>{stamp && <span className="rd-demo-task-day" aria-hidden="true"><b>{stamp.day}</b><small>{stamp.weekday}</small></span>}<p className="eyebrow course-label">{course}</p><h3>{title}</h3>
     <ChangedDeadline value={due} /></article>;
 }
 
