@@ -360,4 +360,4 @@ Issue #47の本文・コメントと設計案5・7節の承認範囲で実装。
 - Cloud Runの環境変数 `BACKGROUND_COLLECTION=paused` のときpaused、それ以外（未設定を含む）はenabled。操作は [deploy.md](deploy.md#ynuの裏の取得を止めるissue-267) を参照。
 - 拡張はYNUの取得を始める前に、Cookie・認証ヘッダーなしで毎回読み、明示のenabledだけを認める。paused・HTTPエラー・通信失敗（15秒の期限を含む）・JSONの形の不一致は取得しない。ページ側への切替も行わない。拡張の既存の `collection-unavailable` 表示で知らせる。
 - 6時間の成功待機は `chrome.storage.local` の `ynuFetchCompletedAt:<uid>` に数値の完了時刻だけを保存する。別のuidの記録は使わず、元のuidに戻ったときも期限を守る。SID・Cookie・トークンはこの記録に含めない。SIDと中断時のチェックポイントは従来どおり `storage.session` に置く。
-- 適用範囲は新しい拡張でこれから始めるYNUの取得。実行中の取得と旧版の拡張は止められない。KULMSの取得と体験用LMSにはつながない（D44）。
+- 適用範囲は対応版の拡張でこれから始めるYNU・KULMS・KULASISの取得。開始済みの取得と停止設定に未対応の旧版の拡張は止められず、体験用LMSも対象外（D44・D45）。KULMS・KULASISも同じAPIと共通の読み取り関数を使い、明示のenabledだけで新規取得を始める。
