@@ -60,6 +60,8 @@ gcloud run services update kadai-hisho-api \
 
 ## Hosting
 
+2026-11-10、同じHostingサイトにカスタムドメイン `todoku.me` を追加した。既存の web.app の配備先も引き続き使う。DNSはCloud DNSのゾーン `todoku-me` で管理し、Firebase Authenticationのログインの許可ドメインにも `todoku.me` を追加済み。拡張の接続先と以下の配備コマンドは変更しない。費用と19:00以降の設定凍結は [D49](decisions.md#d49-独自ドメイン-todokume-を追加の入口にする2026-11-10) を参照。
+
 Cloud Runのデプロイが成功してから、ビルド済みのWeb画面を出す。`.firebaserc` の既定値はエミュレーター用なので、対象プロジェクトを毎回明記する。
 
 ```sh

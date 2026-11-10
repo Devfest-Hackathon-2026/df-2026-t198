@@ -69,7 +69,7 @@ PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs pnpm metrics:m6
 
 ## 手で試す
 
-公開先では[体験用LMS](https://project-00439085-4e2d-44c3-9a8.web.app/demo-lms)の「学生として試す」、または説明資料で案内する個別の組を使う。手元では上の手順で用意した学生でログインする。
+公開先では[体験用LMS](https://todoku.me/demo-lms)の「学生として試す」、または説明資料で案内する個別の組を使う。手元では上の手順で用意した学生でログインする。
 
 1. 「体験を最初からやり直す」を押し、確認で初期化する。同じ組をほかの人が使っている場合、その人の体験も戻る。
 2. 「LMSを開く」を押す。LMSの読み取り後、約0.8秒で学生の画面に切り替わる。上のタブでLMS・学生・支援担当を選べる。
@@ -108,7 +108,7 @@ node packages/server/scripts/seed-demo-live.mjs --project project-00439085-4e2d-
 PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs node packages/web/tests/demo-live.browser.mjs --verify-live-demo
 ```
 
-公開先は [体験画面](https://project-00439085-4e2d-44c3-9a8.web.app/demo-lms)。認証情報は上のローカルファイルから各組へ別途渡し、repo・Issue・PRに載せない。学生と支援担当は別のブラウザ文脈で開く。3組は作成済みなのでseedを再実行せず、上の公開先試験で確認する。公開先の結果と残件は [Issue #59の再開後の記録](records/2026-11-06-issue-59-resumed.md)、権限不足で停止した時点の経緯は [初回の記録](records/2026-11-06-issue-59.md) を参照する。
+公開先は [体験画面](https://todoku.me/demo-lms)。認証情報は上のローカルファイルから各組へ別途渡し、repo・Issue・PRに載せない。学生と支援担当は別のブラウザ文脈で開く。3組は作成済みなのでseedを再実行せず、上の公開先試験で確認する。公開先の結果と残件は [Issue #59の再開後の記録](records/2026-11-06-issue-59-resumed.md)、権限不足で停止した時点の経緯は [初回の記録](records/2026-11-06-issue-59.md) を参照する。
 
 アカウントとデータの対応は [data-shapes.mdの体験用データ](data-shapes.md#体験用データissue-19)。実環境では `demoAccounts/{uid}`、学生の `demo/current`、共有許可、面談日時を同じ組のUIDで用意する。パスワードをrepo・Issue・PRに書かない。ログイン後の支援担当は `/demo-lms` から `/session` に進めば同じ認証状態を使う。体験UIDから実カレンダーAPIへの接続・同期の操作はサーバー側でも拒否する。
 
