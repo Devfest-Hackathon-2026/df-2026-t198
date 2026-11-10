@@ -121,6 +121,59 @@ describe.skipIf(process.env['RUN_SHARING_EMULATOR_TESTS'] !== '1')('student-cont
       expect((await ref.get()).data()).toEqual(data);
     }
   });
+  it('lists multiple students for the authenticated supporter and removes only the revoked grant', async () => {
+    await grantRef(other.uid).set(grant);
+    const rows = async () => (await (await request(supporter, 'supporter/students', 'GET')).json()).students;
+    try {
+      expect(await rows()).toEqual([{ uid: other.uid }, { uid: student.uid }]);
+      expect((await change(other)).status).toBe(200);
+      expect(await rows()).toEqual([{ uid: student.uid }]);
+      // A query cannot switch the authenticated supporter's identity.
+      expect((await (await request(other, `supporter/students?supporterUid=${supporter.uid}`, 'GET')).json()).students).toEqual([]);
+      await expect(getDocsFromServer(collection(db, 'students', other.uid, 'assignments'))).rejects.toMatchObject({ code: 'permission-denied' });
+      expect((await getDocFromServer(doc(db, 'students', student.uid, 'courses/sample'))).exists()).toBe(true);
+    } finally { await grantRef(other.uid).delete(); }
+  });
+  // Executable acceptance cases for the proposed contract, not implemented behavior.
+  // Remove skip only after agreement on docs/records/2026-11-10-f2-plan.md and implementation.
+  describe.skip('F2 display-name proposal — awaiting human agreement', () => {
+    const path = () => `sharing/supporters/${supporter.uid}/display-name`;
+    it('lets only the owner name an existing grant and rejects invalid input', async () => {
+      const before = (await grantRef().get()).data()!;
+      try {
+        expect((await request(student, path(), 'PUT', { displayName: ' 架空の呼び名 ' })).status).toBe(200);
+        expect((await grantRef().get()).data()!['displayName']).toBe('架空の呼び名');
+        for (const owner of [other, supporter]) expect((await request(owner, path(), 'PUT', { displayName: '変更' })).status).toBe(403);
+        expect((await request(student, 'sharing/supporters/missing/display-name', 'PUT', { displayName: '追加' })).status).toBe(403);
+        for (const displayName of ['', ' ', 'a'.repeat(81), '\u0000', 123]) {
+          expect((await request(student, path(), 'PUT', { displayName })).status).toBe(400);
+        }
+        expect((await request(student, path(), 'PUT', { displayName: '名前', studentId: other.uid })).status).toBe(400);
+        await expect(setDoc(doc(ownerDb, grantRef().path), { ...grant, displayName: '直接入力' })).rejects.toMatchObject({ code: 'permission-denied' });
+      } finally { await grantRef().set(before); }
+    });
+    it('returns the chosen name only to the named supporter and removes it on request', async () => {
+      const before = (await grantRef().get()).data()!;
+      try {
+        expect((await request(student, path(), 'PUT', { displayName: '架空の呼び名' })).status).toBe(200);
+        expect(await (await request(supporter, 'supporter/students', 'GET')).json()).toEqual({ students: [{ uid: student.uid, displayName: '架空の呼び名' }] });
+        expect(await (await request(other, 'supporter/students', 'GET')).json()).toEqual({ students: [] });
+        expect((await request(student, path(), 'PUT', { displayName: null })).status).toBe(200);
+        expect(await (await request(supporter, 'supporter/students', 'GET')).json()).toEqual({ students: [{ uid: student.uid }] });
+      } finally { await grantRef().set(before); }
+    });
+    it('deletes the chosen name on revocation and does not revive it on restoration', async () => {
+      const before = (await grantRef().get()).data()!;
+      try {
+        expect((await request(student, path(), 'PUT', { displayName: '架空の呼び名' })).status).toBe(200);
+        expect((await change()).status).toBe(200);
+        expect((await getDocFromServer(doc(db, grantRef().path))).data()).not.toHaveProperty('displayName');
+        expect(await (await request(supporter, 'supporter/students', 'GET')).json()).toEqual({ students: [] });
+        expect((await change(student, 'restore')).status).toBe(200);
+        expect(await (await request(supporter, 'supporter/students', 'GET')).json()).toEqual({ students: [{ uid: student.uid }] });
+      } finally { await grantRef().set(before); }
+    });
+  });
   it('restores only the paired demo grant on reset and blocks shared public accounts at the API', async () => {
     expect((await change(demo, 'revoke', demoSupporter.uid)).status).toBe(200);
     // An unrelated grant does not become active through the demo reset.
