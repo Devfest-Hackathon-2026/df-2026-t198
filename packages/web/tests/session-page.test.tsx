@@ -242,6 +242,46 @@ it('removes a revoked student from the list, including their name, without remov
   expect(host.textContent).toContain('架空の学生B');
 });
 
+it('restores a sharing row after fresh permission when revocation and restoration leave the roster unchanged', async () => {
+  vi.useFakeTimers();
+  let allowed = true;
+  holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }, { uid: 'student-b', displayName: '架空の学生B' }];
+  holder.services!.source.grant = (student, _viewer, next) => {
+    grants.set(student, next); next(student !== 'student-a' || allowed); return () => {};
+  };
+  try {
+    await open();
+    const previousGrant = grants.get('student-a')!;
+    allowed = false;
+    await act(async () => previousGrant(false));
+    expect(host.textContent).not.toContain('架空の学生A');
+    expect(host.textContent).toContain('架空の学生B');
+    allowed = true;
+    await act(async () => previousGrant(true));
+    expect(host.textContent).not.toContain('架空の学生A');
+    await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+    expect(host.textContent).toContain('架空の学生A');
+    expect(host.querySelector('a[href="/session/student-a"]')).not.toBeNull();
+    expect(host.textContent).toContain('架空の学生B');
+  } finally { vi.useRealTimers(); }
+});
+
+it('cancels sharing permission retries when the supporter logs out', async () => {
+  vi.useFakeTimers();
+  const grant = vi.fn(holder.services!.source.grant);
+  holder.services!.source.grant = grant;
+  try {
+    await open();
+    await act(async () => grants.get('student-a')!(false));
+    await click('ログアウト');
+    const checks = grant.mock.calls.length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(grant).toHaveBeenCalledTimes(checks);
+    expect(host.textContent).toContain('面談にログイン');
+    expect(host.textContent).not.toContain('student-a');
+  } finally { vi.useRealTimers(); }
+});
+
 it('does not expose a name while the current sharing permission is unconfirmed', async () => {
   holder.services!.students = async () => [{ uid: 'student-a', displayName: '架空の学生A' }];
   holder.services!.source.grant = (_student, _viewer, next) => { grants.set('student-a', next); return () => {}; };

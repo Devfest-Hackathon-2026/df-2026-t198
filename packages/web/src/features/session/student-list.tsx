@@ -16,12 +16,22 @@ export function StudentList({ students, viewer, source }: {
   useEffect(() => {
     let active = true;
     setStates({});
-    const stops = students.map(student => watchSession(source, student.uid, viewer, state => {
-      if (!active) return;
-      setStates(previous => ({ ...previous, [student.uid]: state }));
-      setNow(new Date());
-    }));
-    return () => { active = false; stops.forEach(stop => stop()); };
+    const stops = new Map<string, () => void>();
+    const retries = new Set<number>();
+    const watchStudent = (uid: string) => {
+      stops.set(uid, watchSession(source, uid, viewer, state => {
+        if (!active) return;
+        setStates(previous => ({ ...previous, [uid]: state }));
+        setNow(new Date());
+        // A denied watch stops permanently; recheck permission even if the roster has not changed.
+        if (state.status === 'denied') {
+          const retry = window.setTimeout(() => { retries.delete(retry); watchStudent(uid); }, 30_000);
+          retries.add(retry);
+        }
+      }));
+    };
+    students.forEach(student => watchStudent(student.uid));
+    return () => { active = false; stops.forEach(stop => stop()); retries.forEach(retry => window.clearTimeout(retry)); };
   }, [students, source, viewer]);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
