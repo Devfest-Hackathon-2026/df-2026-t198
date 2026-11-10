@@ -3,20 +3,31 @@ import { ChangedDeadline } from '../../shared/assignments/deadline-change';
 import { Button } from '../../shared/ui/button';
 import { reducedMotion } from '../../shared/ui/motion';
 import './demo.css';
+import type { DemoScreen } from './screen-flow';
 import type { CourseIdentity } from '../../shared/course-color';
 import { useCourseColors } from '../../shared/course-color-context';
 
 const roles = { lms: 'LMS', student: '学生', supporter: '支援担当' } as const;
 type Pane = keyof typeof roles;
-export function DemoTriptych({ lms, student, supporter, waiting = false }: {
-  lms: ReactNode; student: ReactNode; supporter: ReactNode; waiting?: boolean;
+export function DemoTriptych({ lms, student, supporter, waiting = false, screen }: {
+  lms: ReactNode; student: ReactNode; supporter: ReactNode; waiting?: boolean; screen?: DemoScreen;
 }) {
   const id = useId();
-  const [selected, setSelected] = useState<Pane>('lms');
-  return <div className="demo-triptych">
+  const [localSelected, setSelected] = useState<Pane>('lms');
+  const selected = screen?.selected ?? localSelected;
+  return <div className={`demo-triptych ${screen ? 'demo-screen-flow' : ''}`} data-parallel={screen?.parallel ?? undefined}>
+    {screen && <div className="demo-screen-controls">
+      <label><input type="checkbox" checked={screen.automatic && !screen.reduced} disabled={screen.reduced} onChange={screen.toggleAutomatic} />自動で切り替える</label>
+      <Button className="demo-parallel-toggle" variant="quiet" aria-pressed={screen.parallel} onClick={screen.toggleParallel}>{screen.parallel ? '1画面ずつ見る' : '3つ並べて見る'}</Button>
+      <p role="status">{screen.caption}</p>
+      {(!screen.automatic || screen.reduced) && <div className="demo-manual-links">
+        <Button variant="quiet" onClick={() => screen.select('student')}>学生の画面を見る</Button>
+        <Button variant="quiet" onClick={() => screen.select('supporter')}>支援担当の画面を見る</Button>
+      </div>}
+    </div>}
     <nav className="demo-pane-switch" aria-label="体験の画面">
       {(Object.keys(roles) as Pane[]).map(role => <Button key={role} variant="quiet" aria-pressed={selected === role}
-        aria-controls={`${id}-${role}`} onClick={() => setSelected(role)}>{roles[role]}</Button>)}
+        aria-controls={`${id}-${role}`} onClick={() => screen ? screen.select(role) : setSelected(role)}>{roles[role]}</Button>)}
     </nav>
     {(Object.keys(roles) as Pane[]).map((role, index) => <section key={role} id={`${id}-${role}`} data-demo-pane={role}
       data-selected={selected === role} className={`demo-pane ${role === 'lms' ? 'lms-skin' : 'app'}`} aria-label={`${roles[role]}の画面`}>

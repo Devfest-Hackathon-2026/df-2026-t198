@@ -33,6 +33,7 @@ try {
   await page.getByLabel('メールアドレス').fill('trial-student@example.invalid');
   await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
+  await page.getByRole('button', { name: '3つ並べて見る', exact: true }).click();
   await page.getByRole('button', { name: 'LMSを開く', exact: true }).click();
   await page.getByRole('status').filter({ hasText: '課題を確認しました' }).waitFor();
   await pane('supporter').getByText('第3回レポート（要約と引用）', { exact: true }).waitFor();
