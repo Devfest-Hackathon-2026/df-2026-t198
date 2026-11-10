@@ -1,0 +1,41 @@
+{
+  "checkedAt": "2026-11-10T01:36:19.640Z",
+  "fullCheck": {
+    "command": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "exitCode": 0,
+    "packageUnitTests": {
+      "core": 274,
+      "extension": 555,
+      "server": 344,
+      "web": 288,
+      "skipped": 154
+    }
+  },
+  "demoScreen": {
+    "status": "pass",
+    "checkGroups": 7,
+    "browserErrors": 0
+  },
+  "judgeQA": {
+    "passed": 28,
+    "failed": 0,
+    "browserErrors": 0
+  },
+  "mobile": {
+    "screens": 68,
+    "widths": [
+      390,
+      360
+    ],
+    "overflow": 0,
+    "smallTargets": 0,
+    "narrowText": 0,
+    "tinyText": 0,
+    "browserErrors": 0
+  },
+  "m6": {
+    "passed": 8,
+    "total": 8,
+    "calendar": "mock"
+  }
+}
