@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChangedDeadline } from '../../shared/assignments/deadline-change';
 import { Button } from '../../shared/ui/button';
 import { reducedMotion } from '../../shared/ui/motion';
@@ -15,16 +15,35 @@ export function DemoTriptych({ lms, student, supporter, waiting = false, changed
   const id = useId();
   const [localSelected, setSelected] = useState<Pane>('lms');
   const selected = screen?.selected ?? localSelected;
+  const switchRow = useRef<HTMLElement>(null);
+  const previousSelected = useRef(selected);
+  useEffect(() => {
+    if (!screen || previousSelected.current === selected) return;
+    previousSelected.current = selected;
+    const row = switchRow.current;
+    if (!row) return;
+    const headerBottom = document.querySelector('.app-header')?.getBoundingClientRect().bottom ?? 0;
+    row.style.scrollMarginTop = `${Math.max(0, headerBottom) + 8}px`;
+    row.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }, [selected, !!screen]);
+  const paneButton = (role: Pane) => <Button key={role} variant="quiet" aria-pressed={selected === role}
+    aria-label={roles[role]} aria-controls={`${id}-${role}`} onClick={() => screen ? screen.select(role) : setSelected(role)}>
+    {screen ? <>{role !== 'lms' && <span className="rd-demo-role" data-role={role} aria-hidden="true">{role === 'student' ? '学' : '支'}</span>}
+      <span className="rd-demo-role-label"><b>{{ lms: '大学のLMS', student: '学生の画面', supporter: '支援担当の画面' }[role]}</b>{role === 'lms' && <small>体験用の見本</small>}</span>
+      {role !== 'lms' && (waiting || changed) && <span className="rd-demo-dot" data-changed={changed && !waiting} title={waiting ? 'まだ前のまま' : '締切が変わった'} />}</> : roles[role]}
+  </Button>;
   return <div className={`demo-triptych ${screen ? 'demo-screen-flow' : ''}`} data-parallel={screen?.parallel ?? undefined}>
-    <nav className="demo-pane-switch" aria-label="体験の画面">
-      {(Object.keys(roles) as Pane[]).map(role => <Button key={role} variant="quiet" aria-pressed={selected === role}
-        aria-label={roles[role]} aria-controls={`${id}-${role}`} onClick={() => screen ? screen.select(role) : setSelected(role)}>{screen ? <><span className="rd-demo-role" data-role={role} aria-hidden="true">{{ lms: '先', student: '学', supporter: '支' }[role]}</span><span className="rd-demo-role-label"><b>{{ lms: '体験用LMS', student: '学生の画面', supporter: '支援担当の画面' }[role]}</b><small>{role === 'lms' ? '大学の授業支援システム' : 'ToDoku'}</small></span>{role !== 'lms' && (waiting || changed) && <span className="rd-demo-dot" data-changed={changed && !waiting} title={waiting ? 'まだ前のまま' : '締切が変わった'} />}</> : roles[role]}</Button>)}
+    <nav ref={switchRow} className="demo-pane-switch" aria-label="体験の画面">
+      {screen ? <><div className="rd-demo-external">{paneButton('lms')}</div>
+        <span className="rd-demo-read-arrow"><span>拡張が読み取る </span>→</span>
+        <div className="rd-demo-product"><b>ToDoku</b><div>{paneButton('student')}{paneButton('supporter')}</div></div></>
+        : (Object.keys(roles) as Pane[]).map(paneButton)}
     </nav>
     {screen && <p className="rd-demo-caption" role="status">{screen.caption}{screen.reduced && '。動きを減らす設定のため、自動で切り替えません。タブで画面を選べます'}</p>}
     {screen && (lmsAction || selected !== 'lms') && <div className="rd-demo-window-actions">{lmsAction}{selected !== 'lms' && <a href={selected === 'student' ? '/student' : '/session'} target="_blank" rel="noreferrer" aria-label={selected === 'student' ? '学生の画面を開く' : '面談を開く'}>大きく開く ↗</a>}</div>}
     {(Object.keys(roles) as Pane[]).map((role, index) => <section key={role} id={`${id}-${role}`} data-demo-pane={role}
       data-selected={selected === role} className={`demo-pane ${role === 'lms' ? 'lms-skin' : 'app'}`} aria-label={`${roles[role]}の画面`}>
-      <header className="demo-pane-heading"><span aria-hidden="true">0{index + 1}</span><h2>{roles[role]}</h2>
+      <header className="demo-pane-heading"><span aria-hidden="true">0{index + 1}</span><h2>{role === 'lms' ? '大学のLMS（見本）' : `ToDoku · ${roles[role]}の画面`}</h2>
         {role !== 'lms' && waiting && <span className="demo-waiting">まだLMSを開いていない</span>}</header>
       <div className="demo-pane-body">{{ lms, student, supporter }[role]}</div>
     </section>)}

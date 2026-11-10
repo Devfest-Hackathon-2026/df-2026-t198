@@ -12,6 +12,12 @@ const env = { ...process.env, KADAI_DEMO_PASSWORD: randomUUID(), VITE_USE_FIREBA
   VITE_FIRESTORE_EMULATOR_PORT: process.env.FIRESTORE_EMULATOR_HOST.split(':')[1],
   PUBLIC_WEB_ORIGIN: `http://127.0.0.1:${webPort}`,
   PORT: apiPort, KADAI_API_PORT: apiPort, KADAI_WEB_ORIGIN: `http://127.0.0.1:${webPort}` };
+if (process.argv.includes('--student-future')) {
+  for (const role of ['STUDENT', 'SUPPORTER']) {
+    env[`VITE_PUBLIC_DEMO_${role}_EMAIL`] = `trial-${role.toLowerCase()}@example.invalid`;
+    env[`VITE_PUBLIC_DEMO_${role}_PASSWORD`] = env.KADAI_DEMO_PASSWORD;
+  }
+}
 const { start, finish, ready, checkPorts, stop } = localProcesses(env, 'plans');
 try {
   await checkPorts([apiPort, webPort]);
@@ -20,7 +26,7 @@ try {
   await ready(`http://127.0.0.1:${apiPort}/api/health`, api);
   const web = start('pnpm', ['--filter', 'web', 'exec', 'vite', '--host', '127.0.0.1', '--port', webPort, '--strictPort'], true);
   await ready(env.KADAI_WEB_ORIGIN, web);
-  await finish(start('node', [process.argv.includes('--sharing') ? 'packages/web/tests/sharing.browser.mjs' : process.argv.includes('--student-fit') ? 'packages/web/tests/student-fit.browser.mjs' : process.argv.includes('--judge-links') ? 'packages/web/tests/judge-links.browser.mjs' : process.argv.includes('--student-screens') ? 'packages/web/tests/student-screens.browser.mjs' : process.argv.includes('--capture-landing-shots') ? 'packages/web/tests/capture-landing-shots.mjs' : process.argv.includes('--kulasis') ? 'packages/web/tests/kulasis.browser.mjs' : process.argv.includes('--judge-qa') ? 'packages/web/tests/judge-qa.browser.mjs' : process.argv.includes('--manual-assignments') ? 'packages/web/tests/manual-assignments.browser.mjs' : process.argv.includes('--demo-regression')
+  await finish(start('node', [process.argv.includes('--student-future') ? 'packages/web/tests/student-future.browser.mjs' : process.argv.includes('--sharing') ? 'packages/web/tests/sharing.browser.mjs' : process.argv.includes('--student-fit') ? 'packages/web/tests/student-fit.browser.mjs' : process.argv.includes('--judge-links') ? 'packages/web/tests/judge-links.browser.mjs' : process.argv.includes('--student-screens') ? 'packages/web/tests/student-screens.browser.mjs' : process.argv.includes('--capture-landing-shots') ? 'packages/web/tests/capture-landing-shots.mjs' : process.argv.includes('--kulasis') ? 'packages/web/tests/kulasis.browser.mjs' : process.argv.includes('--judge-qa') ? 'packages/web/tests/judge-qa.browser.mjs' : process.argv.includes('--manual-assignments') ? 'packages/web/tests/manual-assignments.browser.mjs' : process.argv.includes('--demo-regression')
     ? 'packages/web/tests/demo.browser.mjs' : 'packages/web/tests/plans.browser.mjs']));
   if (process.argv.includes('--student-fit')) await finish(start('node', ['packages/web/tests/student.browser.mjs']));
 } finally {

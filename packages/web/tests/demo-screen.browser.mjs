@@ -27,22 +27,65 @@ const errors = []; page.on('pageerror', error => errors.push(error.message));
 try {
   await mkdir(evidence, { recursive: true });
   await page.goto('http://127.0.0.1:5177/demo-lms'); await openJudgeLogin(page);
+  assert.equal(await page.locator('.app-header nav').count(), 0);
+  await page.screenshot({ path: `${evidence}/entry-1440.png`, fullPage: true });
   await page.getByLabel('メールアドレス').fill('trial-student@example.invalid');
   await page.getByLabel('パスワード').fill(process.env.KADAI_DEMO_PASSWORD);
   await page.getByRole('button', { name: 'ログイン', exact: true }).click();
   await page.getByRole('button', { name: 'LMSを開く', exact: true }).waitFor();
   await selected('lms'); assert.equal(await page.locator('[data-demo-pane]').count(), 3);
+  assert.equal(await page.locator('.app-header nav').count(), 0);
+  assert.equal(await page.locator('.rd-demo-external .rd-demo-role').count(), 0);
+  await page.getByText('大学のLMS', { exact: true }).waitFor();
+  await page.getByText('体験用の見本', { exact: true }).waitFor();
+  await page.locator('.rd-demo-product > b').getByText('ToDoku', { exact: true }).waitFor();
+  await page.getByText('ほかの課題の延長やお知らせは、下の「先生役の操作・メールの見本」から', { exact: true }).waitFor();
   await reset();
   await page.getByRole('button', { name: 'LMSを開く', exact: true }).click(); await confirmed();
   const confirmedAt = Date.now();
   await selected('lms'); await selected('student'); assert.ok(Date.now() - confirmedAt >= 600);
   await page.screenshot({ path: `${evidence}/one-screen-1280.png`, fullPage: true, animations: 'disabled' });
   await extend(); await selected('lms');
+  await page.getByRole('button', { name: 'LMSをもう一度開く', exact: true }).waitFor();
   await page.getByRole('status').filter({ hasText: 'LMSの締切が変わりました。学生と支援担当' }).waitFor();
   await pane('lms').locator('[data-demo-page="detail"]:visible').waitFor();
   await confirmed(); await selected('student');
   const studentAt = Date.now(); await selected('supporter'); assert.ok(Date.now() - studentAt >= 2000);
   await page.getByRole('status').filter({ hasText: '支援担当の画面にも、同じ変更が出ています' }).waitFor();
+  for (const viewport of [{ width: 1280, height: 800 }, { width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await extend(); await confirmed(); await selected('student');
+    const geometry = await tab('学生').evaluate(node => {
+      const box = node.getBoundingClientRect();
+      const header = globalThis.document.querySelector('.app-header').getBoundingClientRect();
+      return { top: box.top, bottom: box.bottom, header: header.bottom, height: globalThis.innerHeight };
+    });
+    assert.ok(geometry.top >= geometry.header && geometry.bottom <= geometry.height, JSON.stringify(geometry));
+    await page.screenshot({ path: `${evidence}/auto-switch-${viewport.width}.png`, animations: 'disabled' });
+    await selected('supporter');
+    for (const [name, role] of [['LMS', 'lms'], ['学生', 'student'], ['支援担当', 'supporter']]) {
+      await tab(name).click();
+      await page.screenshot({ path: `${evidence}/single-${role}-${viewport.width}.png`, fullPage: true, animations: 'disabled' });
+    }
+    if (viewport.width > 760) {
+      await page.getByRole('button', { name: '3つ並べて見る', exact: true }).click();
+      await page.getByRole('heading', { name: '大学のLMS（見本）', exact: true }).waitFor();
+      assert.equal(await pane('lms').evaluate(node => globalThis.getComputedStyle(node).borderInlineEndWidth), '3px');
+      await page.screenshot({ path: `${evidence}/parallel-${viewport.width}.png`, fullPage: true, animations: 'disabled' });
+      await page.getByRole('button', { name: '1画面ずつ見る', exact: true }).click();
+    } else {
+      // Parallel mode keeps the existing single-pane presentation on mobile.
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.getByRole('button', { name: '3つ並べて見る', exact: true }).click();
+      await page.setViewportSize(viewport);
+      assert.equal(await page.locator('.demo-pane:visible').count(), 1);
+      await page.screenshot({ path: `${evidence}/parallel-responsive-390.png`, fullPage: true, animations: 'disabled' });
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.getByRole('button', { name: '1画面ずつ見る', exact: true }).click();
+      await page.setViewportSize(viewport);
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 960 });
   await extend(); await selected('lms'); await tab('学生').click(); await confirmed();
   await page.waitForTimeout(3500); await selected('student');
   // Cancel after the first automatic switch too, while the 2.5s timer is pending.
@@ -71,6 +114,11 @@ try {
   await page.screenshot({ path: `${evidence}/one-screen-390.png`, fullPage: true, animations: 'disabled' });
   assert.deepEqual(errors, []);
   await writeFile(`${evidence}/screen-flow.json`, JSON.stringify({ status: 'pass', checks: [
+    'A: demo header navigation absent before and after login',
+    'B: external LMS label/subtitle, separate ToDoku group, 3px LMS column divider',
+    'C: selected student button below header at 1280x800, 1440x900, 390x844 after extension',
+    'E: step 3 says LMSをもう一度開く',
+    'F: step 2 names the teacher controls and mail samples',
     'default single pane, all three DOM panes retained', 'open: LMS then student after confirmation',
     'extend: detail then student then supporter after 2.5 seconds', 'tab cancels during read and during supporter delay',
     'automatic off: no switch, manual guides work', 'reduced motion: no switch or animation, manual guides work',

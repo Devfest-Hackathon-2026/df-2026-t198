@@ -1,0 +1,70 @@
+{
+  "base": "5ca9a543310365407f5c60aec0acabf2042b65d9",
+  "environment": "local Auth/Firestore emulators + Chromium; fictional data only",
+  "commands": {
+    "pnpm typecheck": {
+      "exitCode": 0
+    },
+    "pnpm lint": {
+      "exitCode": 0
+    },
+    "pnpm test": {
+      "exitCode": 0
+    },
+    "pnpm build": {
+      "exitCode": 0
+    }
+  },
+  "packageTestsPassed": {
+    "core": 274,
+    "extension": 555,
+    "server": 344,
+    "web": 291
+  },
+  "packageTestsSkipped": 154,
+  "judgeQa": {
+    "passed": 28,
+    "total": 28,
+    "browserErrors": 0
+  },
+  "m6": {
+    "passed": 8,
+    "total": 8,
+    "calendar": "mock"
+  },
+  "demoScreen": {
+    "groups": 12,
+    "status": "pass",
+    "autoSwitchViewports": [
+      "1280x800",
+      "1440x900",
+      "390x844"
+    ]
+  },
+  "studentUpcoming": {
+    "passed": 3,
+    "total": 3
+  },
+  "mobile": {
+    "passed": 68,
+    "total": 68,
+    "violations": 0,
+    "browserErrors": 0
+  },
+  "triptych": {
+    "casesPassed": 9,
+    "casesTotal": 9,
+    "panesPassed": 27,
+    "panesTotal": 27
+  },
+  "untouched": [
+    "packages/server",
+    "packages/extension",
+    "packages/core",
+    "lms-definitions/demo-lms/definition.json",
+    "packages/web/src/features/demo/pages.tsx",
+    "pnpm-lock.yaml"
+  ],
+  "productionDeployed": false,
+  "merged": false
+}

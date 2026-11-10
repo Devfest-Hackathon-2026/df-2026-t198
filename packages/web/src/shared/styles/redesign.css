@@ -46,6 +46,7 @@
 .app.app-shell summary { align-content: center; }
 .app .app-header .rd-account-actions .td-btn { padding: 0; min-width: 60px; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 12px; font-weight: 400; text-decoration: underline; white-space: nowrap; }
 .rd-account-actions:empty { display: none; }
+.app .app-header .rd-account-actions { margin-left: auto; }
 @media (max-width: 600px) {
   .app .rd-bar-in { padding-inline: 8px; gap: 6px; height: 56px; }
   .app .app-header .app-home { flex: none; }

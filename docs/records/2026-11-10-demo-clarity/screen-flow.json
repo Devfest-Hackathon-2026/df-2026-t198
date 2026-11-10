@@ -1,0 +1,18 @@
+{
+  "status": "pass",
+  "checks": [
+    "A: demo header navigation absent before and after login",
+    "B: external LMS label/subtitle, separate ToDoku group, 3px LMS column divider",
+    "C: selected student button below header at 1280x800, 1440x900, 390x844 after extension",
+    "E: step 3 says LMSをもう一度開く",
+    "F: step 2 names the teacher controls and mail samples",
+    "default single pane, all three DOM panes retained",
+    "open: LMS then student after confirmation",
+    "extend: detail then student then supporter after 2.5 seconds",
+    "tab cancels during read and during supporter delay",
+    "automatic off: no switch, manual guides work",
+    "reduced motion: no switch or animation, manual guides work",
+    "parallel toggle works at 1280, hidden at 390, no horizontal overflow"
+  ],
+  "browserErrors": []
+}
